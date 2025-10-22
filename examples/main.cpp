@@ -7,31 +7,36 @@
 
 using namespace fk;
 
-int main() {
+int main()
+{
     Application app;
 
-    auto win = std::make_shared<Window>();
-    win->Title("Demo Window");
-    win->Width(640);
-    win->Height(480);
+    auto win = window()
+                   ->Title("Demo Window")
+                   ->Width(640)
+                   ->Height(480);
 
-    win->Opened += []() { std::cout << "Event: Opened" << std::endl; };
-    win->Closed += []() { std::cout << "Event: Closed" << std::endl; };
-    win->Resized += [](int w, int h) { std::cout << "Event: Resized " << w << "x" << h << std::endl; };
+    win->Opened += []()
+    { std::cout << "Event: Opened" << std::endl; };
+    win->Closed += []()
+    { std::cout << "Event: Closed" << std::endl; };
+    win->Resized += [](int w, int h)
+    { std::cout << "Event: Resized " << w << "x" << h << std::endl; };
 
     const std::string windowName = "MainWindow";
     app.AddWindow(win, windowName);
 
     // Run will exit when no windows remain (in this simple demo we remove after a bit)
-    std::thread t([&]() {
+    std::thread t([&]()
+                  {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         // simulate closing by name
-        app.RemoveWindow(windowName);
-    });
+        app.RemoveWindow(windowName); });
 
     app.Run();
 
-    if (t.joinable()) {
+    if (t.joinable())
+    {
         t.join();
     }
     return 0;
