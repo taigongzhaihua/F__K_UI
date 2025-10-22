@@ -2,6 +2,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <utility>
 
 namespace fk {
 
@@ -42,24 +43,68 @@ void Application::Run() {
 void Application::Shutdown() {
     if (!isRunning_) return;
     isRunning_ = false;
+    for (auto& [_, window] : windows_) {
+        if (window && window->IsVisible()) {
+            window->Hide();
+        }
+    }
+    windows_.clear();
     // 触发 Exit 事件，用户可在此释放资源
     Exit();
     std::cout << "Application exiting." << std::endl;
 }
 
-void Application::AddWindow(const WindowPtr& w) {
-    if (!w) return;
-    windows_.push_back(w);
-    // 演示策略：添加后自动显示窗口并触发相应事件
-    w->Show();
+bool Application::IsRunning() const {
+    return isRunning_;
 }
 
-void Application::RemoveWindow(const WindowPtr& w) {
-    if (!w) return;
-    auto it = std::find(windows_.begin(), windows_.end(), w);
-    if (it != windows_.end()) {
-        windows_.erase(it);
+void Application::AddWindow(const WindowPtr& window, const std::string& name) {
+    if (!window) {
+        std::cerr << "AddWindow: window pointer is null" << std::endl;
+        return;
     }
+
+    auto [it, inserted] = windows_.emplace(name, window);
+    if (!inserted) {
+        std::cerr << "AddWindow: window name '" << name << "' already exists, replacing existing window" << std::endl;
+        it->second = window;
+    }
+
+    if (!window->IsVisible()) {
+        window->Show();
+    }
+}
+
+void Application::RemoveWindow(const WindowPtr& window) {
+    if (!window) return;
+
+    for (auto it = windows_.begin(); it != windows_.end(); ++it) {
+        if (it->second == window) {
+            if (window->IsVisible()) {
+                window->Hide();
+            }
+            windows_.erase(it);
+            break;
+        }
+    }
+}
+
+void Application::RemoveWindow(const std::string& name) {
+    auto it = windows_.find(name);
+    if (it == windows_.end()) return;
+
+    if (it->second && it->second->IsVisible()) {
+        it->second->Hide();
+    }
+    windows_.erase(it);
+}
+
+WindowPtr Application::GetWindow(const std::string& name) const {
+    auto it = windows_.find(name);
+    if (it != windows_.end()) {
+        return it->second;
+    }
+    return nullptr;
 }
 
 } // namespace fk

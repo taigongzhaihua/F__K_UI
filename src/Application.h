@@ -3,6 +3,9 @@
 #include "../include/Event.h"
 #include "Window.h"
 
+#include <string>
+#include <unordered_map>
+
 namespace fk {
 
 /**
@@ -41,16 +44,28 @@ public:
     void Shutdown();
 
     /**
-     * @brief 将窗口添加到应用的窗口集合并自动显示（示例行为）
-     * @param w 要添加的窗口智能指针
+     * @brief 查询应用是否处于运行状态
      */
-    void AddWindow(const WindowPtr& w);
+    bool IsRunning() const;
+
+    /**
+     * @brief 将窗口添加到应用的窗口集合并自动显示（示例行为）
+     * @param window 要添加的窗口智能指针
+     * @param name 用于索引窗口的唯一名称
+     */
+    void AddWindow(const WindowPtr& window, const std::string& name);
 
     /**
      * @brief 从集合中移除窗口（不会自动销毁智能指针）
-     * @param w 要移除的窗口智能指针
+     * @param window 要移除的窗口智能指针
      */
-    void RemoveWindow(const WindowPtr& w);
+    void RemoveWindow(const WindowPtr& window);
+
+    /**
+     * @brief 通过名称移除窗口
+     * @param name 要移除的窗口名称
+     */
+    void RemoveWindow(const std::string& name);
 
     // 全局事件
     Event<> Startup;    /**< 应用启动时触发 */
@@ -61,11 +76,21 @@ public:
     /**
      * @brief 获取当前注册的窗口列表（只读）
      */
-    const std::vector<WindowPtr>& Windows() const { return windows_; }
+    /**
+     * @brief 获取当前注册的窗口映射（名称 -> 窗口）
+     */
+    const std::unordered_map<std::string, WindowPtr>& Windows() const { return windows_; }
+
+    /**
+     * @brief 根据名称查找窗口
+     * @param name 窗口名称
+     * @return 找到则返回对应窗口指针，否则返回 nullptr
+     */
+    WindowPtr GetWindow(const std::string& name) const;
 
 private:
     static Application* instance_; /**< 单例指针 */
-    std::vector<WindowPtr> windows_; /**< 管理的窗口集合 */
+    std::unordered_map<std::string, WindowPtr> windows_; /**< 管理的窗口映射 */
     bool isRunning_;                 /**< 主循环运行标记 */
 };
 
