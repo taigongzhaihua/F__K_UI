@@ -1,7 +1,7 @@
 #include <iostream>
 #include <memory>
-#include "../src/Application.h"
-#include "../src/Window.h"
+#include "fk/app/Application.h"
+#include "fk/ui/Window.h"
 #include <thread>
 #include <chrono>
 
@@ -11,7 +11,7 @@ int main()
 {
     Application app;
 
-    auto win = window()
+    auto win = Window::Create()
                    ->Title("Demo Window")
                    ->Width(640)
                    ->Height(480);

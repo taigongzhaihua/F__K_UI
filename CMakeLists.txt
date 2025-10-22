@@ -8,8 +8,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_executable(fk_example
     examples/main.cpp
-    src/Application.cpp
-    src/Window.cpp
+    src/app/Application.cpp
+    src/ui/Window.cpp
 )
 
 target_include_directories(fk_example PRIVATE ${CMAKE_SOURCE_DIR}/src)
