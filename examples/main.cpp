@@ -11,7 +11,7 @@ int main()
 {
     Application app;
 
-    auto win = Window::Create()
+    auto win = window()
                    ->Title("Demo Window")
                    ->Width(640)
                    ->Height(480);
