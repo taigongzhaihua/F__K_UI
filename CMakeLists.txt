@@ -34,6 +34,16 @@ find_package(OpenGL REQUIRED)
 
 add_library(fk STATIC
     src/app/Application.cpp
+    src/binding/DependencyProperty.cpp
+    src/binding/Binding.cpp
+    src/binding/BindingExpression.cpp
+    src/binding/BindingPath.cpp
+    src/binding/DependencyObject.cpp
+    src/binding/PropertyStore.cpp
+    src/core/Clock.cpp
+    src/core/Dispatcher.cpp
+    src/core/Logger.cpp
+    src/core/Timer.cpp
     src/ui/Window.cpp
 )
 
