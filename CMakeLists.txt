@@ -44,6 +44,16 @@ add_library(fk STATIC
     src/core/Dispatcher.cpp
     src/core/Logger.cpp
     src/core/Timer.cpp
+    src/ui/DispatcherObject.cpp
+    src/ui/DependencyObject.cpp
+    src/ui/Control.cpp
+    src/ui/ContentControl.cpp
+    src/ui/Decorator.cpp
+    src/ui/ItemsControl.cpp
+    src/ui/FrameworkElement.cpp
+    src/ui/Panel.cpp
+    src/ui/StackPanel.cpp
+    src/ui/UIElement.cpp
     src/ui/Window.cpp
 )
 

@@ -1,87 +1,119 @@
 #pragma once
 
+#include "fk/ui/UIElement.h"
+#include "fk/ui/View.h"
+
+#include <any>
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "fk/ui/View.h"
+namespace fk::ui {
 
-namespace fk {
+class UIElement;
 
-template <typename Derived>
-class Control : public View<Derived> {
+namespace detail {
+
+class ControlBase : public FrameworkElement {
 public:
-    using Ptr = std::shared_ptr<Derived>;
+    using FrameworkElement::FrameworkElement;
 
-    Ptr IsEnabled(bool enabled)
-    {
-        enabled_ = enabled;
-        return this->Self();
-    }
+    ControlBase();
+    ~ControlBase() override;
 
-    bool IsEnabled() const noexcept { return enabled_; }
+    static const binding::DependencyProperty& IsFocusedProperty();
+    static const binding::DependencyProperty& TabIndexProperty();
+    static const binding::DependencyProperty& CursorProperty();
+    static const binding::DependencyProperty& ContentProperty();
 
-    Ptr IsFocused(bool focused)
-    {
-        focused_ = focused;
-        return this->Self();
-    }
+    void SetIsFocused(bool value);
+    [[nodiscard]] bool IsFocused() const;
 
-    bool IsFocused() const noexcept { return focused_; }
+    void SetTabIndex(int value);
+    [[nodiscard]] int GetTabIndex() const;
 
-    Ptr TabIndex(int index)
-    {
-        tabIndex_ = index;
-        return this->Self();
-    }
+    void SetCursor(std::string cursor);
+    [[nodiscard]] const std::string& GetCursor() const;
 
-    int TabIndex() const noexcept { return tabIndex_; }
-
-    Ptr Cursor(std::string cursor)
-    {
-        cursor_ = std::move(cursor);
-        return this->Self();
-    }
-
-    const std::string& Cursor() const noexcept { return cursor_; }
-
-    Ptr Content(const ViewElementPtr& content)
-    {
-        content_ = content;
-        return this->Self();
-    }
-
-    ViewElementPtr Content() const { return content_; }
-
-    Ptr Focus()
-    {
-        focused_ = true;
-        return this->Self();
-    }
-
-    Ptr Blur()
-    {
-        focused_ = false;
-        return this->Self();
-    }
-
-    virtual void OnClick() {}
-    virtual void OnKeyDown(int /*keyCode*/) {}
-    virtual void OnKeyUp(int /*keyCode*/) {}
-    virtual void OnMouseDown(int /*button*/) {}
-    virtual void OnMouseUp(int /*button*/) {}
-    virtual void OnMouseMove(int /*x*/, int /*y*/) {}
-    virtual void OnMouseWheel(int /*delta*/) {}
+    void SetContent(std::shared_ptr<UIElement> content);
+    void ClearContent();
+    [[nodiscard]] std::shared_ptr<UIElement> GetContent() const;
 
 protected:
-    Control() = default;
+    void OnAttachedToLogicalTree() override;
+    void OnDetachedFromLogicalTree() override;
+
+    Size MeasureOverride(const Size& availableSize) override;
+    Size ArrangeOverride(const Size& finalSize) override;
+
+    virtual void OnContentChanged(UIElement* oldContent, UIElement* newContent);
+    virtual void OnIsFocusedChanged(bool oldValue, bool newValue);
+    virtual void OnTabIndexChanged(int oldValue, int newValue);
+    virtual void OnCursorChanged(const std::string& oldCursor, const std::string& newCursor);
 
 private:
-    bool enabled_{true};
-    bool focused_{false};
-    int tabIndex_{0};
-    std::string cursor_{"arrow"};
-    ViewElementPtr content_{};
+    static binding::PropertyMetadata BuildIsFocusedMetadata();
+    static binding::PropertyMetadata BuildTabIndexMetadata();
+    static binding::PropertyMetadata BuildCursorMetadata();
+    static binding::PropertyMetadata BuildContentMetadata();
+
+    static void IsFocusedPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
+        const std::any& oldValue, const std::any& newValue);
+    static void TabIndexPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
+        const std::any& oldValue, const std::any& newValue);
+    static void CursorPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
+        const std::any& oldValue, const std::any& newValue);
+    static void ContentPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
+        const std::any& oldValue, const std::any& newValue);
+
+    static bool ValidateTabIndex(const std::any& value);
+    static bool ValidateCursor(const std::any& value);
+    static bool ValidateContent(const std::any& value);
+
+    static std::shared_ptr<UIElement> ToElement(const std::any& value);
+
+    void AttachContent(UIElement* content);
+    void DetachContent(UIElement* content);
+    void SyncContentAttachment();
 };
 
-} // namespace fk
+} // namespace detail
+
+template <typename Derived>
+class Control : public View<Derived, detail::ControlBase> {
+public:
+    using Base = View<Derived, detail::ControlBase>;
+    using ControlBase = detail::ControlBase;
+    using Ptr = typename Base::Ptr;
+    using ContentPtr = std::shared_ptr<UIElement>;
+
+    using Base::Base;
+
+    Ptr IsFocused(bool value) {
+        this->SetIsFocused(value);
+        return this->Self();
+    }
+
+    Ptr TabIndex(int value) {
+        this->SetTabIndex(value);
+        return this->Self();
+    }
+
+    Ptr Cursor(std::string cursor) {
+        this->SetCursor(std::move(cursor));
+        return this->Self();
+    }
+
+    Ptr Content(ContentPtr content) {
+        this->SetContent(std::move(content));
+        return this->Self();
+    }
+
+    Ptr ClearContentValue() {
+        static_cast<ControlBase*>(this)->ClearContent();
+        return this->Self();
+    }
+
+};
+
+} // namespace fk::ui
