@@ -1,0 +1,96 @@
+#pragma once
+
+#include <cstdint>
+#include <variant>
+#include <array>
+#include "fk/ui/UIElement.h"
+
+namespace fk::render {
+
+/**
+ * @brief 渲染命令类型
+ */
+enum class CommandType : std::uint8_t {
+    SetClip,           // 设置裁剪区域
+    SetTransform,      // 设置变换矩阵
+    DrawRectangle,     // 绘制矩形
+    DrawText,          // 绘制文本
+    DrawImage,         // 绘制图像
+    PushLayer,         // 推入图层（用于透明度/混合）
+    PopLayer,          // 弹出图层
+};
+
+/**
+ * @brief 裁剪命令载荷
+ */
+struct ClipPayload {
+    ui::Rect clipRect;
+};
+
+/**
+ * @brief 变换命令载荷（简化版，先用2D偏移）
+ */
+struct TransformPayload {
+    float offsetX{0.0f};
+    float offsetY{0.0f};
+    // TODO: 后续扩展为完整的变换矩阵
+};
+
+/**
+ * @brief 矩形绘制载荷
+ */
+struct RectanglePayload {
+    ui::Rect rect;
+    std::array<float, 4> color; // RGBA
+    float cornerRadius{0.0f};
+};
+
+/**
+ * @brief 文本绘制载荷（占位）
+ */
+struct TextPayload {
+    ui::Rect bounds;
+    std::array<float, 4> color;
+    // TODO: 字体、文本内容等
+};
+
+/**
+ * @brief 图像绘制载荷（占位）
+ */
+struct ImagePayload {
+    ui::Rect destRect;
+    std::uint32_t textureId{0};
+};
+
+/**
+ * @brief 图层载荷
+ */
+struct LayerPayload {
+    float opacity{1.0f};
+};
+
+/**
+ * @brief 命令载荷联合体
+ */
+using CommandPayload = std::variant<
+    std::monostate,
+    ClipPayload,
+    TransformPayload,
+    RectanglePayload,
+    TextPayload,
+    ImagePayload,
+    LayerPayload
+>;
+
+/**
+ * @brief 渲染命令
+ */
+struct RenderCommand {
+    CommandType type;
+    CommandPayload payload;
+
+    RenderCommand(CommandType t, CommandPayload p = {})
+        : type(t), payload(std::move(p)) {}
+};
+
+} // namespace fk::render

@@ -16,12 +16,23 @@ public:
     Panel();
     ~Panel() override;
 
+    // Setter: 添加子元素
     void AddChild(std::shared_ptr<UIElement> child);
-    bool RemoveChild(UIElement* child);
+    
+    // Setter: 移除子元素
+    void RemoveChild(UIElement* child);
+    
+    // Setter: 清空所有子元素
     void ClearChildren();
 
-    [[nodiscard]] std::span<const std::shared_ptr<UIElement>> Children() const noexcept;
-    [[nodiscard]] std::size_t ChildCount() const noexcept { return children_.size(); }
+    // Getter: 获取所有子元素
+    [[nodiscard]] std::span<const std::shared_ptr<UIElement>> GetChildren() const noexcept;
+    
+    // Getter: 获取子元素数量
+    [[nodiscard]] std::size_t GetChildCount() const noexcept { return children_.size(); }
+    
+    // Getter: 是否有子元素
+    [[nodiscard]] bool HasChildren() const noexcept { return !children_.empty(); }
 
 protected:
     void OnAttachedToLogicalTree() override;

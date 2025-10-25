@@ -15,6 +15,7 @@ public:
 
     void SetChild(std::shared_ptr<UIElement> child);
     [[nodiscard]] std::shared_ptr<UIElement> GetChild() const noexcept { return child_; }
+    [[nodiscard]] bool HasChild() const noexcept { return child_ != nullptr; }
     void ClearChild();
 
 protected:

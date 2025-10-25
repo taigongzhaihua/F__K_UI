@@ -38,6 +38,7 @@ add_library(fk STATIC
     src/binding/Binding.cpp
     src/binding/BindingExpression.cpp
     src/binding/BindingPath.cpp
+    src/binding/BindingContext.cpp
     src/binding/DependencyObject.cpp
     src/binding/PropertyStore.cpp
     src/core/Clock.cpp
@@ -55,6 +56,12 @@ add_library(fk STATIC
     src/ui/StackPanel.cpp
     src/ui/UIElement.cpp
     src/ui/Window.cpp
+    src/ui/WindowInteropHelper.cpp
+    src/ui/ThreadingConfig.cpp
+    src/render/RenderHost.cpp
+    src/render/RenderScene.cpp
+    src/render/RenderTreeBuilder.cpp
+    src/render/GlRenderer.cpp
 )
 
 target_include_directories(fk PRIVATE
@@ -87,4 +94,56 @@ add_custom_command(TARGET fk_example POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${THIRD_PARTY_DIR}/lib/glfw3.dll"
         $<TARGET_FILE_DIR:fk_example>
+)
+
+# Phase 2 Demo
+add_executable(phase2_demo
+    examples/phase2_demo.cpp
+)
+
+target_link_libraries(phase2_demo PRIVATE fk)
+
+add_custom_command(TARGET phase2_demo POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:phase2_demo>
+)
+
+# Phase 3 Demo
+add_executable(phase3_demo
+    examples/phase3_demo.cpp
+)
+
+target_link_libraries(phase3_demo PRIVATE fk)
+
+add_custom_command(TARGET phase3_demo POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:phase3_demo>
+)
+
+# Test Getter Overloads
+add_executable(test_getter
+    examples/test_getter.cpp
+)
+
+target_link_libraries(test_getter PRIVATE fk)
+
+add_custom_command(TARGET test_getter POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:test_getter>
+)
+
+# Test Window Width Resolution
+add_executable(test_window_width
+    examples/test_window_width.cpp
+)
+
+target_link_libraries(test_window_width PRIVATE fk)
+
+add_custom_command(TARGET test_window_width POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:test_window_width>
 )

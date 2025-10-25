@@ -38,6 +38,7 @@ public:
     void SetContent(std::shared_ptr<UIElement> content);
     void ClearContent();
     [[nodiscard]] std::shared_ptr<UIElement> GetContent() const;
+    [[nodiscard]] bool HasContent() const { return GetContent() != nullptr; }
 
 protected:
     void OnAttachedToLogicalTree() override;

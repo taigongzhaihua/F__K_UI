@@ -40,17 +40,17 @@ void Panel::AddChild(std::shared_ptr<UIElement> child) {
     InvalidateArrange();
 }
 
-bool Panel::RemoveChild(UIElement* child) {
+void Panel::RemoveChild(UIElement* child) {
     VerifyAccess();
     if (!child) {
-        return false;
+        return;
     }
 
     const auto it = std::find_if(children_.begin(), children_.end(), [child](const auto& existing) {
         return existing.get() == child;
     });
     if (it == children_.end()) {
-        return false;
+        return;
     }
 
     DetachChild(*child);
@@ -58,7 +58,6 @@ bool Panel::RemoveChild(UIElement* child) {
 
     InvalidateMeasure();
     InvalidateArrange();
-    return true;
 }
 
 void Panel::ClearChildren() {
@@ -69,7 +68,7 @@ void Panel::ClearChildren() {
     InvalidateArrange();
 }
 
-std::span<const std::shared_ptr<UIElement>> Panel::Children() const noexcept {
+std::span<const std::shared_ptr<UIElement>> Panel::GetChildren() const noexcept {
     return { children_.data(), children_.size() };
 }
 

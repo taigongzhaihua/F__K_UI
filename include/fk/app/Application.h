@@ -15,13 +15,21 @@ public:
 
     static Application* Current();
 
-    void Run();
+    /**
+     * @brief 运行消息循环，直到主窗口关闭
+     * @param mainWindow 主窗口
+     */
+    void Run(ui::WindowPtr mainWindow);
+    
+    /**
+     * @brief 关闭应用程序
+     */
     void Shutdown();
 
     bool IsRunning() const;
 
-    void AddWindow(const WindowPtr& window, const std::string& name);
-    void RemoveWindow(const WindowPtr& window);
+    void AddWindow(const ui::WindowPtr& window, const std::string& name);
+    void RemoveWindow(const ui::WindowPtr& window);
     void RemoveWindow(const std::string& name);
 
     core::Event<> Startup;
@@ -29,12 +37,14 @@ public:
     core::Event<> Activated;
     core::Event<> Deactivated;
 
-    const std::unordered_map<std::string, WindowPtr>& Windows() const { return windows_; }
-    WindowPtr GetWindow(const std::string& name) const;
+    const std::unordered_map<std::string, ui::WindowPtr>& Windows() const { return windows_; }
+    ui::WindowPtr GetWindow(const std::string& name) const;
+    ui::WindowPtr GetMainWindow() const { return mainWindow_; }
 
 private:
     static Application* instance_;
-    std::unordered_map<std::string, WindowPtr> windows_;
+    std::unordered_map<std::string, ui::WindowPtr> windows_;
+    ui::WindowPtr mainWindow_;
     bool isRunning_;
 };
 

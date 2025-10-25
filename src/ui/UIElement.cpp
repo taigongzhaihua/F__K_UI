@@ -1,11 +1,48 @@
 #include "fk/ui/UIElement.h"
+#include "fk/ui/Visual.h"
+#include "fk/ui/Window.h"
+#include "fk/ui/ThreadingConfig.h"
+#include "fk/render/RenderHost.h"
 
 #include <algorithm>
 #include <stdexcept>
+#include <any>
+#include <iostream>
 
 namespace fk::ui {
 
 using binding::DependencyProperty;
+
+// 增强的线程访问检查（支持不同模式）
+static void VerifyAccessEnhanced(const DispatcherObject* obj) {
+    auto& config = ThreadingConfig::Instance();
+    
+    if (!config.IsThreadCheckEnabled()) {
+        return;  // 检查已禁用
+    }
+    
+    if (obj->HasThreadAccess()) {
+        return;  // 在正确的线程上
+    }
+    
+    // 跨线程访问检测到
+    auto mode = config.GetThreadCheckMode();
+    
+    if (mode == ThreadCheckMode::WarnOnly) {
+        // 只警告
+        std::cerr << "[WARNING] Cross-thread access detected on UIElement. "
+                  << "Use Dispatcher::Invoke() or Dispatcher::InvokeAsync() for thread-safe calls." 
+                  << std::endl;
+        return;
+    }
+    
+    // 默认：抛出异常（ThrowException 模式）
+    throw std::runtime_error(
+        "Cross-thread operation not allowed on UIElement. "
+        "UI objects can only be accessed from the thread they were created on. "
+        "Use Dispatcher::Invoke() or Dispatcher::InvokeAsync() for cross-thread calls."
+    );
+}
 
 UIElement::UIElement() = default;
 
@@ -14,7 +51,7 @@ UIElement::~UIElement() = default;
 const DependencyProperty& UIElement::VisibilityProperty() {
     static const DependencyProperty& property = DependencyProperty::Register(
         "Visibility",
-        typeid(Visibility),
+        typeid(fk::ui::Visibility),
         typeid(UIElement),
         BuildVisibilityMetadata());
     return property;
@@ -38,17 +75,17 @@ const DependencyProperty& UIElement::OpacityProperty() {
     return property;
 }
 
-void UIElement::SetVisibility(Visibility visibility) {
-    VerifyAccess();
+void UIElement::SetVisibility(fk::ui::Visibility visibility) {
+    VerifyAccessEnhanced(this);
     SetValue(VisibilityProperty(), visibility);
 }
 
 Visibility UIElement::GetVisibility() const {
-    return GetValue<Visibility>(VisibilityProperty());
+    return GetValue<fk::ui::Visibility>(VisibilityProperty());
 }
 
 void UIElement::SetIsEnabled(bool enabled) {
-    VerifyAccess();
+    VerifyAccessEnhanced(this);
     SetValue(IsEnabledProperty(), enabled);
 }
 
@@ -57,16 +94,16 @@ bool UIElement::IsEnabled() const {
 }
 
 void UIElement::SetOpacity(float value) {
-    VerifyAccess();
+    VerifyAccessEnhanced(this);
     SetValue(OpacityProperty(), value);
 }
 
-float UIElement::Opacity() const {
+float UIElement::GetOpacity() const {
     return GetValue<float>(OpacityProperty());
 }
 
 Size UIElement::Measure(const Size& availableSize) {
-    VerifyAccess();
+    VerifyAccessEnhanced(this);
 
     Size finalAvailable = availableSize;
     const auto visibility = GetVisibility();
@@ -82,7 +119,7 @@ Size UIElement::Measure(const Size& availableSize) {
 }
 
 void UIElement::Arrange(const Rect& finalRect) {
-    VerifyAccess();
+    VerifyAccessEnhanced(this);
 
     layoutSlot_ = finalRect;
 
@@ -95,10 +132,13 @@ void UIElement::Arrange(const Rect& finalRect) {
 
     ArrangeCore(finalRect);
     isArrangeValid_ = true;
+    
+    // 布局完成后触发重绘
+    InvalidateVisual();
 }
 
 void UIElement::InvalidateMeasure() {
-    VerifyAccess();
+    VerifyAccessEnhanced(this);
     if (!isMeasureValid_) {
         return;
     }
@@ -107,12 +147,22 @@ void UIElement::InvalidateMeasure() {
 }
 
 void UIElement::InvalidateArrange() {
-    VerifyAccess();
+    VerifyAccessEnhanced(this);
     if (!isArrangeValid_) {
         return;
     }
     isArrangeValid_ = false;
     ArrangeInvalidated(*this);
+}
+
+void UIElement::InvalidateVisual() {
+    VerifyAccessEnhanced(this);
+    
+    // 获取 RenderHost 并通知它元素需要重绘
+    auto* renderHost = GetRenderHost();
+    if (renderHost) {
+        renderHost->InvalidateElement(this);
+    }
 }
 
 void UIElement::OnAttachedToLogicalTree() {
@@ -137,18 +187,44 @@ void UIElement::ArrangeCore(const Rect& finalRect) {
     layoutSlot_ = finalRect;
 }
 
-void UIElement::OnVisibilityChanged(Visibility, Visibility newValue) {
-    if (newValue == Visibility::Collapsed) {
+void UIElement::OnVisibilityChanged(fk::ui::Visibility oldValue, fk::ui::Visibility newValue) {
+    if (newValue == fk::ui::Visibility::Collapsed) {
         InvalidateMeasure();
         InvalidateArrange();
     } else {
         InvalidateMeasure();
     }
+    
+    // 可见性变化影响渲染
+    InvalidateVisual();
 }
 
-void UIElement::OnIsEnabledChanged(bool, bool) {}
+void UIElement::OnIsEnabledChanged(bool, bool) {
+    // 启用状态变化可能影响外观
+    InvalidateVisual();
+}
 
-void UIElement::OnOpacityChanged(float, float) {}
+void UIElement::OnOpacityChanged(float, float) {
+    // 不透明度变化影响渲染
+    InvalidateVisual();
+}
+
+// Visual 接口实现
+Rect UIElement::GetRenderBounds() const {
+    return layoutSlot_;
+}
+
+// GetOpacity() 和 GetVisibility() 已在上面实现,同时满足 UIElement 和 Visual 接口
+
+std::vector<Visual*> UIElement::GetVisualChildren() const {
+    // UIElement 基类没有子元素，由派生类重写
+    return {};
+}
+
+bool UIElement::HasRenderContent() const {
+    // 基类默认没有渲染内容，由派生类重写
+    return false;
+}
 
 binding::PropertyMetadata UIElement::BuildVisibilityMetadata() {
     binding::PropertyMetadata metadata;
@@ -177,8 +253,8 @@ void UIElement::VisibilityPropertyChanged(binding::DependencyObject& sender, con
     if (!element) {
         return;
     }
-    const auto oldVisibility = std::any_cast<Visibility>(oldValue);
-    const auto newVisibility = std::any_cast<Visibility>(newValue);
+    const auto oldVisibility = std::any_cast<fk::ui::Visibility>(oldValue);
+    const auto newVisibility = std::any_cast<fk::ui::Visibility>(newValue);
     element->OnVisibilityChanged(oldVisibility, newVisibility);
 }
 
@@ -211,6 +287,27 @@ bool UIElement::ValidateOpacity(const std::any& value) {
     }
     const auto opacity = std::any_cast<float>(value);
     return opacity >= 0.0f && opacity <= 1.0f;
+}
+
+render::RenderHost* UIElement::GetRenderHost() const {
+    // 向上遍历逻辑树，找到 Window，然后获取其 RenderHost
+    auto* current = const_cast<UIElement*>(this);
+    while (current) {
+        // 检查当前元素是否是 Window
+        if (auto* window = dynamic_cast<Window*>(current)) {
+            return window->GetRenderHost().get();
+        }
+        
+        // 获取父级
+        auto* parent = current->GetLogicalParent();
+        if (!parent) {
+            break;
+        }
+        
+        current = dynamic_cast<UIElement*>(parent);
+    }
+    
+    return nullptr;
 }
 
 } // namespace fk::ui
