@@ -20,13 +20,13 @@ public:
     /**
      * @brief 获取命令缓冲区（只读）
      */
-    const RenderCommandBuffer* CommandBuffer() const { return commandBuffer_.get(); }
+    const RenderCommandBuffer* CommandBuffer() const { return commandBuffer_; }
 
     /**
-     * @brief 设置命令缓冲区
+     * @brief 设置命令缓冲区（接受原始指针，不获取所有权）
      */
-    void SetCommandBuffer(std::unique_ptr<RenderCommandBuffer> buffer) {
-        commandBuffer_ = std::move(buffer);
+    void SetCommandBuffer(const RenderCommandBuffer* buffer) {
+        commandBuffer_ = buffer;
     }
 
     /**
@@ -35,7 +35,7 @@ public:
     bool IsEmpty() const { return commandBuffer_ == nullptr; }
 
 private:
-    std::unique_ptr<RenderCommandBuffer> commandBuffer_;
+    const RenderCommandBuffer* commandBuffer_ = nullptr;
 };
 
 } // namespace fk::render

@@ -1,12 +1,16 @@
 #include "fk/ui/Window.h"
 #include "fk/ui/WindowInteropHelper.h"
+#include "fk/ui/Button.h"
+#include "fk/ui/Panel.h"
 #include "fk/render/RenderHost.h"
 #include "fk/render/IRenderer.h"
+#include "fk/render/GlRenderer.h"
 
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <stdexcept>
 #include <functional>
+#include <typeinfo>
 
 namespace fk::ui {
 
@@ -158,6 +162,24 @@ void Window::Show() {
     // 确保窗口已创建
     interopHelper_->EnsureHandle();
 
+    // 创建 RenderHost（如果还没有）
+    if (!renderHost_) {
+        auto renderer = std::make_unique<render::GlRenderer>();
+        
+        render::RenderHostConfig config;
+        config.window = std::static_pointer_cast<Window>(shared_from_this());
+        config.renderer = std::move(renderer);
+        
+        renderHost_ = std::make_shared<render::RenderHost>(std::move(config));
+        
+        // 初始化渲染器
+        render::RendererInitParams params;
+        params.initialSize = {static_cast<uint32_t>(Width()), static_cast<uint32_t>(Height())};
+        renderHost_->Initialize(params);
+        
+        std::cout << "RenderHost initialized for window (" << Width() << "x" << Height() << ")" << std::endl;
+    }
+
     glfwShowWindow(interopHelper_->GetHandle());
     visible_ = true;
 
@@ -293,6 +315,37 @@ void Window::OnNativeWindowFocus(bool focused) {
 
 void Window::OnNativeWindowMove(int x, int y) {
     // 预留给未来的窗口移动事件
+}
+
+void Window::OnNativeMouseButton(int button, int action, int mods) {
+    // GLFW button: GLFW_MOUSE_BUTTON_LEFT = 0, GLFW_MOUSE_BUTTON_RIGHT = 1, GLFW_MOUSE_BUTTON_MIDDLE = 2
+    // GLFW action: GLFW_PRESS = 1, GLFW_RELEASE = 0
+    
+    if (button != 0) { // 只处理左键
+        return;
+    }
+
+    double xpos, ypos;
+    glfwGetCursorPos(interopHelper_->GetHandle(), &xpos, &ypos);
+
+    auto content = GetContent();
+    if (!content) {
+        return;
+    }
+
+    // 直接将事件传递给 content,让事件系统自动路由
+    if (action == 1) { // GLFW_PRESS
+        content->OnMouseButtonDown(button, xpos, ypos);
+    } else if (action == 0) { // GLFW_RELEASE
+        content->OnMouseButtonUp(button, xpos, ypos);
+    }
+}
+
+void Window::OnNativeMouseMove(double xpos, double ypos) {
+    auto content = GetContent();
+    if (content) {
+        content->OnMouseMove(xpos, ypos);
+    }
 }
 
 } // namespace fk::ui

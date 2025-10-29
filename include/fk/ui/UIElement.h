@@ -102,6 +102,12 @@ protected:
     void SetDesiredSize(const Size& size) noexcept { desiredSize_ = size; }
     void SetLayoutSlot(const Rect& rect) noexcept { layoutSlot_ = rect; }
 
+public:
+    // 鼠标事件处理 (支持事件路由)
+    virtual void OnMouseButtonDown(int button, double x, double y);
+    virtual void OnMouseButtonUp(int button, double x, double y);
+    virtual void OnMouseMove(double x, double y);
+
 private:
     /**
      * @brief 获取此元素关联的 RenderHost（通过遍历父级链）

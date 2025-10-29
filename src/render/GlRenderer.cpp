@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 #include <cmath>
+#include <iostream>
 
 namespace fk::render {
 
@@ -14,6 +15,10 @@ namespace fk::render {
 const char* vertexShaderSource = R"(
 #version 330 core
 layout (location = 0) in vec2 aPos;
+layout (location = 1) in vec2 aTexCoord;
+
+out vec2 vTexCoord;
+out vec2 vFragPos;
 
 uniform vec2 uOffset;
 uniform vec2 uViewport;
@@ -24,19 +29,50 @@ void main() {
     vec2 ndc = (pos / uViewport) * 2.0 - 1.0;
     ndc.y = -ndc.y; // 翻转 Y 轴
     gl_Position = vec4(ndc, 0.0, 1.0);
+    
+    vTexCoord = aTexCoord;
+    vFragPos = aTexCoord;  // 使用纹理坐标作为局部坐标 (0,0 到 w,h)
 }
 )";
 
-// 简单的片段着色器
+// 支持圆角的片段着色器
 const char* fragmentShaderSource = R"(
 #version 330 core
+in vec2 vTexCoord;
+in vec2 vFragPos;
+
 out vec4 FragColor;
 
 uniform vec4 uColor;
 uniform float uOpacity;
+uniform float uCornerRadius;
+uniform vec2 uRectSize;
+
+// 计算到圆角的距离
+float roundedBoxSDF(vec2 p, vec2 size, float radius) {
+    vec2 d = abs(p) - size + radius;
+    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - radius;
+}
 
 void main() {
-    FragColor = vec4(uColor.rgb, uColor.a * uOpacity);
+    if (uCornerRadius > 0.0) {
+        // 计算片段在矩形中的位置（中心为原点）
+        vec2 center = uRectSize * 0.5;
+        vec2 localPos = vFragPos - center;
+        
+        // 计算到圆角边界的距离
+        float dist = roundedBoxSDF(localPos, uRectSize * 0.5, uCornerRadius);
+        
+        // 抗锯齿：使用平滑过渡
+        float alpha = 1.0 - smoothstep(-0.5, 0.5, dist);
+        
+        FragColor = vec4(uColor.rgb, uColor.a * uOpacity * alpha);
+        
+        // 如果完全透明则丢弃片段
+        if (FragColor.a < 0.01) discard;
+    } else {
+        FragColor = vec4(uColor.rgb, uColor.a * uOpacity);
+    }
 }
 )";
 
@@ -66,10 +102,30 @@ void GlRenderer::Initialize(const RendererInitParams& params) {
     // 启用混合
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // 启用多重采样抗锯齿 (MSAA)
+    glEnable(GL_MULTISAMPLE);
 
     // 初始化着色器和缓冲区
     InitializeShaders();
     InitializeBuffers();
+
+    // 设置初始 uniform 值
+    glUseProgram(shaderProgram_);
+    
+    // 初始化投影矩阵
+    int projLoc = glGetUniformLocation(shaderProgram_, "uProjection");
+    float projection[16] = {
+        2.0f / viewportSize_.width, 0.0f, 0.0f, 0.0f,
+        0.0f, -2.0f / viewportSize_.height, 0.0f, 0.0f,
+        0.0f, 0.0f, -1.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f, 1.0f
+    };
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, projection);
+    
+    // 初始化偏移为 (0,0)
+    int offsetLoc = glGetUniformLocation(shaderProgram_, "uOffset");
+    glUniform2f(offsetLoc, 0.0f, 0.0f);
 
     initialized_ = true;
 }
@@ -105,6 +161,10 @@ void GlRenderer::BeginFrame(const FrameContext& ctx) {
     glUniform2f(viewportLoc, 
         static_cast<float>(viewportSize_.width), 
         static_cast<float>(viewportSize_.height));
+    
+    // 设置初始偏移为 0
+    int offsetLoc = glGetUniformLocation(shaderProgram_, "uOffset");
+    glUniform2f(offsetLoc, 0.0f, 0.0f);
 }
 
 void GlRenderer::Draw(const RenderList& list) {
@@ -213,22 +273,31 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     int opacityLoc = glGetUniformLocation(shaderProgram_, "uOpacity");
     glUniform1f(opacityLoc, effectiveOpacity);
 
-    // 构建矩形顶点（两个三角形）
+    // 设置圆角半径
+    int cornerRadiusLoc = glGetUniformLocation(shaderProgram_, "uCornerRadius");
+    glUniform1f(cornerRadiusLoc, payload.cornerRadius);
+
+    // 设置矩形尺寸（用于圆角计算）
+    int rectSizeLoc = glGetUniformLocation(shaderProgram_, "uRectSize");
+    glUniform2f(rectSizeLoc, payload.rect.width, payload.rect.height);
+
+    // 构建矩形顶点（两个三角形，每个顶点包含位置和纹理坐标）
     float x = payload.rect.x;
     float y = payload.rect.y;
     float w = payload.rect.width;
     float h = payload.rect.height;
 
+    // 顶点格式：x, y, u, v (位置 + 纹理坐标)
     float vertices[] = {
         // 第一个三角形
-        x,     y,      // 左上
-        x + w, y,      // 右上
-        x,     y + h,  // 左下
+        x,     y,      0.0f, 0.0f,  // 左上
+        x + w, y,      w,    0.0f,  // 右上
+        x,     y + h,  0.0f, h,     // 左下
         
         // 第二个三角形
-        x + w, y,      // 右上
-        x + w, y + h,  // 右下
-        x,     y + h   // 左下
+        x + w, y,      w,    0.0f,  // 右上
+        x + w, y + h,  w,    h,     // 右下
+        x,     y + h,  0.0f, h      // 左下
     };
 
     // 更新顶点数据
@@ -322,11 +391,18 @@ void GlRenderer::InitializeBuffers() {
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 
     // 分配缓冲区空间（足够容纳一个矩形的顶点）
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 12, nullptr, GL_DYNAMIC_DRAW);
+    // 每个顶点：(x, y, u, v) = 4 floats
+    // 6个顶点（2个三角形）
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 24, nullptr, GL_DYNAMIC_DRAW);
 
-    // 配置顶点属性（位置）
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    // 配置顶点属性
+    // location = 0: 位置 (x, y)
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    // location = 1: 纹理坐标 (u, v)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);

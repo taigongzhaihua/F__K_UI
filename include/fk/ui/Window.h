@@ -44,6 +44,12 @@ public:
     Ptr Height(int h);
     int Height() const;
     
+    // Content 链式调用 (重写以返回 Window::Ptr)
+    Ptr Content(std::shared_ptr<UIElement> content) {
+        SetContent(std::move(content));
+        return std::static_pointer_cast<Window>(shared_from_this());
+    }
+    
     bool IsVisible() const { return visible_; }
 
 
@@ -83,6 +89,8 @@ public:
     void OnNativeWindowResize(int width, int height);
     void OnNativeWindowFocus(bool focused);
     void OnNativeWindowMove(int x, int y);
+    void OnNativeMouseButton(int button, int action, int mods);
+    void OnNativeMouseMove(double xpos, double ypos);
 
 protected:
     // 重写 ContentControl 的内容变更通知

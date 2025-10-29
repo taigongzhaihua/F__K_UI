@@ -2,6 +2,10 @@
 #include "fk/render/RenderScene.h"
 #include "fk/render/RenderCommandBuffer.h"
 #include "fk/render/RenderCommand.h"
+#include "fk/render/ColorUtils.h"
+#include "fk/ui/Button.h"  // 用于 ButtonBase 类型检查
+
+#include <iostream>
 
 namespace fk::render {
 
@@ -42,15 +46,13 @@ void RenderTreeBuilder::TraverseVisual(const ui::Visual& visual, RenderScene& sc
     currentOffsetX_ += bounds.x;
     currentOffsetY_ += bounds.y;
 
-    // 设置变换
-    if (bounds.x != 0.0f || bounds.y != 0.0f) {
-        TransformPayload transformPayload;
-        transformPayload.offsetX = currentOffsetX_;
-        transformPayload.offsetY = currentOffsetY_;
-        scene.CommandBuffer().AddCommand(
-            RenderCommand(CommandType::SetTransform, transformPayload)
-        );
-    }
+    // 始终设置变换(即使偏移为0,确保状态正确)
+    TransformPayload transformPayload;
+    transformPayload.offsetX = currentOffsetX_;
+    transformPayload.offsetY = currentOffsetY_;
+    scene.CommandBuffer().AddCommand(
+        RenderCommand(CommandType::SetTransform, transformPayload)
+    );
 
     // 如果不透明度 < 1，需要推入图层
     bool needLayer = effectiveOpacity < 1.0f;
@@ -91,8 +93,58 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
     // 获取渲染边界（相对于父元素）
     ui::Rect bounds = visual.GetRenderBounds();
     
-    // 暂时生成一个简单的矩形（占位实现）
-    // 实际应该根据元素的背景、边框等属性生成相应的绘制命令
+    // 尝试将 Visual 转换为 ButtonBase
+    const auto* button = dynamic_cast<const ui::detail::ButtonBase*>(&visual);
+    if (button) {
+        float borderThickness = button->GetBorderThickness();
+        
+        // 如果有边框,先绘制边框(作为底层)
+        if (borderThickness > 0.0f) {
+            RectanglePayload borderPayload;
+            borderPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height);
+            borderPayload.color = ColorUtils::ParseColor(button->GetBorderBrush());
+            borderPayload.color[3] *= opacity;
+            borderPayload.cornerRadius = button->GetCornerRadius();
+            
+            scene.CommandBuffer().AddCommand(
+                RenderCommand(CommandType::DrawRectangle, borderPayload)
+            );
+        }
+        
+        // 然后绘制背景(在边框之上,稍微缩小)
+        if (borderThickness > 0.0f && borderThickness < bounds.width / 2 && borderThickness < bounds.height / 2) {
+            // 有边框:绘制缩小的背景
+            RectanglePayload bgPayload;
+            bgPayload.rect = ui::Rect(
+                borderThickness, 
+                borderThickness,
+                bounds.width - 2 * borderThickness,
+                bounds.height - 2 * borderThickness
+            );
+            bgPayload.color = ColorUtils::ParseColor(button->GetActualBackground());
+            bgPayload.color[3] *= opacity;
+            bgPayload.cornerRadius = std::max(0.0f, button->GetCornerRadius() - borderThickness);
+            
+            scene.CommandBuffer().AddCommand(
+                RenderCommand(CommandType::DrawRectangle, bgPayload)
+            );
+        } else {
+            // 无边框:绘制完整背景
+            RectanglePayload bgPayload;
+            bgPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height);
+            bgPayload.color = ColorUtils::ParseColor(button->GetActualBackground());
+            bgPayload.color[3] *= opacity;
+            bgPayload.cornerRadius = button->GetCornerRadius();
+            
+            scene.CommandBuffer().AddCommand(
+                RenderCommand(CommandType::DrawRectangle, bgPayload)
+            );
+        }
+        
+        return;
+    }
+    
+    // 其他元素的默认渲染（占位实现）
     RectanglePayload rectPayload;
     rectPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height); // 相对坐标
     rectPayload.color = {0.8f, 0.8f, 0.8f, opacity}; // 灰色占位

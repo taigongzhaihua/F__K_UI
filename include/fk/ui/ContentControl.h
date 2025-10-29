@@ -18,4 +18,11 @@ protected:
     void OnContentChanged(UIElement* oldContent, UIElement* newContent) override;
 };
 
+/**
+ * @brief 便捷的 ContentControl 工厂函数
+ */
+inline std::shared_ptr<ContentControl> contentControl() {
+    return std::make_shared<ContentControl>();
+}
+
 } // namespace fk::ui

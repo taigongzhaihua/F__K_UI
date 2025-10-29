@@ -4,60 +4,110 @@
 #include "fk/ui/Window.h"
 #include "fk/ui/StackPanel.h"
 #include "fk/ui/ContentControl.h"
+#include "fk/ui/Button.h"
 
 using namespace fk;
 
 int main()
 {
-    try {
-        std::cout << "\n=== F__K_UI Window Example (Fluent API) ===" << std::endl;
-        std::cout << "Step 1: Creating UI tree with fluent API..." << std::endl;
-        
-        auto rootPanel = std::make_shared<ui::StackPanel>();
-        rootPanel->Orientation(ui::Orientation::Vertical)
-                 ->AddChild(std::make_shared<ui::ContentControl>())
-                 ->AddChild(std::make_shared<ui::ContentControl>())
-                 ->AddChild(std::make_shared<ui::ContentControl>());
-        
-        std::cout << "Step 2: Creating window..." << std::endl;
-        
+    try
+    {
+        std::cout << "\n=== F__K_UI Nested Chaining Demo ===" << std::endl;
+        std::cout << "Creating window with nested button hierarchy..." << std::endl;
+
+        // 使用 Children() 接口批量添加子元素 - 更简洁!
         auto window = ui::window()
-            ->Title("F__K_UI Demo - Fluent API")
-            ->Width(800)
-            ->Height(600);
-        
-        std::cout << "Step 3: Setting content (using inherited Content())..." << std::endl;
-        window->Content(rootPanel);  // 使用 ContentControl 继承的 Content() 方法
-        
-        std::cout << "Step 4: Subscribing events..." << std::endl;
-        
+                          ->Title("F__K_UI Demo - Nested Chaining")
+                          ->Width(800)
+                          ->Height(600)
+                          ->Content(
+                              ui::stackPanel()
+                                  ->Orientation(ui::Orientation::Vertical)
+                                  ->Children({
+                                      ui::button()
+                                          ->Width(250)->Height(50)
+                                          ->CornerRadius(10.0f)
+                                          ->Background("#4CAF50")  // 绿色
+                                          ->BorderBrush("#2E7D32")
+                                          ->BorderThickness(2.0f)
+                                          ->OnClick([](ui::detail::ButtonBase&) {
+                                              std::cout << ">>> Green Button Clicked!" << std::endl;
+                                          }),
+                                      ui::button()
+                                          ->Width(250)->Height(50)
+                                          ->CornerRadius(10.0f)
+                                          ->Background("#2196F3")  // 蓝色
+                                          ->BorderBrush("#1565C0")
+                                          ->BorderThickness(2.0f)
+                                          ->OnClick([](ui::detail::ButtonBase&) {
+                                              std::cout << ">>> Blue Button Clicked!" << std::endl;
+                                          }),
+                                      ui::button()
+                                          ->Width(250)->Height(50)
+                                          ->CornerRadius(10.0f)
+                                          ->Background("#FF9800")  // 橙色
+                                          ->BorderBrush("#E65100")
+                                          ->BorderThickness(2.0f)
+                                          ->OnClick([](ui::detail::ButtonBase&) {
+                                              std::cout << ">>> Orange Button Clicked!" << std::endl;
+                                          }),
+                                      ui::button()
+                                          ->Width(250)->Height(50)
+                                          ->CornerRadius(10.0f)
+                                          ->Background("#F44336")  // 红色
+                                          ->BorderBrush("#B71C1C")
+                                          ->BorderThickness(2.0f)
+                                          ->OnClick([](ui::detail::ButtonBase&) {
+                                              std::cout << ">>> Red Button Clicked!" << std::endl;
+                                          }),
+                                      ui::button()
+                                          ->Width(250)->Height(50)
+                                          ->CornerRadius(10.0f)
+                                          ->Background("#9C27B0")  // 紫色
+                                          ->BorderBrush("#4A148C")
+                                          ->BorderThickness(2.0f)
+                                          ->OnClick([](ui::detail::ButtonBase&) {
+                                              std::cout << ">>> Purple Button Clicked!" << std::endl;
+                                          })
+                                  })
+                          );
+
+        std::cout << "Window hierarchy created!" << std::endl;
+        std::cout << "Subscribing events..." << std::endl;
+
+        std::cout << "Window hierarchy created!" << std::endl;
+        std::cout << "Subscribing events..." << std::endl;
+
         window->Opened += []() {
             std::cout << ">>> Window opened!" << std::endl;
         };
-        
+
         window->Closed += []() {
             std::cout << ">>> Window closed!" << std::endl;
         };
-        
+
         window->Resized += [](int w, int h) {
             std::cout << ">>> Window resized to " << w << "x" << h << std::endl;
         };
 
-        std::cout << "Step 5: Creating application..." << std::endl;
+        std::cout << "Creating application..." << std::endl;
         Application app;
-        
-        std::cout << "Step 6: Running application with main window..." << std::endl;
-        app.Run(window);  // Application 接管消息循环
-        
+
+        std::cout << "Running application with main window..." << std::endl;
+        app.Run(window);
+
         std::cout << "=== Demo completed ===" << std::endl;
-        
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception &e)
+    {
         std::cerr << "ERROR: " << e.what() << std::endl;
         return -1;
-    } catch (...) {
+    }
+    catch (...)
+    {
         std::cerr << "ERROR: Unknown exception" << std::endl;
         return -1;
     }
-    
+
     return 0;
 }

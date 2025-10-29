@@ -27,7 +27,7 @@ const RenderCommandBuffer& RenderScene::CommandBuffer() const noexcept {
 
 std::unique_ptr<RenderList> RenderScene::GenerateRenderList() {
     auto list = std::make_unique<RenderList>();
-    // 暂时返回空列表，等RenderCommandBuffer完整实现后再填充
+    list->SetCommandBuffer(commandBuffer_.get()); // 传递原始指针
     return list;
 }
 

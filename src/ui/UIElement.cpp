@@ -310,4 +310,20 @@ render::RenderHost* UIElement::GetRenderHost() const {
     return nullptr;
 }
 
+// ============================================================================
+// 鼠标事件处理 (默认实现 - 不处理，让子类重写)
+// ============================================================================
+
+void UIElement::OnMouseButtonDown(int button, double x, double y) {
+    // 默认不处理
+}
+
+void UIElement::OnMouseButtonUp(int button, double x, double y) {
+    // 默认不处理
+}
+
+void UIElement::OnMouseMove(double x, double y) {
+    // 默认不处理
+}
+
 } // namespace fk::ui

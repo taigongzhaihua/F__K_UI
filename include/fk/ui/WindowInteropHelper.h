@@ -47,9 +47,11 @@ private:
     static void OnWindowResize(GLFWwindow* window, int width, int height);
     static void OnWindowFocus(GLFWwindow* window, int focused);
     static void OnWindowPos(GLFWwindow* window, int xpos, int ypos);
+    static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
+    static void OnMouseMove(GLFWwindow* window, double xpos, double ypos);
 
     Window* owner_;
-    GLFWwindow* handle_{nullptr};
+    GLFWwindow* handle_ = nullptr;
 };
 
 } // namespace fk::ui

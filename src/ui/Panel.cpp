@@ -1,16 +1,104 @@
 #include "fk/ui/Panel.h"
+#include "fk/ui/Button.h"
 
 #include <algorithm>
 
 namespace fk::ui {
 
-Panel::Panel() = default;
+using binding::DependencyProperty;
 
-Panel::~Panel() {
+PanelBase::PanelBase() = default;
+
+PanelBase::~PanelBase() {
     ClearChildren();
 }
 
-void Panel::AddChild(std::shared_ptr<UIElement> child) {
+const DependencyProperty& PanelBase::ChildrenProperty() {
+    static const auto& property = DependencyProperty::Register(
+        "Children",
+        typeid(UIElementCollection),
+        typeid(PanelBase),
+        BuildChildrenMetadata());
+    return property;
+}
+
+void PanelBase::SetChildrenInternal(const UIElementCollection& children) {
+    VerifyAccess();
+    
+    // 清空现有子元素
+    DetachAllChildren();
+    children_.clear();
+    
+    // 添加新的子元素
+    for (const auto& child : children) {
+        if (!child) {
+            continue;
+        }
+        
+        auto* const rawChild = child.get();
+        
+        // 从旧父元素移除
+        if (auto* existingParent = dynamic_cast<DependencyObject*>(rawChild->GetLogicalParent()); 
+            existingParent && existingParent != this) {
+            existingParent->RemoveLogicalChild(rawChild);
+        }
+        
+        // 添加到逻辑树
+        if (IsAttachedToLogicalTree()) {
+            AddLogicalChild(rawChild);
+        } else {
+            BindingDependencyObject::AddLogicalChild(rawChild);
+        }
+        
+        children_.push_back(child);
+    }
+    
+    // 触发依赖属性变更通知
+    SetValue(ChildrenProperty(), children_);
+    
+    InvalidateMeasure();
+    InvalidateArrange();
+}
+
+void PanelBase::SetChildrenInternal(UIElementCollection&& children) {
+    VerifyAccess();
+    
+    // 清空现有子元素
+    DetachAllChildren();
+    children_.clear();
+    
+    // 移动新的子元素
+    for (auto& child : children) {
+        if (!child) {
+            continue;
+        }
+        
+        auto* const rawChild = child.get();
+        
+        // 从旧父元素移除
+        if (auto* existingParent = dynamic_cast<DependencyObject*>(rawChild->GetLogicalParent()); 
+            existingParent && existingParent != this) {
+            existingParent->RemoveLogicalChild(rawChild);
+        }
+        
+        // 添加到逻辑树
+        if (IsAttachedToLogicalTree()) {
+            AddLogicalChild(rawChild);
+        } else {
+            BindingDependencyObject::AddLogicalChild(rawChild);
+        }
+        
+        children_.push_back(std::move(child));
+    }
+    
+    // 触发依赖属性变更通知
+    SetValue(ChildrenProperty(), children_);
+    
+    InvalidateMeasure();
+    InvalidateArrange();
+}
+
+void PanelBase::AddChild(std::shared_ptr<UIElement> child) {
     VerifyAccess();
     if (!child) {
         return;
@@ -36,11 +124,15 @@ void Panel::AddChild(std::shared_ptr<UIElement> child) {
     }
 
     children_.push_back(std::move(child));
+    
+    // 触发依赖属性变更通知
+    SetValue(ChildrenProperty(), children_);
+    
     InvalidateMeasure();
     InvalidateArrange();
 }
 
-void Panel::RemoveChild(UIElement* child) {
+void PanelBase::RemoveChild(UIElement* child) {
     VerifyAccess();
     if (!child) {
         return;
@@ -56,41 +148,111 @@ void Panel::RemoveChild(UIElement* child) {
     DetachChild(*child);
     children_.erase(it);
 
+    // 触发依赖属性变更通知
+    SetValue(ChildrenProperty(), children_);
+
     InvalidateMeasure();
     InvalidateArrange();
 }
 
-void Panel::ClearChildren() {
+void PanelBase::ClearChildren() {
     VerifyAccess();
     DetachAllChildren();
     children_.clear();
+    
+    // 触发依赖属性变更通知
+    SetValue(ChildrenProperty(), children_);
+    
     InvalidateMeasure();
     InvalidateArrange();
 }
 
-std::span<const std::shared_ptr<UIElement>> Panel::GetChildren() const noexcept {
+std::span<const std::shared_ptr<UIElement>> PanelBase::GetChildren() const noexcept {
     return { children_.data(), children_.size() };
 }
 
-void Panel::OnAttachedToLogicalTree() {
+std::vector<Visual*> PanelBase::GetVisualChildren() const {
+    std::vector<Visual*> result;
+    result.reserve(children_.size());
+    for (const auto& child : children_) {
+        if (child) {
+            result.push_back(child.get());
+        }
+    }
+    return result;
+}
+
+std::size_t PanelBase::GetChildCount() const noexcept {
+    return children_.size();
+}
+
+bool PanelBase::HasChildren() const noexcept {
+    return !children_.empty();
+}
+
+void PanelBase::OnAttachedToLogicalTree() {
     FrameworkElement::OnAttachedToLogicalTree();
     AttachAllChildren();
 }
 
-void Panel::OnDetachedFromLogicalTree() {
+void PanelBase::OnDetachedFromLogicalTree() {
     DetachAllChildren();
     FrameworkElement::OnDetachedFromLogicalTree();
 }
 
-void Panel::MeasureChild(UIElement& child, const Size& availableSize) {
+void PanelBase::MeasureChild(UIElement& child, const Size& availableSize) {
     child.Measure(availableSize);
 }
 
-void Panel::ArrangeChild(UIElement& child, const Rect& finalRect) {
+void PanelBase::ArrangeChild(UIElement& child, const Rect& finalRect) {
     child.Arrange(finalRect);
 }
 
-void Panel::AttachChild(UIElement& child) {
+void PanelBase::OnChildrenChanged(const UIElementCollection&, const UIElementCollection&) {
+    // 子类可以重写以响应集合变化
+}
+
+binding::PropertyMetadata PanelBase::BuildChildrenMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = UIElementCollection{};
+    metadata.propertyChangedCallback = &PanelBase::ChildrenPropertyChanged;
+    metadata.validateCallback = &PanelBase::ValidateChildren;
+    return metadata;
+}
+
+void PanelBase::ChildrenPropertyChanged(binding::DependencyObject& sender, 
+    const DependencyProperty&,
+    const std::any& oldValue, 
+    const std::any& newValue) {
+    auto* panel = dynamic_cast<PanelBase*>(&sender);
+    if (!panel) {
+        return;
+    }
+
+    const auto oldCollection = ToCollection(oldValue);
+    const auto newCollection = ToCollection(newValue);
+
+    panel->OnChildrenChanged(oldCollection, newCollection);
+}
+
+bool PanelBase::ValidateChildren(const std::any& value) {
+    if (!value.has_value()) {
+        return true;
+    }
+    return value.type() == typeid(UIElementCollection);
+}
+
+UIElementCollection PanelBase::ToCollection(const std::any& value) {
+    if (!value.has_value()) {
+        return {};
+    }
+    if (value.type() != typeid(UIElementCollection)) {
+        return {};
+    }
+    return std::any_cast<UIElementCollection>(value);
+}
+
+void PanelBase::AttachChild(UIElement& child) {
     if (IsAttachedToLogicalTree()) {
         AddLogicalChild(&child);
     } else {
@@ -98,14 +260,14 @@ void Panel::AttachChild(UIElement& child) {
     }
 }
 
-void Panel::DetachChild(UIElement& child) {
+void PanelBase::DetachChild(UIElement& child) {
     if (child.GetLogicalParent() != this) {
         return;
     }
     RemoveLogicalChild(&child);
 }
 
-void Panel::AttachAllChildren() {
+void PanelBase::AttachAllChildren() {
     for (const auto& child : children_) {
         if (!child) {
             continue;
@@ -114,7 +276,7 @@ void Panel::AttachAllChildren() {
     }
 }
 
-void Panel::DetachAllChildren() {
+void PanelBase::DetachAllChildren() {
     for (const auto& child : children_) {
         if (!child) {
             continue;
@@ -122,6 +284,97 @@ void Panel::DetachAllChildren() {
         if (child->GetLogicalParent() == this) {
             RemoveLogicalChild(child.get());
         }
+    }
+}
+
+// ============================================================================
+// 鼠标事件路由
+// ============================================================================
+
+void PanelBase::OnMouseButtonDown(int button, double x, double y) {
+    // 将事件路由到子元素 (从后往前,因为后面的元素在上层)
+    for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+        const auto& child = *it;
+        if (!child) continue;
+        
+        // 获取子元素的边界
+        auto bounds = child->GetRenderBounds();
+        
+        // 检查点击是否在子元素内
+        if (x >= bounds.x && x < bounds.x + bounds.width &&
+            y >= bounds.y && y < bounds.y + bounds.height) {
+            
+            // 转换坐标到子元素空间
+            double childX = x - bounds.x;
+            double childY = y - bounds.y;
+            
+            // 传递事件到子元素
+            child->OnMouseButtonDown(button, childX, childY);
+            return; // 事件已被处理
+        }
+    }
+    
+    // 如果没有子元素处理,调用基类默认处理
+    UIElement::OnMouseButtonDown(button, x, y);
+}
+
+void PanelBase::OnMouseButtonUp(int button, double x, double y) {
+    // 将事件路由到子元素
+    for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+        const auto& child = *it;
+        if (!child) continue;
+        
+        auto bounds = child->GetRenderBounds();
+        
+        if (x >= bounds.x && x < bounds.x + bounds.width &&
+            y >= bounds.y && y < bounds.y + bounds.height) {
+            
+            double childX = x - bounds.x;
+            double childY = y - bounds.y;
+            
+            child->OnMouseButtonUp(button, childX, childY);
+            return;
+        }
+    }
+    
+    UIElement::OnMouseButtonUp(button, x, y);
+}
+
+void PanelBase::OnMouseMove(double x, double y) {
+    // 查找鼠标当前悬停的子元素
+    UIElement* hoveredChild = nullptr;
+    
+    for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+        const auto& child = *it;
+        if (!child) continue;
+        
+        auto bounds = child->GetRenderBounds();
+        
+        if (x >= bounds.x && x < bounds.x + bounds.width &&
+            y >= bounds.y && y < bounds.y + bounds.height) {
+            
+            hoveredChild = child.get();
+            
+            double childX = x - bounds.x;
+            double childY = y - bounds.y;
+            
+            child->OnMouseMove(childX, childY);
+            break;
+        }
+    }
+    
+    // 处理鼠标离开之前悬停的元素
+    if (lastHoveredChild_ && lastHoveredChild_ != hoveredChild) {
+        // 触发 MouseLeave
+        if (auto* button = dynamic_cast<ui::detail::ButtonBase*>(lastHoveredChild_)) {
+            button->HandleMouseLeave();
+        }
+    }
+    
+    lastHoveredChild_ = hoveredChild;
+    
+    if (!hoveredChild) {
+        UIElement::OnMouseMove(x, y);
     }
 }
 

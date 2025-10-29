@@ -45,6 +45,9 @@ void WindowInteropHelper::CreateNativeWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);  // 创建时隐藏，等 Show() 时再显示
+    
+    // 启用 4x 多重采样抗锯齿
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     // 创建窗口
     handle_ = glfwCreateWindow(
@@ -70,6 +73,8 @@ void WindowInteropHelper::CreateNativeWindow() {
     glfwSetWindowSizeCallback(handle_, OnWindowResize);
     glfwSetWindowFocusCallback(handle_, OnWindowFocus);
     glfwSetWindowPosCallback(handle_, OnWindowPos);
+    glfwSetMouseButtonCallback(handle_, OnMouseButton);
+    glfwSetCursorPosCallback(handle_, OnMouseMove);
 
     // 设置当前上下文
     glfwMakeContextCurrent(handle_);
@@ -100,6 +105,20 @@ void WindowInteropHelper::OnWindowPos(GLFWwindow* window, int xpos, int ypos) {
     auto* owner = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (owner) {
         owner->OnNativeWindowMove(xpos, ypos);
+    }
+}
+
+void WindowInteropHelper::OnMouseButton(GLFWwindow* window, int button, int action, int mods) {
+    auto* owner = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (owner) {
+        owner->OnNativeMouseButton(button, action, mods);
+    }
+}
+
+void WindowInteropHelper::OnMouseMove(GLFWwindow* window, double xpos, double ypos) {
+    auto* owner = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (owner) {
+        owner->OnNativeMouseMove(xpos, ypos);
     }
 }
 

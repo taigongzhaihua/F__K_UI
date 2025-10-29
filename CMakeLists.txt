@@ -47,6 +47,7 @@ add_library(fk STATIC
     src/core/Timer.cpp
     src/ui/DispatcherObject.cpp
     src/ui/DependencyObject.cpp
+    src/ui/Button.cpp
     src/ui/Control.cpp
     src/ui/ContentControl.cpp
     src/ui/Decorator.cpp
@@ -62,6 +63,7 @@ add_library(fk STATIC
     src/render/RenderScene.cpp
     src/render/RenderTreeBuilder.cpp
     src/render/GlRenderer.cpp
+    src/render/ColorUtils.cpp
 )
 
 target_include_directories(fk PRIVATE
@@ -146,4 +148,136 @@ add_custom_command(TARGET test_window_width POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${THIRD_PARTY_DIR}/lib/glfw3.dll"
         $<TARGET_FILE_DIR:test_window_width>
+)
+
+# Test Panel Children Dependency Property
+add_executable(test_panel_children
+    examples/test_panel_children.cpp
+)
+
+target_link_libraries(test_panel_children PRIVATE fk)
+
+add_custom_command(TARGET test_panel_children POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:test_panel_children>
+)
+
+# Children API Demo
+add_executable(children_api_demo
+    examples/children_api_demo.cpp
+)
+
+target_link_libraries(children_api_demo PRIVATE fk)
+
+add_custom_command(TARGET children_api_demo POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:children_api_demo>
+)
+
+# Test Panel CRTP
+add_executable(test_panel_crtp
+    examples/test_panel_crtp.cpp
+)
+
+target_link_libraries(test_panel_crtp PRIVATE fk)
+
+add_custom_command(TARGET test_panel_crtp POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:test_panel_crtp>
+)
+
+# test_items_control_children 示例
+add_executable(test_items_control_children
+    examples/test_items_control_children.cpp
+)
+
+target_link_libraries(test_items_control_children PRIVATE fk)
+
+add_custom_command(TARGET test_items_control_children POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:test_items_control_children>
+)
+
+# test_items_control_improvements 示例
+add_executable(test_items_control_improvements
+    examples/test_items_control_improvements.cpp
+)
+
+target_link_libraries(test_items_control_improvements PRIVATE fk)
+
+add_custom_command(TARGET test_items_control_improvements POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:test_items_control_improvements>
+)
+
+# button_example 示例
+add_executable(button_example
+    examples/button_example.cpp
+)
+
+target_link_libraries(button_example PRIVATE fk)
+
+add_custom_command(TARGET button_example POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:button_example>
+)
+
+# Button Render Test
+add_executable(button_render_test
+    examples/button_render_test.cpp
+)
+
+target_link_libraries(button_render_test PRIVATE fk)
+
+add_custom_command(TARGET button_render_test POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:button_render_test>
+)
+
+# Button Direct Render Demo
+add_executable(button_direct_render
+    examples/button_direct_render.cpp
+)
+
+target_link_libraries(button_direct_render PRIVATE fk)
+
+add_custom_command(TARGET button_direct_render POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:button_direct_render>
+)
+
+# Simple Render Test
+add_executable(simple_render_test
+    examples/simple_render_test.cpp
+)
+
+target_link_libraries(simple_render_test PRIVATE fk)
+
+add_custom_command(TARGET simple_render_test POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        $<TARGET_FILE_DIR:simple_render_test>
+)
+
+add_executable(minesweeper
+    minesweeper.cpp
+)
+target_include_directories(minesweeper PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+    ${THIRD_PARTY_DIR}/include
+    ${FREETYPE_SOURCE_DIR}/include
+    ${FREETYPE_BINARY_DIR}/include
+)
+target_link_libraries(minesweeper PUBLIC
+    glad
+    glfw3
+    freetype
 )
