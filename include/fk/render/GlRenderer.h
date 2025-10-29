@@ -8,6 +8,7 @@
 namespace fk::render {
 
 class RenderList;
+class TextRenderer;
 
 /**
  * @brief OpenGL 渲染器实现
@@ -83,8 +84,14 @@ private:
 
     // OpenGL 资源
     unsigned int shaderProgram_{0};
+    unsigned int textShaderProgram_{0};  // 文本渲染着色器
     unsigned int vao_{0};
     unsigned int vbo_{0};
+    unsigned int textVAO_{0};  // 文本渲染 VAO
+    unsigned int textVBO_{0};  // 文本渲染 VBO
+    
+    // 文本渲染器
+    std::unique_ptr<TextRenderer> textRenderer_;
     
     // 状态
     Extent2D viewportSize_{};

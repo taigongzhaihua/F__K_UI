@@ -46,12 +46,15 @@ struct RectanglePayload {
 };
 
 /**
- * @brief 文本绘制载荷（占位）
+ * @brief 文本绘制载荷
  */
 struct TextPayload {
     ui::Rect bounds;
     std::array<float, 4> color;
-    // TODO: 字体、文本内容等
+    std::string text;           // 文本内容
+    int fontId{0};              // 字体 ID
+    float fontSize{14.0f};      // 字体大小
+    std::string fontFamily;     // 字体族(可选)
 };
 
 /**

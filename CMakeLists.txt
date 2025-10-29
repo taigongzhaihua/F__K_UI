@@ -55,6 +55,7 @@ add_library(fk STATIC
     src/ui/FrameworkElement.cpp
     src/ui/Panel.cpp
     src/ui/StackPanel.cpp
+    src/ui/TextBlock.cpp
     src/ui/UIElement.cpp
     src/ui/Window.cpp
     src/ui/WindowInteropHelper.cpp
@@ -64,6 +65,7 @@ add_library(fk STATIC
     src/render/RenderTreeBuilder.cpp
     src/render/GlRenderer.cpp
     src/render/ColorUtils.cpp
+    src/render/TextRenderer.cpp
 )
 
 target_include_directories(fk PRIVATE

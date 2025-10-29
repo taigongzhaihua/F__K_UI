@@ -4,6 +4,7 @@
 #include "fk/render/RenderCommand.h"
 #include "fk/render/ColorUtils.h"
 #include "fk/ui/Button.h"  // 用于 ButtonBase 类型检查
+#include "fk/ui/TextBlock.h"  // 用于 TextBlockBase 类型检查
 
 #include <iostream>
 
@@ -140,6 +141,26 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
                 RenderCommand(CommandType::DrawRectangle, bgPayload)
             );
         }
+        
+        return;
+    }
+    
+    // 尝试将 Visual 转换为 TextBlockBase
+    const auto* textBlock = dynamic_cast<const ui::detail::TextBlockBase*>(&visual);
+    if (textBlock) {
+        // 生成文本渲染命令
+        TextPayload textPayload;
+        textPayload.bounds = ui::Rect(0, 0, bounds.width, bounds.height);
+        textPayload.color = ColorUtils::ParseColor(textBlock->GetForeground());
+        textPayload.color[3] *= opacity;
+        textPayload.text = textBlock->GetText();
+        textPayload.fontSize = textBlock->GetFontSize();
+        textPayload.fontFamily = textBlock->GetFontFamily();
+        textPayload.fontId = 0;  // TODO: 通过 fontFamily 和 fontSize 获取实际 fontId
+        
+        scene.CommandBuffer().AddCommand(
+            RenderCommand(CommandType::DrawText, textPayload)
+        );
         
         return;
     }

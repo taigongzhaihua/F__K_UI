@@ -5,6 +5,7 @@
 #include "fk/ui/StackPanel.h"
 #include "fk/ui/ContentControl.h"
 #include "fk/ui/Button.h"
+#include "fk/ui/TextBlock.h"
 
 using namespace fk;
 
@@ -24,6 +25,20 @@ int main()
                               ui::stackPanel()
                                   ->Orientation(ui::Orientation::Vertical)
                                   ->Children({
+                                      std::static_pointer_cast<ui::UIElement>(
+                                          ui::textBlock()
+                                              ->Text("欢迎使用 F__K_UI!")
+                                              ->Foreground("#FFFFFF")
+                                              ->FontSize(24.0f)
+                                              ->Width(250)->Height(40)
+                                      ),
+                                      std::static_pointer_cast<ui::UIElement>(
+                                          ui::textBlock()
+                                              ->Text("这是一个测试文本块")
+                                              ->Foreground("#CCCCCC")
+                                              ->FontSize(16.0f)
+                                              ->Width(250)->Height(30)
+                                      ),
                                       ui::button()
                                           ->Width(250)->Height(50)
                                           ->CornerRadius(10.0f)

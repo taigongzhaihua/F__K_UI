@@ -2,6 +2,7 @@
 #include "fk/render/RenderList.h"
 #include "fk/render/RenderCommandBuffer.h"
 #include "fk/render/RenderCommand.h"
+#include "fk/render/TextRenderer.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -76,6 +77,40 @@ void main() {
 }
 )";
 
+// 文本渲染的顶点着色器
+const char* textVertexShaderSource = R"(
+#version 330 core
+layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
+out vec2 TexCoords;
+
+uniform vec2 uOffset;
+uniform vec2 uViewport;
+
+void main() {
+    vec2 pos = vertex.xy + uOffset;
+    vec2 ndc = (pos / uViewport) * 2.0 - 1.0;
+    ndc.y = -ndc.y;
+    gl_Position = vec4(ndc, 0.0, 1.0);
+    TexCoords = vertex.zw;
+}
+)";
+
+// 文本渲染的片段着色器
+const char* textFragmentShaderSource = R"(
+#version 330 core
+in vec2 TexCoords;
+out vec4 color;
+
+uniform sampler2D text;
+uniform vec4 textColor;
+uniform float uOpacity;
+
+void main() {
+    vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);
+    color = vec4(textColor.rgb, textColor.a * uOpacity) * sampled;
+}
+)";
+
 GlRenderer::GlRenderer() = default;
 
 GlRenderer::~GlRenderer() {
@@ -109,6 +144,12 @@ void GlRenderer::Initialize(const RendererInitParams& params) {
     // 初始化着色器和缓冲区
     InitializeShaders();
     InitializeBuffers();
+
+    // 初始化文本渲染器
+    textRenderer_ = std::make_unique<TextRenderer>();
+    if (!textRenderer_->Initialize()) {
+        std::cerr << "WARNING: Failed to initialize TextRenderer" << std::endl;
+    }
 
     // 设置初始 uniform 值
     glUseProgram(shaderProgram_);
@@ -312,8 +353,112 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
 }
 
 void GlRenderer::DrawText(const TextPayload& payload) {
-    // TODO: 实现文本渲染
-    // 需要字体图集和字形渲染
+    if (!textRenderer_) {
+        return;
+    }
+
+    // 确保已加载字体
+    static int defaultFontId = -1;
+    if (defaultFontId == -1) {
+        defaultFontId = textRenderer_->LoadFont("C:/Windows/Fonts/msyh.ttc", static_cast<unsigned int>(payload.fontSize));
+        if (defaultFontId < 0) {
+            defaultFontId = textRenderer_->LoadFont("C:/Windows/Fonts/simhei.ttf", static_cast<unsigned int>(payload.fontSize));
+        }
+        if (defaultFontId < 0) {
+            std::cerr << "Failed to load any font!" << std::endl;
+            return;
+        }
+    }
+    
+    // 保存当前着色器程序
+    GLint currentProgram;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+    
+    // 使用文本着色器
+    glUseProgram(textShaderProgram_);
+    
+    // 设置 uniforms
+    glUniform4f(glGetUniformLocation(textShaderProgram_, "textColor"), 
+                payload.color[0], payload.color[1], payload.color[2], payload.color[3]);
+    glUniform1f(glGetUniformLocation(textShaderProgram_, "uOpacity"), 1.0f);
+    glUniform2f(glGetUniformLocation(textShaderProgram_, "uViewport"), 
+                viewportSize_.width, viewportSize_.height);
+    // 使用当前的全局变换偏移,而不是 payload.bounds
+    glUniform2f(glGetUniformLocation(textShaderProgram_, "uOffset"), 
+                currentOffsetX_, currentOffsetY_);
+    
+    glActiveTexture(GL_TEXTURE0);
+    glUniform1i(glGetUniformLocation(textShaderProgram_, "text"), 0);
+    glBindVertexArray(textVAO_);
+    
+    // 保存混合状态
+    GLboolean blendEnabled = glIsEnabled(GL_BLEND);
+    GLint blendSrc, blendDst;
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &blendSrc);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &blendDst);
+    
+    // 启用混合
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // 将 UTF-8 文本转换为 UTF-32
+    std::u32string utf32Text = textRenderer_->Utf8ToUtf32(payload.text);
+    
+    // 渲染每个字符
+    float x = 0.0f;  // 相对于 offset 的位置
+    float y = 0.0f;
+    
+    for (char32_t c : utf32Text) {
+        const auto* glyph = textRenderer_->GetGlyph(c, defaultFontId);
+        if (!glyph) {
+            continue; // 跳过无法加载的字符
+        }
+        
+        float xpos = x + glyph->bearingX;
+        float ypos = y + (payload.fontSize - glyph->bearingY); // 基线对齐
+        float w = glyph->width;
+        float h = glyph->height;
+        
+        // 更新 VBO (翻转纹理 V 坐标以匹配 FreeType 的上下翻转)
+        float vertices[6][4] = {
+            { xpos,     ypos + h,   0.0f, 1.0f },
+            { xpos,     ypos,       0.0f, 0.0f },
+            { xpos + w, ypos,       1.0f, 0.0f },
+            
+            { xpos,     ypos + h,   0.0f, 1.0f },
+            { xpos + w, ypos,       1.0f, 0.0f },
+            { xpos + w, ypos + h,   1.0f, 1.0f }
+        };
+        
+        // 绑定字形纹理
+        glBindTexture(GL_TEXTURE_2D, glyph->textureID);
+        
+        // 更新 VBO 内容
+        glBindBuffer(GL_ARRAY_BUFFER, textVBO_);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        
+        // 渲染四边形
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        
+        // 前进到下一个字形位置 (advance 已经是像素单位)
+        x += glyph->advance;
+    }
+    
+    // 恢复状态
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    // 恢复混合状态
+    if (!blendEnabled) {
+        glDisable(GL_BLEND);
+    }
+    if (blendEnabled) {
+        glBlendFunc(blendSrc, blendDst);
+    }
+    
+    // 恢复着色器程序
+    glUseProgram(currentProgram);
 }
 
 void GlRenderer::DrawImage(const ImagePayload& payload) {
@@ -380,6 +525,45 @@ void GlRenderer::InitializeShaders() {
     // 删除着色器（已经链接到程序中）
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+
+    // === 初始化文本着色器 ===
+    
+    // 编译文本顶点着色器
+    unsigned int textVertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(textVertexShader, 1, &textVertexShaderSource, nullptr);
+    glCompileShader(textVertexShader);
+
+    glGetShaderiv(textVertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(textVertexShader, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("Text vertex shader compilation failed: ") + infoLog);
+    }
+
+    // 编译文本片段着色器
+    unsigned int textFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(textFragmentShader, 1, &textFragmentShaderSource, nullptr);
+    glCompileShader(textFragmentShader);
+
+    glGetShaderiv(textFragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(textFragmentShader, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("Text fragment shader compilation failed: ") + infoLog);
+    }
+
+    // 链接文本着色器程序
+    textShaderProgram_ = glCreateProgram();
+    glAttachShader(textShaderProgram_, textVertexShader);
+    glAttachShader(textShaderProgram_, textFragmentShader);
+    glLinkProgram(textShaderProgram_);
+
+    glGetProgramiv(textShaderProgram_, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(textShaderProgram_, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("Text shader program linking failed: ") + infoLog);
+    }
+
+    glDeleteShader(textVertexShader);
+    glDeleteShader(textFragmentShader);
 }
 
 void GlRenderer::InitializeBuffers() {
@@ -406,9 +590,33 @@ void GlRenderer::InitializeBuffers() {
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    // === 初始化文本渲染缓冲区 ===
+    glGenVertexArrays(1, &textVAO_);
+    glGenBuffers(1, &textVBO_);
+    
+    glBindVertexArray(textVAO_);
+    glBindBuffer(GL_ARRAY_BUFFER, textVBO_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
+    
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }
 
 void GlRenderer::CleanupResources() {
+    if (textVBO_ != 0) {
+        glDeleteBuffers(1, &textVBO_);
+        textVBO_ = 0;
+    }
+
+    if (textVAO_ != 0) {
+        glDeleteVertexArrays(1, &textVAO_);
+        textVAO_ = 0;
+    }
+
     if (vbo_ != 0) {
         glDeleteBuffers(1, &vbo_);
         vbo_ = 0;
@@ -417,6 +625,11 @@ void GlRenderer::CleanupResources() {
     if (vao_ != 0) {
         glDeleteVertexArrays(1, &vao_);
         vao_ = 0;
+    }
+
+    if (textShaderProgram_ != 0) {
+        glDeleteProgram(textShaderProgram_);
+        textShaderProgram_ = 0;
     }
 
     if (shaderProgram_ != 0) {
