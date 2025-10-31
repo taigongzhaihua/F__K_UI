@@ -46,6 +46,15 @@ const DependencyProperty& ControlBase::ContentProperty() {
     return property;
 }
 
+const DependencyProperty& ControlBase::PaddingProperty() {
+    static const auto& property = DependencyProperty::Register(
+        "Padding",
+        typeid(fk::Thickness),
+        typeid(ControlBase),
+        BuildPaddingMetadata());
+    return property;
+}
+
 void ControlBase::SetIsFocused(bool value) {
     VerifyAccess();
     SetValue(IsFocusedProperty(), value);
@@ -87,6 +96,15 @@ std::shared_ptr<UIElement> ControlBase::GetContent() const {
     return GetValue<std::shared_ptr<UIElement>>(ContentProperty());
 }
 
+void ControlBase::SetPadding(const fk::Thickness& padding) {
+    VerifyAccess();
+    SetValue(PaddingProperty(), padding);
+}
+
+const fk::Thickness& ControlBase::GetPadding() const {
+    return GetValue<const fk::Thickness&>(PaddingProperty());
+}
+
 void ControlBase::OnAttachedToLogicalTree() {
     FrameworkElement::OnAttachedToLogicalTree();
     SyncContentAttachment();
@@ -100,18 +118,55 @@ void ControlBase::OnDetachedFromLogicalTree() {
 }
 
 Size ControlBase::MeasureOverride(const Size& availableSize) {
+    const auto& padding = GetPadding();
+    const float paddingWidth = padding.left + padding.right;
+    const float paddingHeight = padding.top + padding.bottom;
+
     if (const auto content = GetContent()) {
-        content->Measure(availableSize);
-        return content->DesiredSize();
+        // 测量内容时减去 Padding
+        const Size childAvailable{
+            std::max(0.0f, availableSize.width - paddingWidth),
+            std::max(0.0f, availableSize.height - paddingHeight)
+        };
+        content->Measure(childAvailable);
+        
+        // 返回内容大小加上 Padding
+        const auto& childDesired = content->DesiredSize();
+        return Size{
+            childDesired.width + paddingWidth,
+            childDesired.height + paddingHeight
+        };
     }
-    return Size{};
+    
+    // 没有内容时,只返回 Padding 大小
+    return Size{paddingWidth, paddingHeight};
 }
 
 Size ControlBase::ArrangeOverride(const Size& finalSize) {
     if (const auto content = GetContent()) {
-        content->Arrange(Rect{ 0.0f, 0.0f, finalSize.width, finalSize.height });
+        const auto& padding = GetPadding();
+        
+        // 计算内容区域(减去 Padding)
+        const float contentWidth = std::max(0.0f, finalSize.width - padding.left - padding.right);
+        const float contentHeight = std::max(0.0f, finalSize.height - padding.top - padding.bottom);
+        
+        // 在 Padding 区域内排列内容
+        content->Arrange(Rect{
+            padding.left,
+            padding.top,
+            contentWidth,
+            contentHeight
+        });
     }
     return finalSize;
+}
+
+std::vector<Visual*> ControlBase::GetVisualChildren() const {
+    std::vector<Visual*> children;
+    if (auto content = GetContent()) {
+        children.push_back(content.get());
+    }
+    return children;
 }
 
 void ControlBase::OnContentChanged(UIElement*, UIElement*) {}
@@ -121,6 +176,8 @@ void ControlBase::OnIsFocusedChanged(bool, bool) {}
 void ControlBase::OnTabIndexChanged(int, int) {}
 
 void ControlBase::OnCursorChanged(const std::string&, const std::string&) {}
+
+void ControlBase::OnPaddingChanged(const fk::Thickness&, const fk::Thickness&) {}
 
 binding::PropertyMetadata ControlBase::BuildIsFocusedMetadata() {
     binding::PropertyMetadata metadata;
@@ -150,6 +207,13 @@ binding::PropertyMetadata ControlBase::BuildContentMetadata() {
     metadata.defaultValue = std::shared_ptr<UIElement>{};
     metadata.propertyChangedCallback = &ControlBase::ContentPropertyChanged;
     metadata.validateCallback = &ControlBase::ValidateContent;
+    return metadata;
+}
+
+binding::PropertyMetadata ControlBase::BuildPaddingMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = fk::Thickness{};
+    metadata.propertyChangedCallback = &ControlBase::PaddingPropertyChanged;
     return metadata;
 }
 
@@ -223,6 +287,21 @@ void ControlBase::ContentPropertyChanged(binding::DependencyObject& sender, cons
     }
 
     control->OnContentChanged(oldContent.get(), newContent.get());
+    control->InvalidateMeasure();
+    control->InvalidateArrange();
+}
+
+void ControlBase::PaddingPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
+    auto* control = dynamic_cast<ControlBase*>(&sender);
+    if (!control) {
+        return;
+    }
+    if (!oldValue.has_value() || !newValue.has_value()) {
+        return;
+    }
+    const auto& oldPadding = std::any_cast<const fk::Thickness&>(oldValue);
+    const auto& newPadding = std::any_cast<const fk::Thickness&>(newValue);
+    control->OnPaddingChanged(oldPadding, newPadding);
     control->InvalidateMeasure();
     control->InvalidateArrange();
 }

@@ -114,13 +114,39 @@ const std::string& TextBlockBase::GetFontFamily() const {
 // ============================================================================
 
 Size TextBlockBase::MeasureOverride(const Size& availableSize) {
-    // TODO: 实际应该根据文本内容和字体测量
-    // 现在先返回固定大小
     const auto& text = GetText();
     float fontSize = GetFontSize();
     
-    // 简单估算: 每个字符宽度约为 fontSize * 0.6
-    float estimatedWidth = text.length() * fontSize * 0.6f;
+    if (text.empty()) {
+        return Size(0.0f, fontSize * 1.2f);
+    }
+    
+    // 改进的文本宽度估算
+    // 遍历 UTF-8 字符串,区分中文和 ASCII
+    float estimatedWidth = 0.0f;
+    size_t i = 0;
+    while (i < text.length()) {
+        unsigned char c = text[i];
+        
+        if (c < 0x80) {
+            // ASCII 字符: 约 0.5 倍字体大小
+            estimatedWidth += fontSize * 0.5f;
+            i++;
+        } else if (c < 0xE0) {
+            // 2 字节 UTF-8
+            estimatedWidth += fontSize * 0.9f;
+            i += 2;
+        } else if (c < 0xF0) {
+            // 3 字节 UTF-8 (中文等): 接近字体大小
+            estimatedWidth += fontSize;
+            i += 3;
+        } else {
+            // 4 字节 UTF-8
+            estimatedWidth += fontSize;
+            i += 4;
+        }
+    }
+    
     float estimatedHeight = fontSize * 1.2f; // 行高
     
     return Size(

@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
+#include <unordered_map>
 
 namespace fk::render {
 
@@ -357,17 +358,25 @@ void GlRenderer::DrawText(const TextPayload& payload) {
         return;
     }
 
-    // 确保已加载字体
-    static int defaultFontId = -1;
-    if (defaultFontId == -1) {
-        defaultFontId = textRenderer_->LoadFont("C:/Windows/Fonts/msyh.ttc", static_cast<unsigned int>(payload.fontSize));
-        if (defaultFontId < 0) {
-            defaultFontId = textRenderer_->LoadFont("C:/Windows/Fonts/simhei.ttf", static_cast<unsigned int>(payload.fontSize));
+    // 为每个字体大小加载单独的字体
+    static std::unordered_map<unsigned int, int> fontCache;
+    unsigned int fontSizeKey = static_cast<unsigned int>(payload.fontSize);
+    
+    int fontId = -1;
+    auto it = fontCache.find(fontSizeKey);
+    if (it != fontCache.end()) {
+        fontId = it->second;
+    } else {
+        // 加载新的字体大小
+        fontId = textRenderer_->LoadFont("C:/Windows/Fonts/msyh.ttc", fontSizeKey);
+        if (fontId < 0) {
+            fontId = textRenderer_->LoadFont("C:/Windows/Fonts/simhei.ttf", fontSizeKey);
         }
-        if (defaultFontId < 0) {
-            std::cerr << "Failed to load any font!" << std::endl;
+        if (fontId < 0) {
+            std::cerr << "Failed to load any font for size " << fontSizeKey << "!" << std::endl;
             return;
         }
+        fontCache[fontSizeKey] = fontId;
     }
     
     // 保存当前着色器程序
@@ -409,7 +418,7 @@ void GlRenderer::DrawText(const TextPayload& payload) {
     float y = 0.0f;
     
     for (char32_t c : utf32Text) {
-        const auto* glyph = textRenderer_->GetGlyph(c, defaultFontId);
+        const auto* glyph = textRenderer_->GetGlyph(c, fontId);
         if (!glyph) {
             continue; // 跳过无法加载的字符
         }

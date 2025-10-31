@@ -10,7 +10,12 @@ namespace fk::ui::detail {
 // ButtonBase 实现
 // ============================================================================
 
-ButtonBase::ButtonBase() = default;
+ButtonBase::ButtonBase() {
+    // Fluent Design 默认样式
+    SetPadding(fk::Thickness{11.0f, 5.0f});  // 水平 11px, 垂直 5px
+    SetCornerRadius(4.0f);  // Fluent 圆角
+}
+
 ButtonBase::~ButtonBase() = default;
 
 // ============================================================================
@@ -43,6 +48,26 @@ const binding::DependencyProperty& ButtonBase::ForegroundProperty() {
         typeid(std::string),
         typeid(ButtonBase),
         BuildForegroundMetadata()
+    );
+    return property;
+}
+
+const binding::DependencyProperty& ButtonBase::HoveredBackgroundProperty() {
+    static const auto& property = binding::DependencyProperty::Register(
+        "HoveredBackground",
+        typeid(std::string),
+        typeid(ButtonBase),
+        BuildHoveredBackgroundMetadata()
+    );
+    return property;
+}
+
+const binding::DependencyProperty& ButtonBase::PressedBackgroundProperty() {
+    static const auto& property = binding::DependencyProperty::Register(
+        "PressedBackground",
+        typeid(std::string),
+        typeid(ButtonBase),
+        BuildPressedBackgroundMetadata()
     );
     return property;
 }
@@ -135,6 +160,36 @@ const std::string& ButtonBase::GetForeground() const {
     }
 }
 
+void ButtonBase::SetHoveredBackground(std::string color) {
+    SetValue(HoveredBackgroundProperty(), std::move(color));
+}
+
+const std::string& ButtonBase::GetHoveredBackground() const {
+    const auto& value = GetValue(HoveredBackgroundProperty());
+    static const std::string empty;
+    if (!value.has_value()) return empty;
+    try {
+        return std::any_cast<const std::string&>(value);
+    } catch (...) {
+        return empty;
+    }
+}
+
+void ButtonBase::SetPressedBackground(std::string color) {
+    SetValue(PressedBackgroundProperty(), std::move(color));
+}
+
+const std::string& ButtonBase::GetPressedBackground() const {
+    const auto& value = GetValue(PressedBackgroundProperty());
+    static const std::string empty;
+    if (!value.has_value()) return empty;
+    try {
+        return std::any_cast<const std::string&>(value);
+    } catch (...) {
+        return empty;
+    }
+}
+
 void ButtonBase::SetBorderBrush(std::string color) {
     SetValue(BorderBrushProperty(), std::move(color));
 }
@@ -185,14 +240,29 @@ bool ButtonBase::IsPressed() const {
 }
 
 std::string ButtonBase::GetActualBackground() const {
+    // 优先使用显式设置的状态颜色
+    if (IsPressed()) {
+        const std::string& pressedBg = GetPressedBackground();
+        if (!pressedBg.empty()) {
+            return pressedBg;
+        }
+    }
+    
+    if (IsMouseOver()) {
+        const std::string& hoveredBg = GetHoveredBackground();
+        if (!hoveredBg.empty()) {
+            return hoveredBg;
+        }
+    }
+    
     const std::string& baseColor = GetBackground();
     
-    // 如果没有状态变化,直接返回基础颜色
+    // 如果没有状态变化或没有显式状态颜色,直接返回基础颜色
     if (!IsPressed() && !IsMouseOver()) {
         return baseColor;
     }
     
-    // 解析基础颜色
+    // 解析基础颜色(用于自动计算状态颜色)
     static const std::regex colorRegex(R"(#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})?)");
     std::smatch match;
     
@@ -206,17 +276,17 @@ std::string ButtonBase::GetActualBackground() const {
     int b = std::stoi(match[3].str(), nullptr, 16);
     int a = match[4].matched ? std::stoi(match[4].str(), nullptr, 16) : 255;
     
-    // 根据状态调整颜色
+    // 根据状态调整颜色 (Fluent Design 风格)
     if (IsPressed()) {
-        // 按下状态: 变暗 (乘以 0.7)
-        r = static_cast<int>(r * 0.7f);
-        g = static_cast<int>(g * 0.7f);
-        b = static_cast<int>(b * 0.7f);
+        // 按下状态: 变暗 (乘以 0.8,更温和)
+        r = static_cast<int>(r * 0.8f);
+        g = static_cast<int>(g * 0.8f);
+        b = static_cast<int>(b * 0.8f);
     } else if (IsMouseOver()) {
-        // 悬停状态: 变亮 (乘以 1.15)
-        r = std::min(255, static_cast<int>(r * 1.15f));
-        g = std::min(255, static_cast<int>(g * 1.15f));
-        b = std::min(255, static_cast<int>(b * 1.15f));
+        // 悬停状态: 微妙变亮 (乘以 1.1)
+        r = std::min(255, static_cast<int>(r * 1.1f));
+        g = std::min(255, static_cast<int>(g * 1.1f));
+        b = std::min(255, static_cast<int>(b * 1.1f));
     }
     
     // 格式化为十六进制字符串
@@ -305,6 +375,18 @@ void ButtonBase::OnForegroundChanged(const std::string& oldValue, const std::str
     InvalidateVisual();
 }
 
+void ButtonBase::OnHoveredBackgroundChanged(const std::string& oldValue, const std::string& newValue) {
+    if (IsMouseOver()) {
+        InvalidateVisual();
+    }
+}
+
+void ButtonBase::OnPressedBackgroundChanged(const std::string& oldValue, const std::string& newValue) {
+    if (IsPressed()) {
+        InvalidateVisual();
+    }
+}
+
 void ButtonBase::OnBorderBrushChanged(const std::string& oldValue, const std::string& newValue) {
     InvalidateVisual();
 }
@@ -326,28 +408,42 @@ void ButtonBase::OnIsPressedChanged(bool oldValue, bool newValue) {
 // ============================================================================
 
 binding::PropertyMetadata ButtonBase::BuildCornerRadiusMetadata() {
-    binding::PropertyMetadata metadata(0.0f);
+    binding::PropertyMetadata metadata(4.0f);  // Fluent 默认圆角
     metadata.propertyChangedCallback = CornerRadiusPropertyChanged;
     metadata.validateCallback = ValidateCornerRadius;
     return metadata;
 }
 
 binding::PropertyMetadata ButtonBase::BuildBackgroundMetadata() {
-    binding::PropertyMetadata metadata(std::string("#CCCCCC"));  // 默认灰色
+    binding::PropertyMetadata metadata(std::string("#0078D4"));  // Fluent Accent Blue
     metadata.propertyChangedCallback = BackgroundPropertyChanged;
     metadata.validateCallback = ValidateColor;
     return metadata;
 }
 
 binding::PropertyMetadata ButtonBase::BuildForegroundMetadata() {
-    binding::PropertyMetadata metadata(std::string("#000000"));  // 默认黑色
+    binding::PropertyMetadata metadata(std::string("#FFFFFF"));  // 白色文字
     metadata.propertyChangedCallback = ForegroundPropertyChanged;
     metadata.validateCallback = ValidateColor;
     return metadata;
 }
 
+binding::PropertyMetadata ButtonBase::BuildHoveredBackgroundMetadata() {
+    binding::PropertyMetadata metadata(std::string(""));  // 空字符串表示使用自动计算
+    metadata.propertyChangedCallback = HoveredBackgroundPropertyChanged;
+    metadata.validateCallback = ValidateColor;
+    return metadata;
+}
+
+binding::PropertyMetadata ButtonBase::BuildPressedBackgroundMetadata() {
+    binding::PropertyMetadata metadata(std::string(""));  // 空字符串表示使用自动计算
+    metadata.propertyChangedCallback = PressedBackgroundPropertyChanged;
+    metadata.validateCallback = ValidateColor;
+    return metadata;
+}
+
 binding::PropertyMetadata ButtonBase::BuildBorderBrushMetadata() {
-    binding::PropertyMetadata metadata(std::string("#999999"));  // 默认深灰色
+    binding::PropertyMetadata metadata(std::string("#0078D400"));  // 透明边框
     metadata.propertyChangedCallback = BorderBrushPropertyChanged;
     metadata.validateCallback = ValidateColor;
     return metadata;
@@ -409,6 +505,30 @@ void ButtonBase::ForegroundPropertyChanged(binding::DependencyObject& sender,
         const auto& oldColor = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string();
         const auto& newColor = std::any_cast<const std::string&>(newValue);
         button->OnForegroundChanged(oldColor, newColor);
+    } catch (...) {}
+}
+
+void ButtonBase::HoveredBackgroundPropertyChanged(binding::DependencyObject& sender,
+    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
+    auto* button = dynamic_cast<ButtonBase*>(&sender);
+    if (!button) return;
+
+    try {
+        const auto& oldColor = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string();
+        const auto& newColor = std::any_cast<const std::string&>(newValue);
+        button->OnHoveredBackgroundChanged(oldColor, newColor);
+    } catch (...) {}
+}
+
+void ButtonBase::PressedBackgroundPropertyChanged(binding::DependencyObject& sender,
+    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
+    auto* button = dynamic_cast<ButtonBase*>(&sender);
+    if (!button) return;
+
+    try {
+        const auto& oldColor = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string();
+        const auto& newColor = std::any_cast<const std::string&>(newValue);
+        button->OnPressedBackgroundChanged(oldColor, newColor);
     } catch (...) {}
 }
 

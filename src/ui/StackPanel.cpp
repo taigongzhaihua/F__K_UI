@@ -15,6 +15,16 @@ const binding::DependencyProperty& StackPanel::OrientationProperty() {
     return prop;
 }
 
+const binding::DependencyProperty& StackPanel::SpacingProperty() {
+    static const auto& prop = binding::DependencyProperty::Register(
+        "Spacing",
+        typeid(float),
+        typeid(StackPanel),
+        BuildSpacingMetadata()
+    );
+    return prop;
+}
+
 binding::PropertyMetadata StackPanel::BuildOrientationMetadata() {
     return binding::PropertyMetadata(
         ui::Orientation::Vertical,  // 默认值
@@ -22,7 +32,28 @@ binding::PropertyMetadata StackPanel::BuildOrientationMetadata() {
     );
 }
 
+binding::PropertyMetadata StackPanel::BuildSpacingMetadata() {
+    return binding::PropertyMetadata(
+        0.0f,  // 默认间距为 0
+        &StackPanel::SpacingPropertyChanged
+    );
+}
+
 void StackPanel::OrientationPropertyChanged(
+    binding::DependencyObject& sender,
+    const binding::DependencyProperty& property,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* panel = dynamic_cast<StackPanel*>(&sender);
+    if (!panel) return;
+    
+    // 触发布局更新
+    panel->InvalidateMeasure();
+    panel->InvalidateArrange();
+}
+
+void StackPanel::SpacingPropertyChanged(
     binding::DependencyObject& sender,
     const binding::DependencyProperty& property,
     const std::any& oldValue,
@@ -51,11 +82,27 @@ std::shared_ptr<StackPanel> StackPanel::Orientation(ui::Orientation orientation)
     return Self();
 }
 
+// Getter: 获取间距
+float StackPanel::Spacing() const {
+    const auto& value = GetValue(SpacingProperty());
+    if (!value.has_value()) return 0.0f;
+    return std::any_cast<float>(value);
+}
+
+// Setter: 设置间距
+std::shared_ptr<StackPanel> StackPanel::Spacing(float spacing) {
+    SetValue(SpacingProperty(), spacing);
+    return Self();
+}
+
 Size StackPanel::MeasureOverride(const Size& availableSize) {
     Size desired{};
 
     const auto orientation = Orientation();  // 从依赖属性读取
+    const auto spacing = Spacing();  // 获取间距
     const auto children = ChildSpan();
+    
+    size_t validChildCount = 0;
     for (const auto& child : children) {
         if (!child) {
             continue;
@@ -70,6 +117,17 @@ Size StackPanel::MeasureOverride(const Size& availableSize) {
             desired.height += child->DesiredSize().height;
             desired.width = std::max(desired.width, child->DesiredSize().width);
         }
+        validChildCount++;
+    }
+
+    // 添加子元素之间的间距
+    if (validChildCount > 1) {
+        float totalSpacing = spacing * (validChildCount - 1);
+        if (orientation == ui::Orientation::Horizontal) {
+            desired.width += totalSpacing;
+        } else {
+            desired.height += totalSpacing;
+        }
     }
 
     desired.width = std::min(desired.width, availableSize.width);
@@ -80,6 +138,7 @@ Size StackPanel::MeasureOverride(const Size& availableSize) {
 
 Size StackPanel::ArrangeOverride(const Size& finalSize) {
     const auto orientation = Orientation();  // 从依赖属性读取
+    const auto spacing = Spacing();  // 获取间距
     const auto children = ChildSpan();
     float offset = 0.0f;
 
@@ -91,11 +150,11 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
         if (orientation == ui::Orientation::Horizontal) {
             const auto childWidth = child->DesiredSize().width;
             ArrangeChild(*child, Rect{ offset, 0.0f, childWidth, finalSize.height });
-            offset += childWidth;
+            offset += childWidth + spacing;  // 添加间距
         } else {
             const auto childHeight = child->DesiredSize().height;
             ArrangeChild(*child, Rect{ 0.0f, offset, finalSize.width, childHeight });
-            offset += childHeight;
+            offset += childHeight + spacing;  // 添加间距
         }
     }
 

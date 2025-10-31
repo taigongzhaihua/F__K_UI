@@ -24,68 +24,50 @@ int main()
                           ->Content(
                               ui::stackPanel()
                                   ->Orientation(ui::Orientation::Vertical)
-                                  ->Children({
-                                      std::static_pointer_cast<ui::UIElement>(
-                                          ui::textBlock()
-                                              ->Text("欢迎使用 F__K_UI!")
-                                              ->Foreground("#FFFFFF")
-                                              ->FontSize(24.0f)
-                                              ->Width(250)->Height(40)
-                                      ),
-                                      std::static_pointer_cast<ui::UIElement>(
-                                          ui::textBlock()
-                                              ->Text("这是一个测试文本块")
-                                              ->Foreground("#CCCCCC")
-                                              ->FontSize(16.0f)
-                                              ->Width(250)->Height(30)
-                                      ),
-                                      ui::button()
-                                          ->Width(250)->Height(50)
-                                          ->CornerRadius(10.0f)
-                                          ->Background("#4CAF50")  // 绿色
-                                          ->BorderBrush("#2E7D32")
-                                          ->BorderThickness(2.0f)
-                                          ->OnClick([](ui::detail::ButtonBase&) {
-                                              std::cout << ">>> Green Button Clicked!" << std::endl;
-                                          }),
-                                      ui::button()
-                                          ->Width(250)->Height(50)
-                                          ->CornerRadius(10.0f)
-                                          ->Background("#2196F3")  // 蓝色
-                                          ->BorderBrush("#1565C0")
-                                          ->BorderThickness(2.0f)
-                                          ->OnClick([](ui::detail::ButtonBase&) {
-                                              std::cout << ">>> Blue Button Clicked!" << std::endl;
-                                          }),
-                                      ui::button()
-                                          ->Width(250)->Height(50)
-                                          ->CornerRadius(10.0f)
-                                          ->Background("#FF9800")  // 橙色
-                                          ->BorderBrush("#E65100")
-                                          ->BorderThickness(2.0f)
-                                          ->OnClick([](ui::detail::ButtonBase&) {
-                                              std::cout << ">>> Orange Button Clicked!" << std::endl;
-                                          }),
-                                      ui::button()
-                                          ->Width(250)->Height(50)
-                                          ->CornerRadius(10.0f)
-                                          ->Background("#F44336")  // 红色
-                                          ->BorderBrush("#B71C1C")
-                                          ->BorderThickness(2.0f)
-                                          ->OnClick([](ui::detail::ButtonBase&) {
-                                              std::cout << ">>> Red Button Clicked!" << std::endl;
-                                          }),
-                                      ui::button()
-                                          ->Width(250)->Height(50)
-                                          ->CornerRadius(10.0f)
-                                          ->Background("#9C27B0")  // 紫色
-                                          ->BorderBrush("#4A148C")
-                                          ->BorderThickness(2.0f)
-                                          ->OnClick([](ui::detail::ButtonBase&) {
-                                              std::cout << ">>> Purple Button Clicked!" << std::endl;
-                                          })
-                                  })
-                          );
+                                  ->Spacing(10.0f)  // 设置子元素间距为 10px
+                                  ->Children(
+                                      {ui::textBlock()
+                                           ->Text("欢迎使用 F__K_UI!")
+                                           ->Foreground("#FFFFFF")
+                                           ->FontSize(24.0f)
+                                           ->Width(250)
+                                           ->Height(40),
+
+                                       ui::textBlock()
+                                           ->Text("这是一个测试文本块")
+                                           ->Foreground("#CCCCCC")
+                                           ->FontSize(16.0f)
+                                           ->Width(250)
+                                           ->Height(30),
+                                       ui::button()
+                                           ->HorizontalAlignment(ui::HorizontalAlignment::Center)
+                                           ->Content("默认按钮")
+                                           ->OnClick([](ui::detail::ButtonBase &)
+                                                     { std::cout << ">>> Default Button Clicked!" << std::endl; }),
+                                       ui::button()
+                                           ->HorizontalAlignment(ui::HorizontalAlignment::Center)
+                                           ->Background("#107C10") // 绿色 (成功)
+                                           ->Content("成功按钮")
+                                           ->OnClick([](ui::detail::ButtonBase &)
+                                                     { std::cout << ">>> Success Button Clicked!" << std::endl; }),
+                                       ui::button()
+                                           ->HorizontalAlignment(ui::HorizontalAlignment::Center)
+                                           ->Background("#D13438") // 红色 (危险)
+                                           ->Content("危险按钮")
+                                           ->OnClick([](ui::detail::ButtonBase &)
+                                                     { std::cout << ">>> Danger Button Clicked!" << std::endl; }),
+                                       ui::button()
+                                           ->HorizontalAlignment(ui::HorizontalAlignment::Center)
+                                           ->Background("#F7630C") // 橙色 (警告)
+                                           ->Content("警告按钮")
+                                           ->OnClick([](ui::detail::ButtonBase &)
+                                                     { std::cout << ">>> Warning Button Clicked!" << std::endl; }),
+                                       ui::button()
+                                           ->HorizontalAlignment(ui::HorizontalAlignment::Center)
+                                           ->Background("#5C2D91") // 紫色 (次要)
+                                           ->Content("次要按钮")
+                                           ->OnClick([](ui::detail::ButtonBase &)
+                                                     { std::cout << ">>> Secondary Button Clicked!" << std::endl; })}));
 
         std::cout << "Window hierarchy created!" << std::endl;
         std::cout << "Subscribing events..." << std::endl;
@@ -93,15 +75,18 @@ int main()
         std::cout << "Window hierarchy created!" << std::endl;
         std::cout << "Subscribing events..." << std::endl;
 
-        window->Opened += []() {
+        window->Opened += []()
+        {
             std::cout << ">>> Window opened!" << std::endl;
         };
 
-        window->Closed += []() {
+        window->Closed += []()
+        {
             std::cout << ">>> Window closed!" << std::endl;
         };
 
-        window->Resized += [](int w, int h) {
+        window->Resized += [](int w, int h)
+        {
             std::cout << ">>> Window resized to " << w << "x" << h << std::endl;
         };
 

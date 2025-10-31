@@ -25,6 +25,7 @@ public:
     static const binding::DependencyProperty& TabIndexProperty();
     static const binding::DependencyProperty& CursorProperty();
     static const binding::DependencyProperty& ContentProperty();
+    static const binding::DependencyProperty& PaddingProperty();
 
     void SetIsFocused(bool value);
     [[nodiscard]] bool IsFocused() const;
@@ -40,23 +41,31 @@ public:
     [[nodiscard]] std::shared_ptr<UIElement> GetContent() const;
     [[nodiscard]] bool HasContent() const { return GetContent() != nullptr; }
 
+    void SetPadding(const fk::Thickness& padding);
+    [[nodiscard]] const fk::Thickness& GetPadding() const;
+
 protected:
     void OnAttachedToLogicalTree() override;
     void OnDetachedFromLogicalTree() override;
 
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
+    
+    // 重写以返回 Content 作为子元素
+    std::vector<Visual*> GetVisualChildren() const override;
 
     virtual void OnContentChanged(UIElement* oldContent, UIElement* newContent);
     virtual void OnIsFocusedChanged(bool oldValue, bool newValue);
     virtual void OnTabIndexChanged(int oldValue, int newValue);
     virtual void OnCursorChanged(const std::string& oldCursor, const std::string& newCursor);
+    virtual void OnPaddingChanged(const fk::Thickness& oldValue, const fk::Thickness& newValue);
 
 private:
     static binding::PropertyMetadata BuildIsFocusedMetadata();
     static binding::PropertyMetadata BuildTabIndexMetadata();
     static binding::PropertyMetadata BuildCursorMetadata();
     static binding::PropertyMetadata BuildContentMetadata();
+    static binding::PropertyMetadata BuildPaddingMetadata();
 
     static void IsFocusedPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
         const std::any& oldValue, const std::any& newValue);
@@ -65,6 +74,8 @@ private:
     static void CursorPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
         const std::any& oldValue, const std::any& newValue);
     static void ContentPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
+        const std::any& oldValue, const std::any& newValue);
+    static void PaddingPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
         const std::any& oldValue, const std::any& newValue);
 
     static bool ValidateTabIndex(const std::any& value);
@@ -112,6 +123,26 @@ public:
 
     Ptr ClearContentValue() {
         static_cast<ControlBase*>(this)->ClearContent();
+        return this->Self();
+    }
+
+    Ptr Padding(const fk::Thickness& padding) {
+        this->SetPadding(padding);
+        return this->Self();
+    }
+
+    Ptr Padding(float uniform) {
+        this->SetPadding(fk::Thickness{uniform});
+        return this->Self();
+    }
+
+    Ptr Padding(float horizontal, float vertical) {
+        this->SetPadding(fk::Thickness{horizontal, vertical});
+        return this->Self();
+    }
+
+    Ptr Padding(float left, float top, float right, float bottom) {
+        this->SetPadding(fk::Thickness{left, top, right, bottom});
         return this->Self();
     }
 

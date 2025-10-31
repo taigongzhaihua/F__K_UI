@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fk/ui/Control.h"
+#include "fk/ui/TextBlock.h"
 #include "fk/core/Event.h"
 
 #include <string>
@@ -30,6 +31,8 @@ public:
     static const binding::DependencyProperty& CornerRadiusProperty();
     static const binding::DependencyProperty& BackgroundProperty();
     static const binding::DependencyProperty& ForegroundProperty();
+    static const binding::DependencyProperty& HoveredBackgroundProperty();
+    static const binding::DependencyProperty& PressedBackgroundProperty();
     static const binding::DependencyProperty& BorderBrushProperty();
     static const binding::DependencyProperty& BorderThicknessProperty();
     static const binding::DependencyProperty& IsMouseOverProperty();
@@ -46,6 +49,14 @@ public:
     // 前景色（文字颜色）
     void SetForeground(std::string color);
     [[nodiscard]] const std::string& GetForeground() const;
+
+    // 悬停背景色
+    void SetHoveredBackground(std::string color);
+    [[nodiscard]] const std::string& GetHoveredBackground() const;
+
+    // 按下背景色
+    void SetPressedBackground(std::string color);
+    [[nodiscard]] const std::string& GetPressedBackground() const;
 
     // 边框颜色
     void SetBorderBrush(std::string color);
@@ -88,6 +99,8 @@ protected:
     virtual void OnCornerRadiusChanged(float oldValue, float newValue);
     virtual void OnBackgroundChanged(const std::string& oldValue, const std::string& newValue);
     virtual void OnForegroundChanged(const std::string& oldValue, const std::string& newValue);
+    virtual void OnHoveredBackgroundChanged(const std::string& oldValue, const std::string& newValue);
+    virtual void OnPressedBackgroundChanged(const std::string& oldValue, const std::string& newValue);
     virtual void OnBorderBrushChanged(const std::string& oldValue, const std::string& newValue);
     virtual void OnBorderThicknessChanged(float oldValue, float newValue);
     virtual void OnIsMouseOverChanged(bool oldValue, bool newValue);
@@ -101,6 +114,8 @@ private:
     static binding::PropertyMetadata BuildCornerRadiusMetadata();
     static binding::PropertyMetadata BuildBackgroundMetadata();
     static binding::PropertyMetadata BuildForegroundMetadata();
+    static binding::PropertyMetadata BuildHoveredBackgroundMetadata();
+    static binding::PropertyMetadata BuildPressedBackgroundMetadata();
     static binding::PropertyMetadata BuildBorderBrushMetadata();
     static binding::PropertyMetadata BuildBorderThicknessMetadata();
     static binding::PropertyMetadata BuildIsMouseOverMetadata();
@@ -112,6 +127,10 @@ private:
     static void BackgroundPropertyChanged(binding::DependencyObject& sender,
         const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
     static void ForegroundPropertyChanged(binding::DependencyObject& sender,
+        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
+    static void HoveredBackgroundPropertyChanged(binding::DependencyObject& sender,
+        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
+    static void PressedBackgroundPropertyChanged(binding::DependencyObject& sender,
         const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
     static void BorderBrushPropertyChanged(binding::DependencyObject& sender,
         const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
@@ -189,6 +208,22 @@ public:
     }
 
     /**
+     * @brief 设置悬停背景色
+     */
+    Ptr HoveredBackground(std::string color) {
+        this->SetHoveredBackground(std::move(color));
+        return this->Self();
+    }
+
+    /**
+     * @brief 设置按下背景色
+     */
+    Ptr PressedBackground(std::string color) {
+        this->SetPressedBackground(std::move(color));
+        return this->Self();
+    }
+
+    /**
      * @brief 设置边框颜色
      */
     Ptr BorderBrush(std::string color) {
@@ -209,6 +244,20 @@ public:
      */
     Ptr Content(ContentPtr content) {
         this->SetContent(std::move(content));
+        return this->Self();
+    }
+
+    /**
+     * @brief 设置按钮文本内容（便捷方法）
+     * @param text 按钮文本
+     * @note 自动创建一个 14.0f 字体大小的 TextBlock,并应用 Button 的 Foreground 颜色
+     */
+    Ptr Content(const std::string& text) {
+        auto textBlock = ui::textBlock()
+            ->Text(text)
+            ->FontSize(14.0f)
+            ->Foreground(this->GetForeground());
+        this->SetContent(std::static_pointer_cast<UIElement>(textBlock));
         return this->Self();
     }
 

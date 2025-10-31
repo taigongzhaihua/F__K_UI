@@ -19,12 +19,19 @@ public:
 
     // 依赖属性声明
     static const binding::DependencyProperty& OrientationProperty();
+    static const binding::DependencyProperty& SpacingProperty();
 
     // Getter: 获取方向 (无参重载,从依赖属性读取)
     [[nodiscard]] ui::Orientation Orientation() const;
     
     // Setter: 设置方向 (有参重载,写入依赖属性,返回Ptr支持链式调用)
     std::shared_ptr<StackPanel> Orientation(ui::Orientation orientation);
+
+    // Getter: 获取间距
+    [[nodiscard]] float Spacing() const;
+    
+    // Setter: 设置间距 (子元素之间的间距)
+    std::shared_ptr<StackPanel> Spacing(float spacing);
     
     // 流式API: 添加子元素 (包装 Panel::AddChild)
     std::shared_ptr<StackPanel> AddChild(std::shared_ptr<UIElement> child) {
@@ -72,9 +79,17 @@ protected:
 private:
     // 依赖属性元数据构建
     static binding::PropertyMetadata BuildOrientationMetadata();
+    static binding::PropertyMetadata BuildSpacingMetadata();
     
     // 依赖属性变更回调
     static void OrientationPropertyChanged(
+        binding::DependencyObject& sender,
+        const binding::DependencyProperty& property,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+    
+    static void SpacingPropertyChanged(
         binding::DependencyObject& sender,
         const binding::DependencyProperty& property,
         const std::any& oldValue,
