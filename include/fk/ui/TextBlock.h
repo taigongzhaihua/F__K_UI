@@ -8,6 +8,23 @@
 
 namespace fk::ui {
 
+/**
+ * @brief 文本换行模式
+ */
+enum class TextWrapping {
+    NoWrap,  // 不换行
+    Wrap     // 自动换行
+};
+
+/**
+ * @brief 文本截断模式
+ */
+enum class TextTrimming {
+    None,              // 不截断
+    CharacterEllipsis, // 字符级别截断,添加省略号(...)
+    WordEllipsis       // 单词级别截断,添加省略号(...)
+};
+
 namespace detail {
 
 /**
@@ -31,6 +48,8 @@ public:
     static const binding::DependencyProperty& ForegroundProperty();
     static const binding::DependencyProperty& FontSizeProperty();
     static const binding::DependencyProperty& FontFamilyProperty();
+    static const binding::DependencyProperty& TextWrappingProperty();
+    static const binding::DependencyProperty& TextTrimmingProperty();
 
     // Text 属性
     void SetText(const std::string& text);
@@ -48,6 +67,17 @@ public:
     void SetFontFamily(const std::string& family);
     [[nodiscard]] const std::string& GetFontFamily() const;
 
+    // TextWrapping 属性
+    void SetTextWrapping(TextWrapping wrapping);
+    [[nodiscard]] TextWrapping GetTextWrapping() const;
+
+    // TextTrimming 属性
+    void SetTextTrimming(TextTrimming trimming);
+    [[nodiscard]] TextTrimming GetTextTrimming() const;
+
+    // 辅助方法:获取分行后的文本(用于渲染)
+    [[nodiscard]] const std::vector<std::string>& GetWrappedLines() const { return wrappedLines_; }
+
 protected:
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
@@ -58,6 +88,8 @@ protected:
     virtual void OnForegroundChanged(const std::string& oldValue, const std::string& newValue);
     virtual void OnFontSizeChanged(float oldValue, float newValue);
     virtual void OnFontFamilyChanged(const std::string& oldValue, const std::string& newValue);
+    virtual void OnTextWrappingChanged(TextWrapping oldValue, TextWrapping newValue);
+    virtual void OnTextTrimmingChanged(TextTrimming oldValue, TextTrimming newValue);
 
 private:
     // 元数据构建
@@ -65,6 +97,8 @@ private:
     static binding::PropertyMetadata BuildForegroundMetadata();
     static binding::PropertyMetadata BuildFontSizeMetadata();
     static binding::PropertyMetadata BuildFontFamilyMetadata();
+    static binding::PropertyMetadata BuildTextWrappingMetadata();
+    static binding::PropertyMetadata BuildTextTrimmingMetadata();
 
     // 属性变更回调 (静态)
     static void TextPropertyChanged(
@@ -95,9 +129,26 @@ private:
         const std::any& newValue
     );
 
+    static void TextWrappingPropertyChanged(
+        binding::DependencyObject& sender,
+        const binding::DependencyProperty& property,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+
+    static void TextTrimmingPropertyChanged(
+        binding::DependencyObject& sender,
+        const binding::DependencyProperty& property,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+
     // 验证回调
     static bool ValidateColor(const std::any& value);
     static bool ValidateFontSize(const std::any& value);
+
+private:
+    mutable std::vector<std::string> wrappedLines_;  // 缓存的分行文本
 };
 
 } // namespace detail
@@ -161,6 +212,26 @@ public:
 
     Ptr FontFamily(const std::string& family) {
         SetFontFamily(family);
+        return Self();
+    }
+
+    // Fluent API: TextWrapping
+    [[nodiscard]] ui::TextWrapping TextWrapping() const {
+        return GetTextWrapping();
+    }
+
+    Ptr TextWrapping(ui::TextWrapping wrapping) {
+        SetTextWrapping(wrapping);
+        return Self();
+    }
+
+    // Fluent API: TextTrimming
+    [[nodiscard]] ui::TextTrimming TextTrimming() const {
+        return GetTextTrimming();
+    }
+
+    Ptr TextTrimming(ui::TextTrimming trimming) {
+        SetTextTrimming(trimming);
         return Self();
     }
 

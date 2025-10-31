@@ -12,7 +12,7 @@ namespace fk::ui::detail {
 
 ButtonBase::ButtonBase() {
     // Fluent Design 默认样式
-    SetPadding(fk::Thickness{11.0f, 5.0f});  // 水平 11px, 垂直 5px
+    SetPadding(fk::Thickness{12.0f, 8.f, 12.f, 9.f});  // WinUI 3 标准: 左12, 上8, 右12, 下9
     SetCornerRadius(4.0f);  // Fluent 圆角
 }
 

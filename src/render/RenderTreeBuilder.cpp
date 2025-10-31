@@ -153,10 +153,23 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
         textPayload.bounds = ui::Rect(0, 0, bounds.width, bounds.height);
         textPayload.color = ColorUtils::ParseColor(textBlock->GetForeground());
         textPayload.color[3] *= opacity;
-        textPayload.text = textBlock->GetText();
+        
+        // 使用经过处理的文本(可能包含截断)
+        const auto& wrappedLines = textBlock->GetWrappedLines();
+        if (!wrappedLines.empty() && wrappedLines.size() == 1) {
+            // 单行文本(可能被截断),使用处理后的文本
+            textPayload.text = wrappedLines[0];
+        } else {
+            // 多行文本或没有处理过,使用原始文本
+            // 让渲染器根据 textWrapping 和 maxWidth 自动换行
+            textPayload.text = textBlock->GetText();
+        }
+        
         textPayload.fontSize = textBlock->GetFontSize();
         textPayload.fontFamily = textBlock->GetFontFamily();
         textPayload.fontId = 0;  // TODO: 通过 fontFamily 和 fontSize 获取实际 fontId
+        textPayload.textWrapping = (textBlock->GetTextWrapping() == ui::TextWrapping::Wrap);
+        textPayload.maxWidth = bounds.width;
         
         scene.CommandBuffer().AddCommand(
             RenderCommand(CommandType::DrawText, textPayload)

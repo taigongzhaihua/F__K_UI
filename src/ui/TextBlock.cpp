@@ -2,6 +2,8 @@
 #include "fk/binding/DependencyProperty.h"
 
 #include <regex>
+#include <cmath>
+#include <algorithm>
 
 namespace fk::ui::detail {
 
@@ -52,6 +54,26 @@ const binding::DependencyProperty& TextBlockBase::FontFamilyProperty() {
         typeid(std::string),
         typeid(TextBlockBase),
         BuildFontFamilyMetadata()
+    );
+    return property;
+}
+
+const binding::DependencyProperty& TextBlockBase::TextWrappingProperty() {
+    static const auto& property = binding::DependencyProperty::Register(
+        "TextWrapping",
+        typeid(TextWrapping),
+        typeid(TextBlockBase),
+        BuildTextWrappingMetadata()
+    );
+    return property;
+}
+
+const binding::DependencyProperty& TextBlockBase::TextTrimmingProperty() {
+    static const auto& property = binding::DependencyProperty::Register(
+        "TextTrimming",
+        typeid(TextTrimming),
+        typeid(TextBlockBase),
+        BuildTextTrimmingMetadata()
     );
     return property;
 }
@@ -109,6 +131,26 @@ const std::string& TextBlockBase::GetFontFamily() const {
     return std::any_cast<const std::string&>(value);
 }
 
+void TextBlockBase::SetTextWrapping(TextWrapping wrapping) {
+    SetValue(TextWrappingProperty(), wrapping);
+}
+
+TextWrapping TextBlockBase::GetTextWrapping() const {
+    const auto& value = GetValue(TextWrappingProperty());
+    if (!value.has_value()) return TextWrapping::NoWrap;
+    return std::any_cast<TextWrapping>(value);
+}
+
+void TextBlockBase::SetTextTrimming(TextTrimming trimming) {
+    SetValue(TextTrimmingProperty(), trimming);
+}
+
+TextTrimming TextBlockBase::GetTextTrimming() const {
+    const auto& value = GetValue(TextTrimmingProperty());
+    if (!value.has_value()) return TextTrimming::None;
+    return std::any_cast<TextTrimming>(value);
+}
+
 // ============================================================================
 // 布局重写
 // ============================================================================
@@ -116,42 +158,157 @@ const std::string& TextBlockBase::GetFontFamily() const {
 Size TextBlockBase::MeasureOverride(const Size& availableSize) {
     const auto& text = GetText();
     float fontSize = GetFontSize();
+    float lineHeight = fontSize * 1.2f;
     
     if (text.empty()) {
-        return Size(0.0f, fontSize * 1.2f);
+        return Size(0.0f, lineHeight);
     }
     
-    // 改进的文本宽度估算
-    // 遍历 UTF-8 字符串,区分中文和 ASCII
-    float estimatedWidth = 0.0f;
+    TextWrapping wrapping = GetTextWrapping();
+    TextTrimming trimming = GetTextTrimming();
+    
+    // 不换行模式:单行计算
+    if (wrapping == TextWrapping::NoWrap) {
+        float estimatedWidth = 0.0f;
+        size_t i = 0;
+        while (i < text.length()) {
+            unsigned char c = text[i];
+            
+            if (c < 0x80) {
+                estimatedWidth += fontSize * 0.5f;
+                i++;
+            } else if (c < 0xE0) {
+                estimatedWidth += fontSize * 0.9f;
+                i += 2;
+            } else if (c < 0xF0) {
+                estimatedWidth += fontSize;
+                i += 3;
+            } else {
+                estimatedWidth += fontSize;
+                i += 4;
+            }
+        }
+        
+        // 如果需要截断且文本超出宽度
+        if (trimming != TextTrimming::None && estimatedWidth > availableSize.width && availableSize.width > 0.0f) {
+            // 计算省略号宽度 "..."
+            float ellipsisWidth = fontSize * 0.5f * 3;  // 3个点的宽度
+            float maxTextWidth = availableSize.width - ellipsisWidth;
+            
+            // 重新计算可以显示的字符
+            wrappedLines_.clear();
+            std::string trimmedText;
+            float currentWidth = 0.0f;
+            size_t j = 0;
+            
+            while (j < text.length() && currentWidth < maxTextWidth) {
+                unsigned char c = text[j];
+                float charWidth;
+                size_t charSize;
+                
+                if (c < 0x80) {
+                    charWidth = fontSize * 0.5f;
+                    charSize = 1;
+                } else if (c < 0xE0) {
+                    charWidth = fontSize * 0.9f;
+                    charSize = 2;
+                } else if (c < 0xF0) {
+                    charWidth = fontSize;
+                    charSize = 3;
+                } else {
+                    charWidth = fontSize;
+                    charSize = 4;
+                }
+                
+                if (currentWidth + charWidth > maxTextWidth) {
+                    break;
+                }
+                
+                trimmedText.append(text, j, charSize);
+                currentWidth += charWidth;
+                j += charSize;
+            }
+            
+            // 添加省略号
+            trimmedText += "...";
+            wrappedLines_.push_back(trimmedText);
+            
+            return Size(availableSize.width, std::min(lineHeight, availableSize.height));
+        } else {
+            // 不需要截断,存储完整文本
+            wrappedLines_.clear();
+            wrappedLines_.push_back(text);
+        }
+        
+        return Size(
+            std::min(estimatedWidth, availableSize.width),
+            std::min(lineHeight, availableSize.height)
+        );
+    }
+    
+    // 自动换行模式:多行计算
+    float maxLineWidth = availableSize.width;
+    if (maxLineWidth <= 0.0f || std::isinf(maxLineWidth)) {
+        maxLineWidth = 1000.0f;  // 默认最大宽度
+    }
+    
+    // 按字符分割并计算每行
+    wrappedLines_.clear();
+    std::string currentLine;
+    float currentLineWidth = 0.0f;
+    float maxWidth = 0.0f;
+    
     size_t i = 0;
     while (i < text.length()) {
         unsigned char c = text[i];
+        float charWidth;
+        size_t charSize;
         
+        // 计算当前字符宽度和字节数
         if (c < 0x80) {
-            // ASCII 字符: 约 0.5 倍字体大小
-            estimatedWidth += fontSize * 0.5f;
-            i++;
+            charWidth = fontSize * 0.5f;
+            charSize = 1;
         } else if (c < 0xE0) {
-            // 2 字节 UTF-8
-            estimatedWidth += fontSize * 0.9f;
-            i += 2;
+            charWidth = fontSize * 0.9f;
+            charSize = 2;
         } else if (c < 0xF0) {
-            // 3 字节 UTF-8 (中文等): 接近字体大小
-            estimatedWidth += fontSize;
-            i += 3;
+            charWidth = fontSize;
+            charSize = 3;
         } else {
-            // 4 字节 UTF-8
-            estimatedWidth += fontSize;
-            i += 4;
+            charWidth = fontSize;
+            charSize = 4;
         }
+        
+        // 检查是否需要换行
+        if (currentLineWidth + charWidth > maxLineWidth && !currentLine.empty()) {
+            wrappedLines_.push_back(currentLine);
+            maxWidth = std::max(maxWidth, currentLineWidth);
+            currentLine.clear();
+            currentLineWidth = 0.0f;
+        }
+        
+        // 添加字符到当前行
+        currentLine.append(text, i, charSize);
+        currentLineWidth += charWidth;
+        i += charSize;
     }
     
-    float estimatedHeight = fontSize * 1.2f; // 行高
+    // 添加最后一行
+    if (!currentLine.empty()) {
+        wrappedLines_.push_back(currentLine);
+        maxWidth = std::max(maxWidth, currentLineWidth);
+    }
+    
+    // 如果没有行,添加一个空行以保持高度
+    if (wrappedLines_.empty()) {
+        wrappedLines_.push_back("");
+    }
+    
+    float totalHeight = lineHeight * wrappedLines_.size();
     
     return Size(
-        std::min(estimatedWidth, availableSize.width),
-        std::min(estimatedHeight, availableSize.height)
+        std::min(maxWidth, availableSize.width),
+        std::min(totalHeight, availableSize.height)
     );
 }
 
@@ -187,6 +344,16 @@ void TextBlockBase::OnFontFamilyChanged(const std::string& oldValue, const std::
     InvalidateVisual();
 }
 
+void TextBlockBase::OnTextWrappingChanged(TextWrapping oldValue, TextWrapping newValue) {
+    InvalidateMeasure();  // 换行模式变化需要重新测量
+    InvalidateVisual();
+}
+
+void TextBlockBase::OnTextTrimmingChanged(TextTrimming oldValue, TextTrimming newValue) {
+    InvalidateMeasure();  // 截断模式变化需要重新测量
+    InvalidateVisual();
+}
+
 // ============================================================================
 // 元数据构建
 // ============================================================================
@@ -214,6 +381,18 @@ binding::PropertyMetadata TextBlockBase::BuildFontSizeMetadata() {
 binding::PropertyMetadata TextBlockBase::BuildFontFamilyMetadata() {
     binding::PropertyMetadata metadata(std::string("Arial"));  // 默认 Arial
     metadata.propertyChangedCallback = FontFamilyPropertyChanged;
+    return metadata;
+}
+
+binding::PropertyMetadata TextBlockBase::BuildTextWrappingMetadata() {
+    binding::PropertyMetadata metadata(TextWrapping::NoWrap);  // 默认不换行
+    metadata.propertyChangedCallback = TextWrappingPropertyChanged;
+    return metadata;
+}
+
+binding::PropertyMetadata TextBlockBase::BuildTextTrimmingMetadata() {
+    binding::PropertyMetadata metadata(TextTrimming::None);  // 默认不截断
+    metadata.propertyChangedCallback = TextTrimmingPropertyChanged;
     return metadata;
 }
 
@@ -275,6 +454,34 @@ void TextBlockBase::FontFamilyPropertyChanged(
     const auto& oldFamily = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string("Arial");
     const auto& newFamily = std::any_cast<const std::string&>(newValue);
     textBlock->OnFontFamilyChanged(oldFamily, newFamily);
+}
+
+void TextBlockBase::TextWrappingPropertyChanged(
+    binding::DependencyObject& sender,
+    const binding::DependencyProperty& property,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* textBlock = dynamic_cast<TextBlockBase*>(&sender);
+    if (!textBlock) return;
+
+    TextWrapping oldWrapping = oldValue.has_value() ? std::any_cast<TextWrapping>(oldValue) : TextWrapping::NoWrap;
+    TextWrapping newWrapping = std::any_cast<TextWrapping>(newValue);
+    textBlock->OnTextWrappingChanged(oldWrapping, newWrapping);
+}
+
+void TextBlockBase::TextTrimmingPropertyChanged(
+    binding::DependencyObject& sender,
+    const binding::DependencyProperty& property,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* textBlock = dynamic_cast<TextBlockBase*>(&sender);
+    if (!textBlock) return;
+
+    TextTrimming oldTrimming = oldValue.has_value() ? std::any_cast<TextTrimming>(oldValue) : TextTrimming::None;
+    TextTrimming newTrimming = std::any_cast<TextTrimming>(newValue);
+    textBlock->OnTextTrimmingChanged(oldTrimming, newTrimming);
 }
 
 // ============================================================================

@@ -55,6 +55,8 @@ struct TextPayload {
     int fontId{0};              // 字体 ID
     float fontSize{14.0f};      // 字体大小
     std::string fontFamily;     // 字体族(可选)
+    bool textWrapping{false};   // 是否自动换行
+    float maxWidth{0.0f};       // 换行时的最大宽度
 };
 
 /**

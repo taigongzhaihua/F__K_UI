@@ -39,6 +39,20 @@ int main()
                                            ->FontSize(16.0f)
                                            ->Width(250)
                                            ->Height(30),
+
+                                       ui::textBlock()
+                                           ->Text("这是一段很长的文本,用来测试自动换行功能。当文本内容超过控件宽度时,应该能够自动换行显示,这样用户就可以看到完整的内容。")
+                                           ->Foreground("#FFFF00")
+                                           ->FontSize(14.0f)
+                                           ->TextWrapping(ui::TextWrapping::Wrap),
+
+                                       ui::textBlock()
+                                           ->Text("这是一段很长的文本,用来测试截断功能。当文本超出宽度时会自动添加省略号...")
+                                           ->Foreground("#00FFFF")
+                                           ->FontSize(14.0f)
+                                           ->Width(200)
+                                           ->TextTrimming(ui::TextTrimming::CharacterEllipsis),
+
                                        ui::button()
                                            ->HorizontalAlignment(ui::HorizontalAlignment::Center)
                                            ->Content("默认按钮")

@@ -410,48 +410,114 @@ void GlRenderer::DrawText(const TextPayload& payload) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-    // 将 UTF-8 文本转换为 UTF-32
-    std::u32string utf32Text = textRenderer_->Utf8ToUtf32(payload.text);
-    
-    // 渲染每个字符
-    float x = 0.0f;  // 相对于 offset 的位置
-    float y = 0.0f;
-    
-    for (char32_t c : utf32Text) {
-        const auto* glyph = textRenderer_->GetGlyph(c, fontId);
-        if (!glyph) {
-            continue; // 跳过无法加载的字符
+    // 处理文本换行
+    std::vector<std::string> lines;
+    if (payload.textWrapping && payload.maxWidth > 0.0f) {
+        // 自动换行:按字符分割文本
+        float maxLineWidth = payload.maxWidth;
+        std::string currentLine;
+        float currentLineWidth = 0.0f;
+        
+        std::u32string utf32Text = textRenderer_->Utf8ToUtf32(payload.text);
+        std::string utf8Buffer;
+        
+        for (char32_t c : utf32Text) {
+            const auto* glyph = textRenderer_->GetGlyph(c, fontId);
+            if (!glyph) continue;
+            
+            // 检查是否需要换行
+            if (currentLineWidth + glyph->advance > maxLineWidth && !currentLine.empty()) {
+                lines.push_back(currentLine);
+                currentLine.clear();
+                currentLineWidth = 0.0f;
+            }
+            
+            // 将 UTF-32 字符转换为 UTF-8 并添加到当前行
+            if (c < 0x80) {
+                utf8Buffer = std::string(1, static_cast<char>(c));
+            } else if (c < 0x800) {
+                utf8Buffer = std::string{
+                    static_cast<char>(0xC0 | (c >> 6)),
+                    static_cast<char>(0x80 | (c & 0x3F))
+                };
+            } else if (c < 0x10000) {
+                utf8Buffer = std::string{
+                    static_cast<char>(0xE0 | (c >> 12)),
+                    static_cast<char>(0x80 | ((c >> 6) & 0x3F)),
+                    static_cast<char>(0x80 | (c & 0x3F))
+                };
+            } else {
+                utf8Buffer = std::string{
+                    static_cast<char>(0xF0 | (c >> 18)),
+                    static_cast<char>(0x80 | ((c >> 12) & 0x3F)),
+                    static_cast<char>(0x80 | ((c >> 6) & 0x3F)),
+                    static_cast<char>(0x80 | (c & 0x3F))
+                };
+            }
+            
+            currentLine += utf8Buffer;
+            currentLineWidth += glyph->advance;
         }
         
-        float xpos = x + glyph->bearingX;
-        float ypos = y + (payload.fontSize - glyph->bearingY); // 基线对齐
-        float w = glyph->width;
-        float h = glyph->height;
+        // 添加最后一行
+        if (!currentLine.empty()) {
+            lines.push_back(currentLine);
+        }
+    } else {
+        // 不换行:单行
+        lines.push_back(payload.text);
+    }
+    
+    // 渲染每一行
+    float lineHeight = payload.fontSize * 1.2f;
+    float y = 0.0f;
+    
+    for (const auto& line : lines) {
+        // 将 UTF-8 文本转换为 UTF-32
+        std::u32string utf32Text = textRenderer_->Utf8ToUtf32(line);
         
-        // 更新 VBO (翻转纹理 V 坐标以匹配 FreeType 的上下翻转)
-        float vertices[6][4] = {
-            { xpos,     ypos + h,   0.0f, 1.0f },
-            { xpos,     ypos,       0.0f, 0.0f },
-            { xpos + w, ypos,       1.0f, 0.0f },
+        // 渲染每个字符
+        float x = 0.0f;
+        
+        for (char32_t c : utf32Text) {
+            const auto* glyph = textRenderer_->GetGlyph(c, fontId);
+            if (!glyph) {
+                continue; // 跳过无法加载的字符
+            }
             
-            { xpos,     ypos + h,   0.0f, 1.0f },
-            { xpos + w, ypos,       1.0f, 0.0f },
-            { xpos + w, ypos + h,   1.0f, 1.0f }
-        };
+            float xpos = x + glyph->bearingX;
+            float ypos = y + (payload.fontSize - glyph->bearingY); // 基线对齐
+            float w = glyph->width;
+            float h = glyph->height;
+            
+            // 更新 VBO (翻转纹理 V 坐标以匹配 FreeType 的上下翻转)
+            float vertices[6][4] = {
+                { xpos,     ypos + h,   0.0f, 1.0f },
+                { xpos,     ypos,       0.0f, 0.0f },
+                { xpos + w, ypos,       1.0f, 0.0f },
+                
+                { xpos,     ypos + h,   0.0f, 1.0f },
+                { xpos + w, ypos,       1.0f, 0.0f },
+                { xpos + w, ypos + h,   1.0f, 1.0f }
+            };
+            
+            // 绑定字形纹理
+            glBindTexture(GL_TEXTURE_2D, glyph->textureID);
+            
+            // 更新 VBO 内容
+            glBindBuffer(GL_ARRAY_BUFFER, textVBO_);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            
+            // 渲染四边形
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            
+            // 前进到下一个字形位置 (advance 已经是像素单位)
+            x += glyph->advance;
+        }
         
-        // 绑定字形纹理
-        glBindTexture(GL_TEXTURE_2D, glyph->textureID);
-        
-        // 更新 VBO 内容
-        glBindBuffer(GL_ARRAY_BUFFER, textVBO_);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        
-        // 渲染四边形
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        
-        // 前进到下一个字形位置 (advance 已经是像素单位)
-        x += glyph->advance;
+        // 移动到下一行
+        y += lineHeight;
     }
     
     // 恢复状态
