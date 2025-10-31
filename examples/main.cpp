@@ -24,7 +24,7 @@ int main()
                           ->Content(
                               ui::stackPanel()
                                   ->Orientation(ui::Orientation::Vertical)
-                                  ->Spacing(10.0f)  // 设置子元素间距为 10px
+                                  ->Spacing(10.0f) // 设置子元素间距为 10px
                                   ->Children(
                                       {ui::textBlock()
                                            ->Text("欢迎使用 F__K_UI!")
@@ -36,20 +36,20 @@ int main()
                                        ui::textBlock()
                                            ->Text("这是一个测试文本块")
                                            ->Foreground("#CCCCCC")
-                                           ->FontSize(16.0f)
+                                           ->FontSize(18.0f)
                                            ->Width(250)
                                            ->Height(30),
 
                                        ui::textBlock()
                                            ->Text("这是一段很长的文本,用来测试自动换行功能。当文本内容超过控件宽度时,应该能够自动换行显示,这样用户就可以看到完整的内容。")
                                            ->Foreground("#FFFF00")
-                                           ->FontSize(14.0f)
+                                           ->FontSize(16.0f)
                                            ->TextWrapping(ui::TextWrapping::Wrap),
 
                                        ui::textBlock()
                                            ->Text("这是一段很长的文本,用来测试截断功能。当文本超出宽度时会自动添加省略号...")
                                            ->Foreground("#00FFFF")
-                                           ->FontSize(14.0f)
+                                           ->FontSize(16.0f)
                                            ->Width(200)
                                            ->TextTrimming(ui::TextTrimming::CharacterEllipsis),
 
@@ -60,13 +60,13 @@ int main()
                                                      { std::cout << ">>> Default Button Clicked!" << std::endl; }),
                                        ui::button()
                                            ->HorizontalAlignment(ui::HorizontalAlignment::Center)
-                                           ->Background("#107C10") // 绿色 (成功)
+                                           ->Background("#008500") // 绿色 (成功)
                                            ->Content("成功按钮")
                                            ->OnClick([](ui::detail::ButtonBase &)
                                                      { std::cout << ">>> Success Button Clicked!" << std::endl; }),
                                        ui::button()
                                            ->HorizontalAlignment(ui::HorizontalAlignment::Center)
-                                           ->Background("#D13438") // 红色 (危险)
+                                           ->Background("#e93b40") // 红色 (危险)
                                            ->Content("危险按钮")
                                            ->OnClick([](ui::detail::ButtonBase &)
                                                      { std::cout << ">>> Danger Button Clicked!" << std::endl; }),
