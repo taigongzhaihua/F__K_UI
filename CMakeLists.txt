@@ -52,6 +52,8 @@ add_library(fk STATIC
     src/ui/ContentControl.cpp
     src/ui/Decorator.cpp
     src/ui/ItemsControl.cpp
+    src/ui/ScrollBar.cpp
+    src/ui/ScrollViewer.cpp
     src/ui/FrameworkElement.cpp
     src/ui/Panel.cpp
     src/ui/StackPanel.cpp

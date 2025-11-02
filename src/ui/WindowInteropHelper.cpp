@@ -75,6 +75,7 @@ void WindowInteropHelper::CreateNativeWindow() {
     glfwSetWindowPosCallback(handle_, OnWindowPos);
     glfwSetMouseButtonCallback(handle_, OnMouseButton);
     glfwSetCursorPosCallback(handle_, OnMouseMove);
+    glfwSetScrollCallback(handle_, OnMouseScroll);
 
     // 设置当前上下文
     glfwMakeContextCurrent(handle_);
@@ -119,6 +120,13 @@ void WindowInteropHelper::OnMouseMove(GLFWwindow* window, double xpos, double yp
     auto* owner = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (owner) {
         owner->OnNativeMouseMove(xpos, ypos);
+    }
+}
+
+void WindowInteropHelper::OnMouseScroll(GLFWwindow* window, double xoffset, double yoffset) {
+    auto* owner = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (owner) {
+        owner->OnNativeMouseScroll(xoffset, yoffset);
     }
 }
 

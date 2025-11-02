@@ -49,14 +49,8 @@ void Application::Run(ui::WindowPtr mainWindow) {
             break;
         }
         
-        // 渲染主窗口
+        // 渲染主窗口 (RenderFrame 内部会在需要时调用 glfwSwapBuffers)
         mainWindow_->RenderFrame();
-        
-        // 交换缓冲区
-        auto handle = mainWindow_->GetNativeHandle();
-        if (handle) {
-            glfwSwapBuffers(handle);
-        }
     }
     
     std::cout << "Message loop ended" << std::endl;

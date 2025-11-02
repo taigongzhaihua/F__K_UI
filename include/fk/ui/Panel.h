@@ -63,6 +63,10 @@ protected:
     void OnMouseButtonDown(int button, double x, double y) override;
     void OnMouseButtonUp(int button, double x, double y) override;
     void OnMouseMove(double x, double y) override;
+    void OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) override;
+    
+    // 命中测试重写
+    UIElement* HitTestChildren(double x, double y) override;
     
     // 提供给模板类使用的内部方法
     void SetChildrenInternal(const UIElementCollection& children);

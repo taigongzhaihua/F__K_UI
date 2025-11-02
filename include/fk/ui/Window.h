@@ -91,6 +91,7 @@ public:
     void OnNativeWindowMove(int x, int y);
     void OnNativeMouseButton(int button, int action, int mods);
     void OnNativeMouseMove(double xpos, double ypos);
+    void OnNativeMouseScroll(double xoffset, double yoffset);
 
 protected:
     // 重写 ContentControl 的内容变更通知

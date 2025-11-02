@@ -161,6 +161,11 @@ void Window::Show() {
 
     // 确保窗口已创建
     interopHelper_->EnsureHandle();
+    
+    // 🔥 关键修复: 将 Window 附加到逻辑树,这样所有子元素才能通过 GetRenderHost() 找到 RenderHost
+    if (!IsAttachedToLogicalTree()) {
+        AttachToLogicalTree(GetDispatcher());
+    }
 
     // 创建 RenderHost（如果还没有）
     if (!renderHost_) {
@@ -187,6 +192,10 @@ void Window::Show() {
     auto content = GetContent();
     if (content) {
         PerformLayout();
+        // 初始渲染请求
+        if (renderHost_) {
+            renderHost_->RequestRender();
+        }
     }
 
     // 触发事件
@@ -233,8 +242,10 @@ void Window::RenderFrame() {
         return;
     }
     
-    // 请求渲染
-    renderHost_->RequestRender();
+    // 如果布局失效,执行布局
+    if (!content->IsArrangeValid() || !content->IsMeasureValid()) {
+        PerformLayout();
+    }
     
     // 准备帧上下文
     render::FrameContext frameCtx;
@@ -243,8 +254,16 @@ void Window::RenderFrame() {
     frameCtx.clearColor = {0.15f, 0.2f, 0.3f, 1.0f};
     frameCtx.frameIndex = frameCount_++;
     
-    // 执行渲染
-    renderHost_->RenderFrame(frameCtx, *content);
+    // 执行渲染 (只有在 renderPending_ 为 true 时才真正渲染)
+    bool didRender = renderHost_->RenderFrame(frameCtx, *content);
+    
+    // 如果真的渲染了,交换缓冲区
+    if (didRender) {
+        auto handle = GetNativeHandle();
+        if (handle) {
+            glfwSwapBuffers(handle);
+        }
+    }
 }
 
 GLFWwindow* Window::GetNativeHandle() const {
@@ -345,6 +364,18 @@ void Window::OnNativeMouseMove(double xpos, double ypos) {
     auto content = GetContent();
     if (content) {
         content->OnMouseMove(xpos, ypos);
+    }
+}
+
+void Window::OnNativeMouseScroll(double xoffset, double yoffset) {
+    auto content = GetContent();
+    if (content) {
+        // 获取当前鼠标位置
+        double mouseX, mouseY;
+        glfwGetCursorPos(interopHelper_->GetHandle(), &mouseX, &mouseY);
+        
+        // 传递给内容,包含鼠标位置信息
+        content->OnMouseWheel(xoffset, yoffset, mouseX, mouseY);
     }
 }
 

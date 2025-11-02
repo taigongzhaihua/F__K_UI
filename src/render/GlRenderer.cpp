@@ -285,8 +285,30 @@ void GlRenderer::ExecuteCommand(const RenderCommand& cmd) {
 }
 
 void GlRenderer::ApplyClip(const ClipPayload& payload) {
-    // TODO: 实现裁剪区域
-    // 可以使用 glScissor 或模板缓冲区
+    if (payload.enabled) {
+        // 启用裁切
+        glEnable(GL_SCISSOR_TEST);
+        
+        // 计算裁切区域 (需要转换为窗口坐标系)
+        // OpenGL 的裁切坐标系原点在左下角,Y 轴向上
+        float x = currentOffsetX_ + payload.clipRect.x;
+        float y = viewportSize_.height - (currentOffsetY_ + payload.clipRect.y + payload.clipRect.height);
+        float width = payload.clipRect.width;
+        float height = payload.clipRect.height;
+        
+        // 确保裁切区域有效
+        if (width > 0 && height > 0) {
+            glScissor(
+                static_cast<GLint>(x),
+                static_cast<GLint>(y),
+                static_cast<GLsizei>(width),
+                static_cast<GLsizei>(height)
+            );
+        }
+    } else {
+        // 禁用裁切
+        glDisable(GL_SCISSOR_TEST);
+    }
 }
 
 void GlRenderer::ApplyTransform(const TransformPayload& payload) {

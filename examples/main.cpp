@@ -6,6 +6,8 @@
 #include "fk/ui/ContentControl.h"
 #include "fk/ui/Button.h"
 #include "fk/ui/TextBlock.h"
+#include "fk/ui/ScrollBar.h"
+#include "fk/ui/ScrollViewer.h"
 
 using namespace fk;
 
@@ -81,7 +83,50 @@ int main()
                                            ->Background("#5C2D91") // 紫色 (次要)
                                            ->Content("次要按钮")
                                            ->OnClick([](ui::detail::ButtonBase &)
-                                                     { std::cout << ">>> Secondary Button Clicked!" << std::endl; })}));
+                                                     { std::cout << ">>> Secondary Button Clicked!" << std::endl; }),
+
+                                       ui::textBlock()
+                                           ->Text("水平滚动条:")
+                                           ->Foreground("#FFFFFF")
+                                           ->FontSize(14.0f),
+
+                                       ui::scrollBar()
+                                           ->Orientation(ui::Orientation::Horizontal)
+                                           ->Minimum(0.f)
+                                           ->Maximum(100.f)
+                                           ->Value(50.f)
+                                           ->ViewportSize(25.f)
+                                           ->OnValueChanged([](double value)
+                                                           { std::cout << ">>> ScrollBar Value: " << value << std::endl; }),
+
+                                       ui::textBlock()
+                                           ->Text("ScrollViewer 演示:")
+                                           ->Foreground("#FFFFFF")
+                                           ->FontSize(14.0f),
+
+                                       // ScrollViewer 测试
+                                       [&]() {
+                                           auto sv = ui::scrollViewer();
+                                           sv->SetHeight(150);
+                                           sv->SetVerticalScrollBarVisibility(ui::ScrollBarVisibility::Auto);
+
+                                           std::vector<std::shared_ptr<ui::UIElement>> items;
+                                           for (int i = 1; i <= 15; ++i) {
+                                               auto tb = ui::textBlock();
+                                               tb->SetText("第 " + std::to_string(i) + " 行内容");
+                                               tb->SetForeground("#FFFFFF");
+                                               tb->SetFontSize(14);
+                                               items.push_back(tb);
+                                           }
+
+                                           auto stack = ui::stackPanel()
+                                                            ->Orientation(ui::Orientation::Vertical)
+                                                            ->Spacing(5.0f)
+                                                            ->Children(items);
+
+                                           sv->SetContent(stack);
+                                           return sv;
+                                       }()}));
 
         std::cout << "Window hierarchy created!" << std::endl;
         std::cout << "Subscribing events..." << std::endl;

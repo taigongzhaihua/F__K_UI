@@ -169,6 +169,25 @@ std::vector<Visual*> ControlBase::GetVisualChildren() const {
     return children;
 }
 
+void ControlBase::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
+    // 将滚轮事件传递给 Content
+    auto content = GetContent();
+    if (content && content->HitTest(mouseX, mouseY)) {
+        content->OnMouseWheel(xoffset, yoffset, mouseX, mouseY);
+    }
+}
+
+UIElement* ControlBase::HitTestChildren(double x, double y) {
+    auto content = GetContent();
+    if (content && content->GetVisibility() == Visibility::Visible) {
+        if (content->HitTest(x, y)) {
+            UIElement* hitInContent = content->HitTestChildren(x, y);
+            return hitInContent ? hitInContent : content.get();
+        }
+    }
+    return nullptr;
+}
+
 void ControlBase::OnContentChanged(UIElement*, UIElement*) {}
 
 void ControlBase::OnIsFocusedChanged(bool, bool) {}

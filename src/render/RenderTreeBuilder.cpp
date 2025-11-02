@@ -5,6 +5,9 @@
 #include "fk/render/ColorUtils.h"
 #include "fk/ui/Button.h"  // 用于 ButtonBase 类型检查
 #include "fk/ui/TextBlock.h"  // 用于 TextBlockBase 类型检查
+#include "fk/ui/ScrollBar.h"  // 用于 ScrollBarBase 类型检查
+#include "fk/ui/ScrollViewer.h"  // 用于 ScrollViewerBase 类型检查
+#include "fk/ui/UIElement.h"  // 用于 ClipToBounds
 
 #include <iostream>
 
@@ -55,6 +58,19 @@ void RenderTreeBuilder::TraverseVisual(const ui::Visual& visual, RenderScene& sc
         RenderCommand(CommandType::SetTransform, transformPayload)
     );
 
+    // 检查是否需要裁切
+    const auto* uiElement = dynamic_cast<const ui::UIElement*>(&visual);
+    bool needClip = uiElement && uiElement->GetClipToBounds();
+    
+    if (needClip) {
+        ClipPayload clipPayload;
+        clipPayload.clipRect = ui::Rect(0, 0, bounds.width, bounds.height);  // 相对于当前元素
+        clipPayload.enabled = true;
+        scene.CommandBuffer().AddCommand(
+            RenderCommand(CommandType::SetClip, clipPayload)
+        );
+    }
+
     // 如果不透明度 < 1，需要推入图层
     bool needLayer = effectiveOpacity < 1.0f;
     if (needLayer) {
@@ -78,10 +94,35 @@ void RenderTreeBuilder::TraverseVisual(const ui::Visual& visual, RenderScene& sc
         }
     }
 
+    // 处理 ScrollViewer 的滚动条
+    const auto* scrollViewer = dynamic_cast<const ui::detail::ScrollViewerBase*>(&visual);
+    if (scrollViewer) {
+        // 渲染水平滚动条
+        auto* hScrollBar = scrollViewer->GetHorizontalScrollBar();
+        if (hScrollBar && hScrollBar->GetVisibility() == ui::Visibility::Visible) {
+            TraverseVisual(*hScrollBar, scene, effectiveOpacity);
+        }
+        
+        // 渲染垂直滚动条
+        auto* vScrollBar = scrollViewer->GetVerticalScrollBar();
+        if (vScrollBar && vScrollBar->GetVisibility() == ui::Visibility::Visible) {
+            TraverseVisual(*vScrollBar, scene, effectiveOpacity);
+        }
+    }
+
     // 弹出图层
     if (needLayer) {
         scene.CommandBuffer().AddCommand(
             RenderCommand(CommandType::PopLayer, std::monostate{})
+        );
+    }
+    
+    // 禁用裁切
+    if (needClip) {
+        ClipPayload clipPayload;
+        clipPayload.enabled = false;
+        scene.CommandBuffer().AddCommand(
+            RenderCommand(CommandType::SetClip, clipPayload)
         );
     }
 
@@ -139,6 +180,37 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
             
             scene.CommandBuffer().AddCommand(
                 RenderCommand(CommandType::DrawRectangle, bgPayload)
+            );
+        }
+        
+        return;
+    }
+    
+    // 尝试将 Visual 转换为 ScrollBarBase
+    const auto* scrollBar = dynamic_cast<const ui::detail::ScrollBarBase*>(&visual);
+    if (scrollBar) {
+        // 绘制 Track (轨道)
+        RectanglePayload trackPayload;
+        trackPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height);
+        trackPayload.color = ColorUtils::ParseColor(scrollBar->GetTrackBrush());
+        trackPayload.color[3] *= opacity;
+        trackPayload.cornerRadius = 4.0f;  // 轻微圆角
+        
+        scene.CommandBuffer().AddCommand(
+            RenderCommand(CommandType::DrawRectangle, trackPayload)
+        );
+        
+        // 绘制 Thumb (滑块)
+        ui::Rect thumbBounds = scrollBar->GetThumbBounds();
+        if (thumbBounds.width > 0 && thumbBounds.height > 0) {
+            RectanglePayload thumbPayload;
+            thumbPayload.rect = thumbBounds;  // 已经是相对于 ScrollBar 的坐标
+            thumbPayload.color = ColorUtils::ParseColor(scrollBar->GetThumbBrush());
+            thumbPayload.color[3] *= opacity;
+            thumbPayload.cornerRadius = 4.0f;  // 圆角滑块
+            
+            scene.CommandBuffer().AddCommand(
+                RenderCommand(CommandType::DrawRectangle, thumbPayload)
             );
         }
         

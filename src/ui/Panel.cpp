@@ -378,4 +378,32 @@ void PanelBase::OnMouseMove(double x, double y) {
     }
 }
 
+void PanelBase::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
+    // 找到鼠标位置下的最上层子元素
+    UIElement* hitChild = HitTestChildren(mouseX, mouseY);
+    
+    if (hitChild) {
+        // 传递给命中的子元素
+        hitChild->OnMouseWheel(xoffset, yoffset, mouseX, mouseY);
+    }
+}
+
+UIElement* PanelBase::HitTestChildren(double x, double y) {
+    // 从后向前遍历(后面的元素在上层)
+    for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+        const auto& child = *it;
+        if (!child || child->GetVisibility() != Visibility::Visible) {
+            continue;
+        }
+        
+        // 先检查子元素本身
+        if (child->HitTest(x, y)) {
+            // 递归检查子元素的子元素
+            UIElement* hitInChild = child->HitTestChildren(x, y);
+            return hitInChild ? hitInChild : child.get();
+        }
+    }
+    return nullptr;
+}
+
 } // namespace fk::ui

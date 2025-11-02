@@ -33,7 +33,7 @@ public:
 
     void Initialize(const RendererInitParams& params);
     void RequestRender();
-    void RenderFrame(const FrameContext& frameContext, const ui::Visual& visualRoot);
+    bool RenderFrame(const FrameContext& frameContext, const ui::Visual& visualRoot);
     void Resize(const Extent2D& newSize);
     void Shutdown();
 

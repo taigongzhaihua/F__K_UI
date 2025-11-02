@@ -75,6 +75,15 @@ const DependencyProperty& UIElement::OpacityProperty() {
     return property;
 }
 
+const DependencyProperty& UIElement::ClipToBoundsProperty() {
+    static const DependencyProperty& property = DependencyProperty::Register(
+        "ClipToBounds",
+        typeid(bool),
+        typeid(UIElement),
+        BuildClipToBoundsMetadata());
+    return property;
+}
+
 void UIElement::SetVisibility(fk::ui::Visibility visibility) {
     VerifyAccessEnhanced(this);
     SetValue(VisibilityProperty(), visibility);
@@ -100,6 +109,15 @@ void UIElement::SetOpacity(float value) {
 
 float UIElement::GetOpacity() const {
     return GetValue<float>(OpacityProperty());
+}
+
+void UIElement::SetClipToBounds(bool clip) {
+    VerifyAccessEnhanced(this);
+    SetValue(ClipToBoundsProperty(), clip);
+}
+
+bool UIElement::GetClipToBounds() const {
+    return GetValue<bool>(ClipToBoundsProperty());
 }
 
 Size UIElement::Measure(const Size& availableSize) {
@@ -153,6 +171,21 @@ void UIElement::InvalidateArrange() {
     }
     isArrangeValid_ = false;
     ArrangeInvalidated(*this);
+    
+    // 🔥 向上传播失效标记,确保根元素也被标记为失效
+    auto* current = this;
+    while (current) {
+        auto* parent = dynamic_cast<UIElement*>(current->GetLogicalParent());
+        if (!parent) {
+            // 到达根元素(Window)
+            if (auto* window = dynamic_cast<Window*>(current)) {
+                current->isArrangeValid_ = false;
+            }
+            break;
+        }
+        parent->isArrangeValid_ = false;
+        current = parent;
+    }
 }
 
 void UIElement::InvalidateVisual() {
@@ -209,6 +242,11 @@ void UIElement::OnOpacityChanged(float, float) {
     InvalidateVisual();
 }
 
+void UIElement::OnClipToBoundsChanged(bool, bool) {
+    // 裁切设置变化影响渲染
+    InvalidateVisual();
+}
+
 // Visual 接口实现
 Rect UIElement::GetRenderBounds() const {
     return layoutSlot_;
@@ -248,6 +286,13 @@ binding::PropertyMetadata UIElement::BuildOpacityMetadata() {
     return metadata;
 }
 
+binding::PropertyMetadata UIElement::BuildClipToBoundsMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = false;
+    metadata.propertyChangedCallback = &UIElement::ClipToBoundsPropertyChanged;
+    return metadata;
+}
+
 void UIElement::VisibilityPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
     auto* element = dynamic_cast<UIElement*>(&sender);
     if (!element) {
@@ -276,6 +321,16 @@ void UIElement::OpacityPropertyChanged(binding::DependencyObject& sender, const 
     const auto oldOpacity = std::any_cast<float>(oldValue);
     const auto newOpacity = std::any_cast<float>(newValue);
     element->OnOpacityChanged(oldOpacity, newOpacity);
+}
+
+void UIElement::ClipToBoundsPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
+    auto* element = dynamic_cast<UIElement*>(&sender);
+    if (!element) {
+        return;
+    }
+    const auto oldClip = std::any_cast<bool>(oldValue);
+    const auto newClip = std::any_cast<bool>(newValue);
+    element->OnClipToBoundsChanged(oldClip, newClip);
 }
 
 bool UIElement::ValidateOpacity(const std::any& value) {
@@ -324,6 +379,25 @@ void UIElement::OnMouseButtonUp(int button, double x, double y) {
 
 void UIElement::OnMouseMove(double x, double y) {
     // 默认不处理
+}
+
+void UIElement::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
+    // 默认不处理,由子类重写
+}
+
+bool UIElement::HitTest(double x, double y) const {
+    if (GetVisibility() != Visibility::Visible) {
+        return false;
+    }
+    
+    auto bounds = GetRenderBounds();
+    return x >= bounds.x && x < bounds.x + bounds.width &&
+           y >= bounds.y && y < bounds.y + bounds.height;
+}
+
+UIElement* UIElement::HitTestChildren(double x, double y) {
+    // 基类默认没有子元素
+    return nullptr;
 }
 
 } // namespace fk::ui

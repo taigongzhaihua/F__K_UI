@@ -25,6 +25,7 @@ enum class CommandType : std::uint8_t {
  */
 struct ClipPayload {
     ui::Rect clipRect;
+    bool enabled{true};  // true=启用裁切, false=禁用裁切
 };
 
 /**

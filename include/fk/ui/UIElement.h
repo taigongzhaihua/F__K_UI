@@ -49,12 +49,16 @@ public:
     static const binding::DependencyProperty& VisibilityProperty();
     static const binding::DependencyProperty& IsEnabledProperty();
     static const binding::DependencyProperty& OpacityProperty();
+    static const binding::DependencyProperty& ClipToBoundsProperty();
 
     void SetVisibility(Visibility visibility);
     [[nodiscard]] Visibility GetVisibility() const;  // 同时实现 Visual::GetVisibility
 
     void SetIsEnabled(bool enabled);
     [[nodiscard]] bool IsEnabled() const;
+    
+    void SetClipToBounds(bool clip);
+    [[nodiscard]] bool GetClipToBounds() const;
 
     void SetOpacity(float value);
     [[nodiscard]] float GetOpacity() const;  // 同时实现 Visual::GetOpacity
@@ -98,6 +102,7 @@ protected:
     virtual void OnVisibilityChanged(fk::ui::Visibility oldValue, fk::ui::Visibility newValue);
     virtual void OnIsEnabledChanged(bool oldValue, bool newValue);
     virtual void OnOpacityChanged(float oldValue, float newValue);
+    virtual void OnClipToBoundsChanged(bool oldValue, bool newValue);
 
     void SetDesiredSize(const Size& size) noexcept { desiredSize_ = size; }
     void SetLayoutSlot(const Rect& rect) noexcept { layoutSlot_ = rect; }
@@ -107,6 +112,13 @@ public:
     virtual void OnMouseButtonDown(int button, double x, double y);
     virtual void OnMouseButtonUp(int button, double x, double y);
     virtual void OnMouseMove(double x, double y);
+    virtual void OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY);
+    
+    // 命中测试 - 检查点是否在此元素的渲染边界内
+    virtual bool HitTest(double x, double y) const;
+    
+    // 查找在指定位置的最上层子元素
+    virtual UIElement* HitTestChildren(double x, double y);
 
 private:
     /**
@@ -117,11 +129,14 @@ private:
     static binding::PropertyMetadata BuildVisibilityMetadata();
     static binding::PropertyMetadata BuildIsEnabledMetadata();
     static binding::PropertyMetadata BuildOpacityMetadata();
+    static binding::PropertyMetadata BuildClipToBoundsMetadata();
     static void VisibilityPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
         const std::any& oldValue, const std::any& newValue);
     static void IsEnabledPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
         const std::any& oldValue, const std::any& newValue);
     static void OpacityPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
+        const std::any& oldValue, const std::any& newValue);
+    static void ClipToBoundsPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
         const std::any& oldValue, const std::any& newValue);
     static bool ValidateOpacity(const std::any& value);
 

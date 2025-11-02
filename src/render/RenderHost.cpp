@@ -32,13 +32,13 @@ void RenderHost::RequestRender() {
     renderPending_ = true;
 }
 
-void RenderHost::RenderFrame(const FrameContext& frameContext, const ui::Visual& visualRoot) {
+bool RenderHost::RenderFrame(const FrameContext& frameContext, const ui::Visual& visualRoot) {
     if (!renderer_) {
-        return;
+        return false;
     }
 
     if (!renderPending_) {
-        return;
+        return false;
     }
 
     if (!scene_) {
@@ -59,6 +59,8 @@ void RenderHost::RenderFrame(const FrameContext& frameContext, const ui::Visual&
     
     // 渲染完成后清除失效追踪
     ClearDirtyElements();
+    
+    return true;  // 返回 true 表示真的渲染了
 }
 
 void RenderHost::Resize(const Extent2D& newSize) {
@@ -89,9 +91,6 @@ void RenderHost::InvalidateElement(ui::UIElement* element) {
     
     // 自动请求渲染
     RequestRender();
-    
-    // 调试输出
-    // std::cout << "Element invalidated, requesting render" << std::endl;
 }
 
 void RenderHost::ClearDirtyElements() {

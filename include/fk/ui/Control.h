@@ -53,6 +53,12 @@ protected:
     
     // 重写以返回 Content 作为子元素
     std::vector<Visual*> GetVisualChildren() const override;
+    
+    // 重写鼠标滚轮事件,传递给 Content
+    void OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) override;
+    
+    // 命中测试重写
+    UIElement* HitTestChildren(double x, double y) override;
 
     virtual void OnContentChanged(UIElement* oldContent, UIElement* newContent);
     virtual void OnIsFocusedChanged(bool oldValue, bool newValue);

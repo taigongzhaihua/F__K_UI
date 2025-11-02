@@ -2,13 +2,9 @@
 
 #include "fk/ui/Panel.h"
 #include "fk/ui/View.h"
+#include "fk/ui/Enums.h"
 
 namespace fk::ui {
-
-enum class Orientation {
-    Horizontal,
-    Vertical
-};
 
 class StackPanel : public View<StackPanel, Panel<StackPanel>> {
 public:

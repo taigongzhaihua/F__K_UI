@@ -49,6 +49,7 @@ private:
     static void OnWindowPos(GLFWwindow* window, int xpos, int ypos);
     static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
     static void OnMouseMove(GLFWwindow* window, double xpos, double ypos);
+    static void OnMouseScroll(GLFWwindow* window, double xoffset, double yoffset);
 
     Window* owner_;
     GLFWwindow* handle_ = nullptr;
