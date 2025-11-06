@@ -50,6 +50,8 @@ private:
     static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
     static void OnMouseMove(GLFWwindow* window, double xpos, double ypos);
     static void OnMouseScroll(GLFWwindow* window, double xoffset, double yoffset);
+    static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void OnChar(GLFWwindow* window, unsigned int codepoint);
 
     Window* owner_;
     GLFWwindow* handle_ = nullptr;

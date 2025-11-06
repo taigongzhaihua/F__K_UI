@@ -4,102 +4,58 @@
 
 namespace fk::ui {
 
-// 依赖属性定义
-const binding::DependencyProperty& StackPanel::OrientationProperty() {
-    static const auto& prop = binding::DependencyProperty::Register(
-        "Orientation",
-        typeid(ui::Orientation),
-        typeid(StackPanel),
-        BuildOrientationMetadata()
-    );
-    return prop;
-}
+// ============================================================================
+// 依赖属性定义（使用宏）
+// ============================================================================
 
-const binding::DependencyProperty& StackPanel::SpacingProperty() {
-    static const auto& prop = binding::DependencyProperty::Register(
-        "Spacing",
-        typeid(float),
-        typeid(StackPanel),
-        BuildSpacingMetadata()
-    );
-    return prop;
-}
+FK_DEPENDENCY_PROPERTY_DEFINE(StackPanel, Orientation, ui::Orientation, ui::Orientation::Vertical)
+FK_DEPENDENCY_PROPERTY_DEFINE(StackPanel, Spacing, float, 0.0f)
 
-binding::PropertyMetadata StackPanel::BuildOrientationMetadata() {
-    return binding::PropertyMetadata(
-        ui::Orientation::Vertical,  // 默认值
-        &StackPanel::OrientationPropertyChanged
-    );
-}
-
-binding::PropertyMetadata StackPanel::BuildSpacingMetadata() {
-    return binding::PropertyMetadata(
-        0.0f,  // 默认间距为 0
-        &StackPanel::SpacingPropertyChanged
-    );
-}
-
-void StackPanel::OrientationPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* panel = dynamic_cast<StackPanel*>(&sender);
-    if (!panel) return;
-    
-    // 触发布局更新
-    panel->InvalidateMeasure();
-    panel->InvalidateArrange();
-}
-
-void StackPanel::SpacingPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* panel = dynamic_cast<StackPanel*>(&sender);
-    if (!panel) return;
-    
-    // 触发布局更新
-    panel->InvalidateMeasure();
-    panel->InvalidateArrange();
-}
+// ============================================================================
+// 构造/析构
+// ============================================================================
 
 StackPanel::StackPanel() = default;
 
 StackPanel::~StackPanel() = default;
 
-// Getter: 从依赖属性读取
-ui::Orientation StackPanel::Orientation() const {
-    return std::any_cast<ui::Orientation>(GetValue(OrientationProperty()));
+// ============================================================================
+// 属性变更回调
+// ============================================================================
+
+void StackPanel::OnOrientationChanged(ui::Orientation, ui::Orientation) {
+    InvalidateMeasure();
+    InvalidateArrange();
 }
 
-// Setter: 写入依赖属性
-std::shared_ptr<StackPanel> StackPanel::Orientation(ui::Orientation orientation) {
-    SetValue(OrientationProperty(), orientation);
-    return Self();
+void StackPanel::OnSpacingChanged(float, float) {
+    InvalidateMeasure();
+    InvalidateArrange();
 }
 
-// Getter: 获取间距
-float StackPanel::Spacing() const {
-    const auto& value = GetValue(SpacingProperty());
-    if (!value.has_value()) return 0.0f;
-    return std::any_cast<float>(value);
+binding::PropertyMetadata StackPanel::BuildOrientationMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = ui::Orientation::Vertical;
+    metadata.propertyChangedCallback = &StackPanel::OrientationPropertyChanged;
+    return metadata;
 }
 
-// Setter: 设置间距
-std::shared_ptr<StackPanel> StackPanel::Spacing(float spacing) {
-    SetValue(SpacingProperty(), spacing);
-    return Self();
+binding::PropertyMetadata StackPanel::BuildSpacingMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = 0.0f;
+    metadata.propertyChangedCallback = &StackPanel::SpacingPropertyChanged;
+    return metadata;
 }
+
+// ============================================================================
+// 布局
+// ============================================================================
 
 Size StackPanel::MeasureOverride(const Size& availableSize) {
     Size desired{};
 
-    const auto orientation = Orientation();  // 从依赖属性读取
-    const auto spacing = Spacing();  // 获取间距
+    const auto orientation = GetOrientation();  // 从依赖属性读取
+    const auto spacing = GetSpacing();  // 获取间距
     const auto children = ChildSpan();
     
     size_t validChildCount = 0;
@@ -137,8 +93,8 @@ Size StackPanel::MeasureOverride(const Size& availableSize) {
 }
 
 Size StackPanel::ArrangeOverride(const Size& finalSize) {
-    const auto orientation = Orientation();  // 从依赖属性读取
-    const auto spacing = Spacing();  // 获取间距
+    const auto orientation = GetOrientation();  // 从依赖属性读取
+    const auto spacing = GetSpacing();  // 获取间距
     const auto children = ChildSpan();
     float offset = 0.0f;
 
@@ -149,11 +105,13 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
 
         if (orientation == ui::Orientation::Horizontal) {
             const auto childWidth = child->DesiredSize().width;
-            ArrangeChild(*child, Rect{ offset, 0.0f, childWidth, finalSize.height });
+            const auto childHeight = child->DesiredSize().height;
+            ArrangeChild(*child, Rect{ offset, 0.0f, childWidth, childHeight });
             offset += childWidth + spacing;  // 添加间距
         } else {
+            const auto childWidth = child->DesiredSize().width;
             const auto childHeight = child->DesiredSize().height;
-            ArrangeChild(*child, Rect{ 0.0f, offset, finalSize.width, childHeight });
+            ArrangeChild(*child, Rect{ 0.0f, offset, childWidth, childHeight });
             offset += childHeight + spacing;  // 添加间距
         }
     }

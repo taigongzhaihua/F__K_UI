@@ -3,20 +3,24 @@
 #include "fk/render/RenderCommandBuffer.h"
 #include "fk/render/RenderCommand.h"
 #include "fk/render/ColorUtils.h"
+#include "fk/render/IRenderer.h"
 #include "fk/ui/Button.h"  // 用于 ButtonBase 类型检查
 #include "fk/ui/TextBlock.h"  // 用于 TextBlockBase 类型检查
+#include "fk/ui/TextBox.h"  // 用于 TextBoxBase 类型检查
 #include "fk/ui/ScrollBar.h"  // 用于 ScrollBarBase 类型检查
 #include "fk/ui/ScrollViewer.h"  // 用于 ScrollViewerBase 类型检查
 #include "fk/ui/UIElement.h"  // 用于 ClipToBounds
+#include <iostream>
 
 #include <iostream>
 
 namespace fk::render {
 
-void RenderTreeBuilder::Rebuild(const ui::Visual& visualRoot, RenderScene& scene) {
+void RenderTreeBuilder::Rebuild(const ui::Visual& visualRoot, RenderScene& scene, const FrameContext& frameContext) {
     // 重置偏移
     currentOffsetX_ = 0.0f;
     currentOffsetY_ = 0.0f;
+    currentFrameTime_ = frameContext.elapsedSeconds;
 
     // 开始遍历
     TraverseVisual(visualRoot, scene, 1.0f);
@@ -186,6 +190,59 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
         return;
     }
     
+    // 尝试将 Visual 转换为 TextBoxBase
+    const auto* textBox = dynamic_cast<const ui::detail::TextBoxBase*>(&visual);
+    if (textBox) {
+        const_cast<ui::detail::TextBoxBase*>(textBox)->PrepareForRender(currentFrameTime_);
+        const float borderThickness = std::max(0.0f, textBox->GetBorderThickness());
+
+        if (borderThickness > 0.0f) {
+            RectanglePayload borderPayload;
+            borderPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height);
+            borderPayload.color = ColorUtils::ParseColor(textBox->GetBorderBrush());
+            borderPayload.color[3] *= opacity;
+            borderPayload.cornerRadius = 2.0f;
+            scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, borderPayload));
+        }
+
+        RectanglePayload backgroundPayload;
+        if (borderThickness > 0.0f && borderThickness * 2 < bounds.width && borderThickness * 2 < bounds.height) {
+            backgroundPayload.rect = ui::Rect(
+                borderThickness,
+                borderThickness,
+                bounds.width - borderThickness * 2.0f,
+                bounds.height - borderThickness * 2.0f);
+        } else {
+            backgroundPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height);
+        }
+        backgroundPayload.color = ColorUtils::ParseColor(textBox->GetBackground());
+        backgroundPayload.color[3] *= opacity;
+        backgroundPayload.cornerRadius = std::max(0.0f, 2.0f - borderThickness);
+        scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, backgroundPayload));
+
+        if (textBox->HasSelection()) {
+            RectanglePayload selectionPayload;
+            selectionPayload.rect = textBox->GetSelectionRect();
+            if (selectionPayload.rect.width > 0.0f && selectionPayload.rect.height > 0.0f) {
+                selectionPayload.color = ColorUtils::ParseColor("#3399FF55");
+                selectionPayload.color[3] *= opacity;
+                selectionPayload.cornerRadius = 0.0f;
+                scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, selectionPayload));
+            }
+        }
+
+        if (textBox->ShouldShowCaret()) {
+            RectanglePayload caretPayload;
+            caretPayload.rect = textBox->GetCaretRect();
+            caretPayload.color = ColorUtils::ParseColor(textBox->GetForeground());
+            caretPayload.color[3] *= opacity;
+            caretPayload.cornerRadius = 0.0f;
+            scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, caretPayload));
+        }
+
+        return;
+    }
+
     // 尝试将 Visual 转换为 ScrollBarBase
     const auto* scrollBar = dynamic_cast<const ui::detail::ScrollBarBase*>(&visual);
     if (scrollBar) {

@@ -3,6 +3,8 @@
 #include "fk/ui/Panel.h"
 #include "fk/ui/View.h"
 #include "fk/ui/Enums.h"
+#include "fk/ui/BindingMacros.h"
+#include "fk/ui/DependencyPropertyMacros.h"
 
 namespace fk::ui {
 
@@ -13,21 +15,31 @@ public:
     StackPanel();
     ~StackPanel() override;
 
-    // 依赖属性声明
-    static const binding::DependencyProperty& OrientationProperty();
-    static const binding::DependencyProperty& SpacingProperty();
+    // 依赖属性（使用宏）
+    FK_DEPENDENCY_PROPERTY_DECLARE(Orientation, ui::Orientation)
+    FK_DEPENDENCY_PROPERTY_DECLARE(Spacing, float)
 
-    // Getter: 获取方向 (无参重载,从依赖属性读取)
-    [[nodiscard]] ui::Orientation Orientation() const;
+public:
+    // 流式 API 重载（返回 shared_ptr）
+    std::shared_ptr<StackPanel> Orientation(ui::Orientation orientation) {
+        SetOrientation(orientation);
+        return this->Self();
+    }
     
-    // Setter: 设置方向 (有参重载,写入依赖属性,返回Ptr支持链式调用)
-    std::shared_ptr<StackPanel> Orientation(ui::Orientation orientation);
+    std::shared_ptr<StackPanel> Orientation(binding::Binding binding) {
+        SetBinding(OrientationProperty(), std::move(binding));
+        return this->Self();
+    }
 
-    // Getter: 获取间距
-    [[nodiscard]] float Spacing() const;
+    std::shared_ptr<StackPanel> Spacing(float spacing) {
+        SetSpacing(spacing);
+        return this->Self();
+    }
     
-    // Setter: 设置间距 (子元素之间的间距)
-    std::shared_ptr<StackPanel> Spacing(float spacing);
+    std::shared_ptr<StackPanel> Spacing(binding::Binding binding) {
+        SetBinding(SpacingProperty(), std::move(binding));
+        return this->Self();
+    }
     
     // 流式API: 添加子元素 (包装 Panel::AddChild)
     std::shared_ptr<StackPanel> AddChild(std::shared_ptr<UIElement> child) {
@@ -71,26 +83,6 @@ public:
 protected:
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
-
-private:
-    // 依赖属性元数据构建
-    static binding::PropertyMetadata BuildOrientationMetadata();
-    static binding::PropertyMetadata BuildSpacingMetadata();
-    
-    // 依赖属性变更回调
-    static void OrientationPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-    
-    static void SpacingPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
 };
 inline std::shared_ptr<StackPanel> stackPanel() {
     return std::make_shared<StackPanel>();

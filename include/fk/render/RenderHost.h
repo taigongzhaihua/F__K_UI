@@ -15,6 +15,7 @@ namespace fk::render {
 
 class RenderScene;
 class RenderTreeBuilder;
+class TextRenderer;
 
 struct RenderHostConfig {
     std::shared_ptr<ui::Window> window;
@@ -54,8 +55,14 @@ public:
     [[nodiscard]] bool IsRenderPending() const noexcept { return renderPending_; }
     [[nodiscard]] bool HasDirtyElements() const noexcept { return !dirtyElements_.empty(); }
 
+    /**
+     * @brief 获取 TextRenderer 用于文本测量
+     * @return TextRenderer 指针,如果不可用则返回 nullptr
+     */
+    TextRenderer* GetTextRenderer() const;
+
 private:
-    void BuildScene(const ui::Visual& visualRoot);
+    void BuildScene(const ui::Visual& visualRoot, const FrameContext& frameContext);
 
     std::unique_ptr<IRenderer> renderer_;
     std::unique_ptr<RenderTreeBuilder> treeBuilder_;

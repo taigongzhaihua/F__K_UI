@@ -17,46 +17,80 @@ constexpr bool IsVectorAnyType(const std::any& value) {
     return value.has_value() && value.type() == typeid(std::vector<std::any>);
 }
 
-constexpr bool IsTemplateFuncType(const std::any& value) {
-    return value.has_value() && value.type() == typeid(ItemsControl::ItemTemplateFunc);
+// 验证回调
+bool ValidateItemsSource(const std::any& value) {
+    return !value.has_value() || value.type() == typeid(std::vector<std::any>);
+}
+
+bool ValidateItemTemplate(const std::any& value) {
+    return !value.has_value() || value.type() == typeid(ItemsControl::ItemTemplateFunc);
+}
+
+bool ValidateDisplayMemberPath(const std::any& value) {
+    return !value.has_value() || value.type() == typeid(std::string);
+}
+
+bool ValidateAlternationCount(const std::any& value) {
+    if (!value.has_value()) {
+        return true;
+    }
+    if (value.type() != typeid(int)) {
+        return false;
+    }
+    int count = std::any_cast<int>(value);
+    return count >= 0; // AlternationCount 必须非负
 }
 
 } // namespace
 
-const DependencyProperty& ItemsControl::ItemsSourceProperty() {
-    static const auto& property = DependencyProperty::Register(
-        "ItemsSource",
-        typeid(std::vector<std::any>),
-        typeid(ItemsControl),
-        BuildItemsSourceMetadata());
-    return property;
+// 依赖属性定义
+FK_DEPENDENCY_PROPERTY_REGISTER(ItemsControl, ItemsSource, std::vector<std::any>);
+FK_DEPENDENCY_PROPERTY_IMPL_REF(ItemsControl, ItemsSource, std::vector<std::any>);
+FK_DEPENDENCY_PROPERTY_CALLBACK_REF(ItemsControl, ItemsSource, std::vector<std::any>);
+
+FK_DEPENDENCY_PROPERTY_REGISTER(ItemsControl, ItemTemplate, ItemsControl::ItemTemplateFunc);
+FK_DEPENDENCY_PROPERTY_IMPL_REF(ItemsControl, ItemTemplate, ItemsControl::ItemTemplateFunc);
+FK_DEPENDENCY_PROPERTY_CALLBACK_REF(ItemsControl, ItemTemplate, ItemsControl::ItemTemplateFunc);
+
+FK_DEPENDENCY_PROPERTY_REGISTER(ItemsControl, DisplayMemberPath, std::string);
+FK_DEPENDENCY_PROPERTY_IMPL_REF(ItemsControl, DisplayMemberPath, std::string);
+FK_DEPENDENCY_PROPERTY_CALLBACK_REF(ItemsControl, DisplayMemberPath, std::string);
+
+FK_DEPENDENCY_PROPERTY_REGISTER(ItemsControl, AlternationCount, int);
+FK_DEPENDENCY_PROPERTY_IMPL(ItemsControl, AlternationCount, int, 0);
+FK_DEPENDENCY_PROPERTY_CALLBACK(ItemsControl, AlternationCount, int, 0);
+
+// BuildMetadata 实现
+binding::PropertyMetadata ItemsControl::BuildItemsSourceMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = std::vector<std::any>{};
+    metadata.propertyChangedCallback = &ItemsControl::ItemsSourcePropertyChanged;
+    metadata.validateCallback = &ValidateItemsSource;
+    return metadata;
 }
 
-const DependencyProperty& ItemsControl::ItemTemplateProperty() {
-    static const auto& property = DependencyProperty::Register(
-        "ItemTemplate",
-        typeid(ItemTemplateFunc),
-        typeid(ItemsControl),
-        BuildItemTemplateMetadata());
-    return property;
+binding::PropertyMetadata ItemsControl::BuildItemTemplateMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = ItemsControl::ItemTemplateFunc{};
+    metadata.propertyChangedCallback = &ItemsControl::ItemTemplatePropertyChanged;
+    metadata.validateCallback = &ValidateItemTemplate;
+    return metadata;
 }
 
-const DependencyProperty& ItemsControl::DisplayMemberPathProperty() {
-    static const auto& property = DependencyProperty::Register(
-        "DisplayMemberPath",
-        typeid(std::string),
-        typeid(ItemsControl),
-        BuildDisplayMemberPathMetadata());
-    return property;
+binding::PropertyMetadata ItemsControl::BuildDisplayMemberPathMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = std::string{};
+    metadata.propertyChangedCallback = &ItemsControl::DisplayMemberPathPropertyChanged;
+    metadata.validateCallback = &ValidateDisplayMemberPath;
+    return metadata;
 }
 
-const DependencyProperty& ItemsControl::AlternationCountProperty() {
-    static const auto& property = DependencyProperty::Register(
-        "AlternationCount",
-        typeid(int),
-        typeid(ItemsControl),
-        BuildAlternationCountMetadata());
-    return property;
+binding::PropertyMetadata ItemsControl::BuildAlternationCountMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = 0;
+    metadata.propertyChangedCallback = &ItemsControl::AlternationCountPropertyChanged;
+    metadata.validateCallback = &ValidateAlternationCount;
+    return metadata;
 }
 
 ItemsControl::ItemsControl() {
@@ -203,14 +237,6 @@ std::span<const std::shared_ptr<UIElement>> ItemsControl::Items() const noexcept
     return { items_.data(), items_.size() };
 }
 
-void ItemsControl::SetItemsSource(std::vector<std::any> source) {
-    SetValue(ItemsSourceProperty(), std::move(source));
-}
-
-const std::vector<std::any>& ItemsControl::GetItemsSource() const {
-    return GetValue<const std::vector<std::any>&>(ItemsSourceProperty());
-}
-
 void ItemsControl::ClearItemsSource() {
     ClearItemsSourceInternal();
 }
@@ -219,44 +245,12 @@ bool ItemsControl::HasItemsSource() const noexcept {
     return GetValueSource(ItemsSourceProperty()) != binding::ValueSource::Default;
 }
 
-void ItemsControl::SetItemTemplate(ItemTemplateFunc templateFunc) {
-    SetValue(ItemTemplateProperty(), std::move(templateFunc));
-}
-
-ItemsControl::ItemTemplateFunc ItemsControl::GetItemTemplate() const {
-    return GetValue<ItemTemplateFunc>(ItemTemplateProperty());
-}
-
 void ItemsControl::ClearItemTemplate() {
     ClearValue(ItemTemplateProperty());
 }
 
-void ItemsControl::SetDisplayMemberPath(std::string_view path) {
-    SetValue(DisplayMemberPathProperty(), std::string(path));
-}
-
-std::string ItemsControl::GetDisplayMemberPath() const {
-    const auto& value = GetValue(DisplayMemberPathProperty());
-    if (!value.has_value()) {
-        return {};
-    }
-    try {
-        return std::any_cast<std::string>(value);
-    } catch (...) {
-        return {};
-    }
-}
-
 void ItemsControl::ClearDisplayMemberPath() {
     ClearValue(DisplayMemberPathProperty());
-}
-
-void ItemsControl::SetAlternationCount(int count) {
-    SetValue(AlternationCountProperty(), count);
-}
-
-int ItemsControl::GetAlternationCount() const {
-    return GetValue<int>(AlternationCountProperty());
 }
 
 int ItemsControl::GetAlternationIndex(DependencyObject* element) {
@@ -416,102 +410,25 @@ std::shared_ptr<UIElement> ItemsControl::RealizeItem(const std::any& value) {
     return nullptr;
 }
 
-binding::PropertyMetadata ItemsControl::BuildItemsSourceMetadata() {
-    binding::PropertyMetadata metadata;
-    metadata.defaultValue = std::vector<std::any>{};
-    metadata.propertyChangedCallback = &ItemsControl::ItemsSourcePropertyChanged;
-    metadata.validateCallback = &ItemsControl::ValidateItemsSource;
-    return metadata;
+// OnChanged 回调实现
+void ItemsControl::OnItemsSourceChanged(const std::vector<std::any>& oldValue, const std::vector<std::any>& newValue) {
+    ApplyItemsSource(newValue);
 }
 
-binding::PropertyMetadata ItemsControl::BuildItemTemplateMetadata() {
-    binding::PropertyMetadata metadata;
-    metadata.defaultValue = ItemTemplateFunc{};
-    metadata.propertyChangedCallback = &ItemsControl::ItemTemplatePropertyChanged;
-    metadata.validateCallback = &ItemsControl::ValidateItemTemplate;
-    return metadata;
+void ItemsControl::OnItemTemplateChanged(const ItemTemplateFunc& oldValue, const ItemTemplateFunc& newValue) {
+    OnItemTemplateChanged();
 }
 
-binding::PropertyMetadata ItemsControl::BuildDisplayMemberPathMetadata() {
-    binding::PropertyMetadata metadata;
-    metadata.defaultValue = std::string{};
-    metadata.propertyChangedCallback = &ItemsControl::DisplayMemberPathPropertyChanged;
-    metadata.validateCallback = &ItemsControl::ValidateDisplayMemberPath;
-    return metadata;
-}
-
-binding::PropertyMetadata ItemsControl::BuildAlternationCountMetadata() {
-    binding::PropertyMetadata metadata;
-    metadata.defaultValue = 0;
-    metadata.propertyChangedCallback = &ItemsControl::AlternationCountPropertyChanged;
-    metadata.validateCallback = &ItemsControl::ValidateAlternationCount;
-    return metadata;
-}
-
-void ItemsControl::ItemsSourcePropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any&, const std::any& newValue) {
-    auto* control = dynamic_cast<ItemsControl*>(&sender);
-    if (!control) {
-        return;
-    }
-    if (!IsVectorAnyType(newValue)) {
-        return;
-    }
-    const auto& source = std::any_cast<const std::vector<std::any>&>(newValue);
-    control->ApplyItemsSource(source);
-}
-
-void ItemsControl::ItemTemplatePropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any&, const std::any& newValue) {
-    auto* control = dynamic_cast<ItemsControl*>(&sender);
-    if (!control) {
-        return;
-    }
-    if (!IsTemplateFuncType(newValue)) {
-        return;
-    }
-    control->OnItemTemplateChanged();
-}
-
-void ItemsControl::DisplayMemberPathPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any&, const std::any&) {
-    auto* control = dynamic_cast<ItemsControl*>(&sender);
-    if (!control) {
-        return;
-    }
+void ItemsControl::OnDisplayMemberPathChanged(const std::string& oldValue, const std::string& newValue) {
     // DisplayMemberPath 改变时，重新生成 items
-    if (control->HasItemsSource()) {
-        control->ApplyItemsSource(control->GetItemsSource());
+    if (HasItemsSource()) {
+        ApplyItemsSource(GetItemsSource());
     }
 }
 
-void ItemsControl::AlternationCountPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any&, const std::any&) {
-    auto* control = dynamic_cast<ItemsControl*>(&sender);
-    if (!control) {
-        return;
-    }
+void ItemsControl::OnAlternationCountChanged(int oldValue, int newValue) {
     // AlternationCount 改变时，更新所有容器的 AlternationIndex
-    control->UpdateAlternationIndexes();
-}
-
-bool ItemsControl::ValidateItemsSource(const std::any& value) {
-    return !value.has_value() || value.type() == typeid(std::vector<std::any>);
-}
-
-bool ItemsControl::ValidateItemTemplate(const std::any& value) {
-    return !value.has_value() || value.type() == typeid(ItemTemplateFunc);
-}
-
-bool ItemsControl::ValidateDisplayMemberPath(const std::any& value) {
-    return !value.has_value() || value.type() == typeid(std::string);
-}
-
-bool ItemsControl::ValidateAlternationCount(const std::any& value) {
-    if (!value.has_value()) {
-        return true;
-    }
-    if (value.type() != typeid(int)) {
-        return false;
-    }
-    int count = std::any_cast<int>(value);
-    return count >= 0; // AlternationCount 必须非负
+    UpdateAlternationIndexes();
 }
 
 } // namespace fk::ui

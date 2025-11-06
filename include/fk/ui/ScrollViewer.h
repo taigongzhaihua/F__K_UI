@@ -3,6 +3,8 @@
 #include "fk/ui/ContentControl.h"
 #include "fk/ui/ScrollBar.h"
 #include "fk/ui/Enums.h"
+#include "fk/ui/BindingMacros.h"
+#include "fk/ui/DependencyPropertyMacros.h"
 #include "fk/core/Event.h"
 
 namespace fk::ui {
@@ -28,50 +30,24 @@ namespace detail {
  * - 内容偏移管理
  * - 鼠标滚轮支持
  */
-class ScrollViewerBase : public ControlBase {
+class ScrollViewerBase : public ContentControl {
 public:
-    using ControlBase::ControlBase;
+    using ContentControl::ContentControl;
 
     ScrollViewerBase();
     ~ScrollViewerBase() override;
 
-    // 依赖属性
-    static const binding::DependencyProperty& HorizontalOffsetProperty();
-    static const binding::DependencyProperty& VerticalOffsetProperty();
-    static const binding::DependencyProperty& HorizontalScrollBarVisibilityProperty();
-    static const binding::DependencyProperty& VerticalScrollBarVisibilityProperty();
-    static const binding::DependencyProperty& ViewportWidthProperty();
-    static const binding::DependencyProperty& ViewportHeightProperty();
-    static const binding::DependencyProperty& ExtentWidthProperty();
-    static const binding::DependencyProperty& ExtentHeightProperty();
+    // 依赖属性（使用宏）
+    FK_DEPENDENCY_PROPERTY_DECLARE(HorizontalOffset, double)
+    FK_DEPENDENCY_PROPERTY_DECLARE(VerticalOffset, double)
+    FK_DEPENDENCY_PROPERTY_DECLARE(HorizontalScrollBarVisibility, ScrollBarVisibility)
+    FK_DEPENDENCY_PROPERTY_DECLARE(VerticalScrollBarVisibility, ScrollBarVisibility)
+    FK_DEPENDENCY_PROPERTY_DECLARE(ViewportWidth, double)
+    FK_DEPENDENCY_PROPERTY_DECLARE(ViewportHeight, double)
+    FK_DEPENDENCY_PROPERTY_DECLARE(ExtentWidth, double)
+    FK_DEPENDENCY_PROPERTY_DECLARE(ExtentHeight, double)
 
-    // HorizontalOffset 属性 (水平滚动偏移)
-    void SetHorizontalOffset(double offset);
-    [[nodiscard]] double GetHorizontalOffset() const;
-
-    // VerticalOffset 属性 (垂直滚动偏移)
-    void SetVerticalOffset(double offset);
-    [[nodiscard]] double GetVerticalOffset() const;
-
-    // HorizontalScrollBarVisibility 属性
-    void SetHorizontalScrollBarVisibility(ScrollBarVisibility visibility);
-    [[nodiscard]] ScrollBarVisibility GetHorizontalScrollBarVisibility() const;
-
-    // VerticalScrollBarVisibility 属性
-    void SetVerticalScrollBarVisibility(ScrollBarVisibility visibility);
-    [[nodiscard]] ScrollBarVisibility GetVerticalScrollBarVisibility() const;
-
-    // ViewportWidth 属性 (只读,可见区域宽度)
-    [[nodiscard]] double GetViewportWidth() const;
-
-    // ViewportHeight 属性 (只读,可见区域高度)
-    [[nodiscard]] double GetViewportHeight() const;
-
-    // ExtentWidth 属性 (只读,内容实际宽度)
-    [[nodiscard]] double GetExtentWidth() const;
-
-    // ExtentHeight 属性 (只读,内容实际高度)
-    [[nodiscard]] double GetExtentHeight() const;
+public:
 
     // 滚动方法
     void ScrollToTop();
@@ -107,18 +83,12 @@ protected:
     UIElement* HitTestChildren(double x, double y) override;
     
     // 重写鼠标事件,传递给 ScrollBar
-    void OnMouseButtonDown(int button, double x, double y) override;
-    void OnMouseButtonUp(int button, double x, double y) override;
-    void OnMouseMove(double x, double y) override;
+    bool OnMouseButtonDown(int button, double x, double y) override;
+    bool OnMouseButtonUp(int button, double x, double y) override;
+    bool OnMouseMove(double x, double y) override;
     
     // 鼠标滚轮事件处理
-    void OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) override;
-
-    // 属性变更回调
-    virtual void OnHorizontalOffsetChanged(double oldValue, double newValue);
-    virtual void OnVerticalOffsetChanged(double oldValue, double newValue);
-    virtual void OnHorizontalScrollBarVisibilityChanged(ScrollBarVisibility oldValue, ScrollBarVisibility newValue);
-    virtual void OnVerticalScrollBarVisibilityChanged(ScrollBarVisibility oldValue, ScrollBarVisibility newValue);
+    bool OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) override;
 
     // 更新滚动条状态
     void UpdateScrollBars();
@@ -126,51 +96,6 @@ protected:
     void UpdateVerticalScrollBar();
 
 private:
-    // 元数据构建
-    static binding::PropertyMetadata BuildHorizontalOffsetMetadata();
-    static binding::PropertyMetadata BuildVerticalOffsetMetadata();
-    static binding::PropertyMetadata BuildHorizontalScrollBarVisibilityMetadata();
-    static binding::PropertyMetadata BuildVerticalScrollBarVisibilityMetadata();
-    static binding::PropertyMetadata BuildViewportWidthMetadata();
-    static binding::PropertyMetadata BuildViewportHeightMetadata();
-    static binding::PropertyMetadata BuildExtentWidthMetadata();
-    static binding::PropertyMetadata BuildExtentHeightMetadata();
-
-    // 属性变更回调 (静态)
-    static void HorizontalOffsetPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    static void VerticalOffsetPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    static void HorizontalScrollBarVisibilityPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    static void VerticalScrollBarVisibilityPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    // 内部方法
-    void SetViewportWidth(double width);
-    void SetViewportHeight(double height);
-    void SetExtentWidth(double width);
-    void SetExtentHeight(double height);
-
     // ScrollBar 实例
     std::shared_ptr<ScrollBarView> horizontalScrollBar_;
     std::shared_ptr<ScrollBarView> verticalScrollBar_;
@@ -183,30 +108,16 @@ private:
 
 // ScrollViewer 模板类 (支持链式调用)
 template <typename Derived>
-class ScrollViewer : public detail::ScrollViewerBase, public std::enable_shared_from_this<Derived> {
+class ScrollViewer : public detail::ScrollViewerBase {
 public:
     using BaseType = detail::ScrollViewerBase;
     using Ptr = std::shared_ptr<Derived>;
 
-    // Fluent API: HorizontalScrollBarVisibility
-    [[nodiscard]] ScrollBarVisibility HorizontalScrollBarVisibility() const {
-        return GetHorizontalScrollBarVisibility();
-    }
-
-    Ptr HorizontalScrollBarVisibility(ScrollBarVisibility visibility) {
-        SetHorizontalScrollBarVisibility(visibility);
-        return Self();
-    }
-
-    // Fluent API: VerticalScrollBarVisibility
-    [[nodiscard]] ScrollBarVisibility VerticalScrollBarVisibility() const {
-        return GetVerticalScrollBarVisibility();
-    }
-
-    Ptr VerticalScrollBarVisibility(ScrollBarVisibility visibility) {
-        SetVerticalScrollBarVisibility(visibility);
-        return Self();
-    }
+    // 🎯 Fluent API with Binding Support
+    FK_BINDING_PROPERTY_VALUE(HorizontalOffset, double)
+    FK_BINDING_PROPERTY_VALUE(VerticalOffset, double)
+    FK_BINDING_PROPERTY_ENUM(HorizontalScrollBarVisibility, ScrollBarVisibility)
+    FK_BINDING_PROPERTY_ENUM(VerticalScrollBarVisibility, ScrollBarVisibility)
 
     // Fluent API: OnScrollChanged (事件订阅)
     Ptr OnScrollChanged(std::function<void(double, double)> callback) {
@@ -214,10 +125,42 @@ public:
         return Self();
     }
 
+    // Fluent API: 滚动到指定位置
+    Ptr ScrollToVerticalOffset(double offset) {
+        SetVerticalOffset(offset);
+        return Self();
+    }
+
+    Ptr ScrollToHorizontalOffset(double offset) {
+        SetHorizontalOffset(offset);
+        return Self();
+    }
+
+    Ptr ScrollToTop() {
+        BaseType::ScrollToTop();
+        return Self();
+    }
+
+    Ptr ScrollToBottom() {
+        BaseType::ScrollToBottom();
+        return Self();
+    }
+
+    Ptr ScrollToLeft() {
+        BaseType::ScrollToLeft();
+        return Self();
+    }
+
+    Ptr ScrollToRight() {
+        BaseType::ScrollToRight();
+        return Self();
+    }
+
 protected:
     Ptr Self() {
-        auto* derivedThis = static_cast<Derived*>(this);
-        return std::static_pointer_cast<Derived>(derivedThis->shared_from_this());
+        // 通过 ContentControl 基类获取 shared_from_this
+        auto base = ContentControl::shared_from_this();
+        return std::static_pointer_cast<Derived>(base);
     }
 };
 

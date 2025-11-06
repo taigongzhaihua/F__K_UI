@@ -4,6 +4,7 @@
 #include <regex>
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 namespace fk::ui::detail {
 
@@ -15,141 +16,17 @@ TextBlockBase::TextBlockBase() = default;
 TextBlockBase::~TextBlockBase() = default;
 
 // ============================================================================
-// 依赖属性注册
+// 依赖属性定义（使用宏）
 // ============================================================================
 
-const binding::DependencyProperty& TextBlockBase::TextProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Text",
-        typeid(std::string),
-        typeid(TextBlockBase),
-        BuildTextMetadata()
-    );
-    return property;
-}
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(TextBlockBase, Text, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(TextBlockBase, Foreground, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE(TextBlockBase, FontSize, float, 14.0f)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(TextBlockBase, FontFamily, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE(TextBlockBase, TextWrapping, TextWrapping, TextWrapping::NoWrap)
+FK_DEPENDENCY_PROPERTY_DEFINE(TextBlockBase, TextTrimming, TextTrimming, TextTrimming::None)
 
-const binding::DependencyProperty& TextBlockBase::ForegroundProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Foreground",
-        typeid(std::string),
-        typeid(TextBlockBase),
-        BuildForegroundMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& TextBlockBase::FontSizeProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "FontSize",
-        typeid(float),
-        typeid(TextBlockBase),
-        BuildFontSizeMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& TextBlockBase::FontFamilyProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "FontFamily",
-        typeid(std::string),
-        typeid(TextBlockBase),
-        BuildFontFamilyMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& TextBlockBase::TextWrappingProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "TextWrapping",
-        typeid(TextWrapping),
-        typeid(TextBlockBase),
-        BuildTextWrappingMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& TextBlockBase::TextTrimmingProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "TextTrimming",
-        typeid(TextTrimming),
-        typeid(TextBlockBase),
-        BuildTextTrimmingMetadata()
-    );
-    return property;
-}
-
-// ============================================================================
-// 属性访问器
-// ============================================================================
-
-void TextBlockBase::SetText(const std::string& text) {
-    SetValue(TextProperty(), text);
-}
-
-const std::string& TextBlockBase::GetText() const {
-    const auto& value = GetValue(TextProperty());
-    if (!value.has_value()) {
-        static const std::string empty;
-        return empty;
-    }
-    return std::any_cast<const std::string&>(value);
-}
-
-void TextBlockBase::SetForeground(const std::string& color) {
-    SetValue(ForegroundProperty(), color);
-}
-
-const std::string& TextBlockBase::GetForeground() const {
-    const auto& value = GetValue(ForegroundProperty());
-    if (!value.has_value()) {
-        static const std::string defaultColor = "#000000";
-        return defaultColor;
-    }
-    return std::any_cast<const std::string&>(value);
-}
-
-void TextBlockBase::SetFontSize(float size) {
-    SetValue(FontSizeProperty(), size);
-}
-
-float TextBlockBase::GetFontSize() const {
-    const auto& value = GetValue(FontSizeProperty());
-    if (!value.has_value()) return 14.0f;
-    return std::any_cast<float>(value);
-}
-
-void TextBlockBase::SetFontFamily(const std::string& family) {
-    SetValue(FontFamilyProperty(), family);
-}
-
-const std::string& TextBlockBase::GetFontFamily() const {
-    const auto& value = GetValue(FontFamilyProperty());
-    if (!value.has_value()) {
-        static const std::string defaultFamily = "Arial";
-        return defaultFamily;
-    }
-    return std::any_cast<const std::string&>(value);
-}
-
-void TextBlockBase::SetTextWrapping(TextWrapping wrapping) {
-    SetValue(TextWrappingProperty(), wrapping);
-}
-
-TextWrapping TextBlockBase::GetTextWrapping() const {
-    const auto& value = GetValue(TextWrappingProperty());
-    if (!value.has_value()) return TextWrapping::NoWrap;
-    return std::any_cast<TextWrapping>(value);
-}
-
-void TextBlockBase::SetTextTrimming(TextTrimming trimming) {
-    SetValue(TextTrimmingProperty(), trimming);
-}
-
-TextTrimming TextBlockBase::GetTextTrimming() const {
-    const auto& value = GetValue(TextTrimmingProperty());
-    if (!value.has_value()) return TextTrimming::None;
-    return std::any_cast<TextTrimming>(value);
-}
+// Getter/Setter 由宏自动生成
 
 // ============================================================================
 // 布局重写
@@ -326,6 +203,9 @@ bool TextBlockBase::HasRenderContent() const {
 // ============================================================================
 
 void TextBlockBase::OnTextChanged(const std::string& oldValue, const std::string& newValue) {
+    // 清除缓存的换行文本，强制重新计算
+    wrappedLines_.clear();
+    
     InvalidateMeasure();  // 文本变化需要重新测量
     InvalidateVisual();
 }
@@ -396,93 +276,7 @@ binding::PropertyMetadata TextBlockBase::BuildTextTrimmingMetadata() {
     return metadata;
 }
 
-// ============================================================================
-// 静态属性变更回调
-// ============================================================================
-
-void TextBlockBase::TextPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* textBlock = dynamic_cast<TextBlockBase*>(&sender);
-    if (!textBlock) return;
-
-    const auto& oldText = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string("");
-    const auto& newText = std::any_cast<const std::string&>(newValue);
-    textBlock->OnTextChanged(oldText, newText);
-}
-
-void TextBlockBase::ForegroundPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* textBlock = dynamic_cast<TextBlockBase*>(&sender);
-    if (!textBlock) return;
-
-    const auto& oldColor = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string("#000000");
-    const auto& newColor = std::any_cast<const std::string&>(newValue);
-    textBlock->OnForegroundChanged(oldColor, newColor);
-}
-
-void TextBlockBase::FontSizePropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* textBlock = dynamic_cast<TextBlockBase*>(&sender);
-    if (!textBlock) return;
-
-    float oldSize = oldValue.has_value() ? std::any_cast<float>(oldValue) : 14.0f;
-    float newSize = std::any_cast<float>(newValue);
-    textBlock->OnFontSizeChanged(oldSize, newSize);
-}
-
-void TextBlockBase::FontFamilyPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* textBlock = dynamic_cast<TextBlockBase*>(&sender);
-    if (!textBlock) return;
-
-    const auto& oldFamily = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string("Arial");
-    const auto& newFamily = std::any_cast<const std::string&>(newValue);
-    textBlock->OnFontFamilyChanged(oldFamily, newFamily);
-}
-
-void TextBlockBase::TextWrappingPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* textBlock = dynamic_cast<TextBlockBase*>(&sender);
-    if (!textBlock) return;
-
-    TextWrapping oldWrapping = oldValue.has_value() ? std::any_cast<TextWrapping>(oldValue) : TextWrapping::NoWrap;
-    TextWrapping newWrapping = std::any_cast<TextWrapping>(newValue);
-    textBlock->OnTextWrappingChanged(oldWrapping, newWrapping);
-}
-
-void TextBlockBase::TextTrimmingPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* textBlock = dynamic_cast<TextBlockBase*>(&sender);
-    if (!textBlock) return;
-
-    TextTrimming oldTrimming = oldValue.has_value() ? std::any_cast<TextTrimming>(oldValue) : TextTrimming::None;
-    TextTrimming newTrimming = std::any_cast<TextTrimming>(newValue);
-    textBlock->OnTextTrimmingChanged(oldTrimming, newTrimming);
-}
+// 静态回调由宏自动生成
 
 // ============================================================================
 // 验证回调

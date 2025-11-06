@@ -58,6 +58,7 @@ add_library(fk STATIC
     src/ui/Panel.cpp
     src/ui/StackPanel.cpp
     src/ui/TextBlock.cpp
+    src/ui/TextBox.cpp
     src/ui/UIElement.cpp
     src/ui/Window.cpp
     src/ui/WindowInteropHelper.cpp
@@ -90,198 +91,20 @@ target_link_libraries(fk PUBLIC
 
 target_compile_definitions(fk PUBLIC GLFW_DLL)
 
-add_executable(fk_example
-    examples/main.cpp
-)
+# ===== F__K_UI 库构建完成 =====
+# 主项目专注于构建 libfk.a 静态库
+# 
+# 示例项目现在作为独立项目存在于 samples/ 目录中
+# 要构建示例项目，请进入 samples/<示例名>/build 目录并运行:
+#   cmake ..
+#   cmake --build .
+#
+# 详见: samples/README.md
 
-target_link_libraries(fk_example PRIVATE fk)
-
-add_custom_command(TARGET fk_example POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:fk_example>
-)
-
-# Phase 2 Demo
-add_executable(phase2_demo
-    examples/phase2_demo.cpp
-)
-
-target_link_libraries(phase2_demo PRIVATE fk)
-
-add_custom_command(TARGET phase2_demo POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:phase2_demo>
-)
-
-# Phase 3 Demo
-add_executable(phase3_demo
-    examples/phase3_demo.cpp
-)
-
-target_link_libraries(phase3_demo PRIVATE fk)
-
-add_custom_command(TARGET phase3_demo POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:phase3_demo>
-)
-
-# Test Getter Overloads
-add_executable(test_getter
-    examples/test_getter.cpp
-)
-
-target_link_libraries(test_getter PRIVATE fk)
-
-add_custom_command(TARGET test_getter POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:test_getter>
-)
-
-# Test Window Width Resolution
-add_executable(test_window_width
-    examples/test_window_width.cpp
-)
-
-target_link_libraries(test_window_width PRIVATE fk)
-
-add_custom_command(TARGET test_window_width POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:test_window_width>
-)
-
-# Test Panel Children Dependency Property
-add_executable(test_panel_children
-    examples/test_panel_children.cpp
-)
-
-target_link_libraries(test_panel_children PRIVATE fk)
-
-add_custom_command(TARGET test_panel_children POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:test_panel_children>
-)
-
-# Children API Demo
-add_executable(children_api_demo
-    examples/children_api_demo.cpp
-)
-
-target_link_libraries(children_api_demo PRIVATE fk)
-
-add_custom_command(TARGET children_api_demo POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:children_api_demo>
-)
-
-# Test Panel CRTP
-add_executable(test_panel_crtp
-    examples/test_panel_crtp.cpp
-)
-
-target_link_libraries(test_panel_crtp PRIVATE fk)
-
-add_custom_command(TARGET test_panel_crtp POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:test_panel_crtp>
-)
-
-# test_items_control_children 示例
-add_executable(test_items_control_children
-    examples/test_items_control_children.cpp
-)
-
-target_link_libraries(test_items_control_children PRIVATE fk)
-
-add_custom_command(TARGET test_items_control_children POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:test_items_control_children>
-)
-
-# test_items_control_improvements 示例
-add_executable(test_items_control_improvements
-    examples/test_items_control_improvements.cpp
-)
-
-target_link_libraries(test_items_control_improvements PRIVATE fk)
-
-add_custom_command(TARGET test_items_control_improvements POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:test_items_control_improvements>
-)
-
-# button_example 示例
-add_executable(button_example
-    examples/button_example.cpp
-)
-
-target_link_libraries(button_example PRIVATE fk)
-
-add_custom_command(TARGET button_example POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:button_example>
-)
-
-# Button Render Test
-add_executable(button_render_test
-    examples/button_render_test.cpp
-)
-
-target_link_libraries(button_render_test PRIVATE fk)
-
-add_custom_command(TARGET button_render_test POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:button_render_test>
-)
-
-# Button Direct Render Demo
-add_executable(button_direct_render
-    examples/button_direct_render.cpp
-)
-
-target_link_libraries(button_direct_render PRIVATE fk)
-
-add_custom_command(TARGET button_direct_render POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:button_direct_render>
-)
-
-# Simple Render Test
-add_executable(simple_render_test
-    examples/simple_render_test.cpp
-)
-
-target_link_libraries(simple_render_test PRIVATE fk)
-
-add_custom_command(TARGET simple_render_test POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        $<TARGET_FILE_DIR:simple_render_test>
-)
-
-add_executable(minesweeper
-    minesweeper.cpp
-)
-target_include_directories(minesweeper PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
-    ${THIRD_PARTY_DIR}/include
-    ${FREETYPE_SOURCE_DIR}/include
-    ${FREETYPE_BINARY_DIR}/include
-)
-target_link_libraries(minesweeper PUBLIC
-    glad
-    glfw3
-    freetype
-)
+message(STATUS "F__K_UI library build configured successfully!")
+message(STATUS "  - Library: libfk.a")
+message(STATUS "  - Include: ${CMAKE_SOURCE_DIR}/include")
+message(STATUS "  - Third-party: ${THIRD_PARTY_DIR}")
+message(STATUS "")
+message(STATUS "To build sample projects, navigate to samples/ directory")
+message(STATUS "  Example: cd samples/hello_fk_ui && mkdir build && cd build && cmake .. && cmake --build .")

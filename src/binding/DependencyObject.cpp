@@ -8,6 +8,7 @@
 #include <string_view>
 #include <typeindex>
 #include <utility>
+#include <iostream>
 
 namespace fk::binding {
 

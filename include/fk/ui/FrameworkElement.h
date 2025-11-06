@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fk/ui/UIElement.h"
+#include "fk/ui/DependencyPropertyMacros.h"
 #include "fk/ui/Thickness.h"
 #include "fk/core/Event.h"
 
@@ -30,44 +31,19 @@ public:
     FrameworkElement();
     ~FrameworkElement() override;
 
-    static const binding::DependencyProperty& WidthProperty();
-    static const binding::DependencyProperty& HeightProperty();
-    static const binding::DependencyProperty& MinWidthProperty();
-    static const binding::DependencyProperty& MinHeightProperty();
-    static const binding::DependencyProperty& MaxWidthProperty();
-    static const binding::DependencyProperty& MaxHeightProperty();
-    static const binding::DependencyProperty& HorizontalAlignmentProperty();
-    static const binding::DependencyProperty& VerticalAlignmentProperty();
-    static const binding::DependencyProperty& MarginProperty();
+    // 依赖属性声明
+    FK_DEPENDENCY_PROPERTY_DECLARE(Width, float);
+    FK_DEPENDENCY_PROPERTY_DECLARE(Height, float);
+    FK_DEPENDENCY_PROPERTY_DECLARE(MinWidth, float);
+    FK_DEPENDENCY_PROPERTY_DECLARE(MinHeight, float);
+    FK_DEPENDENCY_PROPERTY_DECLARE(MaxWidth, float);
+    FK_DEPENDENCY_PROPERTY_DECLARE(MaxHeight, float);
+    FK_DEPENDENCY_PROPERTY_DECLARE(HorizontalAlignment, HorizontalAlignment);
+    FK_DEPENDENCY_PROPERTY_DECLARE(VerticalAlignment, VerticalAlignment);
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Margin, fk::Thickness);
+
+public:
     static const binding::DependencyProperty& DataContextProperty();
-
-    void SetWidth(float value);
-    [[nodiscard]] float GetWidth() const;
-
-    void SetHeight(float value);
-    [[nodiscard]] float GetHeight() const;
-
-    void SetMinWidth(float value);
-    [[nodiscard]] float GetMinWidth() const;
-
-    void SetMinHeight(float value);
-    [[nodiscard]] float GetMinHeight() const;
-
-    void SetMaxWidth(float value);
-    [[nodiscard]] float GetMaxWidth() const;
-
-    void SetMaxHeight(float value);
-    [[nodiscard]] float GetMaxHeight() const;
-
-    void SetHorizontalAlignment(HorizontalAlignment alignment);
-    [[nodiscard]] HorizontalAlignment GetHorizontalAlignment() const;
-
-    void SetVerticalAlignment(VerticalAlignment alignment);
-    [[nodiscard]] VerticalAlignment GetVerticalAlignment() const;
-
-    void SetMargin(const fk::Thickness& margin);
-    [[nodiscard]] const fk::Thickness& GetMargin() const;
-
     void SetDataContext(std::any value);
 
     template <typename T>
@@ -108,25 +84,7 @@ protected:
     void OnDataContextChanged(const std::any& oldValue, const std::any& newValue) override;
 
 private:
-    static binding::PropertyMetadata BuildWidthMetadata();
-    static binding::PropertyMetadata BuildHeightMetadata();
-    static binding::PropertyMetadata BuildMinWidthMetadata();
-    static binding::PropertyMetadata BuildMinHeightMetadata();
-    static binding::PropertyMetadata BuildMaxWidthMetadata();
-    static binding::PropertyMetadata BuildMaxHeightMetadata();
-    static binding::PropertyMetadata BuildHorizontalAlignmentMetadata();
-    static binding::PropertyMetadata BuildVerticalAlignmentMetadata();
-    static binding::PropertyMetadata BuildMarginMetadata();
     static binding::PropertyMetadata BuildDataContextMetadata();
-
-    static void LengthPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void MinMaxLengthPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void AlignmentPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void MarginPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
     static void DataContextPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
         const std::any& oldValue, const std::any& newValue);
 

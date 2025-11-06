@@ -20,206 +20,17 @@ ScrollBarBase::ScrollBarBase() {
 ScrollBarBase::~ScrollBarBase() = default;
 
 // ============================================================================
-// 依赖属性注�?
+// 依赖属性定义（使用宏）
 // ============================================================================
 
-const binding::DependencyProperty& ScrollBarBase::MinimumProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Minimum",
-        typeid(double),
-        typeid(ScrollBarBase),
-        BuildMinimumMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollBarBase::MaximumProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Maximum",
-        typeid(double),
-        typeid(ScrollBarBase),
-        BuildMaximumMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollBarBase::ValueProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Value",
-        typeid(double),
-        typeid(ScrollBarBase),
-        BuildValueMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollBarBase::ViewportSizeProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "ViewportSize",
-        typeid(double),
-        typeid(ScrollBarBase),
-        BuildViewportSizeMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollBarBase::OrientationProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Orientation",
-        typeid(ui::Orientation),
-        typeid(ScrollBarBase),
-        BuildOrientationMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollBarBase::ThumbBrushProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "ThumbBrush",
-        typeid(std::string),
-        typeid(ScrollBarBase),
-        BuildThumbBrushMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollBarBase::TrackBrushProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "TrackBrush",
-        typeid(std::string),
-        typeid(ScrollBarBase),
-        BuildTrackBrushMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollBarBase::ThicknessProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Thickness",
-        typeid(float),
-        typeid(ScrollBarBase),
-        BuildThicknessMetadata()
-    );
-    return property;
-}
-
-// ============================================================================
-// 属性访问器
-// ============================================================================
-
-void ScrollBarBase::SetMinimum(double minimum) {
-    binding::DependencyObject::SetValue(MinimumProperty(), minimum);
-}
-
-double ScrollBarBase::GetMinimum() const {
-    const auto& value = binding::DependencyObject::GetValue(MinimumProperty());
-    if (!value.has_value()) return 0.0;
-    try {
-        return std::any_cast<double>(value);
-    } catch (...) {
-        return 0.0;
-    }
-}
-
-void ScrollBarBase::SetMaximum(double maximum) {
-    binding::DependencyObject::SetValue(MaximumProperty(), maximum);
-}
-
-double ScrollBarBase::GetMaximum() const {
-    const auto& value = binding::DependencyObject::GetValue(MaximumProperty());
-    if (!value.has_value()) return 100.0;
-    try {
-        return std::any_cast<double>(value);
-    } catch (...) {
-        return 100.0;
-    }
-}
-
-void ScrollBarBase::SetValue(double value) {
-    binding::DependencyObject::SetValue(ValueProperty(), value);
-}
-
-double ScrollBarBase::GetValue() const {
-    const auto& value = binding::DependencyObject::GetValue(ValueProperty());
-    if (!value.has_value()) return 0.0;
-    try {
-        return std::any_cast<double>(value);
-    } catch (...) {
-        return 0.0;
-    }
-}
-
-void ScrollBarBase::SetViewportSize(double size) {
-    binding::DependencyObject::SetValue(ViewportSizeProperty(), size);
-}
-
-double ScrollBarBase::GetViewportSize() const {
-    const auto& value = binding::DependencyObject::GetValue(ViewportSizeProperty());
-    if (!value.has_value()) return 0.0;
-    try {
-        return std::any_cast<double>(value);
-    } catch (...) {
-        return 0.0;
-    }
-}
-
-void ScrollBarBase::SetOrientation(ui::Orientation orientation) {
-    binding::DependencyObject::SetValue(OrientationProperty(), orientation);
-}
-
-ui::Orientation ScrollBarBase::GetOrientation() const {
-    const auto& value = binding::DependencyObject::GetValue(OrientationProperty());
-    if (!value.has_value()) return ui::Orientation::Vertical;
-    try {
-        return std::any_cast<ui::Orientation>(value);
-    } catch (...) {
-        return ui::Orientation::Vertical;
-    }
-}
-
-void ScrollBarBase::SetThumbBrush(std::string color) {
-    binding::DependencyObject::SetValue(ThumbBrushProperty(), std::move(color));
-}
-
-const std::string& ScrollBarBase::GetThumbBrush() const {
-    const auto& value = binding::DependencyObject::GetValue(ThumbBrushProperty());
-    static const std::string empty;
-    if (!value.has_value()) return empty;
-    try {
-        return std::any_cast<const std::string&>(value);
-    } catch (...) {
-        return empty;
-    }
-}
-
-void ScrollBarBase::SetTrackBrush(std::string color) {
-    binding::DependencyObject::SetValue(TrackBrushProperty(), std::move(color));
-}
-
-const std::string& ScrollBarBase::GetTrackBrush() const {
-    const auto& value = binding::DependencyObject::GetValue(TrackBrushProperty());
-    static const std::string empty;
-    if (!value.has_value()) return empty;
-    try {
-        return std::any_cast<const std::string&>(value);
-    } catch (...) {
-        return empty;
-    }
-}
-
-void ScrollBarBase::SetThickness(float thickness) {
-    binding::DependencyObject::SetValue(ThicknessProperty(), thickness);
-}
-
-float ScrollBarBase::GetThickness() const {
-    const auto& value = binding::DependencyObject::GetValue(ThicknessProperty());
-    if (!value.has_value()) return 8.0f;
-    try {
-        return std::any_cast<float>(value);
-    } catch (...) {
-        return 8.0f;
-    }
-}
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollBarBase, Minimum, double, 0.0)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollBarBase, Maximum, double, 100.0)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollBarBase, Value, double, 0.0)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollBarBase, ViewportSize, double, 0.0)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollBarBase, Orientation, ui::Orientation, ui::Orientation::Vertical)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(ScrollBarBase, ThumbBrush, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(ScrollBarBase, TrackBrush, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollBarBase, Thickness, float, 8.0f)
 
 // ============================================================================
 // 布局
@@ -254,22 +65,28 @@ bool ScrollBarBase::HasRenderContent() const {
 // 鼠标事件
 // ============================================================================
 
-void ScrollBarBase::OnMouseButtonDown(int button, double x, double y) {
+bool ScrollBarBase::OnMouseButtonDown(int button, double x, double y) {
     if (button == 0) {  // 左键
         // x, y 已经是局部坐标（由父元素转换过）
         HandleMouseDown(static_cast<float>(x), static_cast<float>(y));
+        return true; // ScrollBar 处理了事件
     }
+    return false;
 }
 
-void ScrollBarBase::OnMouseButtonUp(int button, double x, double y) {
+bool ScrollBarBase::OnMouseButtonUp(int button, double x, double y) {
     if (button == 0) {  // 左键
+        bool wasDragging = isDragging_;
         HandleMouseUp();
+        return wasDragging; // 只有在拖动时才算处理了事件
     }
+    return false;
 }
 
-void ScrollBarBase::OnMouseMove(double x, double y) {
+bool ScrollBarBase::OnMouseMove(double x, double y) {
     // x, y 已经是局部坐标（由父元素转换过）
     HandleMouseMove(static_cast<float>(x), static_cast<float>(y));
+    return isDragging_; // 只有在拖动时才算处理了事件
 }
 
 // ============================================================================
@@ -534,141 +351,9 @@ binding::PropertyMetadata ScrollBarBase::BuildTrackBrushMetadata() {
 }
 
 binding::PropertyMetadata ScrollBarBase::BuildThicknessMetadata() {
-    binding::PropertyMetadata metadata(12.0f);  // 默认厚度 12px
+    binding::PropertyMetadata metadata(8.0f);  // 默认厚度 8px
     metadata.propertyChangedCallback = ThicknessPropertyChanged;
     return metadata;
-}
-
-// ============================================================================
-// 属性变更回调(静态)
-// ============================================================================
-
-void ScrollBarBase::MinimumPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollBar = dynamic_cast<ScrollBarBase*>(&sender);
-    if (!scrollBar) return;
-    
-    try {
-        double oldVal = std::any_cast<double>(oldValue);
-        double newVal = std::any_cast<double>(newValue);
-        scrollBar->OnMinimumChanged(oldVal, newVal);
-    } catch (...) {}
-}
-
-void ScrollBarBase::MaximumPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollBar = dynamic_cast<ScrollBarBase*>(&sender);
-    if (!scrollBar) return;
-    
-    try {
-        double oldVal = std::any_cast<double>(oldValue);
-        double newVal = std::any_cast<double>(newValue);
-        scrollBar->OnMaximumChanged(oldVal, newVal);
-    } catch (...) {}
-}
-
-void ScrollBarBase::ValuePropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollBar = dynamic_cast<ScrollBarBase*>(&sender);
-    if (!scrollBar) return;
-    
-    try {
-        double oldVal = std::any_cast<double>(oldValue);
-        double newVal = std::any_cast<double>(newValue);
-        scrollBar->OnValueChanged(oldVal, newVal);
-    } catch (...) {}
-}
-
-void ScrollBarBase::ViewportSizePropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollBar = dynamic_cast<ScrollBarBase*>(&sender);
-    if (!scrollBar) return;
-    
-    try {
-        double oldVal = std::any_cast<double>(oldValue);
-        double newVal = std::any_cast<double>(newValue);
-        scrollBar->OnViewportSizeChanged(oldVal, newVal);
-    } catch (...) {}
-}
-
-void ScrollBarBase::OrientationPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollBar = dynamic_cast<ScrollBarBase*>(&sender);
-    if (!scrollBar) return;
-    
-    try {
-        auto oldVal = std::any_cast<ui::Orientation>(oldValue);
-        auto newVal = std::any_cast<ui::Orientation>(newValue);
-        scrollBar->OnOrientationChanged(oldVal, newVal);
-    } catch (...) {}
-}
-
-void ScrollBarBase::ThumbBrushPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollBar = dynamic_cast<ScrollBarBase*>(&sender);
-    if (!scrollBar) return;
-    
-    try {
-        const auto& oldVal = std::any_cast<const std::string&>(oldValue);
-        const auto& newVal = std::any_cast<const std::string&>(newValue);
-        scrollBar->OnThumbBrushChanged(oldVal, newVal);
-    } catch (...) {}
-}
-
-void ScrollBarBase::TrackBrushPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollBar = dynamic_cast<ScrollBarBase*>(&sender);
-    if (!scrollBar) return;
-    
-    try {
-        const auto& oldVal = std::any_cast<const std::string&>(oldValue);
-        const auto& newVal = std::any_cast<const std::string&>(newValue);
-        scrollBar->OnTrackBrushChanged(oldVal, newVal);
-    } catch (...) {}
-}
-
-void ScrollBarBase::ThicknessPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollBar = dynamic_cast<ScrollBarBase*>(&sender);
-    if (!scrollBar) return;
-    
-    try {
-        float oldVal = std::any_cast<float>(oldValue);
-        float newVal = std::any_cast<float>(newValue);
-        scrollBar->OnThicknessChanged(oldVal, newVal);
-    } catch (...) {}
 }
 
 // ============================================================================

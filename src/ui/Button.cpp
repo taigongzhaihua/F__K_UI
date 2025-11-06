@@ -19,225 +19,21 @@ ButtonBase::ButtonBase() {
 ButtonBase::~ButtonBase() = default;
 
 // ============================================================================
-// 依赖属性注册
+// 依赖属性定义（使用宏）
 // ============================================================================
 
-const binding::DependencyProperty& ButtonBase::CornerRadiusProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "CornerRadius",
-        typeid(float),
-        typeid(ButtonBase),
-        BuildCornerRadiusMetadata()
-    );
-    return property;
-}
+FK_DEPENDENCY_PROPERTY_DEFINE(ButtonBase, CornerRadius, float, 0.0f)
 
-const binding::DependencyProperty& ButtonBase::BackgroundProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Background",
-        typeid(std::string),
-        typeid(ButtonBase),
-        BuildBackgroundMetadata()
-    );
-    return property;
-}
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(ButtonBase, Background, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(ButtonBase, Foreground, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(ButtonBase, HoveredBackground, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(ButtonBase, PressedBackground, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(ButtonBase, BorderBrush, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE(ButtonBase, BorderThickness, float, 0.0f)
+FK_DEPENDENCY_PROPERTY_DEFINE(ButtonBase, IsMouseOver, bool, false)
+FK_DEPENDENCY_PROPERTY_DEFINE(ButtonBase, IsPressed, bool, false)
 
-const binding::DependencyProperty& ButtonBase::ForegroundProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Foreground",
-        typeid(std::string),
-        typeid(ButtonBase),
-        BuildForegroundMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ButtonBase::HoveredBackgroundProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "HoveredBackground",
-        typeid(std::string),
-        typeid(ButtonBase),
-        BuildHoveredBackgroundMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ButtonBase::PressedBackgroundProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "PressedBackground",
-        typeid(std::string),
-        typeid(ButtonBase),
-        BuildPressedBackgroundMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ButtonBase::BorderBrushProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "BorderBrush",
-        typeid(std::string),
-        typeid(ButtonBase),
-        BuildBorderBrushMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ButtonBase::BorderThicknessProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "BorderThickness",
-        typeid(float),
-        typeid(ButtonBase),
-        BuildBorderThicknessMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ButtonBase::IsMouseOverProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "IsMouseOver",
-        typeid(bool),
-        typeid(ButtonBase),
-        BuildIsMouseOverMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ButtonBase::IsPressedProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "IsPressed",
-        typeid(bool),
-        typeid(ButtonBase),
-        BuildIsPressedMetadata()
-    );
-    return property;
-}
-
-// ============================================================================
-// 属性访问器
-// ============================================================================
-
-void ButtonBase::SetCornerRadius(float radius) {
-    SetValue(CornerRadiusProperty(), radius);
-}
-
-float ButtonBase::GetCornerRadius() const {
-    const auto& value = GetValue(CornerRadiusProperty());
-    if (!value.has_value()) return 0.0f;
-    try {
-        return std::any_cast<float>(value);
-    } catch (...) {
-        return 0.0f;
-    }
-}
-
-void ButtonBase::SetBackground(std::string color) {
-    SetValue(BackgroundProperty(), std::move(color));
-}
-
-const std::string& ButtonBase::GetBackground() const {
-    const auto& value = GetValue(BackgroundProperty());
-    static const std::string empty;
-    if (!value.has_value()) return empty;
-    try {
-        return std::any_cast<const std::string&>(value);
-    } catch (...) {
-        return empty;
-    }
-}
-
-void ButtonBase::SetForeground(std::string color) {
-    SetValue(ForegroundProperty(), std::move(color));
-}
-
-const std::string& ButtonBase::GetForeground() const {
-    const auto& value = GetValue(ForegroundProperty());
-    static const std::string empty;
-    if (!value.has_value()) return empty;
-    try {
-        return std::any_cast<const std::string&>(value);
-    } catch (...) {
-        return empty;
-    }
-}
-
-void ButtonBase::SetHoveredBackground(std::string color) {
-    SetValue(HoveredBackgroundProperty(), std::move(color));
-}
-
-const std::string& ButtonBase::GetHoveredBackground() const {
-    const auto& value = GetValue(HoveredBackgroundProperty());
-    static const std::string empty;
-    if (!value.has_value()) return empty;
-    try {
-        return std::any_cast<const std::string&>(value);
-    } catch (...) {
-        return empty;
-    }
-}
-
-void ButtonBase::SetPressedBackground(std::string color) {
-    SetValue(PressedBackgroundProperty(), std::move(color));
-}
-
-const std::string& ButtonBase::GetPressedBackground() const {
-    const auto& value = GetValue(PressedBackgroundProperty());
-    static const std::string empty;
-    if (!value.has_value()) return empty;
-    try {
-        return std::any_cast<const std::string&>(value);
-    } catch (...) {
-        return empty;
-    }
-}
-
-void ButtonBase::SetBorderBrush(std::string color) {
-    SetValue(BorderBrushProperty(), std::move(color));
-}
-
-const std::string& ButtonBase::GetBorderBrush() const {
-    const auto& value = GetValue(BorderBrushProperty());
-    static const std::string empty;
-    if (!value.has_value()) return empty;
-    try {
-        return std::any_cast<const std::string&>(value);
-    } catch (...) {
-        return empty;
-    }
-}
-
-void ButtonBase::SetBorderThickness(float thickness) {
-    SetValue(BorderThicknessProperty(), thickness);
-}
-
-float ButtonBase::GetBorderThickness() const {
-    const auto& value = GetValue(BorderThicknessProperty());
-    if (!value.has_value()) return 0.0f;
-    try {
-        return std::any_cast<float>(value);
-    } catch (...) {
-        return 0.0f;
-    }
-}
-
-bool ButtonBase::IsMouseOver() const {
-    const auto& value = GetValue(IsMouseOverProperty());
-    if (!value.has_value()) return false;
-    try {
-        return std::any_cast<bool>(value);
-    } catch (...) {
-        return false;
-    }
-}
-
-bool ButtonBase::IsPressed() const {
-    const auto& value = GetValue(IsPressedProperty());
-    if (!value.has_value()) return false;
-    try {
-        return std::any_cast<bool>(value);
-    } catch (...) {
-        return false;
-    }
-}
+// Getter/Setter 由宏自动生成
 
 std::string ButtonBase::GetActualBackground() const {
     // 优先使用显式设置的状态颜色
@@ -304,26 +100,57 @@ std::string ButtonBase::GetActualBackground() const {
 // 事件处理
 // ============================================================================
 
-void ButtonBase::OnMouseButtonDown(int button, double x, double y) {
+bool ButtonBase::OnMouseButtonDown(int button, double x, double y) {
     if (button == 0) { // 左键
-        // 设置 MouseOver 状态
-        SetValue(IsMouseOverProperty(), true);
-        OnMouseDown();
+        // 检查鼠标是否在按钮边界内（x, y 是局部坐标）
+        auto bounds = GetRenderBounds();
+        bool isInside = (x >= 0 && x < bounds.width && y >= 0 && y < bounds.height);
+        
+        if (isInside) {
+            // 设置 MouseOver 状态
+            SetValue(IsMouseOverProperty(), true);
+            OnMouseDown();
+            return true; // 按钮处理了事件
+        }
+        
+        return false; // 鼠标不在按钮上，不处理
     }
+    return false;
 }
 
-void ButtonBase::OnMouseButtonUp(int button, double x, double y) {
+bool ButtonBase::OnMouseButtonUp(int button, double x, double y) {
     if (button == 0) { // 左键
-        OnMouseUp();
+        // 检查鼠标是否在按钮边界内（x, y 是局部坐标）
+        auto bounds = GetRenderBounds();
+        bool isInside = (x >= 0 && x < bounds.width && y >= 0 && y < bounds.height);
+        
+        // 只有在捕获了鼠标时才处理 MouseUp
+        if (isMouseCaptured_) {
+            OnMouseUp();
+            
+            // 根据鼠标位置更新 MouseOver 状态
+            SetValue(IsMouseOverProperty(), isInside);
+            return true;
+        }
+        
+        // 如果没有捕获鼠标，但鼠标在按钮上，也更新状态
+        if (isInside) {
+            SetValue(IsMouseOverProperty(), true);
+            return true;
+        }
+        
+        return false; // 鼠标不在按钮上，不处理
     }
+    return false;
 }
 
-void ButtonBase::OnMouseMove(double x, double y) {
+bool ButtonBase::OnMouseMove(double x, double y) {
     // 处理鼠标移动事件
     if (!IsMouseOver()) {
         SetValue(IsMouseOverProperty(), true);
         OnMouseEnter();
     }
+    return true; // 按钮处理了鼠标移动
 }
 
 void ButtonBase::OnClick() {
@@ -468,117 +295,7 @@ binding::PropertyMetadata ButtonBase::BuildIsPressedMetadata() {
     return metadata;
 }
 
-// ============================================================================
-// 静态回调
-// ============================================================================
-
-void ButtonBase::CornerRadiusPropertyChanged(binding::DependencyObject& sender,
-    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
-    auto* button = dynamic_cast<ButtonBase*>(&sender);
-    if (!button) return;
-
-    try {
-        float oldRadius = oldValue.has_value() ? std::any_cast<float>(oldValue) : 0.0f;
-        float newRadius = std::any_cast<float>(newValue);
-        button->OnCornerRadiusChanged(oldRadius, newRadius);
-    } catch (...) {}
-}
-
-void ButtonBase::BackgroundPropertyChanged(binding::DependencyObject& sender,
-    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
-    auto* button = dynamic_cast<ButtonBase*>(&sender);
-    if (!button) return;
-
-    try {
-        const auto& oldColor = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string();
-        const auto& newColor = std::any_cast<const std::string&>(newValue);
-        button->OnBackgroundChanged(oldColor, newColor);
-    } catch (...) {}
-}
-
-void ButtonBase::ForegroundPropertyChanged(binding::DependencyObject& sender,
-    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
-    auto* button = dynamic_cast<ButtonBase*>(&sender);
-    if (!button) return;
-
-    try {
-        const auto& oldColor = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string();
-        const auto& newColor = std::any_cast<const std::string&>(newValue);
-        button->OnForegroundChanged(oldColor, newColor);
-    } catch (...) {}
-}
-
-void ButtonBase::HoveredBackgroundPropertyChanged(binding::DependencyObject& sender,
-    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
-    auto* button = dynamic_cast<ButtonBase*>(&sender);
-    if (!button) return;
-
-    try {
-        const auto& oldColor = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string();
-        const auto& newColor = std::any_cast<const std::string&>(newValue);
-        button->OnHoveredBackgroundChanged(oldColor, newColor);
-    } catch (...) {}
-}
-
-void ButtonBase::PressedBackgroundPropertyChanged(binding::DependencyObject& sender,
-    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
-    auto* button = dynamic_cast<ButtonBase*>(&sender);
-    if (!button) return;
-
-    try {
-        const auto& oldColor = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string();
-        const auto& newColor = std::any_cast<const std::string&>(newValue);
-        button->OnPressedBackgroundChanged(oldColor, newColor);
-    } catch (...) {}
-}
-
-void ButtonBase::BorderBrushPropertyChanged(binding::DependencyObject& sender,
-    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
-    auto* button = dynamic_cast<ButtonBase*>(&sender);
-    if (!button) return;
-
-    try {
-        const auto& oldColor = oldValue.has_value() ? std::any_cast<const std::string&>(oldValue) : std::string();
-        const auto& newColor = std::any_cast<const std::string&>(newValue);
-        button->OnBorderBrushChanged(oldColor, newColor);
-    } catch (...) {}
-}
-
-void ButtonBase::BorderThicknessPropertyChanged(binding::DependencyObject& sender,
-    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
-    auto* button = dynamic_cast<ButtonBase*>(&sender);
-    if (!button) return;
-
-    try {
-        float oldThickness = oldValue.has_value() ? std::any_cast<float>(oldValue) : 0.0f;
-        float newThickness = std::any_cast<float>(newValue);
-        button->OnBorderThicknessChanged(oldThickness, newThickness);
-    } catch (...) {}
-}
-
-void ButtonBase::IsMouseOverPropertyChanged(binding::DependencyObject& sender,
-    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
-    auto* button = dynamic_cast<ButtonBase*>(&sender);
-    if (!button) return;
-
-    try {
-        bool oldState = oldValue.has_value() ? std::any_cast<bool>(oldValue) : false;
-        bool newState = std::any_cast<bool>(newValue);
-        button->OnIsMouseOverChanged(oldState, newState);
-    } catch (...) {}
-}
-
-void ButtonBase::IsPressedPropertyChanged(binding::DependencyObject& sender,
-    const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue) {
-    auto* button = dynamic_cast<ButtonBase*>(&sender);
-    if (!button) return;
-
-    try {
-        bool oldState = oldValue.has_value() ? std::any_cast<bool>(oldValue) : false;
-        bool newState = std::any_cast<bool>(newValue);
-        button->OnIsPressedChanged(oldState, newState);
-    } catch (...) {}
-}
+// 静态回调由宏自动生成
 
 // ============================================================================
 // 验证函数

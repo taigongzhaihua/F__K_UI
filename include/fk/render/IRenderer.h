@@ -27,6 +27,7 @@ struct FrameContext {
 };
 
 class RenderList;
+class TextRenderer;
 
 class IRenderer {
 public:
@@ -38,6 +39,12 @@ public:
     virtual void Draw(const RenderList& list) = 0;
     virtual void EndFrame() = 0;
     virtual void Shutdown() = 0;
+    
+    /**
+     * @brief 获取 TextRenderer 实例(用于文本测量等)
+     * @return TextRenderer 指针,如果渲染器不支持则返回 nullptr
+     */
+    virtual TextRenderer* GetTextRenderer() const { return nullptr; }
 };
 
 } // namespace fk::render

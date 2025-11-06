@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fk/ui/FrameworkElement.h"
+#include "fk/ui/BindingMacros.h"
 
 #include <any>
 #include <memory>
@@ -21,89 +22,22 @@ public:
         return Ptr(new Derived(std::forward<Args>(args)...));
     }
 
-    // Width - Getter/Setter 重载
-    [[nodiscard]] float Width() const { return Base::GetWidth(); }
-    Ptr Width(float value) {
-        Base::SetWidth(value);
-        return Self();
-    }
+    // 🎯 使用宏简化属性绑定支持
+    // FrameworkElement 属性
+    FK_BINDING_PROPERTY_VIEW_VALUE(Width, float, FrameworkElement)
+    FK_BINDING_PROPERTY_VIEW_VALUE(Height, float, FrameworkElement)
+    FK_BINDING_PROPERTY_VIEW_VALUE(MinWidth, float, FrameworkElement)
+    FK_BINDING_PROPERTY_VIEW_VALUE(MinHeight, float, FrameworkElement)
+    FK_BINDING_PROPERTY_VIEW_VALUE(MaxWidth, float, FrameworkElement)
+    FK_BINDING_PROPERTY_VIEW_VALUE(MaxHeight, float, FrameworkElement)
+    FK_BINDING_PROPERTY_VIEW_ENUM(HorizontalAlignment, ui::HorizontalAlignment, FrameworkElement)
+    FK_BINDING_PROPERTY_VIEW_ENUM(VerticalAlignment, ui::VerticalAlignment, FrameworkElement)
+    FK_BINDING_PROPERTY_VIEW(Margin, Thickness, FrameworkElement)
 
-    // Height - Getter/Setter 重载
-    [[nodiscard]] float Height() const { return Base::GetHeight(); }
-    Ptr Height(float value) {
-        Base::SetHeight(value);
-        return Self();
-    }
-
-    // MinWidth - Getter/Setter 重载
-    [[nodiscard]] float MinWidth() const { return Base::GetMinWidth(); }
-    Ptr MinWidth(float value) {
-        Base::SetMinWidth(value);
-        return Self();
-    }
-
-    // MinHeight - Getter/Setter 重载
-    [[nodiscard]] float MinHeight() const { return Base::GetMinHeight(); }
-    Ptr MinHeight(float value) {
-        Base::SetMinHeight(value);
-        return Self();
-    }
-
-    // MaxWidth - Getter/Setter 重载
-    [[nodiscard]] float MaxWidth() const { return Base::GetMaxWidth(); }
-    Ptr MaxWidth(float value) {
-        Base::SetMaxWidth(value);
-        return Self();
-    }
-
-    // MaxHeight - Getter/Setter 重载
-    [[nodiscard]] float MaxHeight() const { return Base::GetMaxHeight(); }
-    Ptr MaxHeight(float value) {
-        Base::SetMaxHeight(value);
-        return Self();
-    }
-
-    // HorizontalAlignment - Getter/Setter 重载
-    [[nodiscard]] ui::HorizontalAlignment HorizontalAlignment() const { return Base::GetHorizontalAlignment(); }
-    Ptr HorizontalAlignment(ui::HorizontalAlignment alignment) {
-        Base::SetHorizontalAlignment(alignment);
-        return Self();
-    }
-
-    // VerticalAlignment - Getter/Setter 重载
-    [[nodiscard]] ui::VerticalAlignment VerticalAlignment() const { return Base::GetVerticalAlignment(); }
-    Ptr VerticalAlignment(ui::VerticalAlignment alignment) {
-        Base::SetVerticalAlignment(alignment);
-        return Self();
-    }
-
-    // Margin - Getter/Setter 重载
-    [[nodiscard]] Thickness Margin() const { return Base::GetMargin(); }
-    Ptr Margin(const Thickness& margin) {
-        Base::SetMargin(margin);
-        return Self();
-    }
-
-    // Visibility - Getter/Setter 重载
-    [[nodiscard]] ui::Visibility Visibility() const { return Base::GetVisibility(); }
-    Ptr Visibility(ui::Visibility visibility) {
-        Base::SetVisibility(visibility);
-        return Self();
-    }
-
-    // IsEnabled - Getter/Setter 重载
-    [[nodiscard]] bool IsEnabled() const { return Base::GetIsEnabled(); }
-    Ptr IsEnabled(bool enabled) {
-        Base::SetIsEnabled(enabled);
-        return Self();
-    }
-
-    // Opacity - Getter/Setter 重载
-    [[nodiscard]] float Opacity() const { return Base::GetOpacity(); }
-    Ptr Opacity(float opacity) {
-        Base::SetOpacity(opacity);
-        return Self();
-    }
+    // UIElement 属性
+    FK_BINDING_PROPERTY_VIEW_ENUM(Visibility, ui::Visibility, UIElement)
+    FK_BINDING_PROPERTY_VIEW_VALUE(IsEnabled, bool, UIElement)
+    FK_BINDING_PROPERTY_VIEW_VALUE(Opacity, float, UIElement)
 
     // DataContext - Getter/Setter 重载
     [[nodiscard]] const std::any& DataContext() const { return Base::GetDataContext(); }

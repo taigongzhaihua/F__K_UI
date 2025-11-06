@@ -2,6 +2,8 @@
 
 #include "fk/ui/Control.h"
 #include "fk/ui/Enums.h"
+#include "fk/ui/BindingMacros.h"
+#include "fk/ui/DependencyPropertyMacros.h"
 #include "fk/core/Event.h"
 
 namespace fk::ui {
@@ -25,47 +27,17 @@ public:
     ScrollBarBase();
     ~ScrollBarBase() override;
 
-    // 依赖属性
-    static const binding::DependencyProperty& MinimumProperty();
-    static const binding::DependencyProperty& MaximumProperty();
-    static const binding::DependencyProperty& ValueProperty();
-    static const binding::DependencyProperty& ViewportSizeProperty();
-    static const binding::DependencyProperty& OrientationProperty();
-    static const binding::DependencyProperty& ThumbBrushProperty();
-    static const binding::DependencyProperty& TrackBrushProperty();
-    static const binding::DependencyProperty& ThicknessProperty();
+    // 依赖属性（使用宏声明）
+    FK_DEPENDENCY_PROPERTY_DECLARE(Minimum, double)
+    FK_DEPENDENCY_PROPERTY_DECLARE(Maximum, double)
+    FK_DEPENDENCY_PROPERTY_DECLARE(Value, double)
+    FK_DEPENDENCY_PROPERTY_DECLARE(ViewportSize, double)
+    FK_DEPENDENCY_PROPERTY_DECLARE(Orientation, ui::Orientation)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(ThumbBrush, std::string)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(TrackBrush, std::string)
+    FK_DEPENDENCY_PROPERTY_DECLARE(Thickness, float)
 
-    // Minimum 属性 (最小值)
-    void SetMinimum(double minimum);
-    [[nodiscard]] double GetMinimum() const;
-
-    // Maximum 属性 (最大值)
-    void SetMaximum(double maximum);
-    [[nodiscard]] double GetMaximum() const;
-
-    // Value 属性 (当前值)
-    void SetValue(double value);
-    [[nodiscard]] double GetValue() const;
-
-    // ViewportSize 属性 (可见区域大小,影响 Thumb 大小)
-    void SetViewportSize(double size);
-    [[nodiscard]] double GetViewportSize() const;
-
-    // Orientation 属性 (方向)
-    void SetOrientation(ui::Orientation orientation);
-    [[nodiscard]] ui::Orientation GetOrientation() const;
-
-    // ThumbBrush 属性 (滑块颜色)
-    void SetThumbBrush(std::string color);
-    [[nodiscard]] const std::string& GetThumbBrush() const;
-
-    // TrackBrush 属性 (轨道颜色)
-    void SetTrackBrush(std::string color);
-    [[nodiscard]] const std::string& GetTrackBrush() const;
-
-    // Thickness 属性 (滚动条厚度)
-    void SetThickness(float thickness);
-    [[nodiscard]] float GetThickness() const;
+public:
 
     // 值变更事件
     core::Event<double> ValueChanged;
@@ -84,19 +56,9 @@ protected:
     bool HasRenderContent() const override;
 
     // 鼠标事件重写
-    void OnMouseButtonDown(int button, double x, double y) override;
-    void OnMouseButtonUp(int button, double x, double y) override;
-    void OnMouseMove(double x, double y) override;
-
-    // 属性变更回调
-    virtual void OnMinimumChanged(double oldValue, double newValue);
-    virtual void OnMaximumChanged(double oldValue, double newValue);
-    virtual void OnValueChanged(double oldValue, double newValue);
-    virtual void OnViewportSizeChanged(double oldValue, double newValue);
-    virtual void OnOrientationChanged(ui::Orientation oldValue, ui::Orientation newValue);
-    virtual void OnThumbBrushChanged(const std::string& oldValue, const std::string& newValue);
-    virtual void OnTrackBrushChanged(const std::string& oldValue, const std::string& newValue);
-    virtual void OnThicknessChanged(float oldValue, float newValue);
+    bool OnMouseButtonDown(int button, double x, double y) override;
+    bool OnMouseButtonUp(int button, double x, double y) override;
+    bool OnMouseMove(double x, double y) override;
 
     // 辅助方法
     void CoerceValue();  // 限制 Value 在 [Minimum, Maximum] 范围内
@@ -104,73 +66,6 @@ protected:
 
 private:
     void ApplyOrientationLayout(ui::Orientation orientation);
-
-    // 元数据构建
-    static binding::PropertyMetadata BuildMinimumMetadata();
-    static binding::PropertyMetadata BuildMaximumMetadata();
-    static binding::PropertyMetadata BuildValueMetadata();
-    static binding::PropertyMetadata BuildViewportSizeMetadata();
-    static binding::PropertyMetadata BuildOrientationMetadata();
-    static binding::PropertyMetadata BuildThumbBrushMetadata();
-    static binding::PropertyMetadata BuildTrackBrushMetadata();
-    static binding::PropertyMetadata BuildThicknessMetadata();
-
-    // 属性变更回调 (静态)
-    static void MinimumPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    static void MaximumPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    static void ValuePropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    static void ViewportSizePropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    static void OrientationPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    static void ThumbBrushPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    static void TrackBrushPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    static void ThicknessPropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
 
     // 验证回调
     static bool ValidateValue(const std::any& value);
@@ -191,75 +86,15 @@ public:
     using BaseType = detail::ScrollBarBase;
     using Ptr = std::shared_ptr<Derived>;
 
-    // Fluent API: Minimum
-    [[nodiscard]] double Minimum() const {
-        return GetMinimum();
-    }
-
-    Ptr Minimum(double minimum) {
-        SetMinimum(minimum);
-        return Self();
-    }
-
-    // Fluent API: Maximum
-    [[nodiscard]] double Maximum() const {
-        return GetMaximum();
-    }
-
-    Ptr Maximum(double maximum) {
-        SetMaximum(maximum);
-        return Self();
-    }
-
-    // Fluent API: Value
-    [[nodiscard]] double Value() const {
-        return GetValue();
-    }
-
-    Ptr Value(double value) {
-        SetValue(value);
-        return Self();
-    }
-
-    // Fluent API: ViewportSize
-    [[nodiscard]] double ViewportSize() const {
-        return GetViewportSize();
-    }
-
-    Ptr ViewportSize(double size) {
-        SetViewportSize(size);
-        return Self();
-    }
-
-    // Fluent API: Orientation
-    [[nodiscard]] ui::Orientation Orientation() const {
-        return GetOrientation();
-    }
-
-    Ptr Orientation(ui::Orientation orientation) {
-        SetOrientation(orientation);
-        return Self();
-    }
-
-    // Fluent API: ThumbBrush
-    [[nodiscard]] const std::string& ThumbBrush() const {
-        return GetThumbBrush();
-    }
-
-    Ptr ThumbBrush(const std::string& color) {
-        SetThumbBrush(color);
-        return Self();
-    }
-
-    // Fluent API: TrackBrush
-    [[nodiscard]] const std::string& TrackBrush() const {
-        return GetTrackBrush();
-    }
-
-    Ptr TrackBrush(const std::string& color) {
-        SetTrackBrush(color);
-        return Self();
-    }
+    // 🎯 Fluent API with Binding Support
+    FK_BINDING_PROPERTY_VALUE(Minimum, double)
+    FK_BINDING_PROPERTY_VALUE(Maximum, double)
+    FK_BINDING_PROPERTY_VALUE(Value, double)
+    FK_BINDING_PROPERTY_VALUE(ViewportSize, double)
+    FK_BINDING_PROPERTY_ENUM(Orientation, ui::Orientation)
+    FK_BINDING_PROPERTY(ThumbBrush, std::string)
+    FK_BINDING_PROPERTY(TrackBrush, std::string)
+    FK_BINDING_PROPERTY_VALUE(Thickness, float)
 
     // Fluent API: OnValueChanged (事件订阅)
     Ptr OnValueChanged(std::function<void(double)> callback) {

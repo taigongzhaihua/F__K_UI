@@ -2,6 +2,7 @@
 
 #include "fk/ui/DependencyObject.h"
 #include "fk/ui/Visual.h"
+#include "fk/ui/DependencyPropertyMacros.h"
 #include "fk/binding/DependencyProperty.h"
 #include "fk/core/Event.h"
 
@@ -46,23 +47,15 @@ public:
     UIElement();
     ~UIElement() override;
 
-    static const binding::DependencyProperty& VisibilityProperty();
-    static const binding::DependencyProperty& IsEnabledProperty();
-    static const binding::DependencyProperty& OpacityProperty();
-    static const binding::DependencyProperty& ClipToBoundsProperty();
+    // 依赖属性（使用宏）
+    FK_DEPENDENCY_PROPERTY_DECLARE(Visibility, fk::ui::Visibility)
+    FK_DEPENDENCY_PROPERTY_DECLARE(IsEnabled, bool)
+    FK_DEPENDENCY_PROPERTY_DECLARE(Opacity, float)
+    FK_DEPENDENCY_PROPERTY_DECLARE(ClipToBounds, bool)
 
-    void SetVisibility(Visibility visibility);
-    [[nodiscard]] Visibility GetVisibility() const;  // 同时实现 Visual::GetVisibility
-
-    void SetIsEnabled(bool enabled);
-    [[nodiscard]] bool IsEnabled() const;
+public:
+    // GetVisibility() 和 GetOpacity() 同时实现 Visual 接口
     
-    void SetClipToBounds(bool clip);
-    [[nodiscard]] bool GetClipToBounds() const;
-
-    void SetOpacity(float value);
-    [[nodiscard]] float GetOpacity() const;  // 同时实现 Visual::GetOpacity
-
     Size Measure(const Size& availableSize);
     void Arrange(const Rect& finalRect);
 
@@ -99,20 +92,19 @@ protected:
     virtual Size MeasureCore(const Size& availableSize);
     virtual void ArrangeCore(const Rect& finalRect);
 
-    virtual void OnVisibilityChanged(fk::ui::Visibility oldValue, fk::ui::Visibility newValue);
-    virtual void OnIsEnabledChanged(bool oldValue, bool newValue);
-    virtual void OnOpacityChanged(float oldValue, float newValue);
-    virtual void OnClipToBoundsChanged(bool oldValue, bool newValue);
-
     void SetDesiredSize(const Size& size) noexcept { desiredSize_ = size; }
     void SetLayoutSlot(const Rect& rect) noexcept { layoutSlot_ = rect; }
 
 public:
     // 鼠标事件处理 (支持事件路由)
-    virtual void OnMouseButtonDown(int button, double x, double y);
-    virtual void OnMouseButtonUp(int button, double x, double y);
-    virtual void OnMouseMove(double x, double y);
-    virtual void OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY);
+    // 返回 true 表示事件已处理，停止冒泡；返回 false 表示未处理，继续冒泡
+    virtual bool OnMouseButtonDown(int button, double x, double y);
+    virtual bool OnMouseButtonUp(int button, double x, double y);
+    virtual bool OnMouseMove(double x, double y);
+    virtual bool OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY);
+    virtual bool OnKeyDown(int key, int scancode, int mods);
+    virtual bool OnKeyUp(int key, int scancode, int mods);
+    virtual bool OnTextInput(unsigned int codepoint);
     
     // 命中测试 - 检查点是否在此元素的渲染边界内
     virtual bool HitTest(double x, double y) const;
@@ -120,24 +112,12 @@ public:
     // 查找在指定位置的最上层子元素
     virtual UIElement* HitTestChildren(double x, double y);
 
-private:
     /**
      * @brief 获取此元素关联的 RenderHost（通过遍历父级链）
      */
     class render::RenderHost* GetRenderHost() const;
-    
-    static binding::PropertyMetadata BuildVisibilityMetadata();
-    static binding::PropertyMetadata BuildIsEnabledMetadata();
-    static binding::PropertyMetadata BuildOpacityMetadata();
-    static binding::PropertyMetadata BuildClipToBoundsMetadata();
-    static void VisibilityPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void IsEnabledPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void OpacityPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void ClipToBoundsPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
+
+private:
     static bool ValidateOpacity(const std::any& value);
 
     Size desiredSize_{};

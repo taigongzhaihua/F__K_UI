@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
+#include <iostream>
 #include <unordered_map>
 
 namespace fk::render {

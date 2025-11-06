@@ -41,12 +41,18 @@ bool RenderHost::RenderFrame(const FrameContext& frameContext, const ui::Visual&
         return false;
     }
 
+    // 消耗当前的渲染请求，但允许在构建过程中再次请求下一帧
+    renderPending_ = false;
+
     if (!scene_) {
         scene_ = std::make_unique<RenderScene>();
     }
 
     scene_->Reset();
-    BuildScene(visualRoot);
+    BuildScene(visualRoot, frameContext);
+
+    // 在构建过程中可能又产生了新的渲染请求（例如动画驱动），记录下来
+    const bool requestAnotherFrame = renderPending_;
 
     // 生成渲染列表并传递给渲染器
     auto renderList = scene_->GenerateRenderList();
@@ -55,7 +61,8 @@ bool RenderHost::RenderFrame(const FrameContext& frameContext, const ui::Visual&
     renderer_->Draw(*renderList);
     renderer_->EndFrame();
 
-    renderPending_ = false;
+    // 如果在渲染过程中出现新的请求，保持挂起状态以便下一帧继续渲染
+    renderPending_ = requestAnotherFrame;
     
     // 渲染完成后清除失效追踪
     ClearDirtyElements();
@@ -75,9 +82,9 @@ void RenderHost::Shutdown() {
     }
 }
 
-void RenderHost::BuildScene(const ui::Visual& visualRoot) {
+void RenderHost::BuildScene(const ui::Visual& visualRoot, const FrameContext& frameContext) {
     if (treeBuilder_ && scene_) {
-        treeBuilder_->Rebuild(visualRoot, *scene_);
+        treeBuilder_->Rebuild(visualRoot, *scene_, frameContext);
     }
 }
 
@@ -95,6 +102,13 @@ void RenderHost::InvalidateElement(ui::UIElement* element) {
 
 void RenderHost::ClearDirtyElements() {
     dirtyElements_.clear();
+}
+
+TextRenderer* RenderHost::GetTextRenderer() const {
+    if (renderer_) {
+        return renderer_->GetTextRenderer();
+    }
+    return nullptr;
 }
 
 } // namespace fk::render

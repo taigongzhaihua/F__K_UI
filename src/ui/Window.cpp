@@ -2,6 +2,7 @@
 #include "fk/ui/WindowInteropHelper.h"
 #include "fk/ui/Button.h"
 #include "fk/ui/Panel.h"
+#include "fk/ui/Control.h"
 #include "fk/render/RenderHost.h"
 #include "fk/render/IRenderer.h"
 #include "fk/render/GlRenderer.h"
@@ -15,16 +16,19 @@
 namespace fk::ui {
 
 // 依赖属性定义
-const binding::DependencyProperty& Window::TitleProperty() {
-    static const auto& prop = binding::DependencyProperty::Register(
-        "Title",
-        typeid(std::string),
-        typeid(Window),
-        BuildTitleMetadata()
-    );
-    return prop;
-}
+FK_DEPENDENCY_PROPERTY_REGISTER(Window, Title, std::string);
+FK_DEPENDENCY_PROPERTY_IMPL_REF(Window, Title, std::string);
+FK_DEPENDENCY_PROPERTY_CALLBACK_REF(Window, Title, std::string);
 
+FK_DEPENDENCY_PROPERTY_REGISTER(Window, Width, int);
+FK_DEPENDENCY_PROPERTY_IMPL(Window, Width, int, 800);
+FK_DEPENDENCY_PROPERTY_CALLBACK(Window, Width, int, 800);
+
+FK_DEPENDENCY_PROPERTY_REGISTER(Window, Height, int);
+FK_DEPENDENCY_PROPERTY_IMPL(Window, Height, int, 600);
+FK_DEPENDENCY_PROPERTY_CALLBACK(Window, Height, int, 600);
+
+// BuildMetadata 实现
 binding::PropertyMetadata Window::BuildTitleMetadata() {
     return binding::PropertyMetadata(
         std::string("Window"),  // 默认值
@@ -32,74 +36,50 @@ binding::PropertyMetadata Window::BuildTitleMetadata() {
     );
 }
 
-void Window::TitlePropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* window = dynamic_cast<Window*>(&sender);
-    if (!window || !window->interopHelper_ || !window->interopHelper_->HasHandle()) {
-        return;
-    }
-    
-    const auto& title = std::any_cast<const std::string&>(newValue);
-    glfwSetWindowTitle(window->interopHelper_->GetHandle(), title.c_str());
-}
-
-// Width/Height 依赖属性
-const binding::DependencyProperty& Window::WidthProperty() {
-    static const auto& prop = binding::DependencyProperty::Register(
-        "Width",
-        typeid(int),
-        typeid(Window),
-        BuildWidthMetadata()
-    );
-    return prop;
-}
-
-const binding::DependencyProperty& Window::HeightProperty() {
-    static const auto& prop = binding::DependencyProperty::Register(
-        "Height",
-        typeid(int),
-        typeid(Window),
-        BuildHeightMetadata()
-    );
-    return prop;
-}
-
 binding::PropertyMetadata Window::BuildWidthMetadata() {
     return binding::PropertyMetadata(
         800,  // 默认宽度
-        &Window::SizePropertyChanged
+        &Window::WidthPropertyChanged
     );
 }
 
 binding::PropertyMetadata Window::BuildHeightMetadata() {
     return binding::PropertyMetadata(
         600,  // 默认高度
-        &Window::SizePropertyChanged
+        &Window::HeightPropertyChanged
     );
 }
 
-void Window::SizePropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* window = dynamic_cast<Window*>(&sender);
-    if (!window || !window->interopHelper_ || !window->interopHelper_->HasHandle()) {
-        return;
+// OnChanged 实现
+void Window::OnTitleChanged(const std::string& oldValue, const std::string& newValue) {
+    if (interopHelper_ && interopHelper_->HasHandle()) {
+        glfwSetWindowTitle(interopHelper_->GetHandle(), newValue.c_str());
     }
-    
-    const int width = window->Width();
-    const int height = window->Height();
-    glfwSetWindowSize(window->interopHelper_->GetHandle(), width, height);
-    
-    // 触发布局更新
-    if (window->visible_) {
-        window->PerformLayout();
+}
+
+void Window::OnWidthChanged(int oldValue, int newValue) {
+    if (interopHelper_ && interopHelper_->HasHandle()) {
+        const int width = GetWidth();
+        const int height = GetHeight();
+        glfwSetWindowSize(interopHelper_->GetHandle(), width, height);
+        
+        // 触发布局更新
+        if (visible_) {
+            PerformLayout();
+        }
+    }
+}
+
+void Window::OnHeightChanged(int oldValue, int newValue) {
+    if (interopHelper_ && interopHelper_->HasHandle()) {
+        const int width = GetWidth();
+        const int height = GetHeight();
+        glfwSetWindowSize(interopHelper_->GetHandle(), width, height);
+        
+        // 触发布局更新
+        if (visible_) {
+            PerformLayout();
+        }
     }
 }
 
@@ -114,34 +94,32 @@ Window::~Window() {
     // interopHelper_ 会自动销毁窗口
 }
 
-// Title Getter/Setter
-std::string Window::Title() const {
-    return std::any_cast<std::string>(GetValue(TitleProperty()));
-}
-
+// 流式 API 包装（返回 Window::Ptr）
 Window::Ptr Window::Title(const std::string& title) {
-    SetValue(TitleProperty(), title);
+    SetTitle(title);
     return std::static_pointer_cast<Window>(shared_from_this());
 }
 
-// Width Getter/Setter
-int Window::Width() const {
-    return std::any_cast<int>(GetValue(WidthProperty()));
+std::string Window::Title() const {
+    return GetTitle();
 }
 
 Window::Ptr Window::Width(int w) {
-    SetValue(WidthProperty(), w);
+    SetWidth(w);
     return std::static_pointer_cast<Window>(shared_from_this());
 }
 
-// Height Getter/Setter
-int Window::Height() const {
-    return std::any_cast<int>(GetValue(HeightProperty()));
+int Window::Width() const {
+    return GetWidth();
 }
 
 Window::Ptr Window::Height(int h) {
-    SetValue(HeightProperty(), h);
+    SetHeight(h);
     return std::static_pointer_cast<Window>(shared_from_this());
+}
+
+int Window::Height() const {
+    return GetHeight();
 }
 
 void Window::OnContentChanged(UIElement* oldContent, UIElement* newContent) {
@@ -376,6 +354,44 @@ void Window::OnNativeMouseScroll(double xoffset, double yoffset) {
         
         // 传递给内容,包含鼠标位置信息
         content->OnMouseWheel(xoffset, yoffset, mouseX, mouseY);
+    }
+}
+
+void Window::OnNativeKey(int key, int scancode, int action, int mods) {
+    auto* focused = detail::ControlBase::GetFocusedControl();
+    const bool isPress = action == GLFW_PRESS || action == GLFW_REPEAT;
+    const bool isRelease = action == GLFW_RELEASE;
+
+    if (focused) {
+        if (isPress) {
+            if (focused->OnKeyDown(key, scancode, mods)) {
+                return;
+            }
+        } else if (isRelease) {
+            if (focused->OnKeyUp(key, scancode, mods)) {
+                return;
+            }
+        }
+    }
+
+    if (auto content = GetContent()) {
+        if (isPress) {
+            content->OnKeyDown(key, scancode, mods);
+        } else if (isRelease) {
+            content->OnKeyUp(key, scancode, mods);
+        }
+    }
+}
+
+void Window::OnNativeChar(unsigned int codepoint) {
+    if (auto* focused = detail::ControlBase::GetFocusedControl()) {
+        if (focused->OnTextInput(codepoint)) {
+            return;
+        }
+    }
+
+    if (auto content = GetContent()) {
+        content->OnTextInput(codepoint);
     }
 }
 

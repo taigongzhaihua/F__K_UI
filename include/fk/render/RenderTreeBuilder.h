@@ -6,6 +6,7 @@
 namespace fk::render {
 
 class RenderScene;
+struct FrameContext;
 
 /**
  * @brief 渲染树构建器 - 遍历 UI 可视树并生成渲染命令
@@ -20,7 +21,7 @@ public:
      * @param visualRoot 可视树根节点
      * @param scene 输出的渲染场景
      */
-    void Rebuild(const ui::Visual& visualRoot, RenderScene& scene);
+    void Rebuild(const ui::Visual& visualRoot, RenderScene& scene, const FrameContext& frameContext);
 
 private:
     /**
@@ -36,6 +37,7 @@ private:
     // 变换栈（简化版，暂时只记录累计偏移）
     float currentOffsetX_{0.0f};
     float currentOffsetY_{0.0f};
+    double currentFrameTime_{0.0};
 };
 
 } // namespace fk::render

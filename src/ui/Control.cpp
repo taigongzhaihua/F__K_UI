@@ -1,42 +1,28 @@
 #include "fk/ui/Control.h"
 
 #include <utility>
+#include <iostream>
 
 namespace fk::ui::detail {
 
 using binding::DependencyProperty;
 
+ControlBase* ControlBase::focusedControl_ = nullptr;
+
 ControlBase::ControlBase() = default;
 
 ControlBase::~ControlBase() = default;
 
-const DependencyProperty& ControlBase::IsFocusedProperty() {
-    static const auto& property = DependencyProperty::Register(
-        "IsFocused",
-        typeid(bool),
-        typeid(ControlBase),
-        BuildIsFocusedMetadata());
-    return property;
-}
+// ============================================================================
+// 依赖属性定义（使用宏）
+// ============================================================================
 
-const DependencyProperty& ControlBase::TabIndexProperty() {
-    static const auto& property = DependencyProperty::Register(
-        "TabIndex",
-        typeid(int),
-        typeid(ControlBase),
-        BuildTabIndexMetadata());
-    return property;
-}
+FK_DEPENDENCY_PROPERTY_DEFINE(ControlBase, IsFocused, bool, false)
+FK_DEPENDENCY_PROPERTY_DEFINE(ControlBase, TabIndex, int, 0)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(ControlBase, Cursor, std::string)
+FK_DEPENDENCY_PROPERTY_DEFINE(ControlBase, Padding, fk::Thickness, fk::Thickness{})
 
-const DependencyProperty& ControlBase::CursorProperty() {
-    static const auto& property = DependencyProperty::Register(
-        "Cursor",
-        typeid(std::string),
-        typeid(ControlBase),
-        BuildCursorMetadata());
-    return property;
-}
-
+// Content 属性（手动实现，因为需要特殊处理）
 const DependencyProperty& ControlBase::ContentProperty() {
     static const auto& property = DependencyProperty::Register(
         "Content",
@@ -46,42 +32,7 @@ const DependencyProperty& ControlBase::ContentProperty() {
     return property;
 }
 
-const DependencyProperty& ControlBase::PaddingProperty() {
-    static const auto& property = DependencyProperty::Register(
-        "Padding",
-        typeid(fk::Thickness),
-        typeid(ControlBase),
-        BuildPaddingMetadata());
-    return property;
-}
-
-void ControlBase::SetIsFocused(bool value) {
-    VerifyAccess();
-    SetValue(IsFocusedProperty(), value);
-}
-
-bool ControlBase::IsFocused() const {
-    return GetValue<bool>(IsFocusedProperty());
-}
-
-void ControlBase::SetTabIndex(int value) {
-    VerifyAccess();
-    SetValue(TabIndexProperty(), value);
-}
-
-int ControlBase::GetTabIndex() const {
-    return GetValue<int>(TabIndexProperty());
-}
-
-void ControlBase::SetCursor(std::string cursor) {
-    VerifyAccess();
-    SetValue(CursorProperty(), std::move(cursor));
-}
-
-const std::string& ControlBase::GetCursor() const {
-    return GetValue<const std::string&>(CursorProperty());
-}
-
+// Content 属性方法（手动实现）
 void ControlBase::SetContent(std::shared_ptr<UIElement> content) {
     VerifyAccess();
     SetValue(ContentProperty(), std::move(content));
@@ -96,14 +47,26 @@ std::shared_ptr<UIElement> ControlBase::GetContent() const {
     return GetValue<std::shared_ptr<UIElement>>(ContentProperty());
 }
 
-void ControlBase::SetPadding(const fk::Thickness& padding) {
-    VerifyAccess();
-    SetValue(PaddingProperty(), padding);
+bool ControlBase::Focus() {
+    if (!GetIsEnabled()) {
+        return false;
+    }
+
+    if (GetIsFocused()) {
+        return true;
+    }
+
+    SetIsFocused(true);
+    return GetIsFocused();
 }
 
-const fk::Thickness& ControlBase::GetPadding() const {
-    return GetValue<const fk::Thickness&>(PaddingProperty());
+ControlBase* ControlBase::GetFocusedControl() {
+    return focusedControl_;
 }
+
+// ============================================================================
+// 生命周期
+// ============================================================================
 
 void ControlBase::OnAttachedToLogicalTree() {
     FrameworkElement::OnAttachedToLogicalTree();
@@ -111,6 +74,10 @@ void ControlBase::OnAttachedToLogicalTree() {
 }
 
 void ControlBase::OnDetachedFromLogicalTree() {
+    if (focusedControl_ == this) {
+        SetIsFocused(false);
+    }
+
     if (auto content = GetContent()) {
         DetachContent(content.get());
     }
@@ -169,12 +136,47 @@ std::vector<Visual*> ControlBase::GetVisualChildren() const {
     return children;
 }
 
-void ControlBase::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
+bool ControlBase::OnMouseButtonDown(int button, double x, double y) {
+    // 将事件传递给 Content
+    auto content = GetContent();
+    if (content && content->HitTest(x, y)) {
+        auto bounds = content->GetRenderBounds();
+        double localX = x - bounds.x;
+        double localY = y - bounds.y;
+        return content->OnMouseButtonDown(button, localX, localY);
+    }
+    return false;
+}
+
+bool ControlBase::OnMouseButtonUp(int button, double x, double y) {
+    auto content = GetContent();
+    if (content && content->HitTest(x, y)) {
+        auto bounds = content->GetRenderBounds();
+        double localX = x - bounds.x;
+        double localY = y - bounds.y;
+        return content->OnMouseButtonUp(button, localX, localY);
+    }
+    return false;
+}
+
+bool ControlBase::OnMouseMove(double x, double y) {
+    auto content = GetContent();
+    if (content && content->HitTest(x, y)) {
+        auto bounds = content->GetRenderBounds();
+        double localX = x - bounds.x;
+        double localY = y - bounds.y;
+        return content->OnMouseMove(localX, localY);
+    }
+    return false;
+}
+
+bool ControlBase::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
     // 将滚轮事件传递给 Content
     auto content = GetContent();
     if (content && content->HitTest(mouseX, mouseY)) {
-        content->OnMouseWheel(xoffset, yoffset, mouseX, mouseY);
+        return content->OnMouseWheel(xoffset, yoffset, mouseX, mouseY);
     }
+    return false;
 }
 
 UIElement* ControlBase::HitTestChildren(double x, double y) {
@@ -190,18 +192,41 @@ UIElement* ControlBase::HitTestChildren(double x, double y) {
 
 void ControlBase::OnContentChanged(UIElement*, UIElement*) {}
 
-void ControlBase::OnIsFocusedChanged(bool, bool) {}
+void ControlBase::OnIsFocusedChanged(bool /*oldValue*/, bool newValue) {
+    if (newValue) {
+        if (focusedControl_ && focusedControl_ != this) {
+            focusedControl_->SetIsFocused(false);
+        }
+        focusedControl_ = this;
+        OnFocusGained();
+    } else {
+        if (focusedControl_ == this) {
+            focusedControl_ = nullptr;
+        }
+        OnFocusLost();
+    }
+}
 
 void ControlBase::OnTabIndexChanged(int, int) {}
 
 void ControlBase::OnCursorChanged(const std::string&, const std::string&) {}
 
-void ControlBase::OnPaddingChanged(const fk::Thickness&, const fk::Thickness&) {}
+void ControlBase::OnPaddingChanged(fk::Thickness, fk::Thickness) {}
+
+void ControlBase::OnFocusGained() {}
+
+void ControlBase::OnFocusLost() {}
+
+// ============================================================================
+// 元数据构建器
+// ============================================================================
 
 binding::PropertyMetadata ControlBase::BuildIsFocusedMetadata() {
     binding::PropertyMetadata metadata;
     metadata.defaultValue = false;
     metadata.propertyChangedCallback = &ControlBase::IsFocusedPropertyChanged;
+    metadata.bindingOptions.defaultMode = binding::BindingMode::TwoWay;
+    metadata.bindingOptions.updateSourceTrigger = binding::UpdateSourceTrigger::PropertyChanged;
     return metadata;
 }
 
@@ -215,17 +240,9 @@ binding::PropertyMetadata ControlBase::BuildTabIndexMetadata() {
 
 binding::PropertyMetadata ControlBase::BuildCursorMetadata() {
     binding::PropertyMetadata metadata;
-    metadata.defaultValue = std::string("arrow");
+    metadata.defaultValue = std::string{};
     metadata.propertyChangedCallback = &ControlBase::CursorPropertyChanged;
     metadata.validateCallback = &ControlBase::ValidateCursor;
-    return metadata;
-}
-
-binding::PropertyMetadata ControlBase::BuildContentMetadata() {
-    binding::PropertyMetadata metadata;
-    metadata.defaultValue = std::shared_ptr<UIElement>{};
-    metadata.propertyChangedCallback = &ControlBase::ContentPropertyChanged;
-    metadata.validateCallback = &ControlBase::ValidateContent;
     return metadata;
 }
 
@@ -236,54 +253,20 @@ binding::PropertyMetadata ControlBase::BuildPaddingMetadata() {
     return metadata;
 }
 
-void ControlBase::IsFocusedPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
-    auto* control = dynamic_cast<ControlBase*>(&sender);
-    if (!control) {
-        return;
-    }
-    if (!oldValue.has_value() || !newValue.has_value()) {
-        return;
-    }
-    const bool oldFocused = std::any_cast<bool>(oldValue);
-    const bool newFocused = std::any_cast<bool>(newValue);
-    if (oldFocused == newFocused) {
-        return;
-    }
-    control->OnIsFocusedChanged(oldFocused, newFocused);
+// Content 属性元数据（手动实现）
+binding::PropertyMetadata ControlBase::BuildContentMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = std::shared_ptr<UIElement>{};
+    metadata.propertyChangedCallback = &ControlBase::ContentPropertyChanged;
+    metadata.validateCallback = &ControlBase::ValidateContent;
+    return metadata;
 }
 
-void ControlBase::TabIndexPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
-    auto* control = dynamic_cast<ControlBase*>(&sender);
-    if (!control) {
-        return;
-    }
-    if (!oldValue.has_value() || !newValue.has_value()) {
-        return;
-    }
-    const int oldIndex = std::any_cast<int>(oldValue);
-    const int newIndex = std::any_cast<int>(newValue);
-    if (oldIndex == newIndex) {
-        return;
-    }
-    control->OnTabIndexChanged(oldIndex, newIndex);
-}
+// ============================================================================
+// 属性变更回调
+// ============================================================================
 
-void ControlBase::CursorPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
-    auto* control = dynamic_cast<ControlBase*>(&sender);
-    if (!control) {
-        return;
-    }
-    if (!oldValue.has_value() || !newValue.has_value()) {
-        return;
-    }
-    const auto& oldCursor = std::any_cast<const std::string&>(oldValue);
-    const auto& newCursor = std::any_cast<const std::string&>(newValue);
-    if (oldCursor == newCursor) {
-        return;
-    }
-    control->OnCursorChanged(oldCursor, newCursor);
-}
-
+// Content 属性回调（手动实现）
 void ControlBase::ContentPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
     auto* control = dynamic_cast<ControlBase*>(&sender);
     if (!control) {
@@ -310,20 +293,9 @@ void ControlBase::ContentPropertyChanged(binding::DependencyObject& sender, cons
     control->InvalidateArrange();
 }
 
-void ControlBase::PaddingPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
-    auto* control = dynamic_cast<ControlBase*>(&sender);
-    if (!control) {
-        return;
-    }
-    if (!oldValue.has_value() || !newValue.has_value()) {
-        return;
-    }
-    const auto& oldPadding = std::any_cast<const fk::Thickness&>(oldValue);
-    const auto& newPadding = std::any_cast<const fk::Thickness&>(newValue);
-    control->OnPaddingChanged(oldPadding, newPadding);
-    control->InvalidateMeasure();
-    control->InvalidateArrange();
-}
+// ============================================================================
+// 验证回调
+// ============================================================================
 
 bool ControlBase::ValidateTabIndex(const std::any& value) {
     if (!value.has_value()) {

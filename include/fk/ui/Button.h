@@ -2,6 +2,8 @@
 
 #include "fk/ui/Control.h"
 #include "fk/ui/TextBlock.h"
+#include "fk/ui/BindingMacros.h"
+#include "fk/ui/DependencyPropertyMacros.h"
 #include "fk/core/Event.h"
 
 #include <string>
@@ -27,48 +29,21 @@ public:
     ButtonBase();
     ~ButtonBase() override;
 
-    // 依赖属性
-    static const binding::DependencyProperty& CornerRadiusProperty();
-    static const binding::DependencyProperty& BackgroundProperty();
-    static const binding::DependencyProperty& ForegroundProperty();
-    static const binding::DependencyProperty& HoveredBackgroundProperty();
-    static const binding::DependencyProperty& PressedBackgroundProperty();
-    static const binding::DependencyProperty& BorderBrushProperty();
-    static const binding::DependencyProperty& BorderThicknessProperty();
-    static const binding::DependencyProperty& IsMouseOverProperty();
-    static const binding::DependencyProperty& IsPressedProperty();
+    // 依赖属性（使用宏声明）
+    FK_DEPENDENCY_PROPERTY_DECLARE(CornerRadius, float)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Background, std::string)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Foreground, std::string)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(HoveredBackground, std::string)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(PressedBackground, std::string)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(BorderBrush, std::string)
+    FK_DEPENDENCY_PROPERTY_DECLARE(BorderThickness, float)
+    FK_DEPENDENCY_PROPERTY_DECLARE(IsMouseOver, bool)
+    FK_DEPENDENCY_PROPERTY_DECLARE(IsPressed, bool)
 
-    // 圆角半径
-    void SetCornerRadius(float radius);
-    [[nodiscard]] float GetCornerRadius() const;
-
-    // 背景色 (RGBA hex string: "#RRGGBBAA" or "#RRGGBB")
-    void SetBackground(std::string color);
-    [[nodiscard]] const std::string& GetBackground() const;
-
-    // 前景色（文字颜色）
-    void SetForeground(std::string color);
-    [[nodiscard]] const std::string& GetForeground() const;
-
-    // 悬停背景色
-    void SetHoveredBackground(std::string color);
-    [[nodiscard]] const std::string& GetHoveredBackground() const;
-
-    // 按下背景色
-    void SetPressedBackground(std::string color);
-    [[nodiscard]] const std::string& GetPressedBackground() const;
-
-    // 边框颜色
-    void SetBorderBrush(std::string color);
-    [[nodiscard]] const std::string& GetBorderBrush() const;
-
-    // 边框粗细
-    void SetBorderThickness(float thickness);
-    [[nodiscard]] float GetBorderThickness() const;
-
-    // 鼠标状态（只读）
-    [[nodiscard]] bool IsMouseOver() const;
-    [[nodiscard]] bool IsPressed() const;
+public:
+    // 便利方法（无 Get 前缀，更符合 bool 属性的命名习惯）
+    [[nodiscard]] bool IsMouseOver() const { return GetIsMouseOver(); }
+    [[nodiscard]] bool IsPressed() const { return GetIsPressed(); }
 
     // 获取当前实际渲染的背景色（根据状态计算）
     [[nodiscard]] std::string GetActualBackground() const;
@@ -84,9 +59,9 @@ public:
 
 protected:
     // 重写 UIElement 的鼠标事件
-    void OnMouseButtonDown(int button, double x, double y) override;
-    void OnMouseButtonUp(int button, double x, double y) override;
-    void OnMouseMove(double x, double y) override;
+    bool OnMouseButtonDown(int button, double x, double y) override;
+    bool OnMouseButtonUp(int button, double x, double y) override;
+    bool OnMouseMove(double x, double y) override;
 
     // 事件处理
     virtual void OnClick();
@@ -95,52 +70,10 @@ protected:
     virtual void OnMouseDown();
     virtual void OnMouseUp();
 
-    // 属性变更回调
-    virtual void OnCornerRadiusChanged(float oldValue, float newValue);
-    virtual void OnBackgroundChanged(const std::string& oldValue, const std::string& newValue);
-    virtual void OnForegroundChanged(const std::string& oldValue, const std::string& newValue);
-    virtual void OnHoveredBackgroundChanged(const std::string& oldValue, const std::string& newValue);
-    virtual void OnPressedBackgroundChanged(const std::string& oldValue, const std::string& newValue);
-    virtual void OnBorderBrushChanged(const std::string& oldValue, const std::string& newValue);
-    virtual void OnBorderThicknessChanged(float oldValue, float newValue);
-    virtual void OnIsMouseOverChanged(bool oldValue, bool newValue);
-    virtual void OnIsPressedChanged(bool oldValue, bool newValue);
-
     // Visual 接口实现
     bool HasRenderContent() const override { return true; }
 
 private:
-    // 依赖属性元数据构建
-    static binding::PropertyMetadata BuildCornerRadiusMetadata();
-    static binding::PropertyMetadata BuildBackgroundMetadata();
-    static binding::PropertyMetadata BuildForegroundMetadata();
-    static binding::PropertyMetadata BuildHoveredBackgroundMetadata();
-    static binding::PropertyMetadata BuildPressedBackgroundMetadata();
-    static binding::PropertyMetadata BuildBorderBrushMetadata();
-    static binding::PropertyMetadata BuildBorderThicknessMetadata();
-    static binding::PropertyMetadata BuildIsMouseOverMetadata();
-    static binding::PropertyMetadata BuildIsPressedMetadata();
-
-    // 属性变更回调
-    static void CornerRadiusPropertyChanged(binding::DependencyObject& sender,
-        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
-    static void BackgroundPropertyChanged(binding::DependencyObject& sender,
-        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
-    static void ForegroundPropertyChanged(binding::DependencyObject& sender,
-        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
-    static void HoveredBackgroundPropertyChanged(binding::DependencyObject& sender,
-        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
-    static void PressedBackgroundPropertyChanged(binding::DependencyObject& sender,
-        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
-    static void BorderBrushPropertyChanged(binding::DependencyObject& sender,
-        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
-    static void BorderThicknessPropertyChanged(binding::DependencyObject& sender,
-        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
-    static void IsMouseOverPropertyChanged(binding::DependencyObject& sender,
-        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
-    static void IsPressedPropertyChanged(binding::DependencyObject& sender,
-        const binding::DependencyProperty& property, const std::any& oldValue, const std::any& newValue);
-
     // 验证函数
     static bool ValidateCornerRadius(const std::any& value);
     static bool ValidateColor(const std::any& value);
@@ -180,64 +113,14 @@ public:
 
     using Base::Base;
 
-    /**
-     * @brief 设置圆角半径（单位：像素）
-     */
-    Ptr CornerRadius(float radius) {
-        this->SetCornerRadius(radius);
-        return this->Self();
-    }
-
-    /**
-     * @brief 设置背景颜色
-     * @param color 颜色字符串，格式：
-     *   - "#RRGGBB" (如 "#FF5733")
-     *   - "#RRGGBBAA" (如 "#FF5733FF")
-     */
-    Ptr Background(std::string color) {
-        this->SetBackground(std::move(color));
-        return this->Self();
-    }
-
-    /**
-     * @brief 设置前景色（文字颜色）
-     */
-    Ptr Foreground(std::string color) {
-        this->SetForeground(std::move(color));
-        return this->Self();
-    }
-
-    /**
-     * @brief 设置悬停背景色
-     */
-    Ptr HoveredBackground(std::string color) {
-        this->SetHoveredBackground(std::move(color));
-        return this->Self();
-    }
-
-    /**
-     * @brief 设置按下背景色
-     */
-    Ptr PressedBackground(std::string color) {
-        this->SetPressedBackground(std::move(color));
-        return this->Self();
-    }
-
-    /**
-     * @brief 设置边框颜色
-     */
-    Ptr BorderBrush(std::string color) {
-        this->SetBorderBrush(std::move(color));
-        return this->Self();
-    }
-
-    /**
-     * @brief 设置边框粗细
-     */
-    Ptr BorderThickness(float thickness) {
-        this->SetBorderThickness(thickness);
-        return this->Self();
-    }
+    // 🎯 使用宏简化绑定支持
+    FK_BINDING_PROPERTY_VALUE_BASE(CornerRadius, float, ButtonBase)
+    FK_BINDING_PROPERTY_BASE(Background, std::string, ButtonBase)
+    FK_BINDING_PROPERTY_BASE(Foreground, std::string, ButtonBase)
+    FK_BINDING_PROPERTY_BASE(HoveredBackground, std::string, ButtonBase)
+    FK_BINDING_PROPERTY_BASE(PressedBackground, std::string, ButtonBase)
+    FK_BINDING_PROPERTY_BASE(BorderBrush, std::string, ButtonBase)
+    FK_BINDING_PROPERTY_VALUE_BASE(BorderThickness, float, ButtonBase)
 
     /**
      * @brief 设置按钮内容

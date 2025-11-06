@@ -1,6 +1,8 @@
 #pragma once
 
 #include "fk/ui/ContentControl.h"
+#include "fk/ui/BindingMacros.h"
+#include "fk/ui/DependencyPropertyMacros.h"
 #include "fk/binding/PropertyStore.h"
 
 #include <any>
@@ -23,10 +25,13 @@ public:
     ItemsControl();
     ~ItemsControl() override;
 
-    static const binding::DependencyProperty& ItemsSourceProperty();
-    static const binding::DependencyProperty& ItemTemplateProperty();
-    static const binding::DependencyProperty& DisplayMemberPathProperty();
-    static const binding::DependencyProperty& AlternationCountProperty();
+    // 依赖属性声明
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(ItemsSource, std::vector<std::any>);
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(ItemTemplate, ItemTemplateFunc);
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(DisplayMemberPath, std::string);
+    FK_DEPENDENCY_PROPERTY_DECLARE(AlternationCount, int);
+
+public:
 
     void SetItemsPanel(std::shared_ptr<PanelBase> panel);
     [[nodiscard]] std::shared_ptr<PanelBase> GetItemsPanel() const noexcept { return itemsPanel_; }
@@ -48,26 +53,80 @@ public:
 
     [[nodiscard]] std::span<const std::shared_ptr<UIElement>> Items() const noexcept;
 
-    void SetItemsSource(std::vector<std::any> source);
-    [[nodiscard]] const std::vector<std::any>& GetItemsSource() const;
+    // 便利方法
     void ClearItemsSource();
     [[nodiscard]] bool HasItemsSource() const noexcept;
-
-    void SetItemTemplate(ItemTemplateFunc templateFunc);
-    [[nodiscard]] ItemTemplateFunc GetItemTemplate() const;
     void ClearItemTemplate();
-
-    // DisplayMemberPath: 简化简单数据绑定场景
-    void SetDisplayMemberPath(std::string_view path);
-    [[nodiscard]] std::string GetDisplayMemberPath() const;
     void ClearDisplayMemberPath();
 
-    // AlternationCount: 支持奇偶行交替样式
-    void SetAlternationCount(int count);
-    [[nodiscard]] int GetAlternationCount() const;
+    // SetDisplayMemberPath 便利重载（接受 string_view）
+    void SetDisplayMemberPath(std::string_view path) {
+        SetDisplayMemberPath(std::string(path));
+    }
     
     // 获取元素的交替索引（附加属性）
     static int GetAlternationIndex(DependencyObject* element);
+
+    // 🎯 绑定支持：链式 API
+    // ItemsSource
+    [[nodiscard]] const std::vector<std::any>& ItemsSource() const {
+        return GetItemsSource();
+    }
+    
+    Base::Ptr ItemsSource(std::vector<std::any> source) {
+        SetItemsSource(std::move(source));
+        return std::static_pointer_cast<ItemsControl>(shared_from_this());
+    }
+    
+    Base::Ptr ItemsSource(binding::Binding binding) {
+        SetBinding(ItemsSourceProperty(), std::move(binding));
+        return std::static_pointer_cast<ItemsControl>(shared_from_this());
+    }
+    
+    // DisplayMemberPath
+    [[nodiscard]] std::string DisplayMemberPath() const {
+        return GetDisplayMemberPath();
+    }
+    
+    Base::Ptr DisplayMemberPath(std::string_view path) {
+        SetDisplayMemberPath(path);
+        return std::static_pointer_cast<ItemsControl>(shared_from_this());
+    }
+    
+    Base::Ptr DisplayMemberPath(binding::Binding binding) {
+        SetBinding(DisplayMemberPathProperty(), std::move(binding));
+        return std::static_pointer_cast<ItemsControl>(shared_from_this());
+    }
+    
+    // AlternationCount
+    [[nodiscard]] int AlternationCount() const {
+        return GetAlternationCount();
+    }
+    
+    Base::Ptr AlternationCount(int count) {
+        SetAlternationCount(count);
+        return std::static_pointer_cast<ItemsControl>(shared_from_this());
+    }
+    
+    Base::Ptr AlternationCount(binding::Binding binding) {
+        SetBinding(AlternationCountProperty(), std::move(binding));
+        return std::static_pointer_cast<ItemsControl>(shared_from_this());
+    }
+    
+    // ItemTemplate
+    [[nodiscard]] ItemTemplateFunc ItemTemplate() const {
+        return GetItemTemplate();
+    }
+    
+    Base::Ptr ItemTemplate(ItemTemplateFunc templateFunc) {
+        SetItemTemplate(std::move(templateFunc));
+        return std::static_pointer_cast<ItemsControl>(shared_from_this());
+    }
+    
+    Base::Ptr ItemTemplate(binding::Binding binding) {
+        SetBinding(ItemTemplateProperty(), std::move(binding));
+        return std::static_pointer_cast<ItemsControl>(shared_from_this());
+    }
 
 protected:
     void OnAttachedToLogicalTree() override;
@@ -83,25 +142,6 @@ private:
     void OnItemTemplateChanged();
     void UpdateAlternationIndexes();
     std::shared_ptr<UIElement> RealizeItem(const std::any& value);
-
-    static binding::PropertyMetadata BuildItemsSourceMetadata();
-    static binding::PropertyMetadata BuildItemTemplateMetadata();
-    static binding::PropertyMetadata BuildDisplayMemberPathMetadata();
-    static binding::PropertyMetadata BuildAlternationCountMetadata();
-    
-    static void ItemsSourcePropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void ItemTemplatePropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void DisplayMemberPathPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void AlternationCountPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-
-    static bool ValidateItemsSource(const std::any& value);
-    static bool ValidateItemTemplate(const std::any& value);
-    static bool ValidateDisplayMemberPath(const std::any& value);
-    static bool ValidateAlternationCount(const std::any& value);
 
     std::shared_ptr<PanelBase> itemsPanel_;
     std::vector<std::shared_ptr<UIElement>> items_;

@@ -5,6 +5,7 @@
 #include <string_view>
 #include <typeindex>
 #include <utility>
+#include <iostream>
 
 namespace fk::binding {
 
@@ -291,6 +292,7 @@ void BindingExpression::RefreshSourceSubscription() {
 
     currentSource_ = ResolveSourceRoot();
     auto notifier = TryGetNotifier(currentSource_);
+    
     if (notifier == nullptr) {
         return;
     }
@@ -298,7 +300,7 @@ void BindingExpression::RefreshSourceSubscription() {
     auto weakSelf = weak_from_this();
     rawNotifier_ = notifier;
     sourcePropertyConnection_ = notifier->PropertyChanged().Connect(
-        [weakSelf](std::string_view) {
+        [weakSelf](std::string_view propertyName) {
             if (auto self = weakSelf.lock()) {
                 if (!self->isActive_ || self->isUpdatingTarget_) {
                     return;

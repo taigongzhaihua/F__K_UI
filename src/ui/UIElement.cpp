@@ -48,77 +48,14 @@ UIElement::UIElement() = default;
 
 UIElement::~UIElement() = default;
 
-const DependencyProperty& UIElement::VisibilityProperty() {
-    static const DependencyProperty& property = DependencyProperty::Register(
-        "Visibility",
-        typeid(fk::ui::Visibility),
-        typeid(UIElement),
-        BuildVisibilityMetadata());
-    return property;
-}
+// ============================================================================
+// 依赖属性定义（使用宏）
+// ============================================================================
 
-const DependencyProperty& UIElement::IsEnabledProperty() {
-    static const DependencyProperty& property = DependencyProperty::Register(
-        "IsEnabled",
-        typeid(bool),
-        typeid(UIElement),
-        BuildIsEnabledMetadata());
-    return property;
-}
-
-const DependencyProperty& UIElement::OpacityProperty() {
-    static const DependencyProperty& property = DependencyProperty::Register(
-        "Opacity",
-        typeid(float),
-        typeid(UIElement),
-        BuildOpacityMetadata());
-    return property;
-}
-
-const DependencyProperty& UIElement::ClipToBoundsProperty() {
-    static const DependencyProperty& property = DependencyProperty::Register(
-        "ClipToBounds",
-        typeid(bool),
-        typeid(UIElement),
-        BuildClipToBoundsMetadata());
-    return property;
-}
-
-void UIElement::SetVisibility(fk::ui::Visibility visibility) {
-    VerifyAccessEnhanced(this);
-    SetValue(VisibilityProperty(), visibility);
-}
-
-Visibility UIElement::GetVisibility() const {
-    return GetValue<fk::ui::Visibility>(VisibilityProperty());
-}
-
-void UIElement::SetIsEnabled(bool enabled) {
-    VerifyAccessEnhanced(this);
-    SetValue(IsEnabledProperty(), enabled);
-}
-
-bool UIElement::IsEnabled() const {
-    return GetValue<bool>(IsEnabledProperty());
-}
-
-void UIElement::SetOpacity(float value) {
-    VerifyAccessEnhanced(this);
-    SetValue(OpacityProperty(), value);
-}
-
-float UIElement::GetOpacity() const {
-    return GetValue<float>(OpacityProperty());
-}
-
-void UIElement::SetClipToBounds(bool clip) {
-    VerifyAccessEnhanced(this);
-    SetValue(ClipToBoundsProperty(), clip);
-}
-
-bool UIElement::GetClipToBounds() const {
-    return GetValue<bool>(ClipToBoundsProperty());
-}
+FK_DEPENDENCY_PROPERTY_DEFINE(UIElement, Visibility, fk::ui::Visibility, fk::ui::Visibility::Visible)
+FK_DEPENDENCY_PROPERTY_DEFINE(UIElement, IsEnabled, bool, true)
+FK_DEPENDENCY_PROPERTY_DEFINE(UIElement, Opacity, float, 1.0f)
+FK_DEPENDENCY_PROPERTY_DEFINE(UIElement, ClipToBounds, bool, false)
 
 Size UIElement::Measure(const Size& availableSize) {
     VerifyAccessEnhanced(this);
@@ -264,9 +201,13 @@ bool UIElement::HasRenderContent() const {
     return false;
 }
 
+// ============================================================================
+// 元数据构建
+// ============================================================================
+
 binding::PropertyMetadata UIElement::BuildVisibilityMetadata() {
     binding::PropertyMetadata metadata;
-    metadata.defaultValue = Visibility::Visible;
+    metadata.defaultValue = fk::ui::Visibility::Visible;
     metadata.propertyChangedCallback = &UIElement::VisibilityPropertyChanged;
     return metadata;
 }
@@ -293,45 +234,9 @@ binding::PropertyMetadata UIElement::BuildClipToBoundsMetadata() {
     return metadata;
 }
 
-void UIElement::VisibilityPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
-    auto* element = dynamic_cast<UIElement*>(&sender);
-    if (!element) {
-        return;
-    }
-    const auto oldVisibility = std::any_cast<fk::ui::Visibility>(oldValue);
-    const auto newVisibility = std::any_cast<fk::ui::Visibility>(newValue);
-    element->OnVisibilityChanged(oldVisibility, newVisibility);
-}
-
-void UIElement::IsEnabledPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
-    auto* element = dynamic_cast<UIElement*>(&sender);
-    if (!element) {
-        return;
-    }
-    const auto oldEnabled = std::any_cast<bool>(oldValue);
-    const auto newEnabled = std::any_cast<bool>(newValue);
-    element->OnIsEnabledChanged(oldEnabled, newEnabled);
-}
-
-void UIElement::OpacityPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
-    auto* element = dynamic_cast<UIElement*>(&sender);
-    if (!element) {
-        return;
-    }
-    const auto oldOpacity = std::any_cast<float>(oldValue);
-    const auto newOpacity = std::any_cast<float>(newValue);
-    element->OnOpacityChanged(oldOpacity, newOpacity);
-}
-
-void UIElement::ClipToBoundsPropertyChanged(binding::DependencyObject& sender, const DependencyProperty&, const std::any& oldValue, const std::any& newValue) {
-    auto* element = dynamic_cast<UIElement*>(&sender);
-    if (!element) {
-        return;
-    }
-    const auto oldClip = std::any_cast<bool>(oldValue);
-    const auto newClip = std::any_cast<bool>(newValue);
-    element->OnClipToBoundsChanged(oldClip, newClip);
-}
+// ============================================================================
+// 验证回调
+// ============================================================================
 
 bool UIElement::ValidateOpacity(const std::any& value) {
     if (!value.has_value()) {
@@ -369,20 +274,36 @@ render::RenderHost* UIElement::GetRenderHost() const {
 // 鼠标事件处理 (默认实现 - 不处理，让子类重写)
 // ============================================================================
 
-void UIElement::OnMouseButtonDown(int button, double x, double y) {
-    // 默认不处理
+bool UIElement::OnMouseButtonDown(int button, double x, double y) {
+    // 默认不处理，返回 false 允许事件继续冒泡
+    return false;
 }
 
-void UIElement::OnMouseButtonUp(int button, double x, double y) {
-    // 默认不处理
+bool UIElement::OnMouseButtonUp(int button, double x, double y) {
+    // 默认不处理，返回 false 允许事件继续冒泡
+    return false;
 }
 
-void UIElement::OnMouseMove(double x, double y) {
-    // 默认不处理
+bool UIElement::OnMouseMove(double x, double y) {
+    // 默认不处理，返回 false 允许事件继续冒泡
+    return false;
 }
 
-void UIElement::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
-    // 默认不处理,由子类重写
+bool UIElement::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
+    // 默认不处理，返回 false 允许事件继续冒泡
+    return false;
+}
+
+bool UIElement::OnKeyDown(int, int, int) {
+    return false;
+}
+
+bool UIElement::OnKeyUp(int, int, int) {
+    return false;
+}
+
+bool UIElement::OnTextInput(unsigned int) {
+    return false;
 }
 
 bool UIElement::HitTest(double x, double y) const {

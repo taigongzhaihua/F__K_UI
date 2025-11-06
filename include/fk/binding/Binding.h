@@ -135,4 +135,11 @@ namespace fk {
     using binding::IValueConverter;
     using binding::ValidationResult;
     using binding::ValidationRule;
+
+    // Helper function for convenient binding creation
+    inline Binding bind(std::string path) {
+        Binding b;
+        b.Path(std::move(path));
+        return b;
+    }
 }

@@ -4,6 +4,8 @@
 #include <string>
 #include "fk/core/Event.h"
 #include "fk/ui/ContentControl.h"
+#include "fk/ui/DependencyPropertyMacros.h"
+#include "fk/binding/Binding.h"
 
 struct GLFWwindow;
 
@@ -29,13 +31,21 @@ public:
     virtual ~Window();
 
     // 依赖属性声明
-    static const binding::DependencyProperty& TitleProperty();
-    static const binding::DependencyProperty& WidthProperty();
-    static const binding::DependencyProperty& HeightProperty();
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Title, std::string);
+    FK_DEPENDENCY_PROPERTY_DECLARE(Width, int);
+    FK_DEPENDENCY_PROPERTY_DECLARE(Height, int);
+
+public:
 
     // 流式 API (无参getter/有参setter重载)
     Ptr Title(const std::string& title);
     std::string Title() const;
+    
+    // 🎯 绑定支持：Title 属性
+    Ptr Title(binding::Binding binding) {
+        SetBinding(TitleProperty(), std::move(binding));
+        return std::static_pointer_cast<Window>(shared_from_this());
+    }
     
     // 窗口大小 (隐藏父类的 float 版本,提供 int 版本控制窗口大小)
     Ptr Width(int w);
@@ -92,6 +102,8 @@ public:
     void OnNativeMouseButton(int button, int action, int mods);
     void OnNativeMouseMove(double xpos, double ypos);
     void OnNativeMouseScroll(double xoffset, double yoffset);
+    void OnNativeKey(int key, int scancode, int action, int mods);
+    void OnNativeChar(unsigned int codepoint);
 
 protected:
     // 重写 ContentControl 的内容变更通知
@@ -108,28 +120,6 @@ private:
      */
     void RequestRender();
 
-    // 依赖属性元数据
-    static binding::PropertyMetadata BuildTitleMetadata();
-    static binding::PropertyMetadata BuildWidthMetadata();
-    static binding::PropertyMetadata BuildHeightMetadata();
-    
-    // 依赖属性变更回调
-    static void TitlePropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-    
-    static void SizePropertyChanged(
-        binding::DependencyObject& sender,
-        const binding::DependencyProperty& property,
-        const std::any& oldValue,
-        const std::any& newValue
-    );
-
-    // int width_;   // 移除,改用依赖属性
-    // int height_;  // 移除,改用依赖属性
     bool visible_;
     int frameCount_{0};
     

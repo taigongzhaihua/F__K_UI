@@ -43,89 +43,65 @@ namespace {
 
 } // namespace
 
+FK_DEPENDENCY_PROPERTY_DEFINE(FrameworkElement, Width, float, DefaultLengthUnset());
+FK_DEPENDENCY_PROPERTY_DEFINE(FrameworkElement, Height, float, DefaultLengthUnset());
+FK_DEPENDENCY_PROPERTY_DEFINE(FrameworkElement, MinWidth, float, 0.0f);
+FK_DEPENDENCY_PROPERTY_DEFINE(FrameworkElement, MinHeight, float, 0.0f);
+FK_DEPENDENCY_PROPERTY_DEFINE(FrameworkElement, MaxWidth, float, DefaultLengthMax());
+FK_DEPENDENCY_PROPERTY_DEFINE(FrameworkElement, MaxHeight, float, DefaultLengthMax());
+FK_DEPENDENCY_PROPERTY_DEFINE(FrameworkElement, HorizontalAlignment, HorizontalAlignment, HorizontalAlignment::Stretch);
+FK_DEPENDENCY_PROPERTY_DEFINE(FrameworkElement, VerticalAlignment, VerticalAlignment, VerticalAlignment::Stretch);
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(FrameworkElement, Margin, fk::Thickness);
+
 FrameworkElement::FrameworkElement() = default;
 
 FrameworkElement::~FrameworkElement() = default;
 
-const binding::DependencyProperty& FrameworkElement::WidthProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Width",
-        typeid(float),
-        typeid(FrameworkElement),
-        BuildWidthMetadata());
-    return property;
+void FrameworkElement::OnWidthChanged(float, float) {
+    InvalidateMeasure();
+    InvalidateArrange();
 }
 
-const binding::DependencyProperty& FrameworkElement::HeightProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Height",
-        typeid(float),
-        typeid(FrameworkElement),
-        BuildHeightMetadata());
-    return property;
+void FrameworkElement::OnHeightChanged(float, float) {
+    InvalidateMeasure();
+    InvalidateArrange();
 }
 
-const binding::DependencyProperty& FrameworkElement::MinWidthProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "MinWidth",
-        typeid(float),
-        typeid(FrameworkElement),
-        BuildMinWidthMetadata());
-    return property;
+void FrameworkElement::OnMinWidthChanged(float, float) {
+    CoerceMaxToAtLeastMin();
+    InvalidateMeasure();
+    InvalidateArrange();
 }
 
-const binding::DependencyProperty& FrameworkElement::MinHeightProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "MinHeight",
-        typeid(float),
-        typeid(FrameworkElement),
-        BuildMinHeightMetadata());
-    return property;
+void FrameworkElement::OnMinHeightChanged(float, float) {
+    CoerceMaxToAtLeastMin();
+    InvalidateMeasure();
+    InvalidateArrange();
 }
 
-const binding::DependencyProperty& FrameworkElement::MaxWidthProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "MaxWidth",
-        typeid(float),
-        typeid(FrameworkElement),
-        BuildMaxWidthMetadata());
-    return property;
+void FrameworkElement::OnMaxWidthChanged(float, float) {
+    CoerceMaxToAtLeastMin();
+    InvalidateMeasure();
+    InvalidateArrange();
 }
 
-const binding::DependencyProperty& FrameworkElement::MaxHeightProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "MaxHeight",
-        typeid(float),
-        typeid(FrameworkElement),
-        BuildMaxHeightMetadata());
-    return property;
+void FrameworkElement::OnMaxHeightChanged(float, float) {
+    CoerceMaxToAtLeastMin();
+    InvalidateMeasure();
+    InvalidateArrange();
 }
 
-const binding::DependencyProperty& FrameworkElement::HorizontalAlignmentProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "HorizontalAlignment",
-        typeid(HorizontalAlignment),
-        typeid(FrameworkElement),
-        BuildHorizontalAlignmentMetadata());
-    return property;
+void FrameworkElement::OnHorizontalAlignmentChanged(HorizontalAlignment, HorizontalAlignment) {
+    InvalidateArrange();
 }
 
-const binding::DependencyProperty& FrameworkElement::VerticalAlignmentProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "VerticalAlignment",
-        typeid(VerticalAlignment),
-        typeid(FrameworkElement),
-        BuildVerticalAlignmentMetadata());
-    return property;
+void FrameworkElement::OnVerticalAlignmentChanged(VerticalAlignment, VerticalAlignment) {
+    InvalidateArrange();
 }
 
-const binding::DependencyProperty& FrameworkElement::MarginProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "Margin",
-        typeid(fk::Thickness),
-        typeid(FrameworkElement),
-        BuildMarginMetadata());
-    return property;
+void FrameworkElement::OnMarginChanged(const fk::Thickness&, const fk::Thickness&) {
+    InvalidateMeasure();
+    InvalidateArrange();
 }
 
 const binding::DependencyProperty& FrameworkElement::DataContextProperty() {
@@ -135,87 +111,6 @@ const binding::DependencyProperty& FrameworkElement::DataContextProperty() {
         typeid(FrameworkElement),
         BuildDataContextMetadata());
     return property;
-}
-
-void FrameworkElement::SetWidth(float value) {
-    VerifyAccess();
-    SetValue(WidthProperty(), value);
-}
-
-float FrameworkElement::GetWidth() const {
-    return GetValue<float>(WidthProperty());
-}
-
-void FrameworkElement::SetHeight(float value) {
-    VerifyAccess();
-    SetValue(HeightProperty(), value);
-}
-
-float FrameworkElement::GetHeight() const {
-    return GetValue<float>(HeightProperty());
-}
-
-void FrameworkElement::SetMinWidth(float value) {
-    VerifyAccess();
-    SetValue(MinWidthProperty(), value);
-}
-
-float FrameworkElement::GetMinWidth() const {
-    return GetValue<float>(MinWidthProperty());
-}
-
-void FrameworkElement::SetMinHeight(float value) {
-    VerifyAccess();
-    SetValue(MinHeightProperty(), value);
-}
-
-float FrameworkElement::GetMinHeight() const {
-    return GetValue<float>(MinHeightProperty());
-}
-
-void FrameworkElement::SetMaxWidth(float value) {
-    VerifyAccess();
-    SetValue(MaxWidthProperty(), value);
-}
-
-float FrameworkElement::GetMaxWidth() const {
-    return GetValue<float>(MaxWidthProperty());
-}
-
-void FrameworkElement::SetMaxHeight(float value) {
-    VerifyAccess();
-    SetValue(MaxHeightProperty(), value);
-}
-
-float FrameworkElement::GetMaxHeight() const {
-    return GetValue<float>(MaxHeightProperty());
-}
-
-void FrameworkElement::SetHorizontalAlignment(HorizontalAlignment alignment) {
-    VerifyAccess();
-    SetValue(HorizontalAlignmentProperty(), alignment);
-}
-
-HorizontalAlignment FrameworkElement::GetHorizontalAlignment() const {
-    return GetValue<HorizontalAlignment>(HorizontalAlignmentProperty());
-}
-
-void FrameworkElement::SetVerticalAlignment(VerticalAlignment alignment) {
-    VerifyAccess();
-    SetValue(VerticalAlignmentProperty(), alignment);
-}
-
-VerticalAlignment FrameworkElement::GetVerticalAlignment() const {
-    return GetValue<VerticalAlignment>(VerticalAlignmentProperty());
-}
-
-void FrameworkElement::SetMargin(const fk::Thickness& margin) {
-    VerifyAccess();
-    SetValue(MarginProperty(), margin);
-}
-
-const fk::Thickness& FrameworkElement::GetMargin() const {
-    return GetValue<const fk::Thickness&>(MarginProperty());
 }
 
 void FrameworkElement::SetDataContext(std::any value) {
@@ -493,7 +388,7 @@ void FrameworkElement::OnDataContextChanged(const std::any& oldValue, const std:
 binding::PropertyMetadata FrameworkElement::BuildWidthMetadata() {
     binding::PropertyMetadata metadata;
     metadata.defaultValue = DefaultLengthUnset();
-    metadata.propertyChangedCallback = &FrameworkElement::LengthPropertyChanged;
+    metadata.propertyChangedCallback = &FrameworkElement::WidthPropertyChanged;
     metadata.validateCallback = &FrameworkElement::ValidateOptionalLength;
     return metadata;
 }
@@ -501,7 +396,7 @@ binding::PropertyMetadata FrameworkElement::BuildWidthMetadata() {
 binding::PropertyMetadata FrameworkElement::BuildHeightMetadata() {
     binding::PropertyMetadata metadata;
     metadata.defaultValue = DefaultLengthUnset();
-    metadata.propertyChangedCallback = &FrameworkElement::LengthPropertyChanged;
+    metadata.propertyChangedCallback = &FrameworkElement::HeightPropertyChanged;
     metadata.validateCallback = &FrameworkElement::ValidateOptionalLength;
     return metadata;
 }
@@ -509,7 +404,7 @@ binding::PropertyMetadata FrameworkElement::BuildHeightMetadata() {
 binding::PropertyMetadata FrameworkElement::BuildMinWidthMetadata() {
     binding::PropertyMetadata metadata;
     metadata.defaultValue = 0.0f;
-    metadata.propertyChangedCallback = &FrameworkElement::MinMaxLengthPropertyChanged;
+    metadata.propertyChangedCallback = &FrameworkElement::MinWidthPropertyChanged;
     metadata.validateCallback = &FrameworkElement::ValidateNonNegativeLength;
     return metadata;
 }
@@ -517,7 +412,7 @@ binding::PropertyMetadata FrameworkElement::BuildMinWidthMetadata() {
 binding::PropertyMetadata FrameworkElement::BuildMinHeightMetadata() {
     binding::PropertyMetadata metadata;
     metadata.defaultValue = 0.0f;
-    metadata.propertyChangedCallback = &FrameworkElement::MinMaxLengthPropertyChanged;
+    metadata.propertyChangedCallback = &FrameworkElement::MinHeightPropertyChanged;
     metadata.validateCallback = &FrameworkElement::ValidateNonNegativeLength;
     return metadata;
 }
@@ -525,7 +420,7 @@ binding::PropertyMetadata FrameworkElement::BuildMinHeightMetadata() {
 binding::PropertyMetadata FrameworkElement::BuildMaxWidthMetadata() {
     binding::PropertyMetadata metadata;
     metadata.defaultValue = DefaultLengthMax();
-    metadata.propertyChangedCallback = &FrameworkElement::MinMaxLengthPropertyChanged;
+    metadata.propertyChangedCallback = &FrameworkElement::MaxWidthPropertyChanged;
     metadata.validateCallback = &FrameworkElement::ValidateNonNegativeOrInfiniteLength;
     return metadata;
 }
@@ -533,7 +428,7 @@ binding::PropertyMetadata FrameworkElement::BuildMaxWidthMetadata() {
 binding::PropertyMetadata FrameworkElement::BuildMaxHeightMetadata() {
     binding::PropertyMetadata metadata;
     metadata.defaultValue = DefaultLengthMax();
-    metadata.propertyChangedCallback = &FrameworkElement::MinMaxLengthPropertyChanged;
+    metadata.propertyChangedCallback = &FrameworkElement::MaxHeightPropertyChanged;
     metadata.validateCallback = &FrameworkElement::ValidateNonNegativeOrInfiniteLength;
     return metadata;
 }
@@ -541,7 +436,7 @@ binding::PropertyMetadata FrameworkElement::BuildMaxHeightMetadata() {
 binding::PropertyMetadata FrameworkElement::BuildHorizontalAlignmentMetadata() {
     binding::PropertyMetadata metadata;
     metadata.defaultValue = HorizontalAlignment::Stretch;
-    metadata.propertyChangedCallback = &FrameworkElement::AlignmentPropertyChanged;
+    metadata.propertyChangedCallback = &FrameworkElement::HorizontalAlignmentPropertyChanged;
     metadata.validateCallback = &FrameworkElement::ValidateHorizontalAlignment;
     return metadata;
 }
@@ -549,7 +444,7 @@ binding::PropertyMetadata FrameworkElement::BuildHorizontalAlignmentMetadata() {
 binding::PropertyMetadata FrameworkElement::BuildVerticalAlignmentMetadata() {
     binding::PropertyMetadata metadata;
     metadata.defaultValue = VerticalAlignment::Stretch;
-    metadata.propertyChangedCallback = &FrameworkElement::AlignmentPropertyChanged;
+    metadata.propertyChangedCallback = &FrameworkElement::VerticalAlignmentPropertyChanged;
     metadata.validateCallback = &FrameworkElement::ValidateVerticalAlignment;
     return metadata;
 }
@@ -569,48 +464,6 @@ binding::PropertyMetadata FrameworkElement::BuildDataContextMetadata() {
     metadata.bindingOptions.inheritsDataContext = true;
     metadata.validateCallback = nullptr;
     return metadata;
-}
-
-void FrameworkElement::LengthPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty&,
-    const std::any&, const std::any&) {
-    auto* element = dynamic_cast<FrameworkElement*>(&sender);
-    if (!element) {
-        return;
-    }
-    element->InvalidateMeasure();
-    element->InvalidateArrange();
-}
-
-void FrameworkElement::MinMaxLengthPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty&,
-    const std::any&, const std::any&) {
-    auto* element = dynamic_cast<FrameworkElement*>(&sender);
-    if (!element) {
-        return;
-    }
-    element->CoerceMaxToAtLeastMin();
-    element->InvalidateMeasure();
-    element->InvalidateArrange();
-}
-
-void FrameworkElement::AlignmentPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-    const std::any&, const std::any&) {
-    auto* element = dynamic_cast<FrameworkElement*>(&sender);
-    if (!element) {
-        return;
-    }
-    if (&property == &HorizontalAlignmentProperty() || &property == &VerticalAlignmentProperty()) {
-        element->InvalidateArrange();
-    }
-}
-
-void FrameworkElement::MarginPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty&,
-    const std::any&, const std::any&) {
-    auto* element = dynamic_cast<FrameworkElement*>(&sender);
-    if (!element) {
-        return;
-    }
-    element->InvalidateMeasure();
-    element->InvalidateArrange();
 }
 
 void FrameworkElement::DataContextPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty&,

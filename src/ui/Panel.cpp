@@ -2,6 +2,7 @@
 #include "fk/ui/Button.h"
 
 #include <algorithm>
+#include <iostream>
 
 namespace fk::ui {
 
@@ -291,7 +292,7 @@ void PanelBase::DetachAllChildren() {
 // 鼠标事件路由
 // ============================================================================
 
-void PanelBase::OnMouseButtonDown(int button, double x, double y) {
+bool PanelBase::OnMouseButtonDown(int button, double x, double y) {
     // 将事件路由到子元素 (从后往前,因为后面的元素在上层)
     for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
         const auto& child = *it;
@@ -308,41 +309,48 @@ void PanelBase::OnMouseButtonDown(int button, double x, double y) {
             double childX = x - bounds.x;
             double childY = y - bounds.y;
             
-            // 传递事件到子元素
-            child->OnMouseButtonDown(button, childX, childY);
-            return; // 事件已被处理
+            // 传递事件到子元素，如果子元素处理了，返回 true
+            if (child->OnMouseButtonDown(button, childX, childY)) {
+                return true; // 事件已被子元素处理
+            }
         }
     }
     
     // 如果没有子元素处理,调用基类默认处理
-    UIElement::OnMouseButtonDown(button, x, y);
+    return UIElement::OnMouseButtonDown(button, x, y);
 }
 
-void PanelBase::OnMouseButtonUp(int button, double x, double y) {
-    // 将事件路由到子元素
+bool PanelBase::OnMouseButtonUp(int button, double x, double y) {
+    // MouseUp 事件需要特殊处理：即使鼠标不在子元素上，
+    // 也要传递给所有子元素（因为可能有元素捕获了鼠标）
+    bool handled = false;
+    
     for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
         const auto& child = *it;
         if (!child) continue;
         
         auto bounds = child->GetRenderBounds();
+        double childX = x - bounds.x;
+        double childY = y - bounds.y;
         
-        if (x >= bounds.x && x < bounds.x + bounds.width &&
-            y >= bounds.y && y < bounds.y + bounds.height) {
-            
-            double childX = x - bounds.x;
-            double childY = y - bounds.y;
-            
-            child->OnMouseButtonUp(button, childX, childY);
-            return;
+        // 总是尝试传递 MouseUp（子元素会自己判断是否处理）
+        if (child->OnMouseButtonUp(button, childX, childY)) {
+            handled = true;
+            // 不要 break，继续传递给其他元素
         }
     }
     
-    UIElement::OnMouseButtonUp(button, x, y);
+    if (handled) {
+        return true;
+    }
+    
+    return UIElement::OnMouseButtonUp(button, x, y);
 }
 
-void PanelBase::OnMouseMove(double x, double y) {
+bool PanelBase::OnMouseMove(double x, double y) {
     // 查找鼠标当前悬停的子元素
     UIElement* hoveredChild = nullptr;
+    bool handled = false;
     
     for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
         const auto& child = *it;
@@ -358,7 +366,7 @@ void PanelBase::OnMouseMove(double x, double y) {
             double childX = x - bounds.x;
             double childY = y - bounds.y;
             
-            child->OnMouseMove(childX, childY);
+            handled = child->OnMouseMove(childX, childY);
             break;
         }
     }
@@ -374,18 +382,22 @@ void PanelBase::OnMouseMove(double x, double y) {
     lastHoveredChild_ = hoveredChild;
     
     if (!hoveredChild) {
-        UIElement::OnMouseMove(x, y);
+        return UIElement::OnMouseMove(x, y);
     }
+    
+    return handled;
 }
 
-void PanelBase::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
+bool PanelBase::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
     // 找到鼠标位置下的最上层子元素
     UIElement* hitChild = HitTestChildren(mouseX, mouseY);
     
     if (hitChild) {
         // 传递给命中的子元素
-        hitChild->OnMouseWheel(xoffset, yoffset, mouseX, mouseY);
+        return hitChild->OnMouseWheel(xoffset, yoffset, mouseX, mouseY);
     }
+    
+    return false;
 }
 
 UIElement* PanelBase::HitTestChildren(double x, double y) {

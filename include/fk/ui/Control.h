@@ -2,6 +2,8 @@
 
 #include "fk/ui/UIElement.h"
 #include "fk/ui/View.h"
+#include "fk/ui/BindingMacros.h"
+#include "fk/ui/DependencyPropertyMacros.h"
 
 #include <any>
 #include <memory>
@@ -21,28 +23,23 @@ public:
     ControlBase();
     ~ControlBase() override;
 
-    static const binding::DependencyProperty& IsFocusedProperty();
-    static const binding::DependencyProperty& TabIndexProperty();
-    static const binding::DependencyProperty& CursorProperty();
+    // 依赖属性（使用宏）
+    FK_DEPENDENCY_PROPERTY_DECLARE(IsFocused, bool)
+    FK_DEPENDENCY_PROPERTY_DECLARE(TabIndex, int)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Cursor, std::string)
+    FK_DEPENDENCY_PROPERTY_DECLARE(Padding, fk::Thickness)
+
+public:
+    // Content 属性（特殊处理，保留原有方法）
     static const binding::DependencyProperty& ContentProperty();
-    static const binding::DependencyProperty& PaddingProperty();
-
-    void SetIsFocused(bool value);
-    [[nodiscard]] bool IsFocused() const;
-
-    void SetTabIndex(int value);
-    [[nodiscard]] int GetTabIndex() const;
-
-    void SetCursor(std::string cursor);
-    [[nodiscard]] const std::string& GetCursor() const;
-
     void SetContent(std::shared_ptr<UIElement> content);
     void ClearContent();
     [[nodiscard]] std::shared_ptr<UIElement> GetContent() const;
     [[nodiscard]] bool HasContent() const { return GetContent() != nullptr; }
 
-    void SetPadding(const fk::Thickness& padding);
-    [[nodiscard]] const fk::Thickness& GetPadding() const;
+    bool Focus();
+    [[nodiscard]] bool HasFocus() const { return GetIsFocused(); }
+    static ControlBase* GetFocusedControl();
 
 protected:
     void OnAttachedToLogicalTree() override;
@@ -54,35 +51,26 @@ protected:
     // 重写以返回 Content 作为子元素
     std::vector<Visual*> GetVisualChildren() const override;
     
-    // 重写鼠标滚轮事件,传递给 Content
-    void OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) override;
+    // 重写鼠标事件,传递给 Content
+    bool OnMouseButtonDown(int button, double x, double y) override;
+    bool OnMouseButtonUp(int button, double x, double y) override;
+    bool OnMouseMove(double x, double y) override;
+    bool OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) override;
     
     // 命中测试重写
     UIElement* HitTestChildren(double x, double y) override;
 
     virtual void OnContentChanged(UIElement* oldContent, UIElement* newContent);
-    virtual void OnIsFocusedChanged(bool oldValue, bool newValue);
-    virtual void OnTabIndexChanged(int oldValue, int newValue);
-    virtual void OnCursorChanged(const std::string& oldCursor, const std::string& newCursor);
-    virtual void OnPaddingChanged(const fk::Thickness& oldValue, const fk::Thickness& newValue);
+    virtual void OnFocusGained();
+    virtual void OnFocusLost();
 
 private:
-    static binding::PropertyMetadata BuildIsFocusedMetadata();
-    static binding::PropertyMetadata BuildTabIndexMetadata();
-    static binding::PropertyMetadata BuildCursorMetadata();
+    // Content 属性元数据
     static binding::PropertyMetadata BuildContentMetadata();
-    static binding::PropertyMetadata BuildPaddingMetadata();
-
-    static void IsFocusedPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void TabIndexPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-    static void CursorPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
     static void ContentPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
         const std::any& oldValue, const std::any& newValue);
-    static void PaddingPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
+
+    static ControlBase* focusedControl_;
 
     static bool ValidateTabIndex(const std::any& value);
     static bool ValidateCursor(const std::any& value);
@@ -107,29 +95,34 @@ public:
 
     using Base::Base;
 
-    Ptr IsFocused(bool value) {
-        this->SetIsFocused(value);
-        return this->Self();
+    // 🎯 使用宏简化绑定支持
+    FK_BINDING_PROPERTY_VALUE_BASE(IsFocused, bool, ControlBase)
+    FK_BINDING_PROPERTY_VALUE_BASE(TabIndex, int, ControlBase)
+    FK_BINDING_PROPERTY_BASE(Cursor, std::string, ControlBase)
+    
+    // Content 属性 - 需要特殊处理（因为类型是 shared_ptr）
+    [[nodiscard]] ContentPtr Content() const {
+        return this->GetContent();
     }
-
-    Ptr TabIndex(int value) {
-        this->SetTabIndex(value);
-        return this->Self();
-    }
-
-    Ptr Cursor(std::string cursor) {
-        this->SetCursor(std::move(cursor));
-        return this->Self();
-    }
-
+    
     Ptr Content(ContentPtr content) {
         this->SetContent(std::move(content));
+        return this->Self();
+    }
+    
+    Ptr Content(binding::Binding binding) {
+        this->SetBinding(ControlBase::ContentProperty(), std::move(binding));
         return this->Self();
     }
 
     Ptr ClearContentValue() {
         static_cast<ControlBase*>(this)->ClearContent();
         return this->Self();
+    }
+
+    // Padding 属性 - 支持多种重载
+    [[nodiscard]] const fk::Thickness& Padding() const {
+        return this->GetPadding();
     }
 
     Ptr Padding(const fk::Thickness& padding) {
@@ -149,6 +142,11 @@ public:
 
     Ptr Padding(float left, float top, float right, float bottom) {
         this->SetPadding(fk::Thickness{left, top, right, bottom});
+        return this->Self();
+    }
+    
+    Ptr Padding(binding::Binding binding) {
+        this->SetBinding(ControlBase::PaddingProperty(), std::move(binding));
         return this->Self();
     }
 

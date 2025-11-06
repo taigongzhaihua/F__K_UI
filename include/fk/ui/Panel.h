@@ -2,6 +2,7 @@
 
 #include "fk/ui/FrameworkElement.h"
 #include "fk/ui/UIElement.h"
+#include "fk/binding/Binding.h"
 
 #include <memory>
 #include <span>
@@ -60,10 +61,10 @@ protected:
     virtual void OnChildrenChanged(const UIElementCollection& oldChildren, const UIElementCollection& newChildren);
     
     // 重写鼠标事件处理,实现事件路由
-    void OnMouseButtonDown(int button, double x, double y) override;
-    void OnMouseButtonUp(int button, double x, double y) override;
-    void OnMouseMove(double x, double y) override;
-    void OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) override;
+    bool OnMouseButtonDown(int button, double x, double y) override;
+    bool OnMouseButtonUp(int button, double x, double y) override;
+    bool OnMouseMove(double x, double y) override;
+    bool OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) override;
     
     // 命中测试重写
     UIElement* HitTestChildren(double x, double y) override;
@@ -116,6 +117,12 @@ public:
     // Fluent API: 设置 Children 集合（移动语义，返回派生类指针）
     Ptr Children(UIElementCollection&& children) {
         SetChildrenInternal(std::move(children));
+        return Self();
+    }
+    
+    // 🎯 绑定支持：Children 属性
+    Ptr Children(binding::Binding binding) {
+        SetBinding(PanelBase::ChildrenProperty(), std::move(binding));
         return Self();
     }
 

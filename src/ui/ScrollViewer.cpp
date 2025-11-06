@@ -37,204 +37,17 @@ ScrollViewerBase::ScrollViewerBase() {
 ScrollViewerBase::~ScrollViewerBase() = default;
 
 // ============================================================================
-// 依赖属性注�?
+// 依赖属性定义（使用宏）
 // ============================================================================
 
-const binding::DependencyProperty& ScrollViewerBase::HorizontalOffsetProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "HorizontalOffset",
-        typeid(double),
-        typeid(ScrollViewerBase),
-        BuildHorizontalOffsetMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollViewerBase::VerticalOffsetProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "VerticalOffset",
-        typeid(double),
-        typeid(ScrollViewerBase),
-        BuildVerticalOffsetMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollViewerBase::HorizontalScrollBarVisibilityProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "HorizontalScrollBarVisibility",
-        typeid(ScrollBarVisibility),
-        typeid(ScrollViewerBase),
-        BuildHorizontalScrollBarVisibilityMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollViewerBase::VerticalScrollBarVisibilityProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "VerticalScrollBarVisibility",
-        typeid(ScrollBarVisibility),
-        typeid(ScrollViewerBase),
-        BuildVerticalScrollBarVisibilityMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollViewerBase::ViewportWidthProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "ViewportWidth",
-        typeid(double),
-        typeid(ScrollViewerBase),
-        BuildViewportWidthMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollViewerBase::ViewportHeightProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "ViewportHeight",
-        typeid(double),
-        typeid(ScrollViewerBase),
-        BuildViewportHeightMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollViewerBase::ExtentWidthProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "ExtentWidth",
-        typeid(double),
-        typeid(ScrollViewerBase),
-        BuildExtentWidthMetadata()
-    );
-    return property;
-}
-
-const binding::DependencyProperty& ScrollViewerBase::ExtentHeightProperty() {
-    static const auto& property = binding::DependencyProperty::Register(
-        "ExtentHeight",
-        typeid(double),
-        typeid(ScrollViewerBase),
-        BuildExtentHeightMetadata()
-    );
-    return property;
-}
-
-// ============================================================================
-// 属性访问器
-// ============================================================================
-
-void ScrollViewerBase::SetHorizontalOffset(double offset) {
-    DependencyObject::SetValue(HorizontalOffsetProperty(), offset);
-}
-
-double ScrollViewerBase::GetHorizontalOffset() const {
-    const auto& value = DependencyObject::GetValue(HorizontalOffsetProperty());
-    if (!value.has_value()) return 0.0;
-    try {
-        return std::any_cast<double>(value);
-    } catch (...) {
-        return 0.0;
-    }
-}
-
-void ScrollViewerBase::SetVerticalOffset(double offset) {
-    DependencyObject::SetValue(VerticalOffsetProperty(), offset);
-}
-
-double ScrollViewerBase::GetVerticalOffset() const {
-    const auto& value = DependencyObject::GetValue(VerticalOffsetProperty());
-    if (!value.has_value()) return 0.0;
-    try {
-        return std::any_cast<double>(value);
-    } catch (...) {
-        return 0.0;
-    }
-}
-
-void ScrollViewerBase::SetHorizontalScrollBarVisibility(ScrollBarVisibility visibility) {
-    DependencyObject::SetValue(HorizontalScrollBarVisibilityProperty(), visibility);
-}
-
-ScrollBarVisibility ScrollViewerBase::GetHorizontalScrollBarVisibility() const {
-    const auto& value = DependencyObject::GetValue(HorizontalScrollBarVisibilityProperty());
-    if (!value.has_value()) return ScrollBarVisibility::Auto;
-    try {
-        return std::any_cast<ScrollBarVisibility>(value);
-    } catch (...) {
-        return ScrollBarVisibility::Auto;
-    }
-}
-
-void ScrollViewerBase::SetVerticalScrollBarVisibility(ScrollBarVisibility visibility) {
-    DependencyObject::SetValue(VerticalScrollBarVisibilityProperty(), visibility);
-}
-
-ScrollBarVisibility ScrollViewerBase::GetVerticalScrollBarVisibility() const {
-    const auto& value = DependencyObject::GetValue(VerticalScrollBarVisibilityProperty());
-    if (!value.has_value()) return ScrollBarVisibility::Auto;
-    try {
-        return std::any_cast<ScrollBarVisibility>(value);
-    } catch (...) {
-        return ScrollBarVisibility::Auto;
-    }
-}
-
-double ScrollViewerBase::GetViewportWidth() const {
-    const auto& value = DependencyObject::GetValue(ViewportWidthProperty());
-    if (!value.has_value()) return 0.0;
-    try {
-        return std::any_cast<double>(value);
-    } catch (...) {
-        return 0.0;
-    }
-}
-
-double ScrollViewerBase::GetViewportHeight() const {
-    const auto& value = DependencyObject::GetValue(ViewportHeightProperty());
-    if (!value.has_value()) return 0.0;
-    try {
-        return std::any_cast<double>(value);
-    } catch (...) {
-        return 0.0;
-    }
-}
-
-double ScrollViewerBase::GetExtentWidth() const {
-    const auto& value = DependencyObject::GetValue(ExtentWidthProperty());
-    if (!value.has_value()) return 0.0;
-    try {
-        return std::any_cast<double>(value);
-    } catch (...) {
-        return 0.0;
-    }
-}
-
-double ScrollViewerBase::GetExtentHeight() const {
-    const auto& value = DependencyObject::GetValue(ExtentHeightProperty());
-    if (!value.has_value()) return 0.0;
-    try {
-        return std::any_cast<double>(value);
-    } catch (...) {
-        return 0.0;
-    }
-}
-
-void ScrollViewerBase::SetViewportWidth(double width) {
-    DependencyObject::SetValue(ViewportWidthProperty(), width);
-}
-
-void ScrollViewerBase::SetViewportHeight(double height) {
-    DependencyObject::SetValue(ViewportHeightProperty(), height);
-}
-
-void ScrollViewerBase::SetExtentWidth(double width) {
-    DependencyObject::SetValue(ExtentWidthProperty(), width);
-}
-
-void ScrollViewerBase::SetExtentHeight(double height) {
-    DependencyObject::SetValue(ExtentHeightProperty(), height);
-}
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollViewerBase, HorizontalOffset, double, 0.0)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollViewerBase, VerticalOffset, double, 0.0)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollViewerBase, HorizontalScrollBarVisibility, ScrollBarVisibility, ScrollBarVisibility::Auto)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollViewerBase, VerticalScrollBarVisibility, ScrollBarVisibility, ScrollBarVisibility::Auto)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollViewerBase, ViewportWidth, double, 0.0)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollViewerBase, ViewportHeight, double, 0.0)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollViewerBase, ExtentWidth, double, 0.0)
+FK_DEPENDENCY_PROPERTY_DEFINE(ScrollViewerBase, ExtentHeight, double, 0.0)
 
 // ============================================================================
 // 滚动方法
@@ -497,81 +310,134 @@ UIElement* ScrollViewerBase::HitTestChildren(double x, double y) {
 // 鼠标事件处理
 // ============================================================================
 
-void ScrollViewerBase::OnMouseButtonDown(int button, double x, double y) {
-    // 使用 HitTest 找到应该接收事件的元素
-    UIElement* target = HitTestChildren(x, y);
+bool ScrollViewerBase::OnMouseButtonDown(int button, double x, double y) {
+    // 优先检查滚动条（从上往下）
+    if (verticalScrollBar_ && verticalScrollBar_->GetVisibility() == Visibility::Visible) {
+        if (verticalScrollBar_->HitTest(x, y)) {
+            auto bounds = verticalScrollBar_->GetRenderBounds();
+            double localX = x - bounds.x;
+            double localY = y - bounds.y;
+            if (static_cast<UIElement*>(verticalScrollBar_.get())->OnMouseButtonDown(button, localX, localY)) {
+                return true;
+            }
+        }
+    }
     
-    if (target) {
-        // 获取目标元素的边界并转换坐标
-        auto bounds = target->GetRenderBounds();
+    if (horizontalScrollBar_ && horizontalScrollBar_->GetVisibility() == Visibility::Visible) {
+        if (horizontalScrollBar_->HitTest(x, y)) {
+            auto bounds = horizontalScrollBar_->GetRenderBounds();
+            double localX = x - bounds.x;
+            double localY = y - bounds.y;
+            if (static_cast<UIElement*>(horizontalScrollBar_.get())->OnMouseButtonDown(button, localX, localY)) {
+                return true;
+            }
+        }
+    }
+    
+    // 然后检查内容
+    auto content = GetContent();
+    if (content && content->HitTest(x, y)) {
+        auto bounds = content->GetRenderBounds();
         double localX = x - bounds.x;
         double localY = y - bounds.y;
-        
-        // 通过虚函数调用（多态）
-        target->OnMouseButtonDown(button, localX, localY);
+        return content->OnMouseButtonDown(button, localX, localY);
     }
+    
+    return false;
 }
 
-void ScrollViewerBase::OnMouseButtonUp(int button, double x, double y) {
+bool ScrollViewerBase::OnMouseButtonUp(int button, double x, double y) {
     // MouseUp 需要传递给所有可能正在交互的元素（特别是正在拖动的 ScrollBar）
+    // 注意：即使鼠标不在 ScrollBar 上，也要通知它（因为可能正在拖动）
+    bool handled = false;
+    
     if (verticalScrollBar_) {
         auto bounds = verticalScrollBar_->GetRenderBounds();
         double localX = x - bounds.x;
         double localY = y - bounds.y;
-        // 使用 UIElement 的公共虚函数接口
-        static_cast<UIElement*>(verticalScrollBar_.get())->OnMouseButtonUp(button, localX, localY);
+        if (static_cast<UIElement*>(verticalScrollBar_.get())->OnMouseButtonUp(button, localX, localY)) {
+            handled = true;
+        }
     }
     
     if (horizontalScrollBar_) {
         auto bounds = horizontalScrollBar_->GetRenderBounds();
         double localX = x - bounds.x;
         double localY = y - bounds.y;
-        static_cast<UIElement*>(horizontalScrollBar_.get())->OnMouseButtonUp(button, localX, localY);
+        if (static_cast<UIElement*>(horizontalScrollBar_.get())->OnMouseButtonUp(button, localX, localY)) {
+            handled = true;
+        }
     }
     
-    // 也传递给内容
+    if (handled) {
+        return true;
+    }
+    
+    // 传递给内容
     auto content = GetContent();
     if (content) {
         auto bounds = content->GetRenderBounds();
         double localX = x - bounds.x;
         double localY = y - bounds.y;
-        content->OnMouseButtonUp(button, localX, localY);
+        return content->OnMouseButtonUp(button, localX, localY);
     }
+    
+    return false;
 }
 
-void ScrollViewerBase::OnMouseMove(double x, double y) {
+bool ScrollViewerBase::OnMouseMove(double x, double y) {
     // MouseMove 需要传递给所有可能正在拖动的元素
+    bool handled = false;
+    
     if (verticalScrollBar_) {
         auto bounds = verticalScrollBar_->GetRenderBounds();
         double localX = x - bounds.x;
         double localY = y - bounds.y;
-        static_cast<UIElement*>(verticalScrollBar_.get())->OnMouseMove(localX, localY);
+        if (static_cast<UIElement*>(verticalScrollBar_.get())->OnMouseMove(localX, localY)) {
+            handled = true;
+        }
     }
     
     if (horizontalScrollBar_) {
         auto bounds = horizontalScrollBar_->GetRenderBounds();
         double localX = x - bounds.x;
         double localY = y - bounds.y;
-        static_cast<UIElement*>(horizontalScrollBar_.get())->OnMouseMove(localX, localY);
+        if (static_cast<UIElement*>(horizontalScrollBar_.get())->OnMouseMove(localX, localY)) {
+            handled = true;
+        }
     }
     
-    // 也传递给内容
+    if (handled) {
+        return true;
+    }
+    
+    // 传递给内容
     auto content = GetContent();
     if (content) {
         auto bounds = content->GetRenderBounds();
         double localX = x - bounds.x;
         double localY = y - bounds.y;
-        content->OnMouseMove(localX, localY);
+        return content->OnMouseMove(localX, localY);
     }
+    
+    return false;
 }
 
 // ============================================================================
 // 鼠标滚轮事件处理
 // ============================================================================
 
-void ScrollViewerBase::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
-    // ScrollViewer 处理滚轮事件,不再向下传递
-    // (除非鼠标明确在内容的某个嵌套 ScrollViewer 上,但那会由命中测试自动处理)
+bool ScrollViewerBase::OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) {
+    // 先尝试传递给内容（例如嵌套的 ScrollViewer）
+    auto content = GetContent();
+    if (content && content->HitTest(mouseX, mouseY)) {
+        if (content->OnMouseWheel(xoffset, yoffset, mouseX, mouseY)) {
+            return true; // 内容处理了
+        }
+    }
+    
+    // 内容没有处理，由 ScrollViewer 自己处理
+    bool handled = false;
     
     // 垂直滚动
     // yoffset > 0: 鼠标向上滚 → 内容向下移(看到上面的内容) → offset 减小
@@ -584,6 +450,7 @@ void ScrollViewerBase::OnMouseWheel(double xoffset, double yoffset, double mouse
             } else {
                 LineDown();  // 增大 offset,内容向上移
             }
+            handled = true;
         }
     }
     
@@ -596,8 +463,11 @@ void ScrollViewerBase::OnMouseWheel(double xoffset, double yoffset, double mouse
             } else {
                 LineLeft();
             }
+            handled = true;
         }
     }
+    
+    return handled;
 }
 
 // ============================================================================
@@ -747,74 +617,6 @@ binding::PropertyMetadata ScrollViewerBase::BuildExtentWidthMetadata() {
 binding::PropertyMetadata ScrollViewerBase::BuildExtentHeightMetadata() {
     binding::PropertyMetadata metadata(0.0);
     return metadata;
-}
-
-// ============================================================================
-// 属性变更回�?(静�?
-// ============================================================================
-
-void ScrollViewerBase::HorizontalOffsetPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollViewer = dynamic_cast<ScrollViewerBase*>(&sender);
-    if (!scrollViewer) return;
-    
-    try {
-        double oldVal = std::any_cast<double>(oldValue);
-        double newVal = std::any_cast<double>(newValue);
-        scrollViewer->OnHorizontalOffsetChanged(oldVal, newVal);
-    } catch (...) {}
-}
-
-void ScrollViewerBase::VerticalOffsetPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollViewer = dynamic_cast<ScrollViewerBase*>(&sender);
-    if (!scrollViewer) return;
-    
-    try {
-        double oldVal = std::any_cast<double>(oldValue);
-        double newVal = std::any_cast<double>(newValue);
-        scrollViewer->OnVerticalOffsetChanged(oldVal, newVal);
-    } catch (...) {}
-}
-
-void ScrollViewerBase::HorizontalScrollBarVisibilityPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollViewer = dynamic_cast<ScrollViewerBase*>(&sender);
-    if (!scrollViewer) return;
-    
-    try {
-        auto oldVal = std::any_cast<ScrollBarVisibility>(oldValue);
-        auto newVal = std::any_cast<ScrollBarVisibility>(newValue);
-        scrollViewer->OnHorizontalScrollBarVisibilityChanged(oldVal, newVal);
-    } catch (...) {}
-}
-
-void ScrollViewerBase::VerticalScrollBarVisibilityPropertyChanged(
-    binding::DependencyObject& sender,
-    const binding::DependencyProperty& property,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* scrollViewer = dynamic_cast<ScrollViewerBase*>(&sender);
-    if (!scrollViewer) return;
-    
-    try {
-        auto oldVal = std::any_cast<ScrollBarVisibility>(oldValue);
-        auto newVal = std::any_cast<ScrollBarVisibility>(newValue);
-        scrollViewer->OnVerticalScrollBarVisibilityChanged(oldVal, newVal);
-    } catch (...) {}
 }
 
 } // namespace fk::ui::detail

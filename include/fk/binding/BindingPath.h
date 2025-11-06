@@ -148,25 +148,42 @@ void PropertyAccessorRegistry::RegisterPropertyGetter(std::string name, Getter g
 
 template<typename Owner, typename Setter>
 void PropertyAccessorRegistry::RegisterPropertySetter(std::string name, Setter setter) {
-    static_assert(std::is_member_function_pointer_v<Setter>, "Setter must be a pointer to member function");
-    using Traits = detail::MemberFunctionTraits<Setter>;
-    static_assert(Traits::Arity == 1, "Setter must accept exactly one argument");
+    // 支持成员函数指针和通用可调用对象（lambda/函数对象）
+    if constexpr (std::is_member_function_pointer_v<Setter>) {
+        // 成员函数指针路径
+        using Traits = detail::MemberFunctionTraits<Setter>;
+        static_assert(Traits::Arity == 1, "Setter must accept exactly one argument");
 
-    using ArgumentRaw = std::tuple_element_t<0, typename Traits::ArgumentTuple>;
-    using ArgumentType = std::remove_cv_t<std::remove_reference_t<ArgumentRaw>>;
+        using ArgumentRaw = std::tuple_element_t<0, typename Traits::ArgumentTuple>;
+        using ArgumentType = std::remove_cv_t<std::remove_reference_t<ArgumentRaw>>;
 
-    Accessor accessor;
-    accessor.setter = [setter](std::any& instance, const std::any& value) -> bool {
-        bool invoked = false;
-        auto visitor = [&](Owner& owner) {
-            ArgumentType argument = std::any_cast<ArgumentType>(value);
-            std::invoke(setter, owner, argument);
-            invoked = true;
+        Accessor accessor;
+        accessor.setter = [setter](std::any& instance, const std::any& value) -> bool {
+            bool invoked = false;
+            auto visitor = [&](Owner& owner) {
+                ArgumentType argument = std::any_cast<ArgumentType>(value);
+                std::invoke(setter, owner, argument);
+                invoked = true;
+            };
+            return VisitInstance<Owner>(instance, visitor) && invoked;
         };
-        return VisitInstance<Owner>(instance, visitor) && invoked;
-    };
 
-    RegisterVariants<Owner>(name, accessor);
+        RegisterVariants<Owner>(name, accessor);
+    } else {
+        // 通用可调用对象路径（lambda/函数对象）
+        Accessor accessor;
+        accessor.setter = [setter = std::move(setter)](std::any& instance, const std::any& value) -> bool {
+            bool invoked = false;
+            auto visitor = [&](Owner& owner) {
+                // 直接调用可调用对象，让它自己处理类型转换
+                setter(owner, value);
+                invoked = true;
+            };
+            return VisitInstance<Owner>(instance, visitor) && invoked;
+        };
+
+        RegisterVariants<Owner>(name, accessor);
+    }
 }
 
 template<typename Owner, typename Getter, typename Setter>

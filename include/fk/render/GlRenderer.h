@@ -26,6 +26,11 @@ public:
     void EndFrame() override;
     void Shutdown() override;
 
+    /**
+     * @brief 获取 TextRenderer 实例(用于文本测量)
+     */
+    TextRenderer* GetTextRenderer() const { return textRenderer_.get(); }
+
 private:
     /**
      * @brief 执行单个渲染命令
