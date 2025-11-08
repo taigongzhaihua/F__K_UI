@@ -8,6 +8,7 @@
 
 #include <any>
 #include <cstddef>
+#include <string>
 
 namespace fk::render {
 class RenderHost;
@@ -52,6 +53,7 @@ public:
     FK_DEPENDENCY_PROPERTY_DECLARE(IsEnabled, bool)
     FK_DEPENDENCY_PROPERTY_DECLARE(Opacity, float)
     FK_DEPENDENCY_PROPERTY_DECLARE(ClipToBounds, bool)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Name, std::string)
 
 public:
     // GetVisibility() 和 GetOpacity() 同时实现 Visual 接口
@@ -84,6 +86,20 @@ public:
     // GetOpacity() 和 GetVisibility() 已在上面声明
     std::vector<Visual*> GetVisualChildren() const override;
     bool HasRenderContent() const override;
+
+    [[nodiscard]] UIElement* FindName(const std::string& name);
+    [[nodiscard]] const UIElement* FindName(const std::string& name) const;
+
+    template<typename T>
+    [[nodiscard]] T* As() noexcept {
+        return dynamic_cast<T*>(this);
+    }
+
+    template<typename T>
+    [[nodiscard]] const T* As() const noexcept {
+        return dynamic_cast<const T*>(this);
+    }
+    
 
 protected:
     void OnAttachedToLogicalTree() override;

@@ -38,6 +38,7 @@ public:
     FK_BINDING_PROPERTY_VIEW_ENUM(Visibility, ui::Visibility, UIElement)
     FK_BINDING_PROPERTY_VIEW_VALUE(IsEnabled, bool, UIElement)
     FK_BINDING_PROPERTY_VIEW_VALUE(Opacity, float, UIElement)
+    FK_BINDING_PROPERTY_VIEW(Name, std::string, UIElement)
 
     // DataContext - Getter/Setter 重载
     [[nodiscard]] const std::any& DataContext() const { return Base::GetDataContext(); }

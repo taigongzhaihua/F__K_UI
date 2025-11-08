@@ -990,9 +990,10 @@ void TextBoxBase::EnsureCaretVisible() {
     
     // 计算光标在视口中的位置
     const float caretInViewport = caretOffset - horizontalScrollOffset_;
+
+    const float margin = leftPadding + 1.0f;  // 🎯 Padding + 1px 额外缓冲区
     
-    const float margin = leftPadding + 2.0f;  // 🎯 Padding + 2px 额外缓冲区
-    
+
     // 如果光标在视口左侧外面,滚动到光标位置
     if (caretInViewport < margin) {
         horizontalScrollOffset_ = std::max(0.0f, caretOffset - margin);

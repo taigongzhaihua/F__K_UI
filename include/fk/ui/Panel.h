@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <span>
+#include <any>
 #include <vector>
 
 namespace fk::ui {
@@ -48,6 +49,7 @@ public:
 protected:
     void OnAttachedToLogicalTree() override;
     void OnDetachedFromLogicalTree() override;
+    void OnDataContextChanged(const std::any& oldValue, const std::any& newValue) override;
 
     virtual Size MeasureOverride(const Size& availableSize) = 0;
     virtual Size ArrangeOverride(const Size& finalSize) = 0;

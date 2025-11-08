@@ -56,6 +56,7 @@ FK_DEPENDENCY_PROPERTY_DEFINE(UIElement, Visibility, fk::ui::Visibility, fk::ui:
 FK_DEPENDENCY_PROPERTY_DEFINE(UIElement, IsEnabled, bool, true)
 FK_DEPENDENCY_PROPERTY_DEFINE(UIElement, Opacity, float, 1.0f)
 FK_DEPENDENCY_PROPERTY_DEFINE(UIElement, ClipToBounds, bool, false)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(UIElement, Name, std::string)
 
 Size UIElement::Measure(const Size& availableSize) {
     VerifyAccessEnhanced(this);
@@ -184,6 +185,13 @@ void UIElement::OnClipToBoundsChanged(bool, bool) {
     InvalidateVisual();
 }
 
+void UIElement::OnNameChanged(const std::string& oldValue, const std::string& newValue) {
+    if (oldValue == newValue) {
+        return;
+    }
+    SetElementName(newValue);
+}
+
 // Visual 接口实现
 Rect UIElement::GetRenderBounds() const {
     return layoutSlot_;
@@ -199,6 +207,16 @@ std::vector<Visual*> UIElement::GetVisualChildren() const {
 bool UIElement::HasRenderContent() const {
     // 基类默认没有渲染内容，由派生类重写
     return false;
+}
+
+UIElement* UIElement::FindName(const std::string& name) {
+    auto* result = DependencyObject::FindElementByName(name);
+    return dynamic_cast<UIElement*>(result);
+}
+
+const UIElement* UIElement::FindName(const std::string& name) const {
+    auto* result = DependencyObject::FindElementByName(name);
+    return dynamic_cast<const UIElement*>(result);
 }
 
 // ============================================================================
@@ -231,6 +249,13 @@ binding::PropertyMetadata UIElement::BuildClipToBoundsMetadata() {
     binding::PropertyMetadata metadata;
     metadata.defaultValue = false;
     metadata.propertyChangedCallback = &UIElement::ClipToBoundsPropertyChanged;
+    return metadata;
+}
+
+binding::PropertyMetadata UIElement::BuildNameMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = std::string{};
+    metadata.propertyChangedCallback = &UIElement::NamePropertyChanged;
     return metadata;
 }
 

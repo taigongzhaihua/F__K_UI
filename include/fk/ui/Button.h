@@ -4,10 +4,12 @@
 #include "fk/ui/TextBlock.h"
 #include "fk/ui/BindingMacros.h"
 #include "fk/ui/DependencyPropertyMacros.h"
+#include "fk/ui/ICommand.h"
 #include "fk/core/Event.h"
 
 #include <string>
 #include <functional>
+#include <any>
 
 namespace fk::ui {
 
@@ -39,6 +41,8 @@ public:
     FK_DEPENDENCY_PROPERTY_DECLARE(BorderThickness, float)
     FK_DEPENDENCY_PROPERTY_DECLARE(IsMouseOver, bool)
     FK_DEPENDENCY_PROPERTY_DECLARE(IsPressed, bool)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Command, ICommand::Ptr)
+    FK_DEPENDENCY_PROPERTY_DECLARE_REF(CommandParameter, std::any)
 
 public:
     // 便利方法（无 Get 前缀，更符合 bool 属性的命名习惯）
@@ -81,6 +85,9 @@ private:
 
     // 内部状态
     bool isMouseCaptured_{false};
+    core::Event<>::Connection canExecuteChangedConnection_{};
+
+    void UpdateCommandCanExecuteState();
 };
 
 } // namespace detail
@@ -150,6 +157,26 @@ public:
      */
     Ptr OnClick(std::function<void(ButtonBase&)> handler) {
         this->Click.Add(std::move(handler));
+        return this->Self();
+    }
+
+    Ptr Command(ICommand::Ptr command) {
+        this->SetCommand(std::move(command));
+        return this->Self();
+    }
+
+    Ptr Command(binding::Binding binding) {
+        this->SetBinding(ButtonBase::CommandProperty(), std::move(binding));
+        return this->Self();
+    }
+
+    Ptr CommandParameter(std::any parameter) {
+        this->SetCommandParameter(std::move(parameter));
+        return this->Self();
+    }
+
+    Ptr CommandParameter(binding::Binding binding) {
+        this->SetBinding(ButtonBase::CommandParameterProperty(), std::move(binding));
         return this->Self();
     }
 

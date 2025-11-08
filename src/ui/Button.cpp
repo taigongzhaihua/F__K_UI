@@ -16,7 +16,9 @@ ButtonBase::ButtonBase() {
     SetCornerRadius(4.0f);  // Fluent 圆角
 }
 
-ButtonBase::~ButtonBase() = default;
+ButtonBase::~ButtonBase() {
+    canExecuteChangedConnection_.Disconnect();
+}
 
 // ============================================================================
 // 依赖属性定义（使用宏）
@@ -32,6 +34,8 @@ FK_DEPENDENCY_PROPERTY_DEFINE_REF(ButtonBase, BorderBrush, std::string)
 FK_DEPENDENCY_PROPERTY_DEFINE(ButtonBase, BorderThickness, float, 0.0f)
 FK_DEPENDENCY_PROPERTY_DEFINE(ButtonBase, IsMouseOver, bool, false)
 FK_DEPENDENCY_PROPERTY_DEFINE(ButtonBase, IsPressed, bool, false)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(ButtonBase, Command, ICommand::Ptr)
+FK_DEPENDENCY_PROPERTY_DEFINE_REF(ButtonBase, CommandParameter, std::any)
 
 // Getter/Setter 由宏自动生成
 
@@ -154,6 +158,16 @@ bool ButtonBase::OnMouseMove(double x, double y) {
 }
 
 void ButtonBase::OnClick() {
+    const auto& command = GetCommand();
+    const std::any& parameter = GetCommandParameter();
+
+    if (command) {
+        if (command->CanExecute(parameter)) {
+            command->Execute(parameter);
+        }
+        return;
+    }
+
     Click(*this);  // 使用 operator() 触发事件
 }
 
@@ -230,6 +244,26 @@ void ButtonBase::OnIsPressedChanged(bool oldValue, bool newValue) {
     InvalidateVisual();  // 按下状态变化时重绘
 }
 
+void ButtonBase::OnCommandChanged(const ICommand::Ptr& oldCommand, const ICommand::Ptr& newCommand) {
+    if (canExecuteChangedConnection_.IsConnected()) {
+        canExecuteChangedConnection_.Disconnect();
+    }
+
+    if (newCommand) {
+        canExecuteChangedConnection_ = newCommand->CanExecuteChanged().Connect([this]() {
+            UpdateCommandCanExecuteState();
+        });
+    }
+
+    UpdateCommandCanExecuteState();
+}
+
+void ButtonBase::OnCommandParameterChanged(const std::any& oldParameter, const std::any& newParameter) {
+    (void)oldParameter;
+    (void)newParameter;
+    UpdateCommandCanExecuteState();
+}
+
 // ============================================================================
 // 元数据构建
 // ============================================================================
@@ -295,6 +329,18 @@ binding::PropertyMetadata ButtonBase::BuildIsPressedMetadata() {
     return metadata;
 }
 
+binding::PropertyMetadata ButtonBase::BuildCommandMetadata() {
+    binding::PropertyMetadata metadata(ICommand::Ptr{});
+    metadata.propertyChangedCallback = CommandPropertyChanged;
+    return metadata;
+}
+
+binding::PropertyMetadata ButtonBase::BuildCommandParameterMetadata() {
+    binding::PropertyMetadata metadata(std::any{});
+    metadata.propertyChangedCallback = CommandParameterPropertyChanged;
+    return metadata;
+}
+
 // 静态回调由宏自动生成
 
 // ============================================================================
@@ -333,6 +379,17 @@ bool ButtonBase::ValidateBorderThickness(const std::any& value) {
     } catch (...) {
         return false;
     }
+}
+
+void ButtonBase::UpdateCommandCanExecuteState() {
+    bool canExecute = true;
+
+    const auto& command = GetCommand();
+    if (command) {
+        canExecute = command->CanExecute(GetCommandParameter());
+    }
+
+    SetIsEnabled(canExecute);
 }
 
 } // namespace fk::ui::detail

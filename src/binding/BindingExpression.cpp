@@ -1,4 +1,5 @@
 #include "fk/binding/BindingExpression.h"
+#include "fk/binding/ValueConverters.h"
 
 #include <functional>
 #include <stdexcept>
@@ -97,6 +98,11 @@ void BindingExpression::UpdateTarget() {
     if (const auto& converter = definition_.GetConverter()) {
         const std::any* parameter = definition_.HasConverterParameter() ? &definition_.GetConverterParameter() : nullptr;
         value = converter->Convert(value, property_->PropertyType(), parameter);
+    } else {
+        std::any converted;
+        if (TryDefaultConvert(resolvedValue, property_->PropertyType(), converted)) {
+            value = std::move(converted);
+        }
     }
 
     ApplyTargetValue(std::move(value));
@@ -135,6 +141,11 @@ void BindingExpression::UpdateSource() {
     if (const auto& converter = definition_.GetConverter()) {
         const std::any* parameter = definition_.HasConverterParameter() ? &definition_.GetConverterParameter() : nullptr;
         valueToAssign = converter->ConvertBack(targetValue, sourceType, parameter);
+    } else {
+        std::any converted;
+        if (TryDefaultConvert(targetValue, sourceType, converted)) {
+            valueToAssign = std::move(converted);
+        }
     }
 
     if (!ValidateBeforeSet(valueToAssign)) {

@@ -201,6 +201,17 @@ void PanelBase::OnDetachedFromLogicalTree() {
     FrameworkElement::OnDetachedFromLogicalTree();
 }
 
+void PanelBase::OnDataContextChanged(const std::any& oldValue, const std::any& newValue) {
+    FrameworkElement::OnDataContextChanged(oldValue, newValue);
+
+    for (const auto& child : children_) {
+        if (!child) {
+            continue;
+        }
+        child->SetDataContextParent(this);
+    }
+}
+
 void PanelBase::MeasureChild(UIElement& child, const Size& availableSize) {
     child.Measure(availableSize);
 }

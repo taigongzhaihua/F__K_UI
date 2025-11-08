@@ -40,6 +40,7 @@ add_library(fk STATIC
     src/binding/BindingPath.cpp
     src/binding/BindingContext.cpp
     src/binding/DependencyObject.cpp
+    src/binding/ValueConverters.cpp
     src/binding/PropertyStore.cpp
     src/core/Clock.cpp
     src/core/Dispatcher.cpp
@@ -57,6 +58,7 @@ add_library(fk STATIC
     src/ui/FrameworkElement.cpp
     src/ui/Panel.cpp
     src/ui/StackPanel.cpp
+    src/ui/Grid.cpp
     src/ui/TextBlock.cpp
     src/ui/TextBox.cpp
     src/ui/UIElement.cpp
