@@ -33,6 +33,8 @@ public:
     FK_DEPENDENCY_PROPERTY_DECLARE_REF(Background, std::string)
     FK_DEPENDENCY_PROPERTY_DECLARE_REF(BorderBrush, std::string)
     FK_DEPENDENCY_PROPERTY_DECLARE(BorderThickness, float)
+    FK_DEPENDENCY_PROPERTY_DECLARE(TextWrapping, TextWrapping)
+    FK_DEPENDENCY_PROPERTY_DECLARE(AcceptsReturn, bool)
 
 public:
     core::Event<TextBoxBase&, const std::string&, const std::string&> TextChanged;
@@ -40,7 +42,7 @@ public:
     [[nodiscard]] bool ShouldShowCaret() const;
     [[nodiscard]] Rect GetCaretRect() const;
     [[nodiscard]] bool HasSelection() const;
-    [[nodiscard]] Rect GetSelectionRect() const;
+    [[nodiscard]] std::vector<Rect> GetSelectionRects() const;
     void PrepareForRender(double frameTime);
 
 protected:
@@ -69,7 +71,7 @@ private:
     bool MoveCaretToEnd();
     float ComputeOffsetForIndex(int index) const;
     float ComputeCaretOffset() const;
-    int HitTestCaretIndex(float pointX) const;
+    int HitTestCaretIndex(float pointX, float pointY) const;
     void ResetCaretBlink();
     void UpdateCaretAnimation(double frameTime);
 
@@ -93,6 +95,7 @@ private:
     double caretBlinkStartTime_{0.0};
     double lastFrameTime_{0.0};
     float horizontalScrollOffset_{0.0f};  // 🎯 水平滚动偏移
+    float verticalScrollOffset_{0.0f};    // 🎯 垂直滚动偏移
 };
 
 } // namespace detail
@@ -116,6 +119,8 @@ public:
     FK_BINDING_PROPERTY_BASE(Background, std::string, TextBoxBase)
     FK_BINDING_PROPERTY_BASE(BorderBrush, std::string, TextBoxBase)
     FK_BINDING_PROPERTY_VALUE_BASE(BorderThickness, float, TextBoxBase)
+    FK_BINDING_PROPERTY_VALUE_BASE(TextWrapping, ui::TextWrapping, TextBoxBase)
+    FK_BINDING_PROPERTY_VALUE_BASE(AcceptsReturn, bool, TextBoxBase)
 
     Ptr OnTextChanged(std::function<void(TextBoxBase&, const std::string&, const std::string&)> handler) {
         this->TextChanged.Add(std::move(handler));

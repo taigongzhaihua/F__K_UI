@@ -435,27 +435,53 @@ void GlRenderer::DrawText(const TextPayload& payload) {
     
     // 处理文本换行
     std::vector<std::string> lines;
+    
+    // 首先按硬换行符 \n 分割文本
+    std::vector<std::string> hardLines;
+    {
+        std::string currentHardLine;
+        for (char c : payload.text) {
+            if (c == '\n') {
+                hardLines.push_back(currentHardLine);
+                currentHardLine.clear();
+            } else {
+                currentHardLine += c;
+            }
+        }
+        if (!currentHardLine.empty() || payload.text.empty() || payload.text.back() == '\n') {
+            hardLines.push_back(currentHardLine);
+        }
+    }
+    
+    // 然后对每个硬换行的行应用自动换行
     if (payload.textWrapping && payload.maxWidth > 0.0f) {
         // 自动换行:按字符分割文本
         float maxLineWidth = payload.maxWidth;
-        std::string currentLine;
-        float currentLineWidth = 0.0f;
         
-        std::u32string utf32Text = textRenderer_->Utf8ToUtf32(payload.text);
-        std::string utf8Buffer;
-        
-        for (char32_t c : utf32Text) {
-            const auto* glyph = textRenderer_->GetGlyph(c, fontId);
-            if (!glyph) continue;
-            
-            // 检查是否需要换行
-            if (currentLineWidth + glyph->advance > maxLineWidth && !currentLine.empty()) {
-                lines.push_back(currentLine);
-                currentLine.clear();
-                currentLineWidth = 0.0f;
+        for (const auto& hardLine : hardLines) {
+            if (hardLine.empty()) {
+                lines.push_back("");  // 保留空行
+                continue;
             }
             
-            // 将 UTF-32 字符转换为 UTF-8 并添加到当前行
+            std::string currentLine;
+            float currentLineWidth = 0.0f;
+            
+            std::u32string utf32Text = textRenderer_->Utf8ToUtf32(hardLine);
+            std::string utf8Buffer;
+            
+            for (char32_t c : utf32Text) {
+                const auto* glyph = textRenderer_->GetGlyph(c, fontId);
+                if (!glyph) continue;
+                
+                // 检查是否需要自动换行
+                if (currentLineWidth + glyph->advance > maxLineWidth && !currentLine.empty()) {
+                    lines.push_back(currentLine);
+                    currentLine.clear();
+                    currentLineWidth = 0.0f;
+                }
+                
+                // 将 UTF-32 字符转换为 UTF-8 并添加到当前行
             if (c < 0x80) {
                 utf8Buffer = std::string(1, static_cast<char>(c));
             } else if (c < 0x800) {
@@ -478,17 +504,18 @@ void GlRenderer::DrawText(const TextPayload& payload) {
                 };
             }
             
-            currentLine += utf8Buffer;
-            currentLineWidth += glyph->advance;
-        }
-        
-        // 添加最后一行
-        if (!currentLine.empty()) {
-            lines.push_back(currentLine);
+                currentLine += utf8Buffer;
+                currentLineWidth += glyph->advance;
+            }
+            
+            // 添加当前硬行的最后一个软行
+            if (!currentLine.empty()) {
+                lines.push_back(currentLine);
+            }
         }
     } else {
-        // 不换行:单行
-        lines.push_back(payload.text);
+        // 不自动换行:只处理硬换行符
+        lines = hardLines;
     }
     
     // 渲染每一行

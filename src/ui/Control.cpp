@@ -47,6 +47,43 @@ std::shared_ptr<UIElement> ControlBase::GetContent() const {
     return GetValue<std::shared_ptr<UIElement>>(ContentProperty());
 }
 
+// ============================================================================
+// Template 支持
+// ============================================================================
+
+void ControlBase::SetTemplate(std::shared_ptr<ControlTemplate> controlTemplate) {
+    if (template_ == controlTemplate) {
+        return;
+    }
+    
+    template_ = std::move(controlTemplate);
+    templateApplied_ = false;
+    
+    // 自动应用模板
+    ApplyTemplate();
+}
+
+bool ControlBase::ApplyTemplate() {
+    if (!template_ || templateApplied_) {
+        return templateApplied_;
+    }
+    
+    // 从模板创建可视化树
+    auto templateRoot = template_->LoadContent();
+    if (!templateRoot) {
+        return false;
+    }
+    
+    // 将模板根设置为 Content
+    SetContent(templateRoot);
+    templateApplied_ = true;
+    
+    // 调用子类的回调
+    OnApplyTemplate();
+    
+    return true;
+}
+
 bool ControlBase::Focus() {
     if (!GetIsEnabled()) {
         return false;

@@ -152,7 +152,7 @@ TextBoxBase::TextBoxBase() {
         textPresenter_->FontSize(14.0f);
         textPresenter_->Foreground("#000000");
         textPresenter_->SetHorizontalAlignment(HorizontalAlignment::Stretch);
-        textPresenter_->SetVerticalAlignment(VerticalAlignment::Center);
+        textPresenter_->SetVerticalAlignment(VerticalAlignment::Top);  // 🎯 多行文本需要顶部对齐
     }
     presenterElement_ = std::static_pointer_cast<UIElement>(textPresenter_);
 
@@ -174,6 +174,8 @@ FK_DEPENDENCY_PROPERTY_DEFINE_REF(TextBoxBase, Foreground, std::string)
 FK_DEPENDENCY_PROPERTY_DEFINE_REF(TextBoxBase, Background, std::string)
 FK_DEPENDENCY_PROPERTY_DEFINE_REF(TextBoxBase, BorderBrush, std::string)
 FK_DEPENDENCY_PROPERTY_DEFINE(TextBoxBase, BorderThickness, float, 1.0f)
+FK_DEPENDENCY_PROPERTY_DEFINE(TextBoxBase, TextWrapping, TextWrapping, TextWrapping::NoWrap)
+FK_DEPENDENCY_PROPERTY_DEFINE(TextBoxBase, AcceptsReturn, bool, false)
 
 void TextBoxBase::OnAttachedToLogicalTree() {
     ControlBase::OnAttachedToLogicalTree();
@@ -269,13 +271,25 @@ void TextBoxBase::OnBorderThicknessChanged(float, float newValue) {
     InvalidateVisual();
 }
 
+void TextBoxBase::OnTextWrappingChanged(TextWrapping, TextWrapping newValue) {
+    if (textPresenter_) {
+        textPresenter_->SetTextWrapping(newValue);
+    }
+    InvalidateMeasure();
+    InvalidateVisual();
+}
+
+void TextBoxBase::OnAcceptsReturnChanged(bool, bool) {
+    // 属性变更时无需特殊处理，在按键事件中检查即可
+}
+
 bool TextBoxBase::OnMouseButtonDown(int button, double x, double y) {
     bool handled = ControlBase::OnMouseButtonDown(button, x, y);
 
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         Focus();
         const int textLength = static_cast<int>(GetText().size());
-        int caretIndex = HitTestCaretIndex(static_cast<float>(x));
+        int caretIndex = HitTestCaretIndex(static_cast<float>(x), static_cast<float>(y));
         caretIndex = std::clamp(caretIndex, 0, textLength);
 
         selectionAnchor_ = caretIndex;
@@ -313,7 +327,7 @@ bool TextBoxBase::OnMouseMove(double x, double y) {
     }
 
     const int textLength = static_cast<int>(GetText().size());
-    int caretIndex = HitTestCaretIndex(static_cast<float>(x));
+    int caretIndex = HitTestCaretIndex(static_cast<float>(x), static_cast<float>(y));
     caretIndex = std::clamp(caretIndex, 0, textLength);
 
     int anchor = std::clamp(selectionAnchor_, 0, textLength);
@@ -352,6 +366,23 @@ bool TextBoxBase::OnKeyDown(int key, int scancode, int mods) {
             break;
         case GLFW_KEY_END:
             handled = MoveCaretToEnd();
+            break;
+        case GLFW_KEY_ENTER:
+        case GLFW_KEY_KP_ENTER:
+            // 仅在 AcceptsReturn 为 true 时插入换行符
+            if (GetAcceptsReturn() && !GetIsReadOnly() && GetIsEnabled()) {
+                std::string text = GetText();
+                int caret = std::clamp(GetCaretIndex(), 0, static_cast<int>(text.size()));
+                
+                // 删除选中内容
+                RemoveSelection(text, caret);
+                
+                // 插入换行符
+                text.insert(static_cast<std::size_t>(caret), "\n");
+                caret += 1;
+                CommitTextChange(std::move(text), caret);
+                handled = true;
+            }
             break;
         default:
             break;
@@ -495,6 +526,20 @@ binding::PropertyMetadata TextBoxBase::BuildBorderThicknessMetadata() {
     return metadata;
 }
 
+binding::PropertyMetadata TextBoxBase::BuildTextWrappingMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = TextWrapping::NoWrap;
+    metadata.propertyChangedCallback = &TextBoxBase::TextWrappingPropertyChanged;
+    return metadata;
+}
+
+binding::PropertyMetadata TextBoxBase::BuildAcceptsReturnMetadata() {
+    binding::PropertyMetadata metadata;
+    metadata.defaultValue = false;
+    metadata.propertyChangedCallback = &TextBoxBase::AcceptsReturnPropertyChanged;
+    return metadata;
+}
+
 bool TextBoxBase::ValidateNonNegativeInt(const std::any& value) {
     if (!value.has_value()) {
         return true;
@@ -539,18 +584,164 @@ Rect TextBoxBase::GetCaretRect() const {
     }
 
     const float fontSize = textPresenter_ ? textPresenter_->GetFontSize() : 14.0f;
-    float caretHeight = presenterBounds.height;
-    if (caretHeight <= 0.0f) {
-        caretHeight = fontSize * 1.2f;
+    const float lineHeight = fontSize * 1.2f;
+    
+    // 🎯 计算光标所在的行号和行内偏移
+    const std::string& text = GetText();
+    const int caretIndex = GetCaretIndex();
+    
+    // 🎯 需要考虑自动换行：通过渲染器模拟文本换行来计算实际行号
+    int currentLine = 0;
+    int lineStartIndex = 0;
+    
+    if (GetTextWrapping() == TextWrapping::Wrap || GetAcceptsReturn()) {
+        // 多行模式：需要考虑硬换行和软换行
+        const float maxLineWidth = presenterBounds.width;
+        
+        auto* renderHost = GetRenderHost();
+        auto* textRenderer = renderHost ? renderHost->GetTextRenderer() : nullptr;
+        
+        // 获取字体
+        static std::unordered_map<unsigned int, int> fontCache;
+        int fontId = -1;
+        if (textRenderer) {
+            unsigned int fontSizeKey = static_cast<unsigned int>(fontSize);
+            auto it = fontCache.find(fontSizeKey);
+            if (it != fontCache.end()) {
+                fontId = it->second;
+            } else {
+                fontId = textRenderer->LoadFont("C:/Windows/Fonts/msyh.ttc", fontSizeKey);
+                if (fontId < 0) {
+                    fontId = textRenderer->LoadFont("C:/Windows/Fonts/simhei.ttf", fontSizeKey);
+                }
+                if (fontId >= 0) {
+                    fontCache[fontSizeKey] = fontId;
+                }
+            }
+        }
+        
+        // 模拟渲染器的换行逻辑
+        float currentLineWidth = 0.0f;
+        int index = 0;
+        
+        while (index < caretIndex && index < static_cast<int>(text.size())) {
+            // 硬换行
+            if (text[index] == '\n') {
+                currentLine++;
+                lineStartIndex = index + 1;
+                currentLineWidth = 0.0f;
+                index++;
+                continue;
+            }
+            
+            // 计算字符宽度
+            unsigned char lead = static_cast<unsigned char>(text[index]);
+            int byteLength = 1;
+            if (lead >= 0xF0) byteLength = 4;
+            else if (lead >= 0xE0) byteLength = 3;
+            else if (lead >= 0xC0) byteLength = 2;
+            byteLength = std::min(byteLength, static_cast<int>(text.size()) - index);
+            
+            float charWidth = MeasureCharacterWidth(text, index, byteLength, fontSize, 
+                                                    textPresenter_.get(), textRenderer, fontId);
+            
+            // 软换行检查
+            if (GetTextWrapping() == TextWrapping::Wrap && maxLineWidth > 0.0f) {
+                if (currentLineWidth + charWidth > maxLineWidth && currentLineWidth > 0.0f) {
+                    // 触发软换行
+                    currentLine++;
+                    lineStartIndex = index;
+                    currentLineWidth = 0.0f;
+                }
+            }
+            
+            currentLineWidth += charWidth;
+            index += byteLength;
+        }
+    } else {
+        // 单行模式：只考虑硬换行（理论上不应该有）
+        for (int i = 0; i < caretIndex && i < static_cast<int>(text.size()); ++i) {
+            if (text[i] == '\n') {
+                currentLine++;
+                lineStartIndex = i + 1;
+            }
+        }
     }
-
-    float caretX = presenterBounds.x + ComputeCaretOffset();
+    
+    // 计算光标在当前行内的偏移
+    int caretInLine = caretIndex - lineStartIndex;
+    
+    // 获取当前行的文本
+    std::string currentLineText;
+    for (int i = lineStartIndex; i < static_cast<int>(text.size()) && text[i] != '\n'; ++i) {
+        currentLineText += text[i];
+    }
+    
+    // 🎯 使用 TextRenderer 精确计算光标在当前行内的 X 偏移
+    float caretOffsetInLine = 0.0f;
+    if (caretInLine > 0 && !currentLineText.empty()) {
+        // 获取 TextRenderer 用于精确测量
+        auto* renderHost = GetRenderHost();
+        auto* textRenderer = renderHost ? renderHost->GetTextRenderer() : nullptr;
+        
+        // 获取对应字体大小的字体 ID
+        static std::unordered_map<unsigned int, int> fontCache;
+        int fontId = -1;
+        if (textRenderer) {
+            unsigned int fontSizeKey = static_cast<unsigned int>(fontSize);
+            auto it = fontCache.find(fontSizeKey);
+            if (it != fontCache.end()) {
+                fontId = it->second;
+            } else {
+                fontId = textRenderer->LoadFont("C:/Windows/Fonts/msyh.ttc", fontSizeKey);
+                if (fontId < 0) {
+                    fontId = textRenderer->LoadFont("C:/Windows/Fonts/simhei.ttf", fontSizeKey);
+                }
+                if (fontId >= 0) {
+                    fontCache[fontSizeKey] = fontId;
+                }
+            }
+        }
+        
+        // 遍历当前行的字符，累加精确宽度
+        int byteIndex = 0;
+        while (byteIndex < caretInLine && byteIndex < static_cast<int>(currentLineText.size())) {
+            unsigned char lead = static_cast<unsigned char>(currentLineText[byteIndex]);
+            
+            // 获取字符的字节长度
+            int byteLength = 1;
+            if (lead >= 0xF0) byteLength = 4;
+            else if (lead >= 0xE0) byteLength = 3;
+            else if (lead >= 0xC0) byteLength = 2;
+            
+            byteLength = std::min(byteLength, static_cast<int>(currentLineText.size()) - byteIndex);
+            
+            if (byteIndex + byteLength > caretInLine) {
+                // 如果光标在字符中间，按比例计算
+                const float charWidth = MeasureCharacterWidth(currentLineText, byteIndex, byteLength, 
+                                                             fontSize, textPresenter_.get(), textRenderer, fontId);
+                const float fraction = static_cast<float>(caretInLine - byteIndex) / static_cast<float>(byteLength);
+                caretOffsetInLine += charWidth * fraction;
+                break;
+            }
+            
+            // 使用 TextRenderer 精确测量字符宽度
+            const float charWidth = MeasureCharacterWidth(currentLineText, byteIndex, byteLength, 
+                                                         fontSize, textPresenter_.get(), textRenderer, fontId);
+            caretOffsetInLine += charWidth;
+            byteIndex += byteLength;
+        }
+    }
+    
+    float caretX = presenterBounds.x + caretOffsetInLine;
     const float maxX = presenterBounds.x + presenterBounds.width;
     caretX = std::clamp(caretX, presenterBounds.x, maxX);
 
-    float caretY = presenterBounds.y;
+    // 🎯 根据行号计算 Y 偏移
+    float caretY = presenterBounds.y + (currentLine * lineHeight);
+    
     const float caretWidth = std::max(1.0f, fontSize * 0.08f);
-    return Rect{caretX, caretY, caretWidth, std::max(caretHeight, fontSize)};
+    return Rect{caretX, caretY, caretWidth, lineHeight};
 }
 
 bool TextBoxBase::HasSelection() const {
@@ -558,9 +749,9 @@ bool TextBoxBase::HasSelection() const {
     return selectionLength > 0 && selectionLength <= static_cast<int>(GetText().size());
 }
 
-Rect TextBoxBase::GetSelectionRect() const {
+std::vector<Rect> TextBoxBase::GetSelectionRects() const {
     if (!HasSelection()) {
-        return Rect{};
+        return {};
     }
 
     Rect presenterBounds{};
@@ -568,25 +759,248 @@ Rect TextBoxBase::GetSelectionRect() const {
         presenterBounds = presenterElement_->GetRenderBounds();
     }
 
+    const std::string& text = GetText();
     const float fontSize = textPresenter_ ? textPresenter_->GetFontSize() : 14.0f;
-    float selectionHeight = presenterBounds.height;
-    if (selectionHeight <= 0.0f) {
-        selectionHeight = fontSize * 1.2f;
-    }
+    const float lineHeight = fontSize * 1.2f;
 
-    const int textLength = static_cast<int>(GetText().size());
+    const int textLength = static_cast<int>(text.size());
     int start = std::clamp(GetSelectionStart(), 0, textLength);
     int end = std::clamp(start + GetSelectionLength(), start, textLength);
 
-    const float startOffset = ComputeOffsetForIndex(start);
-    const float endOffset = ComputeOffsetForIndex(end);
-    float selectionWidth = std::max(0.0f, endOffset - startOffset);
+    // 🎯 多行模式：考虑软换行
+    if (GetTextWrapping() == TextWrapping::Wrap || GetAcceptsReturn()) {
+        const float maxLineWidth = presenterBounds.width;
+        
+        auto* renderHost = GetRenderHost();
+        auto* textRenderer = renderHost ? renderHost->GetTextRenderer() : nullptr;
+        
+        // 获取字体
+        static std::unordered_map<unsigned int, int> fontCache;
+        int fontId = -1;
+        if (textRenderer) {
+            unsigned int fontSizeKey = static_cast<unsigned int>(fontSize);
+            auto it = fontCache.find(fontSizeKey);
+            if (it != fontCache.end()) {
+                fontId = it->second;
+            } else {
+                fontId = textRenderer->LoadFont("C:/Windows/Fonts/msyh.ttc", fontSizeKey);
+                if (fontId < 0) {
+                    fontId = textRenderer->LoadFont("C:/Windows/Fonts/simhei.ttf", fontSizeKey);
+                }
+                if (fontId >= 0) {
+                    fontCache[fontSizeKey] = fontId;
+                }
+            }
+        }
+        
+        // 模拟渲染，找到 start 和 end 的行号和行内偏移
+        int currentLine = 0;
+        int lineStartIndex = 0;
+        float currentLineWidth = 0.0f;
+        int index = 0;
+        
+        int startLine = -1;
+        float startLineOffset = 0.0f;
+        int startLineStartIndex = 0;
+        
+        int endLine = -1;
+        float endLineOffset = 0.0f;
+        int endLineStartIndex = 0;
+        
+        while (index <= textLength) {
+            // 记录 start 位置信息
+            if (index == start) {
+                startLine = currentLine;
+                startLineOffset = currentLineWidth;
+                startLineStartIndex = lineStartIndex;
+            }
+            
+            // 记录 end 位置信息
+            if (index == end) {
+                endLine = currentLine;
+                endLineOffset = currentLineWidth;
+                endLineStartIndex = lineStartIndex;
+                break;
+            }
+            
+            if (index >= textLength) break;
+            
+            // 硬换行
+            if (text[index] == '\n') {
+                currentLine++;
+                lineStartIndex = index + 1;
+                currentLineWidth = 0.0f;
+                index++;
+                continue;
+            }
+            
+            // 计算字符宽度
+            unsigned char lead = static_cast<unsigned char>(text[index]);
+            int byteLength = 1;
+            if (lead >= 0xF0) byteLength = 4;
+            else if (lead >= 0xE0) byteLength = 3;
+            else if (lead >= 0xC0) byteLength = 2;
+            byteLength = std::min(byteLength, textLength - index);
+            
+            float charWidth = MeasureCharacterWidth(text, index, byteLength, fontSize, 
+                                                    textPresenter_.get(), textRenderer, fontId);
+            
+            // 软换行检查
+            if (GetTextWrapping() == TextWrapping::Wrap && maxLineWidth > 0.0f) {
+                if (currentLineWidth + charWidth > maxLineWidth && currentLineWidth > 0.0f) {
+                    currentLine++;
+                    lineStartIndex = index;
+                    currentLineWidth = 0.0f;
+                }
+            }
+            
+            currentLineWidth += charWidth;
+            index += byteLength;
+        }
+        
+        // 🎯 单行选择：返回单个矩形
+        if (startLine == endLine) {
+            float selectionWidth = std::max(0.0f, endLineOffset - startLineOffset);
+            float selectionX = presenterBounds.x + startLineOffset;
+            float selectionY = presenterBounds.y + (startLine * lineHeight);
+            return {Rect{selectionX, selectionY, selectionWidth, lineHeight}};
+        }
+        
+        // 🎯 多行选择：重新遍历，生成每行的矩形
+        std::vector<Rect> rects;
+        currentLine = 0;
+        lineStartIndex = 0;
+        currentLineWidth = 0.0f;
+        index = 0;
+        
+        float lineStartOffset = 0.0f;
+        bool inSelection = false;
+        
+        while (index <= textLength) {
+            // 进入选择区域
+            if (index == start) {
+                inSelection = true;
+                lineStartOffset = currentLineWidth;
+            }
+            
+            // 离开选择区域
+            if (index == end) {
+                // 添加最后一行的矩形
+                if (inSelection) {
+                    float selectionWidth = currentLineWidth - lineStartOffset;
+                    float selectionX = presenterBounds.x + lineStartOffset;
+                    float selectionY = presenterBounds.y + (currentLine * lineHeight);
+                    rects.push_back(Rect{selectionX, selectionY, selectionWidth, lineHeight});
+                }
+                break;
+            }
+            
+            if (index >= textLength) break;
+            
+            // 硬换行
+            if (text[index] == '\n') {
+                // 如果在选择区域内，添加当前行的矩形
+                if (inSelection) {
+                    float selectionWidth = currentLineWidth - lineStartOffset;
+                    float selectionX = presenterBounds.x + lineStartOffset;
+                    float selectionY = presenterBounds.y + (currentLine * lineHeight);
+                    rects.push_back(Rect{selectionX, selectionY, selectionWidth, lineHeight});
+                    lineStartOffset = 0.0f;  // 下一行从头开始
+                }
+                
+                currentLine++;
+                lineStartIndex = index + 1;
+                currentLineWidth = 0.0f;
+                index++;
+                continue;
+            }
+            
+            // 计算字符宽度
+            unsigned char lead = static_cast<unsigned char>(text[index]);
+            int byteLength = 1;
+            if (lead >= 0xF0) byteLength = 4;
+            else if (lead >= 0xE0) byteLength = 3;
+            else if (lead >= 0xC0) byteLength = 2;
+            byteLength = std::min(byteLength, textLength - index);
+            
+            float charWidth = MeasureCharacterWidth(text, index, byteLength, fontSize, 
+                                                    textPresenter_.get(), textRenderer, fontId);
+            
+            // 软换行检查
+            if (GetTextWrapping() == TextWrapping::Wrap && maxLineWidth > 0.0f) {
+                if (currentLineWidth + charWidth > maxLineWidth && currentLineWidth > 0.0f) {
+                    // 如果在选择区域内，添加当前行的矩形
+                    if (inSelection) {
+                        float selectionWidth = currentLineWidth - lineStartOffset;
+                        float selectionX = presenterBounds.x + lineStartOffset;
+                        float selectionY = presenterBounds.y + (currentLine * lineHeight);
+                        rects.push_back(Rect{selectionX, selectionY, selectionWidth, lineHeight});
+                        lineStartOffset = 0.0f;  // 下一行从头开始
+                    }
+                    
+                    currentLine++;
+                    lineStartIndex = index;
+                    currentLineWidth = 0.0f;
+                }
+            }
+            
+            currentLineWidth += charWidth;
+            index += byteLength;
+        }
+        
+        return rects;
+    }
+    
+    // 🎯 单行模式：只考虑硬换行
+    int startLine = 0;
+    int endLine = 0;
+    for (int i = 0; i < end && i < textLength; ++i) {
+        if (text[i] == '\n') {
+            if (i < start) startLine++;
+            endLine++;
+        }
+    }
 
-    float selectionX = presenterBounds.x + startOffset;
-    const float availableWidth = std::max(0.0f, presenterBounds.width - (selectionX - presenterBounds.x));
-    selectionWidth = std::min(selectionWidth, availableWidth);
-
-    return Rect{selectionX, presenterBounds.y, selectionWidth, std::max(selectionHeight, fontSize)};
+    if (startLine == endLine) {
+        const float startOffset = ComputeOffsetForIndex(start);
+        const float endOffset = ComputeOffsetForIndex(end);
+        float selectionWidth = std::max(0.0f, endOffset - startOffset);
+        float selectionX = presenterBounds.x + startOffset;
+        float selectionY = presenterBounds.y + (startLine * lineHeight);
+        
+        return {Rect{selectionX, selectionY, selectionWidth, lineHeight}};
+    }
+    
+    // 多行选择（硬换行）：生成每行的矩形
+    std::vector<Rect> rects;
+    for (int line = startLine; line <= endLine; ++line) {
+        float selectionY = presenterBounds.y + (line * lineHeight);
+        
+        if (line == startLine && line == endLine) {
+            // 单行（不应该到这里，上面已经处理了）
+            const float startOffset = ComputeOffsetForIndex(start);
+            const float endOffset = ComputeOffsetForIndex(end);
+            float selectionWidth = std::max(0.0f, endOffset - startOffset);
+            float selectionX = presenterBounds.x + startOffset;
+            rects.push_back(Rect{selectionX, selectionY, selectionWidth, lineHeight});
+        } else if (line == startLine) {
+            // 第一行：从 start 到行尾
+            const float startOffset = ComputeOffsetForIndex(start);
+            float selectionWidth = presenterBounds.width - startOffset;
+            float selectionX = presenterBounds.x + startOffset;
+            rects.push_back(Rect{selectionX, selectionY, selectionWidth, lineHeight});
+        } else if (line == endLine) {
+            // 最后一行：从行首到 end
+            const float endOffset = ComputeOffsetForIndex(end);
+            float selectionWidth = endOffset;
+            rects.push_back(Rect{presenterBounds.x, selectionY, selectionWidth, lineHeight});
+        } else {
+            // 中间行：整行
+            rects.push_back(Rect{presenterBounds.x, selectionY, presenterBounds.width, lineHeight});
+        }
+    }
+    
+    return rects;
 }
 
 float TextBoxBase::ComputeOffsetForIndex(int targetIndex) const {
@@ -623,9 +1037,22 @@ float TextBoxBase::ComputeOffsetForIndex(int targetIndex) const {
         }
     }
 
+    // 🎯 多行文本：找到当前行的起始位置，只计算行内偏移
+    int lineStartIndex = 0;
+    for (int i = 0; i < clampedIndex && i < length; ++i) {
+        if (text[i] == '\n') {
+            lineStartIndex = i + 1;  // 换行符后的位置
+        }
+    }
+
     float offset = 0.0f;
-    int index = 0;
+    int index = lineStartIndex;
     while (index < clampedIndex && index < length) {
+        // 如果遇到换行符，说明已经到行尾，停止计算
+        if (text[index] == '\n') {
+            break;
+        }
+        
         unsigned char lead = static_cast<unsigned char>(text[index]);
         
         // 获取字符的字节长度
@@ -671,7 +1098,7 @@ float TextBoxBase::ComputeCaretOffset() const {
     return ComputeOffsetForIndex(GetCaretIndex());
 }
 
-int TextBoxBase::HitTestCaretIndex(float pointX) const {
+int TextBoxBase::HitTestCaretIndex(float pointX, float pointY) const {
     const std::string& text = GetText();
     const int textLength = static_cast<int>(text.size());
     if (textLength == 0) {
@@ -683,16 +1110,185 @@ int TextBoxBase::HitTestCaretIndex(float pointX) const {
         presenterBounds = presenterElement_->GetRenderBounds();
     }
 
+    const float fontSize = textPresenter_ ? textPresenter_->GetFontSize() : 14.0f;
+    const float lineHeight = fontSize * 1.2f;
+
+    // 🎯 计算点击位置对应的行号
+    float localY = pointY - presenterBounds.y;
+    int clickedLine = static_cast<int>(localY / lineHeight);
+    if (clickedLine < 0) clickedLine = 0;
+
     float localX = pointX - presenterBounds.x;
     if (presenterBounds.width > 0.0f) {
         localX = std::clamp(localX, 0.0f, presenterBounds.width);
     } else {
         localX = std::max(localX, 0.0f);
     }
-    int bestIndex = 0;
+
+    // 🎯 多行模式：需要模拟渲染器的换行逻辑
+    if (GetTextWrapping() == TextWrapping::Wrap || GetAcceptsReturn()) {
+        const float maxLineWidth = presenterBounds.width;
+        
+        auto* renderHost = GetRenderHost();
+        auto* textRenderer = renderHost ? renderHost->GetTextRenderer() : nullptr;
+        
+        // 获取字体
+        static std::unordered_map<unsigned int, int> fontCache;
+        int fontId = -1;
+        if (textRenderer) {
+            unsigned int fontSizeKey = static_cast<unsigned int>(fontSize);
+            auto it = fontCache.find(fontSizeKey);
+            if (it != fontCache.end()) {
+                fontId = it->second;
+            } else {
+                fontId = textRenderer->LoadFont("C:/Windows/Fonts/msyh.ttc", fontSizeKey);
+                if (fontId < 0) {
+                    fontId = textRenderer->LoadFont("C:/Windows/Fonts/simhei.ttf", fontSizeKey);
+                }
+                if (fontId >= 0) {
+                    fontCache[fontSizeKey] = fontId;
+                }
+            }
+        }
+        
+        // 模拟渲染，找到点击行的起始和结束位置
+        int currentLine = 0;
+        int lineStartIndex = 0;
+        float currentLineWidth = 0.0f;
+        int index = 0;
+        
+        while (index < textLength) {
+            // 如果到达目标行，进行水平命中测试
+            if (currentLine == clickedLine) {
+                // 找到当前行的结束位置
+                int lineEndIndex = index;
+                float testLineWidth = currentLineWidth;
+                
+                while (lineEndIndex < textLength) {
+                    if (text[lineEndIndex] == '\n') {
+                        break;
+                    }
+                    
+                    unsigned char lead = static_cast<unsigned char>(text[lineEndIndex]);
+                    int byteLength = 1;
+                    if (lead >= 0xF0) byteLength = 4;
+                    else if (lead >= 0xE0) byteLength = 3;
+                    else if (lead >= 0xC0) byteLength = 2;
+                    byteLength = std::min(byteLength, textLength - lineEndIndex);
+                    
+                    float charWidth = MeasureCharacterWidth(text, lineEndIndex, byteLength, fontSize, 
+                                                           textPresenter_.get(), textRenderer, fontId);
+                    
+                    // 检查软换行
+                    if (GetTextWrapping() == TextWrapping::Wrap && maxLineWidth > 0.0f) {
+                        if (testLineWidth + charWidth > maxLineWidth && testLineWidth > 0.0f) {
+                            break;  // 软换行，当前行结束
+                        }
+                    }
+                    
+                    testLineWidth += charWidth;
+                    lineEndIndex += byteLength;
+                }
+                
+                // 在 [lineStartIndex, lineEndIndex) 范围内进行水平命中测试
+                int bestIndex = lineStartIndex;
+                float bestDistance = std::numeric_limits<float>::max();
+                int testIndex = lineStartIndex;
+                float accumulatedWidth = 0.0f;
+                
+                while (testIndex <= lineEndIndex && testIndex <= textLength) {
+                    float distance = std::fabs(localX - accumulatedWidth);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestIndex = testIndex;
+                    }
+                    
+                    if (testIndex >= lineEndIndex || testIndex >= textLength) {
+                        break;
+                    }
+                    
+                    unsigned char lead = static_cast<unsigned char>(text[testIndex]);
+                    int byteLength = 1;
+                    if (lead >= 0xF0) byteLength = 4;
+                    else if (lead >= 0xE0) byteLength = 3;
+                    else if (lead >= 0xC0) byteLength = 2;
+                    byteLength = std::min(byteLength, textLength - testIndex);
+                    
+                    if (text[testIndex] == '\n') {
+                        break;
+                    }
+                    
+                    float charWidth = MeasureCharacterWidth(text, testIndex, byteLength, fontSize, 
+                                                           textPresenter_.get(), textRenderer, fontId);
+                    accumulatedWidth += charWidth;
+                    testIndex += byteLength;
+                }
+                
+                return bestIndex;
+            }
+            
+            // 硬换行
+            if (text[index] == '\n') {
+                currentLine++;
+                lineStartIndex = index + 1;
+                currentLineWidth = 0.0f;
+                index++;
+                continue;
+            }
+            
+            // 计算字符宽度
+            unsigned char lead = static_cast<unsigned char>(text[index]);
+            int byteLength = 1;
+            if (lead >= 0xF0) byteLength = 4;
+            else if (lead >= 0xE0) byteLength = 3;
+            else if (lead >= 0xC0) byteLength = 2;
+            byteLength = std::min(byteLength, textLength - index);
+            
+            float charWidth = MeasureCharacterWidth(text, index, byteLength, fontSize, 
+                                                    textPresenter_.get(), textRenderer, fontId);
+            
+            // 软换行检查
+            if (GetTextWrapping() == TextWrapping::Wrap && maxLineWidth > 0.0f) {
+                if (currentLineWidth + charWidth > maxLineWidth && currentLineWidth > 0.0f) {
+                    currentLine++;
+                    lineStartIndex = index;
+                    currentLineWidth = 0.0f;
+                }
+            }
+            
+            currentLineWidth += charWidth;
+            index += byteLength;
+        }
+        
+        // 点击在最后一行之后，返回文本末尾
+        return textLength;
+    }
+    
+    // 🎯 单行模式：只考虑硬换行
+    int currentLine = 0;
+    int lineStartIndex = 0;
+    int lineEndIndex = textLength;
+    
+    for (int i = 0; i < textLength; ++i) {
+        if (text[i] == '\n') {
+            if (currentLine == clickedLine) {
+                lineEndIndex = i;
+                break;
+            }
+            currentLine++;
+            lineStartIndex = i + 1;
+        }
+    }
+    
+    if (clickedLine > currentLine) {
+        return textLength;
+    }
+
+    int bestIndex = lineStartIndex;
     float bestDistance = std::numeric_limits<float>::max();
-    int index = 0;
-    while (index <= textLength) {
+    int index = lineStartIndex;
+    
+    while (index <= lineEndIndex) {
         float offset = ComputeOffsetForIndex(index);
         float distance = std::fabs(localX - offset);
         if (distance < bestDistance) {
@@ -700,11 +1296,14 @@ int TextBoxBase::HitTestCaretIndex(float pointX) const {
             bestIndex = index;
         }
 
-        if (index == textLength) {
+        if (index == lineEndIndex) {
             break;
         }
 
         index = Utf8NextIndex(text, index);
+        if (index > lineEndIndex) {
+            break;
+        }
     }
 
     return bestIndex;
@@ -923,6 +1522,9 @@ void TextBoxBase::UpdateTextPresenter() {
         }
     }
 
+    // 🎯 应用文本换行设置
+    textPresenter_->SetTextWrapping(GetTextWrapping());
+
     ApplyForeground();
     textPresenter_->InvalidateMeasure();
     textPresenter_->InvalidateArrange();
@@ -972,6 +1574,53 @@ void TextBoxBase::ClampCaretAndSelection() {
 void TextBoxBase::EnsureCaretVisible() {
     if (!presenterElement_) {
         return;
+    }
+
+    // 🎯 多行模式下禁用水平滚动，但启用垂直滚动
+    if (GetTextWrapping() == TextWrapping::Wrap || GetAcceptsReturn()) {
+        // 重置水平滚动偏移
+        if (horizontalScrollOffset_ != 0.0f) {
+            horizontalScrollOffset_ = 0.0f;
+        }
+        
+        // 🎯 垂直滚动逻辑
+        const Rect bounds = GetRenderBounds();
+        const Thickness padding = GetPadding();
+        const float topPadding = padding.top;
+        const float bottomPadding = padding.bottom;
+        const float viewportHeight = bounds.height - topPadding - bottomPadding;
+        
+        if (viewportHeight > 0.0f) {
+            // 获取光标位置
+            const Rect caretRect = GetCaretRect();
+            const float fontSize = textPresenter_ ? textPresenter_->GetFontSize() : 14.0f;
+            const float lineHeight = fontSize * 1.2f;
+            
+            // 计算光标所在行（相对于文本开始）
+            const float caretY = caretRect.y - bounds.y;
+            
+            // 计算光标在视口中的位置
+            const float caretInViewport = caretY - verticalScrollOffset_;
+            
+            const float margin = topPadding + 2.0f;
+            
+            // 如果光标在视口上方外面，滚动到光标位置
+            if (caretInViewport < margin) {
+                verticalScrollOffset_ = std::max(0.0f, caretY - margin);
+            }
+            // 如果光标在视口下方外面，滚动到光标可见
+            else if (caretInViewport + lineHeight > viewportHeight - margin) {
+                verticalScrollOffset_ = caretY + lineHeight - viewportHeight + margin;
+            }
+        }
+        
+        // 应用滚动偏移到 TextPresenter
+        if (textPresenter_) {
+            textPresenter_->SetMargin(fk::Thickness{0.0f, -verticalScrollOffset_, 0.0f, 0.0f});
+            InvalidateVisual();
+        }
+        
+        return;  // 不进行水平滚动
     }
 
     // 获取可视区域宽度

@@ -221,13 +221,16 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
         scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, backgroundPayload));
 
         if (textBox->HasSelection()) {
-            RectanglePayload selectionPayload;
-            selectionPayload.rect = textBox->GetSelectionRect();
-            if (selectionPayload.rect.width > 0.0f && selectionPayload.rect.height > 0.0f) {
-                selectionPayload.color = ColorUtils::ParseColor("#3399FF55");
-                selectionPayload.color[3] *= opacity;
-                selectionPayload.cornerRadius = 0.0f;
-                scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, selectionPayload));
+            auto selectionRects = textBox->GetSelectionRects();
+            for (const auto& rect : selectionRects) {
+                if (rect.width > 0.0f && rect.height > 0.0f) {
+                    RectanglePayload selectionPayload;
+                    selectionPayload.rect = rect;
+                    selectionPayload.color = ColorUtils::ParseColor("#3399FF55");
+                    selectionPayload.color[3] *= opacity;
+                    selectionPayload.cornerRadius = 0.0f;
+                    scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, selectionPayload));
+                }
             }
         }
 

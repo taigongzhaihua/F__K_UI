@@ -129,51 +129,74 @@ Size TextBlockBase::MeasureOverride(const Size& availableSize) {
         maxLineWidth = 1000.0f;  // 默认最大宽度
     }
     
-    // 按字符分割并计算每行
-    wrappedLines_.clear();
-    std::string currentLine;
-    float currentLineWidth = 0.0f;
-    float maxWidth = 0.0f;
-    
-    size_t i = 0;
-    while (i < text.length()) {
-        unsigned char c = text[i];
-        float charWidth;
-        size_t charSize;
-        
-        // 计算当前字符宽度和字节数
-        if (c < 0x80) {
-            charWidth = fontSize * 0.5f;
-            charSize = 1;
-        } else if (c < 0xE0) {
-            charWidth = fontSize * 0.9f;
-            charSize = 2;
-        } else if (c < 0xF0) {
-            charWidth = fontSize;
-            charSize = 3;
-        } else {
-            charWidth = fontSize;
-            charSize = 4;
+    // 🎯 首先按硬换行符 \n 分割文本
+    std::vector<std::string> hardLines;
+    {
+        std::string currentHardLine;
+        for (char c : text) {
+            if (c == '\n') {
+                hardLines.push_back(currentHardLine);
+                currentHardLine.clear();
+            } else {
+                currentHardLine += c;
+            }
         }
-        
-        // 检查是否需要换行
-        if (currentLineWidth + charWidth > maxLineWidth && !currentLine.empty()) {
-            wrappedLines_.push_back(currentLine);
-            maxWidth = std::max(maxWidth, currentLineWidth);
-            currentLine.clear();
-            currentLineWidth = 0.0f;
-        }
-        
-        // 添加字符到当前行
-        currentLine.append(text, i, charSize);
-        currentLineWidth += charWidth;
-        i += charSize;
+        hardLines.push_back(currentHardLine);
     }
     
-    // 添加最后一行
-    if (!currentLine.empty()) {
-        wrappedLines_.push_back(currentLine);
-        maxWidth = std::max(maxWidth, currentLineWidth);
+    // 然后对每个硬换行的行应用软换行（根据宽度）
+    wrappedLines_.clear();
+    float maxWidth = 0.0f;
+    
+    for (const auto& hardLine : hardLines) {
+        if (hardLine.empty()) {
+            wrappedLines_.push_back("");  // 保留空行
+            continue;
+        }
+        
+        std::string currentLine;
+        float currentLineWidth = 0.0f;
+        
+        size_t i = 0;
+        while (i < hardLine.length()) {
+            unsigned char c = hardLine[i];
+            float charWidth;
+            size_t charSize;
+            
+            // 计算当前字符宽度和字节数
+            if (c < 0x80) {
+                charWidth = fontSize * 0.5f;
+                charSize = 1;
+            } else if (c < 0xE0) {
+                charWidth = fontSize * 0.9f;
+                charSize = 2;
+            } else if (c < 0xF0) {
+                charWidth = fontSize;
+                charSize = 3;
+            } else {
+                charWidth = fontSize;
+                charSize = 4;
+            }
+            
+            // 检查是否需要软换行
+            if (currentLineWidth + charWidth > maxLineWidth && !currentLine.empty()) {
+                wrappedLines_.push_back(currentLine);
+                maxWidth = std::max(maxWidth, currentLineWidth);
+                currentLine.clear();
+                currentLineWidth = 0.0f;
+            }
+            
+            // 添加字符到当前行
+            currentLine.append(hardLine, i, charSize);
+            currentLineWidth += charWidth;
+            i += charSize;
+        }
+        
+        // 添加当前硬行的最后一个软行
+        if (!currentLine.empty()) {
+            wrappedLines_.push_back(currentLine);
+            maxWidth = std::max(maxWidth, currentLineWidth);
+        }
     }
     
     // 如果没有行,添加一个空行以保持高度
