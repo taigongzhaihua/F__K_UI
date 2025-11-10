@@ -1,145 +1,237 @@
 #pragma once
 
-#include "fk/ui/DependencyObject.h"
 #include "fk/ui/Visual.h"
-#include "fk/ui/DependencyPropertyMacros.h"
-#include "fk/binding/DependencyProperty.h"
+#include "fk/ui/Primitives.h"
 #include "fk/core/Event.h"
-
-#include <any>
-#include <cstddef>
-#include <string>
-
-namespace fk::render {
-class RenderHost;
-}
+#include "fk/binding/DependencyProperty.h"
+#include <functional>
+#include <unordered_map>
+#include <memory>
+#include <vector>
 
 namespace fk::ui {
 
-struct Size {
-    float width{0.0f};
-    float height{0.0f};
+// 前向声明
+class RoutedEvent;
+struct RoutedEventArgs;
+struct PointerEventArgs;
+struct KeyEventArgs;
 
-    constexpr Size() = default;
-    constexpr Size(float w, float h) : width(w), height(h) {}
-};
-
-struct Rect {
-    float x{0.0f};
-    float y{0.0f};
-    float width{0.0f};
-    float height{0.0f};
-
-    constexpr Rect() = default;
-    constexpr Rect(float left, float top, float w, float h)
-        : x(left), y(top), width(w), height(h) {}
-};
-
+/**
+ * @brief 可见性枚举
+ */
 enum class Visibility {
-    Visible,
-    Hidden,
-    Collapsed
+    Visible,    // 可见且参与布局
+    Hidden,     // 不可见但参与布局
+    Collapsed   // 不可见且不参与布局
 };
 
-class UIElement : public DependencyObject, public Visual {
+/**
+ * @brief UI 元素基类
+ * 
+ * 职责：
+ * - 输入事件处理
+ * - 布局系统（Measure/Arrange）
+ * - 路由事件机制
+ * 
+ * 继承：Visual
+ */
+class UIElement : public Visual {
 public:
-    using DependencyObject::DependencyObject;
-
     UIElement();
-    ~UIElement() override;
+    virtual ~UIElement();
 
-    // 依赖属性（使用宏）
-    FK_DEPENDENCY_PROPERTY_DECLARE(Visibility, fk::ui::Visibility)
-    FK_DEPENDENCY_PROPERTY_DECLARE(IsEnabled, bool)
-    FK_DEPENDENCY_PROPERTY_DECLARE(Opacity, float)
-    FK_DEPENDENCY_PROPERTY_DECLARE(ClipToBounds, bool)
-    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Name, std::string)
-
-public:
-    // GetVisibility() 和 GetOpacity() 同时实现 Visual 接口
+    // ========== 依赖属性声明 ==========
     
-    Size Measure(const Size& availableSize);
-    void Arrange(const Rect& finalRect);
+    /**
+     * @brief 可见性依赖属性
+     */
+    static const binding::DependencyProperty& VisibilityProperty();
+    
+    /**
+     * @brief 启用状态依赖属性
+     */
+    static const binding::DependencyProperty& IsEnabledProperty();
+    
+    /**
+     * @brief 不透明度依赖属性（0.0 - 1.0）
+     */
+    static const binding::DependencyProperty& OpacityProperty();
+    
+    // TODO: ClipProperty - 裁剪区域依赖属性
+    // TODO: RenderTransformProperty - 渲染变换依赖属性
 
+    // ========== 布局 ==========
+    
+    /**
+     * @brief 测量期望尺寸
+     */
+    void Measure(const Size& availableSize);
+    
+    /**
+     * @brief 确定最终布局
+     */
+    void Arrange(const Rect& finalRect);
+    
+    /**
+     * @brief 标记需要重新测量
+     */
     void InvalidateMeasure();
+    
+    /**
+     * @brief 标记需要重新排列
+     */
     void InvalidateArrange();
     
     /**
-     * @brief 标记元素的视觉呈现为无效，触发重新渲染
-     * 
-     * 当元素的视觉外观发生变化但布局不变时调用此方法。
-     * 这会通知 RenderHost 在下一帧重新渲染此元素。
+     * @brief 获取期望尺寸
      */
-    void InvalidateVisual();
-
-    [[nodiscard]] bool IsMeasureValid() const noexcept { return isMeasureValid_; }
-    [[nodiscard]] bool IsArrangeValid() const noexcept { return isArrangeValid_; }
-
-    [[nodiscard]] const Size& DesiredSize() const noexcept { return desiredSize_; }
-    [[nodiscard]] const Rect& LayoutSlot() const noexcept { return layoutSlot_; }
-
-    core::Event<UIElement&> MeasureInvalidated;
-    core::Event<UIElement&> ArrangeInvalidated;
-
-    // Visual 接口实现
-    Rect GetRenderBounds() const override;
-    // GetOpacity() 和 GetVisibility() 已在上面声明
-    std::vector<Visual*> GetVisualChildren() const override;
-    bool HasRenderContent() const override;
-
-    [[nodiscard]] UIElement* FindName(const std::string& name);
-    [[nodiscard]] const UIElement* FindName(const std::string& name) const;
-
-    template<typename T>
-    [[nodiscard]] T* As() noexcept {
-        return dynamic_cast<T*>(this);
-    }
-
-    template<typename T>
-    [[nodiscard]] const T* As() const noexcept {
-        return dynamic_cast<const T*>(this);
-    }
+    Size GetDesiredSize() const { return desiredSize_; }
     
+    /**
+     * @brief 获取渲染尺寸
+     */
+    Size GetRenderSize() const { return renderSize_; }
+
+    // ========== 可见性 ==========
+    
+    void SetVisibility(Visibility value);
+    Visibility GetVisibility() const;
+
+    // ========== 交互状态 ==========
+    
+    void SetIsEnabled(bool value);
+    bool GetIsEnabled() const;
+    
+    // ========== 不透明度 ==========
+    
+    void SetOpacity(float value);
+    float GetOpacity() const;
+
+    // ========== 路由事件 ==========
+    
+    using EventHandler = std::function<void(UIElement*, RoutedEventArgs&)>;
+    
+    /**
+     * @brief 触发路由事件
+     */
+    void RaiseEvent(RoutedEventArgs& args);
+    
+    /**
+     * @brief 注册事件处理器
+     */
+    void AddHandler(RoutedEvent* routedEvent, EventHandler handler);
+    
+    /**
+     * @brief 移除事件处理器
+     */
+    void RemoveHandler(RoutedEvent* routedEvent, EventHandler handler);
+
+    // ========== 输入事件（虚函数） ==========
+    
+    virtual void OnPointerPressed(PointerEventArgs& e);
+    virtual void OnPointerReleased(PointerEventArgs& e);
+    virtual void OnPointerMoved(PointerEventArgs& e);
+    virtual void OnPointerEntered(PointerEventArgs& e);
+    virtual void OnPointerExited(PointerEventArgs& e);
+    virtual void OnKeyDown(KeyEventArgs& e);
+    virtual void OnKeyUp(KeyEventArgs& e);
 
 protected:
-    void OnAttachedToLogicalTree() override;
-    void OnDetachedFromLogicalTree() override;
-
-    virtual Size MeasureCore(const Size& availableSize);
-    virtual void ArrangeCore(const Rect& finalRect);
-
-    void SetDesiredSize(const Size& size) noexcept { desiredSize_ = size; }
-    void SetLayoutSlot(const Rect& rect) noexcept { layoutSlot_ = rect; }
-
-public:
-    // 鼠标事件处理 (支持事件路由)
-    // 返回 true 表示事件已处理，停止冒泡；返回 false 表示未处理，继续冒泡
-    virtual bool OnMouseButtonDown(int button, double x, double y);
-    virtual bool OnMouseButtonUp(int button, double x, double y);
-    virtual bool OnMouseMove(double x, double y);
-    virtual bool OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY);
-    virtual bool OnKeyDown(int key, int scancode, int mods);
-    virtual bool OnKeyUp(int key, int scancode, int mods);
-    virtual bool OnTextInput(unsigned int codepoint);
-    
-    // 命中测试 - 检查点是否在此元素的渲染边界内
-    virtual bool HitTest(double x, double y) const;
-    
-    // 查找在指定位置的最上层子元素
-    virtual UIElement* HitTestChildren(double x, double y);
-
     /**
-     * @brief 获取此元素关联的 RenderHost（通过遍历父级链）
+     * @brief 核心测量逻辑（派生类覆写）
      */
-    class render::RenderHost* GetRenderHost() const;
+    virtual Size MeasureCore(const Size& availableSize);
+    
+    /**
+     * @brief 核心排列逻辑（派生类覆写）
+     */
+    virtual void ArrangeCore(const Rect& finalRect);
+    
+    /**
+     * @brief 获取子对象所有权（用于自动内存管理）
+     * 当子对象添加到父对象时，父对象调用此方法获取所有权
+     * 父对象析构时会自动释放所有拥有的子对象
+     */
+    void TakeOwnership(UIElement* child);
 
 private:
-    static bool ValidateOpacity(const std::any& value);
+    Size desiredSize_;
+    Size renderSize_;
+    bool measureDirty_{true};
+    bool arrangeDirty_{true};
+    
+    // 事件处理器映射
+    std::unordered_map<RoutedEvent*, std::vector<EventHandler>> eventHandlers_;
+    
+    // 拥有的子对象（自动管理内存）
+    std::vector<std::unique_ptr<UIElement>> ownedChildren_;
+};
 
-    Size desiredSize_{};
-    Rect layoutSlot_{};
-    bool isMeasureValid_{false};
-    bool isArrangeValid_{false};
+/**
+ * @brief 事件参数基类
+ */
+struct EventArgs {
+    virtual ~EventArgs() = default;
+};
+
+/**
+ * @brief 路由事件参数基类
+ */
+struct RoutedEventArgs : EventArgs {
+    UIElement* source{nullptr};
+    bool handled{false};
+    
+    RoutedEventArgs() = default;
+    explicit RoutedEventArgs(UIElement* src) : source(src) {}
+};
+
+/**
+ * @brief 指针事件参数
+ */
+struct PointerEventArgs : RoutedEventArgs {
+    Point position;
+    int pointerId{0};
+    // TODO: 扩展鼠标按钮、修饰键等
+    
+    PointerEventArgs() = default;
+    PointerEventArgs(UIElement* src, const Point& pos, int id = 0)
+        : RoutedEventArgs(src), position(pos), pointerId(id) {}
+};
+
+/**
+ * @brief 键盘事件参数
+ */
+struct KeyEventArgs : RoutedEventArgs {
+    int key{0};
+    bool isRepeat{false};
+    // TODO: 扩展修饰键等
+    
+    KeyEventArgs() = default;
+    KeyEventArgs(UIElement* src, int k, bool repeat = false)
+        : RoutedEventArgs(src), key(k), isRepeat(repeat) {}
+};
+
+/**
+ * @brief 路由事件定义（基于 core::Event）
+ */
+class RoutedEvent : public core::Event<UIElement*, RoutedEventArgs&> {
+public:
+    enum class RoutingStrategy {
+        Direct,     // 直接路由
+        Bubble,     // 冒泡路由
+        Tunnel      // 隧道路由
+    };
+    
+    explicit RoutedEvent(const std::string& name, RoutingStrategy strategy = RoutingStrategy::Bubble)
+        : name_(name), strategy_(strategy) {}
+    
+    const std::string& GetName() const { return name_; }
+    RoutingStrategy GetStrategy() const { return strategy_; }
+    
+private:
+    std::string name_;
+    RoutingStrategy strategy_;
 };
 
 } // namespace fk::ui

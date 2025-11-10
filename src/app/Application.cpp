@@ -20,6 +20,17 @@ Application::~Application() {
 
 Application* Application::Current() { return instance_; }
 
+ui::Window* Application::CreateWindow() {
+    auto window = std::make_shared<ui::Window>();
+    auto* ptr = window.get();
+    
+    // 自动添加到窗口集合中，使用指针地址作为唯一名称
+    std::string name = "Window_" + std::to_string(reinterpret_cast<uintptr_t>(ptr));
+    windows_[name] = window;
+    
+    return ptr;
+}
+
 void Application::Run(ui::WindowPtr mainWindow) {
     if (isRunning_) {
         return;

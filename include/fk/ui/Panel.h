@@ -1,139 +1,130 @@
 #pragma once
 
 #include "fk/ui/FrameworkElement.h"
-#include "fk/ui/UIElement.h"
-#include "fk/binding/Binding.h"
-
-#include <memory>
-#include <span>
-#include <any>
+#include "fk/binding/DependencyProperty.h"
 #include <vector>
+#include <memory>
 
 namespace fk::ui {
 
-// 用于 Children 依赖属性的集合类型
-using UIElementCollection = std::vector<std::shared_ptr<UIElement>>;
+// 前向声明
+class Brush;
 
-// Panel 基类（非模板）
-class PanelBase : public FrameworkElement {
+/**
+ * @brief 面板基类（CRTP 模式）
+ * 
+ * 职责：
+ * - 子元素管理
+ * - 布局逻辑
+ * 
+ * 模板参数：Derived - 派生类类型（CRTP）
+ * 继承：FrameworkElement<Derived>
+ */
+template<typename Derived>
+class Panel : public FrameworkElement<Derived> {
 public:
-    using FrameworkElement::FrameworkElement;
-
-    PanelBase();
-    ~PanelBase() override;
-
-    // 依赖属性
-    static const binding::DependencyProperty& ChildrenProperty();
-
-    // Setter: 添加子元素
-    void AddChild(std::shared_ptr<UIElement> child);
+    // ========== 依赖属性 ==========
     
-    // Setter: 移除子元素
-    void RemoveChild(UIElement* child);
-    
-    // Setter: 清空所有子元素
-    void ClearChildren();
+    /// Background 属性：背景画刷
+    static const binding::DependencyProperty& BackgroundProperty();
 
-    // Getter: 获取所有子元素（返回内部集合的视图）
-    [[nodiscard]] std::span<const std::shared_ptr<UIElement>> GetChildren() const noexcept;
-    
-    // Getter: 获取子元素数量
-    [[nodiscard]] std::size_t GetChildCount() const noexcept;
-    
-    // Getter: 是否有子元素
-    [[nodiscard]] bool HasChildren() const noexcept;
+public:
+    Panel() = default;
+    virtual ~Panel() = default;
 
-    // Visual interface - 返回所有子元素作为可视子元素
-    std::vector<Visual*> GetVisualChildren() const override;
+    // ========== 外观 ==========
+    
+    Brush* GetBackground() const { return this->template GetValue<Brush*>(BackgroundProperty()); }
+    void SetBackground(Brush* value) { this->SetValue(BackgroundProperty(), value); }
+    
+    Derived* Background(Brush* brush) {
+        SetBackground(brush);
+        return static_cast<Derived*>(this);
+    }
+    Brush* Background() const { return GetBackground(); }
+
+    // ========== 子元素集合 ==========
+    
+    /**
+     * @brief 添加子元素（并获取其所有权）
+     */
+    Derived* AddChild(UIElement* child) {
+        if (child) {
+            children_.push_back(child);
+            this->AddVisualChild(child);
+            this->TakeOwnership(child);  // 获取子对象所有权
+            this->InvalidateMeasure();
+        }
+        return static_cast<Derived*>(this);
+    }
+    
+    /**
+     * @brief 移除子元素
+     */
+    void RemoveChild(UIElement* child) {
+        auto it = std::find(children_.begin(), children_.end(), child);
+        if (it != children_.end()) {
+            children_.erase(it);
+            this->RemoveVisualChild(child);
+            this->InvalidateMeasure();
+        }
+    }
+    
+    /**
+     * @brief 清空子元素
+     */
+    void ClearChildren() {
+        for (auto* child : children_) {
+            this->RemoveVisualChild(child);
+        }
+        children_.clear();
+        this->InvalidateMeasure();
+    }
+    
+    /**
+     * @brief 获取子元素集合
+     */
+    const std::vector<UIElement*>& GetChildren() const { return children_; }
+    
+    Derived* Children(std::initializer_list<UIElement*> elements) {
+        for (auto* elem : elements) {
+            AddChild(elem);
+        }
+        return static_cast<Derived*>(this);
+    }
+    
+    const std::vector<UIElement*>& Children() const { return GetChildren(); }
+    
+    /**
+     * @brief 获取子元素数量
+     */
+    size_t GetChildrenCount() const { return children_.size(); }
 
 protected:
-    void OnAttachedToLogicalTree() override;
-    void OnDetachedFromLogicalTree() override;
-    void OnDataContextChanged(const std::any& oldValue, const std::any& newValue) override;
-
-    virtual Size MeasureOverride(const Size& availableSize) = 0;
-    virtual Size ArrangeOverride(const Size& finalSize) = 0;
-
-    [[nodiscard]] std::span<const std::shared_ptr<UIElement>> ChildSpan() const noexcept { return { children_.data(), children_.size() }; }
-
-    static void MeasureChild(UIElement& child, const Size& availableSize);
-    static void ArrangeChild(UIElement& child, const Rect& finalRect);
-    
-    // 子类可以重写以响应子元素集合变化
-    virtual void OnChildrenChanged(const UIElementCollection& oldChildren, const UIElementCollection& newChildren);
-    
-    // 重写鼠标事件处理,实现事件路由
-    bool OnMouseButtonDown(int button, double x, double y) override;
-    bool OnMouseButtonUp(int button, double x, double y) override;
-    bool OnMouseMove(double x, double y) override;
-    bool OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) override;
-    
-    // 命中测试重写
-    UIElement* HitTestChildren(double x, double y) override;
-    
-    // 提供给模板类使用的内部方法
-    void SetChildrenInternal(const UIElementCollection& children);
-    void SetChildrenInternal(UIElementCollection&& children);
-
-private:
-    static binding::PropertyMetadata BuildChildrenMetadata();
-    
-    static void ChildrenPropertyChanged(binding::DependencyObject& sender, 
-        const binding::DependencyProperty& property,
-        const std::any& oldValue, 
-        const std::any& newValue);
-    
-    static bool ValidateChildren(const std::any& value);
-    
-    static UIElementCollection ToCollection(const std::any& value);
-
-    void AttachChild(UIElement& child);
-    void DetachChild(UIElement& child);
-    void AttachAllChildren();
-    void DetachAllChildren();
-
-    std::vector<std::shared_ptr<UIElement>> children_;
-    UIElement* lastHoveredChild_ = nullptr;  // 跟踪上一次悬停的子元素
-};
-
-// Panel 模板类（支持 CRTP 链式调用）
-template <typename Derived>
-class Panel : public PanelBase {
-public:
-    using BaseType = PanelBase;
-    using Ptr = std::shared_ptr<Derived>;
-
-    using PanelBase::PanelBase;
-
-    // Fluent API: 获取 Children 集合
-    [[nodiscard]] std::span<const std::shared_ptr<UIElement>> Children() const noexcept {
-        return GetChildren();
+    /**
+     * @brief 测量所有子元素
+     */
+    void MeasureChildren(const Size& availableSize) {
+        for (auto* child : children_) {
+            if (child && child->GetVisibility() != Visibility::Collapsed) {
+                child->Measure(availableSize);
+            }
+        }
     }
     
-    // Fluent API: 设置 Children 集合（拷贝语义，返回派生类指针）
-    Ptr Children(const UIElementCollection& children) {
-        SetChildrenInternal(children);
-        return Self();
-    }
-    
-    // Fluent API: 设置 Children 集合（移动语义，返回派生类指针）
-    Ptr Children(UIElementCollection&& children) {
-        SetChildrenInternal(std::move(children));
-        return Self();
-    }
-    
-    // 🎯 绑定支持：Children 属性
-    Ptr Children(binding::Binding binding) {
-        SetBinding(PanelBase::ChildrenProperty(), std::move(binding));
-        return Self();
+    /**
+     * @brief 排列所有子元素
+     */
+    void ArrangeChildren() {
+        for (auto* child : children_) {
+            if (child && child->GetVisibility() != Visibility::Collapsed) {
+                // 派生类的 ArrangeOverride 应该调用 child->Arrange()
+            }
+        }
     }
 
-protected:
-    Ptr Self() {
-        // 通过 View 的 enable_shared_from_this 获取 shared_ptr
-        auto* derivedThis = static_cast<Derived*>(this);
-        return std::static_pointer_cast<Derived>(derivedThis->shared_from_this());
-    }
+    // 子元素集合
+    std::vector<UIElement*> children_;
 };
 
 } // namespace fk::ui

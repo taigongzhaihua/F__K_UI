@@ -1,136 +1,205 @@
 #pragma once
 
-#include <memory>
-#include <string>
-#include "fk/core/Event.h"
 #include "fk/ui/ContentControl.h"
-#include "fk/ui/DependencyPropertyMacros.h"
-#include "fk/binding/Binding.h"
-
-struct GLFWwindow;
-
-namespace fk::render {
-class RenderHost;
-}
+#include "fk/binding/DependencyProperty.h"
+#include <string>
+#include <memory>
 
 namespace fk::ui {
 
-class WindowInteropHelper;
+/**
+ * @brief 窗口枚举
+ */
+enum class WindowState {
+    Normal,      // 正常状态
+    Minimized,   // 最小化
+    Maximized    // 最大化
+};
+
+enum class WindowStartupLocation {
+    Manual,          // 手动指定位置
+    CenterScreen,    // 屏幕中心
+    CenterOwner      // 相对于父窗口居中
+};
 
 /**
- * @brief Window - 顶级窗口类
+ * @brief 窗口类
  * 
- * 继承自 ContentControl，提供顶级窗口功能
- * 通过 WindowInteropHelper 管理原生窗口
+ * 职责：
+ * - 顶层窗口容器
+ * - 窗口标题和图标
+ * - 窗口状态（最小化、最大化、正常）
+ * - 窗口位置和大小
+ * - 模态对话框支持
+ * 
+ * 继承：ContentControl
+ * WPF 对应：Window
  */
-class Window : public ContentControl {
+class Window : public ContentControl<Window> {
 public:
-    using Ptr = std::shared_ptr<Window>;
-
     Window();
     virtual ~Window();
 
-    // 依赖属性声明
-    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Title, std::string);
-    FK_DEPENDENCY_PROPERTY_DECLARE(Width, int);
-    FK_DEPENDENCY_PROPERTY_DECLARE(Height, int);
-
-public:
-
-    // 流式 API (无参getter/有参setter重载)
-    Ptr Title(const std::string& title);
-    std::string Title() const;
+    // ========== 依赖属性 ==========
     
-    // 🎯 绑定支持：Title 属性
-    Ptr Title(binding::Binding binding) {
-        SetBinding(TitleProperty(), std::move(binding));
-        return std::static_pointer_cast<Window>(shared_from_this());
+    /// Title 属性：窗口标题
+    static const binding::DependencyProperty& TitleProperty();
+    
+    /// WindowState 属性：窗口状态
+    static const binding::DependencyProperty& WindowStateProperty();
+    
+    /// Left 属性：窗口左边距（相对于屏幕）
+    static const binding::DependencyProperty& LeftProperty();
+    
+    /// Top 属性：窗口顶边距（相对于屏幕）
+    static const binding::DependencyProperty& TopProperty();
+    
+    /// ShowInTaskbar 属性：是否在任务栏显示
+    static const binding::DependencyProperty& ShowInTaskbarProperty();
+    
+    /// Topmost 属性：是否置顶显示
+    static const binding::DependencyProperty& TopmostProperty();
+    
+    /// ResizeMode 属性：调整大小模式（暂未实现枚举）
+    // static const binding::DependencyProperty& ResizeModeProperty();
+
+    // ========== 窗口标题 ==========
+    
+    std::string GetTitle() const { return GetValue<std::string>(TitleProperty()); }
+    void SetTitle(const std::string& value) { SetValue(TitleProperty(), value); }
+    
+    Window* Title(const std::string& value) {
+        SetTitle(value);
+        return this;
     }
+    std::string Title() const { return GetTitle(); }
+
+    // ========== 窗口状态 ==========
     
-    // 窗口大小 (隐藏父类的 float 版本,提供 int 版本控制窗口大小)
-    Ptr Width(int w);
-    int Width() const;
+    WindowState GetWindowState() const { return GetValue<ui::WindowState>(WindowStateProperty()); }
+    void SetWindowState(WindowState value);
     
-    Ptr Height(int h);
-    int Height() const;
-    
-    // Content 链式调用 (重写以返回 Window::Ptr)
-    Ptr Content(std::shared_ptr<UIElement> content) {
-        SetContent(std::move(content));
-        return std::static_pointer_cast<Window>(shared_from_this());
+    Window* WindowState(ui::WindowState value) {
+        SetWindowState(value);
+        return this;
     }
+    ui::WindowState WindowState() const { return GetWindowState(); }
+
+    // ========== 窗口位置 ==========
     
-    bool IsVisible() const { return visible_; }
+    float GetLeft() const { return GetValue<float>(LeftProperty()); }
+    void SetLeft(float value) { SetValue(LeftProperty(), value); }
+    
+    Window* Left(float value) {
+        SetLeft(value);
+        return this;
+    }
+    float Left() const { return GetLeft(); }
+    
+    float GetTop() const { return GetValue<float>(TopProperty()); }
+    void SetTop(float value) { SetValue(TopProperty(), value); }
+    
+    Window* Top(float value) {
+        SetTop(value);
+        return this;
+    }
+    float Top() const { return GetTop(); }
 
+    // ========== 窗口行为 ==========
+    
+    bool GetShowInTaskbar() const { return GetValue<bool>(ShowInTaskbarProperty()); }
+    void SetShowInTaskbar(bool value) { SetValue(ShowInTaskbarProperty(), value); }
+    
+    Window* ShowInTaskbar(bool value) {
+        SetShowInTaskbar(value);
+        return this;
+    }
+    bool ShowInTaskbar() const { return GetShowInTaskbar(); }
+    
+    bool GetTopmost() const { return GetValue<bool>(TopmostProperty()); }
+    void SetTopmost(bool value) { SetValue(TopmostProperty(), value); }
+    
+    Window* Topmost(bool value) {
+        SetTopmost(value);
+        return this;
+    }
+    bool Topmost() const { return GetTopmost(); }
 
-    // 窗口操作
+    // ========== 窗口操作 ==========
+    
+    /**
+     * @brief 显示窗口
+     */
     void Show();
-    void Hide();
+    
+    /**
+     * @brief 显示模态窗口
+     * @return 对话框结果（true/false）
+     */
+    bool ShowDialog();
+    
+    /**
+     * @brief 关闭窗口
+     */
     void Close();
     
     /**
-     * @brief 处理一次消息（非阻塞）
-     * @return 如果窗口应该关闭返回 false
+     * @brief 激活窗口（置于前台）
+     */
+    void Activate();
+    
+    /**
+     * @brief 隐藏窗口
+     */
+    void Hide();
+    
+    /**
+     * @brief 检查窗口是否可见
+     */
+    bool IsVisible() const { return isVisible_; }
+    
+    /**
+     * @brief 处理窗口事件
+     * @return 如果窗口继续运行返回 true，关闭返回 false
      */
     bool ProcessEvents();
     
     /**
-     * @brief 执行一帧渲染
+     * @brief 渲染窗口帧
      */
     void RenderFrame();
+
+    // ========== 窗口事件 ==========
     
-    // 获取本地窗口句柄（尽量避免使用，仅供底层需要）
-    GLFWwindow* GetNativeHandle() const;
-
-    // 渲染集成
-    void SetRenderHost(std::shared_ptr<render::RenderHost> renderHost);
-    std::shared_ptr<render::RenderHost> GetRenderHost() const { return renderHost_; }
-
-    // 事件
-    core::Event<> Closed;
-    core::Event<> Opened;
-    core::Event<int, int> Resized;
-    core::Event<> Activated;
-    core::Event<> Deactivated;
-
-    // 由 WindowInteropHelper 调用的回调
-    friend class WindowInteropHelper;
-    void OnNativeWindowClose();
-    void OnNativeWindowResize(int width, int height);
-    void OnNativeWindowFocus(bool focused);
-    void OnNativeWindowMove(int x, int y);
-    void OnNativeMouseButton(int button, int action, int mods);
-    void OnNativeMouseMove(double xpos, double ypos);
-    void OnNativeMouseScroll(double xoffset, double yoffset);
-    void OnNativeKey(int key, int scancode, int action, int mods);
-    void OnNativeChar(unsigned int codepoint);
+    core::Event<> Closing;      // 窗口即将关闭
+    core::Event<> Closed;       // 窗口已关闭
+    core::Event<> Activated;    // 窗口激活
+    core::Event<> Deactivated;  // 窗口失活
 
 protected:
-    // 重写 ContentControl 的内容变更通知
-    void OnContentChanged(UIElement* oldContent, UIElement* newContent) override;
+    /**
+     * @brief 窗口状态变更钩子
+     */
+    virtual void OnWindowStateChanged(ui::WindowState oldState, ui::WindowState newState);
+    
+    /**
+     * @brief 窗口关闭前钩子（可取消）
+     */
+    virtual bool OnClosing() { return true; }
+    
+    /**
+     * @brief 窗口关闭后钩子
+     */
+    virtual void OnClosed() {}
 
 private:
-    /**
-     * @brief 执行布局
-     */
-    void PerformLayout();
-
-    /**
-     * @brief 请求重绘
-     */
-    void RequestRender();
-
-    bool visible_;
-    int frameCount_{0};
-    
-    std::unique_ptr<WindowInteropHelper> interopHelper_;
-    std::shared_ptr<render::RenderHost> renderHost_;
+    void* nativeHandle_{nullptr};  // 平台原生窗口句柄
+    bool isModal_{false};           // 是否为模态窗口
+    bool isClosing_{false};         // 正在关闭标志
+    bool isVisible_{false};         // 窗口可见性标志
 };
 
-using WindowPtr = Window::Ptr;
-
-inline WindowPtr window() {
-    return std::make_shared<Window>();
-}
+// 窗口智能指针类型（用于 Application 管理）
+using WindowPtr = std::shared_ptr<Window>;
 
 } // namespace fk::ui

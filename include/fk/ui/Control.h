@@ -1,186 +1,279 @@
 #pragma once
 
-#include "fk/ui/UIElement.h"
-#include "fk/ui/View.h"
-#include "fk/ui/BindingMacros.h"
-#include "fk/ui/DependencyPropertyMacros.h"
-#include "fk/ui/Template.h"
-
-#include <any>
+#include "fk/ui/FrameworkElement.h"
+#include "fk/ui/Thickness.h"
+#include "fk/ui/TextEnums.h"
+#include "fk/binding/DependencyProperty.h"
 #include <memory>
 #include <string>
-#include <utility>
 
 namespace fk::ui {
 
-class UIElement;
+// 前向声明
+class ControlTemplate;
+class Brush;
 
-namespace detail {
-
-class ControlBase : public FrameworkElement {
+/**
+ * @brief 控件基类（CRTP 模式）
+ * 
+ * 职责：
+ * - 控件模板
+ * - 外观属性（前景、背景、边框等）
+ * - 焦点和鼠标状态
+ * 
+ * 模板参数：Derived - 派生类类型（CRTP）
+ * 继承：FrameworkElement<Derived>
+ */
+template<typename Derived>
+class Control : public FrameworkElement<Derived> {
 public:
-    using FrameworkElement::FrameworkElement;
+    Control() = default;
+    virtual ~Control() = default;
 
-    ControlBase();
-    ~ControlBase() override;
-
-    // 依赖属性（使用宏）
-    FK_DEPENDENCY_PROPERTY_DECLARE(IsFocused, bool)
-    FK_DEPENDENCY_PROPERTY_DECLARE(TabIndex, int)
-    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Cursor, std::string)
-    FK_DEPENDENCY_PROPERTY_DECLARE(Padding, fk::Thickness)
-
-public:
-    // Content 属性（特殊处理，保留原有方法）
-    static const binding::DependencyProperty& ContentProperty();
-    void SetContent(std::shared_ptr<UIElement> content);
-    void ClearContent();
-    [[nodiscard]] std::shared_ptr<UIElement> GetContent() const;
-    [[nodiscard]] bool HasContent() const { return GetContent() != nullptr; }
-
-    // 🎯 Template 支持
-    void SetTemplate(std::shared_ptr<ControlTemplate> controlTemplate);
-    [[nodiscard]] std::shared_ptr<ControlTemplate> GetTemplate() const { return template_; }
+    // ========== 依赖属性声明 ==========
     
     /**
-     * @brief 应用控件模板
-     * 从模板创建可视化树并替换当前 Content
-     * @return 是否成功应用模板
+     * @brief 前景画刷依赖属性
      */
-    bool ApplyTemplate();
+    static const binding::DependencyProperty& ForegroundProperty();
     
     /**
-     * @brief 模板应用完成后的回调
-     * 子类重写此方法以获取模板中的命名部件
+     * @brief 背景画刷依赖属性
      */
-    virtual void OnApplyTemplate() {}
+    static const binding::DependencyProperty& BackgroundProperty();
+    
+    /**
+     * @brief 边框画刷依赖属性
+     */
+    static const binding::DependencyProperty& BorderBrushProperty();
+    
+    /**
+     * @brief 边框厚度依赖属性
+     */
+    static const binding::DependencyProperty& BorderThicknessProperty();
+    
+    /**
+     * @brief 内边距依赖属性
+     */
+    static const binding::DependencyProperty& PaddingProperty();
+    
+    /**
+     * @brief 字体系列依赖属性
+     */
+    static const binding::DependencyProperty& FontFamilyProperty();
+    
+    /**
+     * @brief 字体大小依赖属性
+     */
+    static const binding::DependencyProperty& FontSizeProperty();
+    
+    /**
+     * @brief 字体粗细依赖属性
+     */
+    static const binding::DependencyProperty& FontWeightProperty();
 
-    bool Focus();
-    [[nodiscard]] bool HasFocus() const { return GetIsFocused(); }
-    static ControlBase* GetFocusedControl();
+    // ========== 控件模板 ==========
+    
+    ControlTemplate* GetTemplate() const { return template_; }
+    void SetTemplate(ControlTemplate* tmpl);
+    Derived* Template(ControlTemplate* tmpl) {
+        SetTemplate(tmpl);
+        return static_cast<Derived*>(this);
+    }
+    ControlTemplate* Template() const { return GetTemplate(); }
+
+    // ========== 外观属性 ==========
+    
+    // 前景
+    Brush* GetForeground() const {
+        auto value = this->template GetValue<Brush*>(ForegroundProperty());
+        return value;
+    }
+    void SetForeground(Brush* brush) {
+        this->SetValue(ForegroundProperty(), brush);
+        this->InvalidateVisual();
+    }
+    Derived* Foreground(Brush* brush) {
+        SetForeground(brush);
+        return static_cast<Derived*>(this);
+    }
+    Brush* Foreground() const { return GetForeground(); }
+    
+    // 背景
+    Brush* GetBackground() const {
+        return this->template GetValue<Brush*>(BackgroundProperty());
+    }
+    void SetBackground(Brush* brush) {
+        this->SetValue(BackgroundProperty(), brush);
+        this->InvalidateVisual();
+    }
+    Derived* Background(Brush* brush) {
+        SetBackground(brush);
+        return static_cast<Derived*>(this);
+    }
+    Brush* Background() const { return GetBackground(); }
+    
+    // 边框画刷
+    Brush* GetBorderBrush() const {
+        return this->template GetValue<Brush*>(BorderBrushProperty());
+    }
+    void SetBorderBrush(Brush* brush) {
+        this->SetValue(BorderBrushProperty(), brush);
+        this->InvalidateVisual();
+    }
+    Derived* BorderBrush(Brush* brush) {
+        SetBorderBrush(brush);
+        return static_cast<Derived*>(this);
+    }
+    Brush* BorderBrush() const { return GetBorderBrush(); }
+    
+    // 边框厚度
+    Thickness GetBorderThickness() const {
+        return this->template GetValue<Thickness>(BorderThicknessProperty());
+    }
+    void SetBorderThickness(const Thickness& thickness) {
+        this->SetValue(BorderThicknessProperty(), thickness);
+        this->InvalidateMeasure();
+    }
+    Derived* BorderThickness(float uniform) {
+        SetBorderThickness(Thickness(uniform));
+        return static_cast<Derived*>(this);
+    }
+    Derived* BorderThickness(float left, float top, float right, float bottom) {
+        SetBorderThickness(Thickness(left, top, right, bottom));
+        return static_cast<Derived*>(this);
+    }
+    Thickness BorderThickness() const { return GetBorderThickness(); }
+    
+    // 内边距
+    Thickness GetPadding() const {
+        return this->template GetValue<Thickness>(PaddingProperty());
+    }
+    void SetPadding(const Thickness& padding) {
+        this->SetValue(PaddingProperty(), padding);
+        this->InvalidateMeasure();
+    }
+    Derived* Padding(float uniform) {
+        SetPadding(Thickness(uniform));
+        return static_cast<Derived*>(this);
+    }
+    Derived* Padding(float left, float top, float right, float bottom) {
+        SetPadding(Thickness(left, top, right, bottom));
+        return static_cast<Derived*>(this);
+    }
+    Thickness Padding() const { return GetPadding(); }
+
+    // ========== 字体属性 ==========
+    
+    std::string GetFontFamily() const {
+        return this->template GetValue<std::string>(FontFamilyProperty());
+    }
+    void SetFontFamily(const std::string& family) {
+        this->SetValue(FontFamilyProperty(), family);
+        this->InvalidateMeasure();
+    }
+    Derived* FontFamily(const std::string& family) {
+        SetFontFamily(family);
+        return static_cast<Derived*>(this);
+    }
+    std::string FontFamily() const { return GetFontFamily(); }
+    
+    float GetFontSize() const {
+        return this->template GetValue<float>(FontSizeProperty());
+    }
+    void SetFontSize(float size) {
+        this->SetValue(FontSizeProperty(), size);
+        this->InvalidateMeasure();
+    }
+    Derived* FontSize(float size) {
+        SetFontSize(size);
+        return static_cast<Derived*>(this);
+    }
+    float FontSize() const { return GetFontSize(); }
+    
+    ui::FontWeight GetFontWeight() const {
+        return this->template GetValue<ui::FontWeight>(FontWeightProperty());
+    }
+    void SetFontWeight(ui::FontWeight weight) {
+        this->SetValue(FontWeightProperty(), weight);
+        this->InvalidateMeasure();
+    }
+    Derived* FontWeight(ui::FontWeight weight) {
+        SetFontWeight(weight);
+        return static_cast<Derived*>(this);
+    }
+    ui::FontWeight FontWeight() const { return GetFontWeight(); }
+
+    // ========== 状态属性 ==========
+    
+    bool IsFocused() const { return isFocused_; }
+    bool IsMouseOver() const { return isMouseOver_; }
+
+    // ========== 虚方法 ==========
+    
+    /**
+     * @brief 获取默认样式键
+     */
+    virtual const std::type_info& GetDefaultStyleKey() const {
+        return typeid(Derived);
+    }
 
 protected:
-    void OnAttachedToLogicalTree() override;
-    void OnDetachedFromLogicalTree() override;
-
-    Size MeasureOverride(const Size& availableSize) override;
-    Size ArrangeOverride(const Size& finalSize) override;
+    /**
+     * @brief 模板应用钩子
+     */
+    void OnApplyTemplate() override {
+        // 派生类覆写以获取模板部件
+    }
     
-    // 重写以返回 Content 作为子元素
-    std::vector<Visual*> GetVisualChildren() const override;
+    /**
+     * @brief 鼠标进入
+     */
+    void OnPointerEntered(PointerEventArgs& e) override {
+        isMouseOver_ = true;
+        this->InvalidateVisual();
+    }
     
-    // 重写鼠标事件,传递给 Content
-    bool OnMouseButtonDown(int button, double x, double y) override;
-    bool OnMouseButtonUp(int button, double x, double y) override;
-    bool OnMouseMove(double x, double y) override;
-    bool OnMouseWheel(double xoffset, double yoffset, double mouseX, double mouseY) override;
+    /**
+     * @brief 鼠标离开
+     */
+    void OnPointerExited(PointerEventArgs& e) override {
+        isMouseOver_ = false;
+        this->InvalidateVisual();
+    }
     
-    // 命中测试重写
-    UIElement* HitTestChildren(double x, double y) override;
-
-    virtual void OnContentChanged(UIElement* oldContent, UIElement* newContent);
-    virtual void OnFocusGained();
-    virtual void OnFocusLost();
+    /**
+     * @brief 获得焦点
+     */
+    virtual void OnGotFocus() {
+        isFocused_ = true;
+        this->InvalidateVisual();
+    }
+    
+    /**
+     * @brief 失去焦点
+     */
+    virtual void OnLostFocus() {
+        isFocused_ = false;
+        this->InvalidateVisual();
+    }
 
 private:
-    // Content 属性元数据
-    static binding::PropertyMetadata BuildContentMetadata();
-    static void ContentPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-
-    static ControlBase* focusedControl_;
-
-    static bool ValidateTabIndex(const std::any& value);
-    static bool ValidateCursor(const std::any& value);
-    static bool ValidateContent(const std::any& value);
-
-    static std::shared_ptr<UIElement> ToElement(const std::any& value);
-
-    void AttachContent(UIElement* content);
-    void DetachContent(UIElement* content);
-    void SyncContentAttachment();
+    ControlTemplate* template_{nullptr};
     
-    std::shared_ptr<ControlTemplate> template_;  // 🎯 控件模板
-    bool templateApplied_{false};                 // 🎯 模板是否已应用
+    // 状态（非依赖属性，用于内部状态跟踪）
+    bool isFocused_{false};
+    bool isMouseOver_{false};
 };
 
-} // namespace detail
-
-template <typename Derived>
-class Control : public View<Derived, detail::ControlBase> {
-public:
-    using Base = View<Derived, detail::ControlBase>;
-    using ControlBase = detail::ControlBase;
-    using Ptr = typename Base::Ptr;
-    using ContentPtr = std::shared_ptr<UIElement>;
-
-    using Base::Base;
-
-    // 🎯 使用宏简化绑定支持
-    FK_BINDING_PROPERTY_VALUE_BASE(IsFocused, bool, ControlBase)
-    FK_BINDING_PROPERTY_VALUE_BASE(TabIndex, int, ControlBase)
-    FK_BINDING_PROPERTY_BASE(Cursor, std::string, ControlBase)
-    
-    // Content 属性 - 需要特殊处理（因为类型是 shared_ptr）
-    [[nodiscard]] ContentPtr Content() const {
-        return this->GetContent();
+// 模板实现
+template<typename Derived>
+void Control<Derived>::SetTemplate(ControlTemplate* tmpl) {
+    if (template_ != tmpl) {
+        template_ = tmpl;
+        // TODO: 重新应用模板
+        this->ApplyTemplate();
     }
-    
-    Ptr Content(ContentPtr content) {
-        this->SetContent(std::move(content));
-        return this->Self();
-    }
-    
-    Ptr Content(binding::Binding binding) {
-        this->SetBinding(ControlBase::ContentProperty(), std::move(binding));
-        return this->Self();
-    }
-
-    Ptr ClearContentValue() {
-        static_cast<ControlBase*>(this)->ClearContent();
-        return this->Self();
-    }
-
-    // Padding 属性 - 支持多种重载
-    [[nodiscard]] const fk::Thickness& Padding() const {
-        return this->GetPadding();
-    }
-
-    Ptr Padding(const fk::Thickness& padding) {
-        this->SetPadding(padding);
-        return this->Self();
-    }
-
-    Ptr Padding(float uniform) {
-        this->SetPadding(fk::Thickness{uniform});
-        return this->Self();
-    }
-
-    Ptr Padding(float horizontal, float vertical) {
-        this->SetPadding(fk::Thickness{horizontal, vertical});
-        return this->Self();
-    }
-
-    Ptr Padding(float left, float top, float right, float bottom) {
-        this->SetPadding(fk::Thickness{left, top, right, bottom});
-        return this->Self();
-    }
-    
-    Ptr Padding(binding::Binding binding) {
-        this->SetBinding(ControlBase::PaddingProperty(), std::move(binding));
-        return this->Self();
-    }
-
-    // 🎯 Template 属性
-    [[nodiscard]] std::shared_ptr<ControlTemplate> Template() const {
-        return static_cast<const ControlBase*>(this)->GetTemplate();
-    }
-    
-    Ptr Template(std::shared_ptr<ControlTemplate> controlTemplate) {
-        static_cast<ControlBase*>(this)->SetTemplate(std::move(controlTemplate));
-        return this->Self();
-    }
-
-};
+}
 
 } // namespace fk::ui

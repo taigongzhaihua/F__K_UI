@@ -1,112 +1,281 @@
 #pragma once
 
 #include "fk/ui/UIElement.h"
-#include "fk/ui/DependencyPropertyMacros.h"
 #include "fk/ui/Thickness.h"
+#include "fk/ui/Alignment.h"
+#include "fk/ui/ResourceDictionary.h"
 #include "fk/core/Event.h"
-
+#include "fk/binding/DependencyProperty.h"
 #include <any>
-#include <utility>
+#include <string>
+#include <memory>
 
 namespace fk::ui {
 
-enum class HorizontalAlignment {
-    Left,
-    Center,
-    Right,
-    Stretch
-};
+// 前向声明
+class Style;
 
-enum class VerticalAlignment {
-    Top,
-    Center,
-    Bottom,
-    Stretch
-};
-
+/**
+ * @brief 框架元素基类（CRTP 模式）
+ * 
+ * 职责：
+ * - 数据上下文
+ * - 样式和资源
+ * - 生命周期事件
+ * - 尺寸约束
+ * 
+ * 模板参数：Derived - 派生类类型（CRTP）
+ * 继承：UIElement
+ */
+template<typename Derived>
 class FrameworkElement : public UIElement {
 public:
-    using UIElement::UIElement;
+    FrameworkElement() = default;
+    virtual ~FrameworkElement() = default;
 
-    FrameworkElement();
-    ~FrameworkElement() override;
-
-    // 依赖属性声明
-    FK_DEPENDENCY_PROPERTY_DECLARE(Width, float);
-    FK_DEPENDENCY_PROPERTY_DECLARE(Height, float);
-    FK_DEPENDENCY_PROPERTY_DECLARE(MinWidth, float);
-    FK_DEPENDENCY_PROPERTY_DECLARE(MinHeight, float);
-    FK_DEPENDENCY_PROPERTY_DECLARE(MaxWidth, float);
-    FK_DEPENDENCY_PROPERTY_DECLARE(MaxHeight, float);
-    FK_DEPENDENCY_PROPERTY_DECLARE(HorizontalAlignment, HorizontalAlignment);
-    FK_DEPENDENCY_PROPERTY_DECLARE(VerticalAlignment, VerticalAlignment);
-    FK_DEPENDENCY_PROPERTY_DECLARE_REF(Margin, fk::Thickness);
-
-public:
+    // ========== 依赖属性声明 ==========
+    
+    /**
+     * @brief 宽度依赖属性
+     */
+    static const binding::DependencyProperty& WidthProperty();
+    
+    /**
+     * @brief 高度依赖属性
+     */
+    static const binding::DependencyProperty& HeightProperty();
+    
+    /**
+     * @brief 最小宽度依赖属性
+     */
+    static const binding::DependencyProperty& MinWidthProperty();
+    
+    /**
+     * @brief 最大宽度依赖属性
+     */
+    static const binding::DependencyProperty& MaxWidthProperty();
+    
+    /**
+     * @brief 最小高度依赖属性
+     */
+    static const binding::DependencyProperty& MinHeightProperty();
+    
+    /**
+     * @brief 最大高度依赖属性
+     */
+    static const binding::DependencyProperty& MaxHeightProperty();
+    
+    /**
+     * @brief 数据上下文依赖属性
+     */
     static const binding::DependencyProperty& DataContextProperty();
-    void SetDataContext(std::any value);
+    
+    /**
+     * @brief 外边距依赖属性
+     */
+    static const binding::DependencyProperty& MarginProperty();
+    
+    /**
+     * @brief 水平对齐方式依赖属性
+     */
+    static const binding::DependencyProperty& HorizontalAlignmentProperty();
+    
+    /**
+     * @brief 垂直对齐方式依赖属性
+     */
+    static const binding::DependencyProperty& VerticalAlignmentProperty();
 
-    template <typename T>
-    void SetDataContext(T&& value) {
-        SetDataContext(std::any(std::forward<T>(value)));
+    // ========== 数据上下文 ==========
+    
+    void SetDataContext(const std::any& value) {
+        SetValue(DataContextProperty(), value);
+        InvalidateVisual();
     }
+    
+    std::any GetDataContext() const {
+        return GetValue<std::any>(DataContextProperty());
+    }
+    
+    Derived* DataContext(const std::any& value) {
+        SetDataContext(value);
+        return static_cast<Derived*>(this);
+    }
+    
+    std::any DataContext() const { return GetDataContext(); }
 
-    void ClearDataContext();
-    [[nodiscard]] const std::any& GetDataContext() const noexcept;
+    // ========== 尺寸约束 ==========
+    
+    void SetWidth(float value) { SetValue(WidthProperty(), value); InvalidateMeasure(); }
+    float GetWidth() const { return GetValue<float>(WidthProperty()); }
+    Derived* Width(float value) { SetWidth(value); return static_cast<Derived*>(this); }
+    float Width() const { return GetWidth(); }
+    
+    void SetHeight(float value) { SetValue(HeightProperty(), value); InvalidateMeasure(); }
+    float GetHeight() const { return GetValue<float>(HeightProperty()); }
+    Derived* Height(float value) { SetHeight(value); return static_cast<Derived*>(this); }
+    float Height() const { return GetHeight(); }
+    
+    void SetMinWidth(float value) { SetValue(MinWidthProperty(), value); InvalidateMeasure(); }
+    float GetMinWidth() const { return GetValue<float>(MinWidthProperty()); }
+    Derived* MinWidth(float value) { SetMinWidth(value); return static_cast<Derived*>(this); }
+    float MinWidth() const { return GetMinWidth(); }
+    
+    void SetMaxWidth(float value) { SetValue(MaxWidthProperty(), value); InvalidateMeasure(); }
+    float GetMaxWidth() const { return GetValue<float>(MaxWidthProperty()); }
+    Derived* MaxWidth(float value) { SetMaxWidth(value); return static_cast<Derived*>(this); }
+    float MaxWidth() const { return GetMaxWidth(); }
+    
+    void SetMinHeight(float value) { SetValue(MinHeightProperty(), value); InvalidateMeasure(); }
+    float GetMinHeight() const { return GetValue<float>(MinHeightProperty()); }
+    Derived* MinHeight(float value) { SetMinHeight(value); return static_cast<Derived*>(this); }
+    float MinHeight() const { return GetMinHeight(); }
+    
+    void SetMaxHeight(float value) { SetValue(MaxHeightProperty(), value); InvalidateMeasure(); }
+    float GetMaxHeight() const { return GetValue<float>(MaxHeightProperty()); }
+    Derived* MaxHeight(float value) { SetMaxHeight(value); return static_cast<Derived*>(this); }
+    float MaxHeight() const { return GetMaxHeight(); }
 
-    [[nodiscard]] bool IsInitialized() const noexcept { return isInitialized_; }
-    [[nodiscard]] bool IsLoaded() const noexcept { return isLoaded_; }
-    [[nodiscard]] bool HasAppliedTemplate() const noexcept { return isTemplateApplied_; }
+    // ========== 布局属性 ==========
+    
+    void SetMargin(const Thickness& value) { SetValue(MarginProperty(), value); InvalidateMeasure(); }
+    Thickness GetMargin() const { return GetValue<Thickness>(MarginProperty()); }
+    Derived* Margin(const Thickness& value) { SetMargin(value); return static_cast<Derived*>(this); }
+    Derived* Margin(float uniform) { SetMargin(Thickness(uniform)); return static_cast<Derived*>(this); }
+    Derived* Margin(float left, float top, float right, float bottom) { 
+        SetMargin(Thickness(left, top, right, bottom)); 
+        return static_cast<Derived*>(this); 
+    }
+    Thickness Margin() const { return GetMargin(); }
+    
+    void SetHorizontalAlignment(HorizontalAlignment value) { 
+        SetValue(HorizontalAlignmentProperty(), value); 
+        InvalidateArrange(); 
+    }
+    HorizontalAlignment GetHorizontalAlignment() const { 
+        return GetValue<HorizontalAlignment>(HorizontalAlignmentProperty()); 
+    }
+    Derived* HorizontalAlignment(ui::HorizontalAlignment value) { 
+        SetHorizontalAlignment(value); 
+        return static_cast<Derived*>(this); 
+    }
+    ui::HorizontalAlignment HorizontalAlignment() const { return GetHorizontalAlignment(); }
+    
+    void SetVerticalAlignment(VerticalAlignment value) { 
+        SetValue(VerticalAlignmentProperty(), value); 
+        InvalidateArrange(); 
+    }
+    VerticalAlignment GetVerticalAlignment() const { 
+        return GetValue<VerticalAlignment>(VerticalAlignmentProperty()); 
+    }
+    Derived* VerticalAlignment(ui::VerticalAlignment value) { 
+        SetVerticalAlignment(value); 
+        return static_cast<Derived*>(this); 
+    }
+    ui::VerticalAlignment VerticalAlignment() const { return GetVerticalAlignment(); }
 
-    bool ApplyTemplate();
+    // ========== 样式和资源 ==========
+    
+    ResourceDictionary& GetResources() { return *resources_; }
+    
+    fk::ui::Style* GetStyle() const { return style_; }
+    void SetStyle(fk::ui::Style* style);
+    Derived* Style(fk::ui::Style* style) { SetStyle(style); return static_cast<Derived*>(this); }
+    fk::ui::Style* Style() const { return GetStyle(); }
 
-    [[nodiscard]] const Size& RenderSize() const noexcept { return renderSize_; }
+    // ========== 模板 ==========
+    
+    /**
+     * @brief 应用模板
+     */
+    void ApplyTemplate();
+    
+    /**
+     * @brief 模板应用钩子（派生类覆写）
+     */
+    virtual void OnApplyTemplate() {}
 
-    core::Event<FrameworkElement&> Initialized;
-    core::Event<FrameworkElement&> Loaded;
-    core::Event<FrameworkElement&> Unloaded;
-    core::Event<FrameworkElement&> TemplateApplied;
+    // ========== 生命周期事件 ==========
+    
+    core::Event<> Loaded;
+    core::Event<> Unloaded;
+    core::Event<const std::any&, const std::any&> DataContextChanged;
 
 protected:
-    Size MeasureCore(const Size& availableSize) override;
-    void ArrangeCore(const Rect& finalRect) override;
+    /**
+     * @brief 数据上下文变更钩子
+     */
+    virtual void OnDataContextChanged(const std::any& oldValue, const std::any& newValue) {}
+    
+    /**
+     * @brief 自定义测量逻辑
+     */
+    virtual Size MeasureOverride(const Size& availableSize) {
+        return Size(0, 0);
+    }
+    
+    /**
+     * @brief 自定义排列逻辑
+     */
+    virtual Size ArrangeOverride(const Size& finalSize) {
+        return finalSize;
+    }
+    
+    /**
+     * @brief 应用尺寸约束
+     */
+    Size ApplySizeConstraints(const Size& size) const {
+        float w = size.width;
+        float h = size.height;
+        
+        float width = GetWidth();
+        float height = GetHeight();
+        float minWidth = GetMinWidth();
+        float maxWidth = GetMaxWidth();
+        float minHeight = GetMinHeight();
+        float maxHeight = GetMaxHeight();
+        
+        if (width > 0) w = width;
+        if (height > 0) h = height;
+        
+        w = std::max(minWidth, std::min(maxWidth, w));
+        h = std::max(minHeight, std::min(maxHeight, h));
+        
+        return Size(w, h);
+    }
 
-    virtual Size MeasureOverride(const Size& availableSize);
-    virtual Size ArrangeOverride(const Size& finalSize);
-
-    virtual void OnInitialized();
-    virtual void OnLoaded();
-    virtual void OnUnloaded();
-    virtual void OnApplyTemplate();
-
-    void OnAttachedToLogicalTree() override;
-    void OnDetachedFromLogicalTree() override;
-    void OnDataContextChanged(const std::any& oldValue, const std::any& newValue) override;
+    // 覆写基类方法
+    Size MeasureCore(const Size& availableSize) override {
+        auto constrainedSize = ApplySizeConstraints(availableSize);
+        return MeasureOverride(constrainedSize);
+    }
+    
+    void ArrangeCore(const Rect& finalRect) override {
+        auto finalSize = Size(finalRect.width, finalRect.height);
+        auto arrangedSize = ArrangeOverride(finalSize);
+        // TODO: 应用对齐等
+    }
 
 private:
-    static binding::PropertyMetadata BuildDataContextMetadata();
-    static void DataContextPropertyChanged(binding::DependencyObject& sender, const binding::DependencyProperty& property,
-        const std::any& oldValue, const std::any& newValue);
-
-    static bool ValidateOptionalLength(const std::any& value);
-    static bool ValidateNonNegativeLength(const std::any& value);
-    static bool ValidateNonNegativeOrInfiniteLength(const std::any& value);
-    static bool ValidateHorizontalAlignment(const std::any& value);
-    static bool ValidateVerticalAlignment(const std::any& value);
-    static bool ValidateThickness(const std::any& value);
-
-    static bool IsUnsetLength(float value);
-
-    void UpdateLocalDataContextFromProperty(const std::any& value);
-    void UpdatePropertyFromLocalDataContext(const std::any& value);
-
-    void CoerceMaxToAtLeastMin();
-
-    Size renderSize_{};
-    bool isInitialized_{false};
-    bool isLoaded_{false};
-    bool isTemplateApplied_{false};
-    bool isUpdatingDataContext_{false};
+    std::unique_ptr<ResourceDictionary> resources_{std::make_unique<ResourceDictionary>()};
+    fk::ui::Style* style_{nullptr};
+    bool templateApplied_{false};
 };
+
+// 模板实现需要在头文件中
+template<typename Derived>
+void FrameworkElement<Derived>::SetStyle(fk::ui::Style* style) {
+    if (style_ != style) {
+        style_ = style;
+        // TODO: 应用样式
+    }
+}
+
+template<typename Derived>
+void FrameworkElement<Derived>::ApplyTemplate() {
+    if (!templateApplied_) {
+        OnApplyTemplate();
+        templateApplied_ = true;
+    }
+}
 
 } // namespace fk::ui

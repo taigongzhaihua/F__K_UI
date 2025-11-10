@@ -981,10 +981,321 @@ rect->Fill(Brushes::Blue())
     ->Height(50);
 ```
 
-## 13. 后续工作项
+## 13. 依赖属性系统集成实现
 
-1. 定义各基类的头/源文件骨架，补齐关键虚接口。
-2. 编写核心单元测试：依赖属性、绑定冒泡、布局无效化、事件路由。
-3. 实现基础 Renderer 和 Canvas，验证 DrawCommand 流程。
-4. 迁移现有控件到新层级，确保示例程序可运行。
-5. 梳理资源、主题系统与新架构的对接方案。
+### 13.1 设计原则
+
+所有 UI 元素的可配置属性均通过依赖属性系统实现，以支持：
+- **数据绑定**：属性可绑定到数据源，自动更新
+- **样式设置**：样式可以设置依赖属性值
+- **属性值优先级**：本地值 > 样式值 > 默认值
+- **变更通知**：属性变更自动触发布局/渲染失效
+- **动画支持**：依赖属性可作为动画目标
+
+### 13.2 模板类依赖属性实现
+
+由于 `FrameworkElement`、`Control` 等为 CRTP 模板类，依赖属性的注册采用以下方案：
+
+1. **头文件声明**：在模板类中声明静态依赖属性访问器
+   ```cpp
+   template<typename Derived>
+   class FrameworkElement : public UIElement {
+   public:
+       static const binding::DependencyProperty& WidthProperty();
+       // ...
+   };
+   ```
+
+2. **实现文件注册**：在 `.cpp` 文件中为模板类提供属性注册实现
+   ```cpp
+   template<typename Derived>
+   const binding::DependencyProperty& FrameworkElement<Derived>::WidthProperty() {
+       static auto* property = binding::DependencyProperty::Register(
+           "Width", typeid(float), typeid(FrameworkElement<Derived>),
+           binding::PropertyMetadata::Create(-1.0f)
+       );
+       return *property;
+   }
+   ```
+
+3. **属性访问封装**：getter/setter 通过 `GetValue<T>()`/`SetValue()` 访问
+   ```cpp
+   void SetWidth(float value) { 
+       SetValue(WidthProperty(), value); 
+       InvalidateMeasure(); 
+   }
+   float GetWidth() const { 
+       return GetValue<float>(WidthProperty()); 
+   }
+   ```
+
+### 13.3 已实现的依赖属性
+
+#### UIElement（3 个属性）
+| 属性名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `Visibility` | `Visibility` | `Visible` | 可见性（Visible/Hidden/Collapsed） |
+| `IsEnabled` | `bool` | `true` | 是否启用 |
+| `Opacity` | `float` | `1.0f` | 不透明度（0.0-1.0） |
+
+#### FrameworkElement（7 个属性）
+| 属性名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `Width` | `float` | `-1.0f` | 宽度（-1 表示自动） |
+| `Height` | `float` | `-1.0f` | 高度（-1 表示自动） |
+| `MinWidth` | `float` | `0.0f` | 最小宽度 |
+| `MaxWidth` | `float` | `∞` | 最大宽度 |
+| `MinHeight` | `float` | `0.0f` | 最小高度 |
+| `MaxHeight` | `float` | `∞` | 最大高度 |
+| `DataContext` | `std::any` | `std::any()` | 数据上下文 |
+
+**待添加属性**：`Margin`, `HorizontalAlignment`, `VerticalAlignment`
+
+#### Control（5 个属性）
+| 属性名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `Foreground` | `Brush*` | `nullptr` | 前景画刷 |
+| `Background` | `Brush*` | `nullptr` | 背景画刷 |
+| `BorderBrush` | `Brush*` | `nullptr` | 边框画刷 |
+| `BorderThickness` | `Thickness` | `Thickness(0)` | 边框厚度 |
+| `Padding` | `Thickness` | `Thickness(0)` | 内边距 |
+
+**待添加属性**：`FontFamily`, `FontSize`, `FontWeight`
+
+### 13.4 待实现的依赖属性
+
+#### ContentControl
+- `Content` - 内容对象（std::any）
+- `ContentTemplate` - 内容模板（DataTemplate*）
+
+#### ItemsControl
+- `ItemsSource` - 数据源（std::shared_ptr<IEnumerable>）
+- `ItemTemplate` - 项模板（DataTemplate*）
+- `ItemsPanel` - 项容器面板（ItemsPanelTemplate*）
+
+#### Panel
+- `Background` - 背景画刷（Brush*）
+
+#### TextBlock
+- `Text` - 文本内容（std::string）
+- `FontFamily` - 字体族（std::string）
+- `FontSize` - 字体大小（float）
+- `FontWeight` - 字体粗细（FontWeight）
+- `FontStyle` - 字体样式（FontStyle）
+- `TextAlignment` - 文本对齐（TextAlignment）
+- `Foreground` - 前景色（Brush*）
+- `TextWrapping` - 文本换行（TextWrapping）
+
+#### Border
+- `Child` - 子元素（UIElement*）
+- `BorderBrush` - 边框画刷（Brush*）
+- `BorderThickness` - 边框厚度（Thickness）
+- `CornerRadius` - 圆角半径（CornerRadius）
+- `Background` - 背景画刷（Brush*）
+- `Padding` - 内边距（Thickness）
+
+### 13.5 实现要点
+
+1. **成员变量移除**：原有的私有成员变量（如 `width_`, `foreground_` 等）已移除，完全由依赖属性系统管理。
+
+2. **属性失效化**：属性设置时自动调用失效化方法：
+   - 布局属性（Width/Height/Padding 等）→ `InvalidateMeasure()`
+   - 外观属性（Foreground/Background 等）→ `InvalidateVisual()`
+
+3. **模板类特殊处理**：
+   - 依赖属性在 `.cpp` 文件中定义为模板函数
+   - 使用静态局部变量确保单例注册
+   - 通过 `this->template GetValue<T>()` 在模板类中调用
+
+4. **链式 API 兼容**：所有链式调用接口保持不变，内部委托到依赖属性系统。
+
+5. **类型安全**：使用 `typeid()` 确保类型匹配，运行时检查属性类型。
+
+### 13.6 完整依赖属性规划
+
+#### UIElement (已实现 3/3)
+| 属性名 | C++ 类型 | 默认值 | 说明 | 状态 |
+|--------|----------|--------|------|------|
+| Visibility | `Visibility` | `Visible` | 可见性 | ✅ |
+| IsEnabled | `bool` | `true` | 是否启用 | ✅ |
+| Opacity | `float` | `1.0f` | 不透明度 | ✅ |
+| Clip | `Geometry*` | `nullptr` | 裁剪区域 | 📋 待实现 |
+| RenderTransform | `Transform*` | `nullptr` | 渲染变换 | 📋 待实现 |
+
+#### FrameworkElement (已实现 7/10)
+| 属性名 | C++ 类型 | 默认值 | 说明 | 状态 |
+|--------|----------|--------|------|------|
+| Width | `float` | `-1.0f` | 宽度 | ✅ |
+| Height | `float` | `-1.0f` | 高度 | ✅ |
+| MinWidth | `float` | `0.0f` | 最小宽度 | ✅ |
+| MaxWidth | `float` | `∞` | 最大宽度 | ✅ |
+| MinHeight | `float` | `0.0f` | 最小高度 | ✅ |
+| MaxHeight | `float` | `∞` | 最大高度 | ✅ |
+| DataContext | `std::any` | `std::any()` | 数据上下文 | ✅ |
+| Margin | `Thickness` | `Thickness(0)` | 外边距 | ✅ |
+| HorizontalAlignment | `HorizontalAlignment` | `Stretch` | 水平对齐 | ✅ |
+| VerticalAlignment | `VerticalAlignment` | `Stretch` | 垂直对齐 | ✅ |
+
+#### Control (已实现 8/8)
+| 属性名 | C++ 类型 | 默认值 | 说明 | 状态 |
+|--------|----------|--------|------|------|
+| Foreground | `Brush*` | `nullptr` | 前景画刷 | ✅ |
+| Background | `Brush*` | `nullptr` | 背景画刷 | ✅ |
+| BorderBrush | `Brush*` | `nullptr` | 边框画刷 | ✅ |
+| BorderThickness | `Thickness` | `Thickness(0)` | 边框厚度 | ✅ |
+| Padding | `Thickness` | `Thickness(0)` | 内边距 | ✅ |
+| FontFamily | `std::string` | `"Arial"` | 字体族 | ✅ |
+| FontSize | `float` | `14.0f` | 字体大小 | ✅ |
+| FontWeight | `FontWeight` | `Normal` | 字体粗细 | ✅ |
+
+#### ContentControl (已实现 2/2)
+| 属性名 | C++ 类型 | 默认值 | 说明 | 状态 |
+|--------|----------|--------|------|------|
+| Content | `std::any` | `std::any()` | 内容对象 | ✅ |
+| ContentTemplate | `DataTemplate*` | `nullptr` | 内容模板 | ✅ |
+
+#### ItemsControl (已实现 3/3)
+| 属性名 | C++ 类型 | 默认值 | 说明 | 状态 |
+|--------|----------|--------|------|------|
+| ItemsSource | `std::any` | `std::any()` | 数据源（可存储任意集合类型） | ✅ |
+| ItemTemplate | `DataTemplate*` | `nullptr` | 项模板 | ✅ |
+| ItemsPanel | `UIElement*` | `nullptr` | 项容器面板 | ✅ |
+
+#### Panel (已实现 1/1)
+| 属性名 | C++ 类型 | 默认值 | 说明 | 状态 |
+|--------|----------|--------|------|------|
+| Background | `Brush*` | `nullptr` | 背景画刷 | ✅ |
+
+#### StackPanel (已实现 2/2)
+| 属性名 | C++ 类型 | 默认值 | 说明 | 状态 |
+|--------|----------|--------|------|------|
+| Orientation | `Orientation` | `Vertical` | 排列方向 | ✅ |
+| Spacing | `float` | `0.0f` | 子元素间距 | ✅ |
+
+#### Grid (未实现 0/0)
+**注意**：Grid 的 Row/Column 是附加属性，使用全局 map 实现，不计入依赖属性系统
+
+#### TextBlock (已实现 8/8)
+| 属性名 | C++ 类型 | 默认值 | 说明 | 状态 |
+|--------|----------|--------|------|------|
+| Text | `std::string` | `""` | 文本内容 | ✅ |
+| FontFamily | `std::string` | `"Arial"` | 字体族 | ✅ |
+| FontSize | `float` | `12.0f` | 字体大小 | ✅ |
+| FontWeight | `FontWeight` | `Normal` | 字体粗细 | ✅ |
+| FontStyle | `FontStyle` | `Normal` | 字体样式 | ✅ |
+| TextAlignment | `TextAlignment` | `Left` | 文本对齐 | ✅ |
+| Foreground | `Brush*` | `nullptr` | 前景色 | ✅ |
+| TextWrapping | `TextWrapping` | `NoWrap` | 文本换行 | ✅ |
+
+#### Border (已实现 6/6)
+| 属性名 | C++ 类型 | 默认值 | 说明 | 状态 |
+|--------|----------|--------|------|------|
+| Child | `UIElement*` | `nullptr` | 子元素 | ✅ |
+| BorderBrush | `Brush*` | `nullptr` | 边框画刷 | ✅ |
+| BorderThickness | `Thickness` | `Thickness(0)` | 边框厚度 | ✅ |
+| CornerRadius | `CornerRadius` | `CornerRadius(0)` | 圆角半径 | ✅ |
+| Background | `Brush*` | `nullptr` | 背景画刷 | ✅ |
+| Padding | `Thickness` | `Thickness(0)` | 内边距 | ✅ |
+
+#### Button (未实现 0/0)
+**注意**：Button 从 ContentControl 继承，无额外依赖属性
+
+#### Window (已实现 6/6)
+| 属性名 | C++ 类型 | 默认值 | 说明 | 状态 |
+|--------|----------|--------|------|------|
+| Title | `std::string` | `""` | 窗口标题 | ✅ |
+| WindowState | `WindowState` | `Normal` | 窗口状态 | ✅ |
+| Left | `float` | `0.0f` | 窗口左边距 | ✅ |
+| Top | `float` | `0.0f` | 窗口顶边距 | ✅ |
+| ShowInTaskbar | `bool` | `true` | 是否显示在任务栏 | ✅ |
+| Topmost | `bool` | `false` | 是否置顶 | ✅ |
+
+**继承关系**：`DependencyObject → Visual → UIElement → FrameworkElement → Control → ContentControl → Window`
+
+**统计**：
+- ✅ 已实现：**49 个属性**（11 个类/模块完成）
+- 📋 待实现：7 个属性（可选扩展）
+- **总计**：56 个依赖属性
+- **完成度**：**87.5%** 🎉
+
+### 13.7 实现优先级
+
+#### 第一批（核心布局和外观）✅ 已完成
+1. ✅ UIElement - 基础可见性和交互（3 个属性）
+2. ✅ FrameworkElement - 尺寸约束和数据上下文（7 个属性）
+3. ✅ Control - 外观属性（5 个属性）
+4. ✅ ContentControl - 内容展示（2 个属性）
+
+#### 第二批（文本和容器）✅ 已完成
+5. ✅ TextBlock - 文本显示（8 个属性）
+6. ✅ Border - 装饰容器（6 个属性）
+7. ✅ Panel - 布局基类（1 个属性）
+8. ✅ StackPanel - 线性布局（2 个属性）
+
+#### 第三批（集合控件）✅ 已完成
+9. ✅ ItemsControl - 集合控件（3 个属性）
+
+#### 第四批（扩展属性）✅ 已完成
+10. ✅ FrameworkElement 扩展 - Margin、HorizontalAlignment、VerticalAlignment（3 个属性）
+11. ✅ Control 扩展 - FontFamily、FontSize、FontWeight（3 个属性）
+
+#### 第五批（窗口类）✅ 已完成
+12. ✅ Window - 顶层窗口容器（6 个属性）
+
+#### 第六批（可选扩展）📋 未实现
+13. ⏸️ UIElement 扩展 - Clip、RenderTransform（2 个属性，需 Geometry 和 Transform 类型支持）
+14. ⏸️ Button 扩展 - ClickMode、IsDefault、IsCancel（3 个属性，可选功能）
+15. ⏸️ 其他控件特定属性（按需扩展）
+
+### 13.8 新增类型和文件
+
+#### 新增枚举类型
+1. **TextEnums.h**
+   - `FontWeight` - 字体粗细（Thin, Light, Normal, Bold, Black 等）
+   - `FontStyle` - 字体样式（Normal, Italic, Oblique）
+   - `TextAlignment` - 文本对齐（Left, Center, Right, Justify）
+   - `TextWrapping` - 文本换行（NoWrap, Wrap, WrapWithOverflow）
+
+2. **Alignment.h**
+   - `HorizontalAlignment` - 水平对齐（Left, Center, Right, Stretch）
+   - `VerticalAlignment` - 垂直对齐（Top, Center, Bottom, Stretch）
+
+3. **Window.h**
+   - `WindowState` - 窗口状态（Normal, Minimized, Maximized）
+   - `WindowStartupLocation` - 窗口启动位置（Manual, CenterScreen, CenterOwner）
+
+#### 新增结构体类型
+1. **CornerRadius.h**
+   - `CornerRadius` - 圆角半径（支持四角独立设置）
+
+#### 新增类文件
+1. **Window** (ContentControl → Window)
+   - `include/fk/ui/Window.h` - 窗口类声明
+   - `src/ui/Window.cpp` - 窗口类实现
+
+#### 新增依赖属性实现文件
+1. `src/ui/Panel.cpp` - Panel 模板类依赖属性注册
+2. `src/ui/ItemsControl.cpp` - ItemsControl 模板类依赖属性注册
+3. `src/ui/Window.cpp` - Window 类依赖属性注册及窗口操作
+
+### 13.9 后续优化方向
+
+1. **属性变更回调**：为关键属性添加 `PropertyChangedCallback`，实现自定义逻辑。
+2. **属性值继承**：实现 `DataContext` 等属性的自动继承机制。
+3. **附加属性支持**：实现 `Grid.Row`、`Grid.Column` 等附加属性（当前使用全局 map）。
+4. **属性验证**：为数值属性添加范围验证（如 Opacity 0.0-1.0）。
+5. **性能优化**：对频繁访问的属性添加缓存机制。
+6. **类型系统完善**：实现 Geometry、Transform 基类以支持 Clip 和 RenderTransform 属性。
+
+## 14. 后续工作项
+
+1. ✅ 核心类依赖属性集成（UIElement, FrameworkElement, Control, ContentControl）
+2. ✅ 完成主要控件依赖属性（TextBlock, Border, Panel, StackPanel, ItemsControl）
+3. ✅ 实现布局和对齐扩展属性（Margin, HorizontalAlignment, VerticalAlignment）
+4. ✅ 实现字体扩展属性（FontFamily, FontSize, FontWeight）
+5. 📋 编写核心单元测试：依赖属性、绑定冒泡、布局无效化、事件路由
+6. 📋 实现基础 Renderer 和 Canvas，验证 DrawCommand 流程
+7. 📋 迁移现有控件到新层级，确保示例程序可运行
+8. 📋 梳理资源、主题系统与新架构的对接方案
+9. 📋 实现属性值继承和附加属性机制
+10. 📋 实现 Geometry 和 Transform 基类，支持 Clip 和 RenderTransform 属性

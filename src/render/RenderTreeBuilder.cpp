@@ -6,9 +6,9 @@
 #include "fk/render/IRenderer.h"
 #include "fk/ui/Button.h"  // 用于 ButtonBase 类型检查
 #include "fk/ui/TextBlock.h"  // 用于 TextBlockBase 类型检查
-#include "fk/ui/TextBox.h"  // 用于 TextBoxBase 类型检查
-#include "fk/ui/ScrollBar.h"  // 用于 ScrollBarBase 类型检查
-#include "fk/ui/ScrollViewer.h"  // 用于 ScrollViewerBase 类型检查
+// #include "fk/ui/TextBox.h"  // TODO: 暂时注释，未实现
+// #include "fk/ui/ScrollBar.h"  // TODO: 暂时注释，未实现
+// #include "fk/ui/ScrollViewer.h"  // TODO: 暂时注释，未实现
 #include "fk/ui/UIElement.h"  // 用于 ClipToBounds
 #include <iostream>
 

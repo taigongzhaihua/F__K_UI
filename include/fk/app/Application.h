@@ -16,6 +16,12 @@ public:
     static Application* Current();
 
     /**
+     * @brief 创建窗口（由 Application 管理生命周期）
+     * @return 返回原始指针供使用，窗口所有权由 Application 管理
+     */
+    ui::Window* CreateWindow();
+    
+    /**
      * @brief 运行消息循环，直到主窗口关闭
      * @param mainWindow 主窗口
      */

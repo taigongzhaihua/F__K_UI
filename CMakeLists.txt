@@ -33,7 +33,10 @@ add_subdirectory(${FREETYPE_SOURCE_DIR})
 find_package(OpenGL REQUIRED)
 
 add_library(fk STATIC
+    # app 模块
     src/app/Application.cpp
+    
+    # binding 模块
     src/binding/DependencyProperty.cpp
     src/binding/Binding.cpp
     src/binding/BindingExpression.cpp
@@ -42,32 +45,39 @@ add_library(fk STATIC
     src/binding/DependencyObject.cpp
     src/binding/ValueConverters.cpp
     src/binding/PropertyStore.cpp
+    
+    # core 模块
     src/core/Clock.cpp
     src/core/Dispatcher.cpp
     src/core/Logger.cpp
     src/core/Timer.cpp
-    src/ui/DispatcherObject.cpp
-    src/ui/DependencyObject.cpp
-    src/ui/Button.cpp
-    src/ui/Control.cpp
-    src/ui/ContentControl.cpp
-    src/ui/Decorator.cpp
-    src/ui/ItemsControl.cpp
-    src/ui/ScrollBar.cpp
-    src/ui/ScrollViewer.cpp
-    src/ui/FrameworkElement.cpp
-    src/ui/Panel.cpp
-    src/ui/StackPanel.cpp
-    src/ui/Grid.cpp
-    src/ui/TextBlock.cpp
-    src/ui/TextBox.cpp
+    
+    # ui 模块（新架构）
+    src/ui/Visual.cpp
+    src/ui/VisualCollection.cpp
     src/ui/UIElement.cpp
+    src/ui/FrameworkElement.cpp
+    # src/ui/Control.cpp  # 模板类，不需要 cpp 文件
+    # src/ui/ContentControl.cpp  # 模板类，不需要 cpp 文件
+    src/ui/FrameworkTemplate.cpp
+    src/ui/ControlTemplate.cpp
+    src/ui/DataTemplate.cpp
     src/ui/Window.cpp
-    src/ui/WindowInteropHelper.cpp
-    src/ui/ThreadingConfig.cpp
-    src/render/RenderHost.cpp
-    src/render/RenderScene.cpp
-    src/render/RenderTreeBuilder.cpp
+    src/ui/TextBlock.cpp
+    src/ui/Border.cpp
+    # src/ui/Panel.cpp  # 模板类，不需要 cpp 文件
+    # src/ui/ItemsControl.cpp  # 模板类，不需要 cpp 文件
+    src/ui/Button.cpp
+    # src/ui/StackPanel.cpp  # 模板类，不需要 cpp 文件
+    # src/ui/Grid.cpp  # 模板类，不需要 cpp 文件
+    src/ui/DrawCommand.cpp
+    src/ui/Renderer.cpp
+    src/ui/RenderBackend.cpp
+    
+    # render 模块（旧框架，暂时注释，新设计中 DrawCommand 在 ui 模块）
+    # src/render/RenderHost.cpp
+    # src/render/RenderScene.cpp
+    # src/render/RenderTreeBuilder.cpp
     src/render/GlRenderer.cpp
     src/render/ColorUtils.cpp
     src/render/TextRenderer.cpp
