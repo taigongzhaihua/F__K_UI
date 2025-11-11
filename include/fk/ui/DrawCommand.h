@@ -91,6 +91,7 @@ public:
     static DrawCommand Line(const Point& start, const Point& end, const Color& color, float width = 1.0f);
     static DrawCommand Text(const Point& position, const std::string& text, const Color& color, float fontSize = 14.0f);
     static DrawCommand Image(const Rect& bounds, const std::string& path);
+    static DrawCommand Image(const Rect& bounds, unsigned int textureId, const Color& tint = Color::White());
 };
 
 } // namespace fk::ui

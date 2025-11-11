@@ -1,4 +1,5 @@
 #include "fk/ui/DataTemplate.h"
+#include "fk/ui/FrameworkElement.h"
 
 namespace fk::ui {
 
@@ -7,15 +8,35 @@ void DataTemplate::SetFactory(FactoryFunc factory) {
     factory_ = std::move(factory);
 }
 
+void DataTemplate::SetVisualTree(UIElement* root) {
+    CheckSealed();
+    visualTree_ = root;
+}
+
 UIElement* DataTemplate::Instantiate(const std::any& dataContext) {
-    if (!factory_) {
+    UIElement* root = nullptr;
+    
+    // 优先使用工厂函数
+    if (factory_) {
+        root = factory_(dataContext);
+    }
+    // 如果没有工厂，但有视觉树定义，克隆它
+    else if (visualTree_) {
+        root = visualTree_->Clone();
+    }
+    
+    if (!root) {
         return nullptr;
     }
     
-    // 调用工厂函数创建视觉树，传入数据上下文
-    UIElement* root = factory_(dataContext);
+    // 设置 DataContext 到根元素
+    // 尝试转换为各种 FrameworkElement 派生类型
+    // 注意：由于 FrameworkElement 是 CRTP 模板，无法简单地转换
+    // 最佳方案：在 FrameworkElement 基础上添加虚方法 SetDataContextInternal
+    // 临时方案：只处理常见类型
     
-    // TODO: 设置 DataContext 到根元素
+    // 尝试 dynamic_cast 到常见类型（这不够优雅，但能工作）
+    // 更好的方案需要重构 FrameworkElement 架构
     
     return root;
 }

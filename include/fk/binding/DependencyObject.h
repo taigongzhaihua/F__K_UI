@@ -44,8 +44,10 @@ public:
     ValueSource GetValueSource(const DependencyProperty& property) const;
 
     void SetBinding(const DependencyProperty& property, Binding binding);
+    void SetBinding(const DependencyProperty& property, class MultiBinding binding);
     void ClearBinding(const DependencyProperty& property);
     std::shared_ptr<BindingExpression> GetBinding(const DependencyProperty& property) const;
+    void UpdateSource(const DependencyProperty& property);  // Trigger UpdateSource for a specific property
 
     void SetDataContext(std::any value);
 
@@ -101,8 +103,12 @@ private:
     DependencyObject* logicalParent_{nullptr};
     std::vector<DependencyObject*> logicalChildren_{};
     std::string elementName_{};
+    
+    // MultiBindingExpression storage (can be extended to map if multiple properties need MultiBinding)
+    std::shared_ptr<class MultiBindingExpression> activeMultiBinding_;
 
     friend class BindingExpression;
+    friend class MultiBindingExpression;
 };
 
 } // namespace fk::binding

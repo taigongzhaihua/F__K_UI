@@ -10,14 +10,16 @@ static std::unordered_map<UIElement*, int> g_columnMap;
 static std::unordered_map<UIElement*, int> g_rowSpanMap;
 static std::unordered_map<UIElement*, int> g_columnSpanMap;
 
-void Grid::AddRowDefinition(const RowDefinition& row) {
+Grid* Grid::AddRowDefinition(const RowDefinition& row) {
     rowDefinitions_.push_back(row);
     InvalidateMeasure();
+    return this;
 }
 
-void Grid::AddColumnDefinition(const ColumnDefinition& col) {
+Grid* Grid::AddColumnDefinition(const ColumnDefinition& col) {
     columnDefinitions_.push_back(col);
     InvalidateMeasure();
+    return this;
 }
 
 Grid* Grid::RowDefinitions(std::initializer_list<RowDefinition> rows) {

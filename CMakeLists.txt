@@ -45,6 +45,8 @@ add_library(fk STATIC
     src/binding/DependencyObject.cpp
     src/binding/ValueConverters.cpp
     src/binding/PropertyStore.cpp
+    src/binding/MultiBinding.cpp
+    src/binding/MultiBindingExpression.cpp
     
     # core 模块
     src/core/Clock.cpp
@@ -57,19 +59,26 @@ add_library(fk STATIC
     src/ui/VisualCollection.cpp
     src/ui/UIElement.cpp
     src/ui/FrameworkElement.cpp
-    # src/ui/Control.cpp  # 模板类，不需要 cpp 文件
-    # src/ui/ContentControl.cpp  # 模板类，不需要 cpp 文件
+    src/ui/Control.cpp
+    src/ui/ContentControl.cpp
     src/ui/FrameworkTemplate.cpp
     src/ui/ControlTemplate.cpp
     src/ui/DataTemplate.cpp
+    src/ui/Setter.cpp
+    # src/ui/Style.cpp  # 头文件实现，不需要 cpp 文件
     src/ui/Window.cpp
     src/ui/TextBlock.cpp
     src/ui/Border.cpp
-    # src/ui/Panel.cpp  # 模板类，不需要 cpp 文件
-    # src/ui/ItemsControl.cpp  # 模板类，不需要 cpp 文件
+    src/ui/Image.cpp
+    src/ui/Transform.cpp
+    src/ui/InputManager.cpp
+    src/ui/FocusManager.cpp
+    src/ui/Panel.cpp
+    src/ui/ItemsControl.cpp
     src/ui/Button.cpp
-    # src/ui/StackPanel.cpp  # 模板类，不需要 cpp 文件
-    # src/ui/Grid.cpp  # 模板类，不需要 cpp 文件
+    src/ui/StackPanel.cpp
+    src/ui/Grid.cpp
+    src/ui/Shape.cpp
     src/ui/DrawCommand.cpp
     src/ui/Renderer.cpp
     src/ui/RenderBackend.cpp
@@ -102,6 +111,40 @@ target_link_libraries(fk PUBLIC
 )
 
 target_compile_definitions(fk PUBLIC GLFW_DLL)
+
+# ===== 示例可执行文件 (临时测试) =====
+add_executable(style_api_test examples/style_api_test.cpp)
+target_link_libraries(style_api_test PRIVATE fk)
+
+add_executable(style_template_demo examples/style_template_demo.cpp)
+target_link_libraries(style_template_demo PRIVATE fk)
+
+add_executable(binding_modes_demo examples/binding_modes_demo.cpp)
+target_link_libraries(binding_modes_demo PRIVATE fk)
+
+add_executable(async_binding_demo examples/async_binding_demo.cpp)
+target_link_libraries(async_binding_demo PRIVATE fk)
+
+add_executable(multibinding_demo examples/multibinding_demo.cpp)
+target_link_libraries(multibinding_demo PRIVATE fk)
+
+add_executable(multibinding_auto_update_demo examples/multibinding_auto_update_demo.cpp)
+target_link_libraries(multibinding_auto_update_demo PRIVATE fk)
+
+add_executable(validation_demo examples/validation_demo.cpp)
+target_link_libraries(validation_demo PRIVATE fk)
+
+add_executable(binding_validation_demo examples/binding_validation_demo.cpp)
+target_link_libraries(binding_validation_demo PRIVATE fk)
+
+add_executable(style_system_demo examples/style_system_demo.cpp)
+target_link_libraries(style_system_demo PRIVATE fk)
+
+add_executable(template_system_demo examples/template_system_demo.cpp)
+target_link_libraries(template_system_demo PRIVATE fk)
+
+add_executable(p2_features_demo examples/p2_features_demo.cpp)
+target_link_libraries(p2_features_demo PRIVATE fk)
 
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库

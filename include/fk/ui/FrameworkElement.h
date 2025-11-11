@@ -152,7 +152,7 @@ public:
         InvalidateArrange(); 
     }
     HorizontalAlignment GetHorizontalAlignment() const { 
-        return GetValue<HorizontalAlignment>(HorizontalAlignmentProperty()); 
+        return GetValue<ui::HorizontalAlignment>(HorizontalAlignmentProperty()); 
     }
     Derived* HorizontalAlignment(ui::HorizontalAlignment value) { 
         SetHorizontalAlignment(value); 
@@ -165,7 +165,7 @@ public:
         InvalidateArrange(); 
     }
     VerticalAlignment GetVerticalAlignment() const { 
-        return GetValue<VerticalAlignment>(VerticalAlignmentProperty()); 
+        return GetValue<ui::VerticalAlignment>(VerticalAlignmentProperty()); 
     }
     Derived* VerticalAlignment(ui::VerticalAlignment value) { 
         SetVerticalAlignment(value); 

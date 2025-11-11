@@ -59,6 +59,16 @@ public:
     }
     
     /**
+     * @brief 批量添加子元素（链式调用）
+     */
+    Derived* Children(std::initializer_list<UIElement*> children) {
+        for (auto* child : children) {
+            AddChild(child);
+        }
+        return static_cast<Derived*>(this);
+    }
+    
+    /**
      * @brief 移除子元素
      */
     void RemoveChild(UIElement* child) {
@@ -86,19 +96,21 @@ public:
      */
     const std::vector<UIElement*>& GetChildren() const { return children_; }
     
-    Derived* Children(std::initializer_list<UIElement*> elements) {
-        for (auto* elem : elements) {
-            AddChild(elem);
-        }
-        return static_cast<Derived*>(this);
-    }
-    
     const std::vector<UIElement*>& Children() const { return GetChildren(); }
     
     /**
      * @brief 获取子元素数量
      */
     size_t GetChildrenCount() const { return children_.size(); }
+    
+    // ========== 逻辑树遍历（覆写 UIElement）==========
+    
+    /**
+     * @brief 返回子元素集合（用于模板递归遍历）
+     */
+    std::vector<UIElement*> GetLogicalChildren() const override {
+        return children_;
+    }
 
 protected:
     /**

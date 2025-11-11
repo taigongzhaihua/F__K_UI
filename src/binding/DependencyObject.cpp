@@ -1,6 +1,8 @@
 #include "fk/binding/DependencyObject.h"
 
 #include "fk/binding/BindingExpression.h"
+#include "fk/binding/MultiBinding.h"
+#include "fk/binding/MultiBindingExpression.h"
 
 #include <algorithm>
 #include <sstream>
@@ -67,6 +69,30 @@ void DependencyObject::SetBinding(const DependencyProperty& property, Binding bi
     OnBindingChanged(property, current, expression);
 }
 
+void DependencyObject::SetBinding(const DependencyProperty& property, MultiBinding binding) {
+    auto current = propertyStore_.GetBinding(property);
+    if (current) {
+        current->Detach();
+    }
+
+    // Detach any existing MultiBinding
+    if (activeMultiBinding_) {
+        activeMultiBinding_->Detach();
+        activeMultiBinding_.reset();
+    }
+
+    propertyStore_.ClearBinding(property);
+
+    // Create and activate new MultiBindingExpression
+    activeMultiBinding_ = binding.CreateExpression(this, property);
+    
+    if (activeMultiBinding_) {
+        activeMultiBinding_->Activate();
+    }
+
+    OnBindingChanged(property, current, nullptr);
+}
+
 void DependencyObject::ClearBinding(const DependencyProperty& property) {
     auto current = propertyStore_.GetBinding(property);
     if (!current) {
@@ -82,6 +108,13 @@ void DependencyObject::ClearBinding(const DependencyProperty& property) {
 
 std::shared_ptr<BindingExpression> DependencyObject::GetBinding(const DependencyProperty& property) const {
     return propertyStore_.GetBinding(property);
+}
+
+void DependencyObject::UpdateSource(const DependencyProperty& property) {
+    auto binding = GetBinding(property);
+    if (binding) {
+        binding->UpdateSourceExplicitly();
+    }
 }
 
 void DependencyObject::SetDataContext(std::any value) {

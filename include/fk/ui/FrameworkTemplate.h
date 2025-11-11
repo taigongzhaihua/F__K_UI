@@ -1,5 +1,6 @@
 #pragma once
 
+#include "fk/ui/ResourceDictionary.h"
 #include <memory>
 #include <functional>
 #include <unordered_map>
@@ -9,7 +10,6 @@ namespace fk::ui {
 
 // 前向声明
 class UIElement;
-class ResourceDictionary;
 
 /**
  * @brief 框架模板基类

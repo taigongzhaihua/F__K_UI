@@ -3,7 +3,9 @@
 #include "fk/ui/FrameworkElement.h"
 #include "fk/ui/Thickness.h"
 #include "fk/ui/TextEnums.h"
+#include "fk/ui/Style.h"
 #include "fk/binding/DependencyProperty.h"
+#include "fk/binding/BindingExpression.h"
 #include <memory>
 #include <string>
 
@@ -72,6 +74,16 @@ public:
      */
     static const binding::DependencyProperty& FontWeightProperty();
 
+    // ========== 控件样式 ==========
+    
+    Style* GetStyle() const { return style_; }
+    void SetStyle(Style* style);
+    Derived* StyleProperty(Style* style) {
+        SetStyle(style);
+        return static_cast<Derived*>(this);
+    }
+    Style* StyleProperty() const { return GetStyle(); }
+    
     // ========== 控件模板 ==========
     
     ControlTemplate* GetTemplate() const { return template_; }
@@ -256,9 +268,39 @@ protected:
     virtual void OnLostFocus() {
         isFocused_ = false;
         this->InvalidateVisual();
+        
+        // Trigger UpdateSource for bindings with LostFocus trigger
+        UpdateSourceOnLostFocus();
+    }
+    
+    /**
+     * @brief Helper to update all bindings with LostFocus trigger
+     */
+    void UpdateSourceOnLostFocus() {
+        // Iterate through all properties with bindings
+        const auto& store = this->GetPropertyStore();
+        // Note: PropertyStore doesn't expose all bindings, so we need to check known properties
+        // This is a simplified implementation - in production, PropertyStore should provide iterator
+        
+        // Common properties that might have TwoWay bindings
+        static const DependencyProperty* commonProps[] = {
+            // Text-based controls would have TextProperty, Value-based would have ValueProperty, etc.
+            // For now, we'll rely on derived classes to override if they have specific properties
+        };
+        
+        for (const auto* prop : commonProps) {
+            if (prop) {
+                auto binding = this->GetBinding(*prop);
+                if (binding && binding->IsActive() && 
+                    binding->GetEffectiveUpdateSourceTrigger() == binding::UpdateSourceTrigger::LostFocus) {
+                    binding->UpdateSource();
+                }
+            }
+        }
     }
 
 private:
+    Style* style_{nullptr};
     ControlTemplate* template_{nullptr};
     
     // 状态（非依赖属性，用于内部状态跟踪）
@@ -267,6 +309,29 @@ private:
 };
 
 // 模板实现
+template<typename Derived>
+void Control<Derived>::SetStyle(Style* style) {
+    if (style_ != style) {
+        // 取消应用旧样式
+        if (style_ != nullptr) {
+            style_->Unapply(this);
+        }
+        
+        style_ = style;
+        
+        // 应用新样式
+        if (style_ != nullptr) {
+            if (!style_->IsApplicableTo(typeid(Derived))) {
+                // TODO: 记录警告日志
+                // 类型不匹配，但仍尝试应用（允许基类样式应用到派生类）
+            }
+            style_->Apply(this);
+        }
+        
+        this->InvalidateVisual();
+    }
+}
+
 template<typename Derived>
 void Control<Derived>::SetTemplate(ControlTemplate* tmpl) {
     if (template_ != tmpl) {

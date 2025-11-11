@@ -34,6 +34,26 @@ const binding::DependencyProperty& UIElement::OpacityProperty() {
     return property;
 }
 
+const binding::DependencyProperty& UIElement::ClipProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Clip",
+        typeid(Rect),
+        typeid(UIElement),
+        binding::PropertyMetadata{Rect(0, 0, 0, 0)}
+    );
+    return property;
+}
+
+const binding::DependencyProperty& UIElement::RenderTransformProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "RenderTransform",
+        typeid(Transform*),
+        typeid(UIElement),
+        binding::PropertyMetadata{static_cast<Transform*>(nullptr)}
+    );
+    return property;
+}
+
 UIElement::UIElement() 
     : desiredSize_(0, 0)
     , renderSize_(0, 0)
@@ -132,6 +152,29 @@ void UIElement::SetOpacity(float value) {
 
 float UIElement::GetOpacity() const {
     return GetValue<float>(OpacityProperty());
+}
+
+void UIElement::SetClip(const Rect& value) {
+    SetValue(ClipProperty(), value);
+    InvalidateVisual();
+}
+
+Rect UIElement::GetClip() const {
+    return GetValue<Rect>(ClipProperty());
+}
+
+bool UIElement::HasClip() const {
+    Rect clip = GetClip();
+    return clip.width > 0 && clip.height > 0;
+}
+
+void UIElement::SetRenderTransform(Transform* value) {
+    SetValue(RenderTransformProperty(), value);
+    InvalidateVisual();
+}
+
+Transform* UIElement::GetRenderTransform() const {
+    return GetValue<Transform*>(RenderTransformProperty());
 }
 
 void UIElement::RaiseEvent(RoutedEventArgs& args) {
@@ -235,6 +278,27 @@ void UIElement::OnKeyDown(KeyEventArgs& e) {
 
 void UIElement::OnKeyUp(KeyEventArgs& e) {
     // 默认不处理
+}
+
+std::vector<UIElement*> UIElement::GetLogicalChildren() const {
+    // 默认实现：非容器元素返回空列表
+    return {};
+}
+
+UIElement* UIElement::Clone() const {
+    // 默认实现：创建基本 UIElement 副本
+    auto* clone = new UIElement();
+    
+    // 克隆基本属性
+    clone->SetName(name_);
+    clone->SetVisibility(GetVisibility());
+    clone->SetIsEnabled(GetIsEnabled());
+    clone->SetOpacity(GetOpacity());
+    
+    // 注意：不克隆 templatedParent_，因为克隆体会设置新的父元素
+    // 注意：不克隆子元素，因为基类 UIElement 没有子元素
+    
+    return clone;
 }
 
 Size UIElement::MeasureCore(const Size& availableSize) {

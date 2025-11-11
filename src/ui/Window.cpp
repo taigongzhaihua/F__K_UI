@@ -80,7 +80,7 @@ Window::~Window() {
 
 // ========== 窗口状态 ==========
 
-void Window::SetWindowState(fk::ui::WindowState value) {
+void Window::SetWindowState(enum WindowState value) {
     auto oldState = GetWindowState();
     SetValue(WindowStateProperty(), value);
     
@@ -90,7 +90,7 @@ void Window::SetWindowState(fk::ui::WindowState value) {
     }
 }
 
-void Window::OnWindowStateChanged(fk::ui::WindowState oldState, fk::ui::WindowState newState) {
+void Window::OnWindowStateChanged(enum WindowState oldState, enum WindowState newState) {
     // 派生类可覆写此方法
 }
 

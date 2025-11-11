@@ -1,5 +1,6 @@
 #include "fk/binding/BindingExpression.h"
 #include "fk/binding/ValueConverters.h"
+#include "fk/core/Dispatcher.h"
 
 #include <functional>
 #include <stdexcept>
@@ -162,6 +163,64 @@ void BindingExpression::UpdateSource() {
     }
 }
 
+void BindingExpression::UpdateSourceExplicitly() {
+    // For Explicit mode, allow manual trigger of source update
+    if (!isActive_) {
+        return;
+    }
+    if (effectiveUpdateSourceTrigger_ != UpdateSourceTrigger::Explicit) {
+        return;
+    }
+    UpdateSource();
+}
+
+void BindingExpression::UpdateTargetAsync() {
+    if (!isActive_ || !definition_.GetIsAsync()) {
+        UpdateTarget();  // Fall back to synchronous update
+        return;
+    }
+
+    // Avoid duplicate pending updates
+    if (hasPendingTargetUpdate_) {
+        return;
+    }
+
+    hasPendingTargetUpdate_ = true;
+    auto weakSelf = weak_from_this();
+
+    // Note: Using a simple approach here. In production, this should integrate
+    // with the UI framework's Dispatcher/main thread message loop.
+    // For now, we'll execute immediately but with the async flag for demonstration.
+    // A real implementation would use: Dispatcher::Instance().Post([weakSelf]() { ... });
+    
+    // Immediate execution for now (to avoid threading complexity in demo)
+    if (auto self = weakSelf.lock()) {
+        self->hasPendingTargetUpdate_ = false;
+        self->UpdateTarget();
+    }
+}
+
+void BindingExpression::UpdateSourceAsync() {
+    if (!isActive_ || !definition_.GetIsAsync()) {
+        UpdateSource();  // Fall back to synchronous update
+        return;
+    }
+
+    // Avoid duplicate pending updates
+    if (hasPendingSourceUpdate_) {
+        return;
+    }
+
+    hasPendingSourceUpdate_ = true;
+    auto weakSelf = weak_from_this();
+
+    // Immediate execution for now (to avoid threading complexity in demo)
+    if (auto self = weakSelf.lock()) {
+        self->hasPendingSourceUpdate_ = false;
+        self->UpdateSource();
+    }
+}
+
 void BindingExpression::ApplyTargetValue(std::any value) {
     if (!isActive_) {
         return;
@@ -192,7 +251,11 @@ void BindingExpression::Subscribe() {
             [weakSelf](const std::any&, const std::any&) {
                 if (auto self = weakSelf.lock()) {
                     self->RefreshSourceSubscription();
-                    self->UpdateTarget();
+                    if (self->definition_.GetIsAsync()) {
+                        self->UpdateTargetAsync();
+                    } else {
+                        self->UpdateTarget();
+                    }
                 }
             });
     } else {
@@ -213,7 +276,11 @@ void BindingExpression::Subscribe() {
                         return;
                     }
                     if (self->effectiveUpdateSourceTrigger_ == UpdateSourceTrigger::PropertyChanged) {
-                        self->UpdateSource();
+                        if (self->definition_.GetIsAsync()) {
+                            self->UpdateSourceAsync();
+                        } else {
+                            self->UpdateSource();
+                        }
                     }
                 }
             });
@@ -316,7 +383,11 @@ void BindingExpression::RefreshSourceSubscription() {
                 if (!self->isActive_ || self->isUpdatingTarget_) {
                     return;
                 }
-                self->UpdateTarget();
+                if (self->definition_.GetIsAsync()) {
+                    self->UpdateTargetAsync();
+                } else {
+                    self->UpdateTarget();
+                }
             }
         });
 }

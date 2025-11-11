@@ -54,4 +54,12 @@ DrawCommand DrawCommand::Image(const Rect& bounds, const std::string& path) {
     return cmd;
 }
 
+DrawCommand DrawCommand::Image(const Rect& bounds, unsigned int textureId, const Color& tint) {
+    DrawCommand cmd(DrawCommandType::Image);
+    cmd.bounds = bounds;
+    cmd.textureId = reinterpret_cast<void*>(static_cast<uintptr_t>(textureId));
+    cmd.fillColor = tint;
+    return cmd;
+}
+
 } // namespace fk::ui

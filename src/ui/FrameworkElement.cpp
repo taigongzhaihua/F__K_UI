@@ -114,6 +114,6 @@ const binding::DependencyProperty& FrameworkElement<Derived>::VerticalAlignmentP
 }
 
 // 显式实例化常用的模板版本（避免链接错误）
-// 注意：这些实例化应该在使用这些类型时才需要
+// 注意：这些实例化由各个具体类型的 .cpp 文件完成（如 StackPanel.cpp）
 
 } // namespace fk::ui

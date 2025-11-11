@@ -3,6 +3,10 @@
 
 namespace fk::ui {
 
+// ========== 模板显式实例化（修复链接错误）==========
+template class FrameworkElement<StackPanel>;
+template class Panel<StackPanel>;
+
 // ========== 依赖属性注册 ==========
 
 const binding::DependencyProperty& StackPanel::OrientationProperty() {

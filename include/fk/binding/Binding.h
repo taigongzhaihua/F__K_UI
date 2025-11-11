@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fk/binding/DependencyProperty.h"
+#include "fk/binding/ValidationRule.h"
 
 #include <any>
 #include <memory>
@@ -61,20 +62,6 @@ public:
     virtual std::any ConvertBack(const std::any& value, std::type_index sourceType, const std::any* parameter) const = 0;
 };
 
-struct ValidationResult {
-    bool isValid{true};
-    std::string errorMessage{};
-
-    static ValidationResult Valid() { return ValidationResult{}; }
-    static ValidationResult Invalid(std::string message) { return ValidationResult{false, std::move(message)}; }
-};
-
-class ValidationRule {
-public:
-    virtual ~ValidationRule() = default;
-    virtual ValidationResult Validate(const std::any& value) const = 0;
-};
-
 class Binding {
 public:
     Binding() = default;
@@ -89,6 +76,7 @@ public:
     Binding& AddValidationRule(std::shared_ptr<ValidationRule> rule);
     Binding& ElementName(std::string name);
     Binding& SetRelativeSource(RelativeSource relativeSource);
+    Binding& IsAsync(bool async);
 
     [[nodiscard]] const std::string& GetPath() const noexcept { return path_; }
     [[nodiscard]] const std::any& GetSource() const noexcept { return source_; }
@@ -106,6 +94,7 @@ public:
     [[nodiscard]] const std::string& GetElementName() const noexcept { return elementName_; }
     [[nodiscard]] bool HasRelativeSource() const noexcept { return relativeSource_.has_value(); }
     [[nodiscard]] const RelativeSource& GetRelativeSource() const { return relativeSource_.value(); }
+    [[nodiscard]] bool GetIsAsync() const noexcept { return isAsync_; }
 
     std::shared_ptr<BindingExpression> CreateExpression(DependencyObject* target, const DependencyProperty& targetProperty) const;
 
@@ -124,6 +113,7 @@ private:
     bool hasElementName_{false};
     std::string elementName_{};
     std::optional<RelativeSource> relativeSource_{};
+    bool isAsync_{false};
 };
 
 } // namespace fk::binding

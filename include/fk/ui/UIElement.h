@@ -16,6 +16,7 @@ class RoutedEvent;
 struct RoutedEventArgs;
 struct PointerEventArgs;
 struct KeyEventArgs;
+class Transform;
 
 /**
  * @brief 可见性枚举
@@ -58,8 +59,16 @@ public:
      */
     static const binding::DependencyProperty& OpacityProperty();
     
-    // TODO: ClipProperty - 裁剪区域依赖属性
-    // TODO: RenderTransformProperty - 渲染变换依赖属性
+    /**
+     * @brief 裁剪区域依赖属性
+     * 值类型：Rect（矩形裁剪区域）
+     */
+    static const binding::DependencyProperty& ClipProperty();
+    
+    /**
+     * @brief 渲染变换依赖属性
+     */
+    static const binding::DependencyProperty& RenderTransformProperty();
 
     // ========== 布局 ==========
     
@@ -92,8 +101,31 @@ public:
      * @brief 获取渲染尺寸
      */
     Size GetRenderSize() const { return renderSize_; }
+    
+    // ========== 模板支持 ==========
+    
+    /**
+     * @brief 获取模板化父元素
+     * 当元素是从 ControlTemplate 实例化时，这指向应用模板的控件
+     */
+    UIElement* GetTemplatedParent() const { return templatedParent_; }
+    
+    /**
+     * @brief 设置模板化父元素（内部使用）
+     */
+    void SetTemplatedParent(UIElement* parent) { templatedParent_ = parent; }
+    
+    /**
+     * @brief 获取元素名称
+     */
+    const std::string& GetName() const { return name_; }
+    
+    /**
+     * @brief 设置元素名称（用于模板中的 FindName）
+     */
+    void SetName(const std::string& name) { name_ = name; }
 
-    // ========== 可见性 ==========
+    // ========== 事件处理 ==========
     
     void SetVisibility(Visibility value);
     Visibility GetVisibility() const;
@@ -107,6 +139,17 @@ public:
     
     void SetOpacity(float value);
     float GetOpacity() const;
+    
+    // ========== 裁剪 ==========
+    
+    void SetClip(const Rect& value);
+    Rect GetClip() const;
+    bool HasClip() const;
+    
+    // ========== 变换 ==========
+    
+    void SetRenderTransform(Transform* value);
+    Transform* GetRenderTransform() const;
 
     // ========== 路由事件 ==========
     
@@ -136,6 +179,33 @@ public:
     virtual void OnPointerExited(PointerEventArgs& e);
     virtual void OnKeyDown(KeyEventArgs& e);
     virtual void OnKeyUp(KeyEventArgs& e);
+    
+    // ========== 逻辑树遍历 ==========
+    
+    /**
+     * @brief 获取逻辑子元素（虚方法，容器类覆写）
+     * @return 子元素列表（不拥有所有权）
+     * 
+     * 容器类（如 Panel）应覆写此方法返回其子元素集合。
+     * 用于模板系统的递归遍历、FindName 等功能。
+     */
+    virtual std::vector<UIElement*> GetLogicalChildren() const;
+    
+    // ========== 对象克隆 ==========
+    
+    /**
+     * @brief 深拷贝当前元素（虚方法，各派生类实现）
+     * @return 新创建的克隆对象（调用者拥有所有权）
+     * 
+     * 用于模板系统克隆视觉树。
+     * 派生类应覆写此方法实现完整的深拷贝，包括：
+     * - 依赖属性值
+     * - 子元素（递归克隆）
+     * - 元素名称
+     * 
+     * 注意：返回的指针需要调用者管理内存
+     */
+    virtual UIElement* Clone() const;
 
 protected:
     /**
@@ -160,6 +230,12 @@ private:
     Size renderSize_;
     bool measureDirty_{true};
     bool arrangeDirty_{true};
+    
+    // 元素名称（用于 FindName）
+    std::string name_;
+    
+    // 模板化父元素（从 ControlTemplate 实例化时设置）
+    UIElement* templatedParent_{nullptr};
     
     // 事件处理器映射
     std::unordered_map<RoutedEvent*, std::vector<EventHandler>> eventHandlers_;
@@ -187,16 +263,58 @@ struct RoutedEventArgs : EventArgs {
 };
 
 /**
- * @brief 指针事件参数
+ * @brief 鼠标按钮枚举
+ */
+enum class MouseButton {
+    None = 0,
+    Left = 1,
+    Right = 2,
+    Middle = 3
+};
+
+/**
+ * @brief 修饰键枚举（可按位组合）
+ */
+enum class ModifierKeys {
+    None = 0,
+    Ctrl = 1 << 0,   // 0x01
+    Shift = 1 << 1,  // 0x02
+    Alt = 1 << 2     // 0x04
+};
+
+// 修饰键按位操作符
+inline ModifierKeys operator|(ModifierKeys a, ModifierKeys b) {
+    return static_cast<ModifierKeys>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+inline ModifierKeys operator&(ModifierKeys a, ModifierKeys b) {
+    return static_cast<ModifierKeys>(static_cast<int>(a) & static_cast<int>(b));
+}
+
+inline bool HasModifier(ModifierKeys keys, ModifierKeys modifier) {
+    return (keys & modifier) == modifier;
+}
+
+/**
+ * @brief 指针/鼠标事件参数
  */
 struct PointerEventArgs : RoutedEventArgs {
     Point position;
     int pointerId{0};
-    // TODO: 扩展鼠标按钮、修饰键等
+    MouseButton button{MouseButton::None};
+    ModifierKeys modifiers{ModifierKeys::None};
     
     PointerEventArgs() = default;
     PointerEventArgs(UIElement* src, const Point& pos, int id = 0)
         : RoutedEventArgs(src), position(pos), pointerId(id) {}
+    
+    // 便捷方法
+    bool IsLeftButton() const { return button == MouseButton::Left; }
+    bool IsRightButton() const { return button == MouseButton::Right; }
+    bool IsMiddleButton() const { return button == MouseButton::Middle; }
+    bool HasCtrl() const { return HasModifier(modifiers, ModifierKeys::Ctrl); }
+    bool HasShift() const { return HasModifier(modifiers, ModifierKeys::Shift); }
+    bool HasAlt() const { return HasModifier(modifiers, ModifierKeys::Alt); }
 };
 
 /**
@@ -205,11 +323,16 @@ struct PointerEventArgs : RoutedEventArgs {
 struct KeyEventArgs : RoutedEventArgs {
     int key{0};
     bool isRepeat{false};
-    // TODO: 扩展修饰键等
+    ModifierKeys modifiers{ModifierKeys::None};
     
     KeyEventArgs() = default;
     KeyEventArgs(UIElement* src, int k, bool repeat = false)
         : RoutedEventArgs(src), key(k), isRepeat(repeat) {}
+    
+    // 便捷方法
+    bool HasCtrl() const { return HasModifier(modifiers, ModifierKeys::Ctrl); }
+    bool HasShift() const { return HasModifier(modifiers, ModifierKeys::Shift); }
+    bool HasAlt() const { return HasModifier(modifiers, ModifierKeys::Alt); }
 };
 
 /**

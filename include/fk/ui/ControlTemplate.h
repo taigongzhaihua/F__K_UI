@@ -41,13 +41,46 @@ public:
     void SetFactory(FactoryFunc factory);
     
     /**
+     * @brief 设置视觉树根节点（直接指定）
+     */
+    void SetVisualTree(UIElement* root);
+    
+    /**
+     * @brief 获取视觉树根节点（模板定义，非实例）
+     */
+    UIElement* GetVisualTree() const { return visualTree_; }
+    
+    /**
      * @brief 实例化模板（为控件创建视觉树）
+     * 
+     * @param templatedParent 应用此模板的控件
+     * @return 实例化的视觉树根节点
      */
     UIElement* Instantiate(UIElement* templatedParent);
+    
+    /**
+     * @brief 检查模板是否有效（有工厂或视觉树）
+     */
+    bool IsValid() const { return factory_ || visualTree_; }
+    
+    /**
+     * @brief 在模板实例中查找命名元素
+     * 
+     * @param name 元素名称
+     * @param root 模板实例化的根节点
+     * @return 找到的元素，未找到返回 nullptr
+     */
+    static UIElement* FindName(const std::string& name, UIElement* root);
 
 private:
+    /**
+     * @brief 递归查找命名元素
+     */
+    static UIElement* FindNameRecursive(const std::string& name, UIElement* element);
+
     const std::type_info* targetType_{nullptr};
     FactoryFunc factory_;
+    UIElement* visualTree_{nullptr};  // 视觉树定义（可选，优先使用 factory）
 };
 
 } // namespace fk::ui

@@ -21,6 +21,9 @@ public:
     void Detach();
     void UpdateTarget();
     void UpdateSource();
+    void UpdateSourceExplicitly();  // For UpdateSourceTrigger::Explicit mode
+    void UpdateTargetAsync();       // For async binding support
+    void UpdateSourceAsync();       // For async binding support
 
     [[nodiscard]] bool IsActive() const noexcept { return isActive_; }
     [[nodiscard]] DependencyObject* Target() const noexcept { return target_; }
@@ -28,6 +31,7 @@ public:
     [[nodiscard]] const Binding& Definition() const noexcept { return definition_; }
     [[nodiscard]] bool HasValidationErrors() const noexcept { return !validationErrors_.empty(); }
     [[nodiscard]] const std::vector<ValidationResult>& GetValidationErrors() const noexcept { return validationErrors_; }
+    [[nodiscard]] UpdateSourceTrigger GetEffectiveUpdateSourceTrigger() const noexcept { return effectiveUpdateSourceTrigger_; }
 
     void ApplyTargetValue(std::any value);
 
@@ -68,6 +72,8 @@ private:
     std::shared_ptr<INotifyPropertyChanged> sharedNotifierHolder_{};
     INotifyPropertyChanged* rawNotifier_{nullptr};
     std::vector<ValidationResult> validationErrors_{};
+    bool hasPendingTargetUpdate_{false};
+    bool hasPendingSourceUpdate_{false};
 };
 
 } // namespace fk::binding

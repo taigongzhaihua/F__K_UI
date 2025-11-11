@@ -37,7 +37,7 @@ public:
 
     // ========== 方向 ==========
     
-    Orientation GetOrientation() const { return GetValue<Orientation>(OrientationProperty()); }
+    Orientation GetOrientation() const { return GetValue<enum ui::Orientation>(OrientationProperty()); }
     void SetOrientation(Orientation value) { SetValue(OrientationProperty(), value); }
     
     StackPanel* Orientation(enum Orientation value) {

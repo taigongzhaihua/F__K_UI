@@ -1,9 +1,11 @@
 #pragma once
 
 #include "fk/ui/Control.h"
+#include "fk/ui/ObservableCollection.h"
 #include "fk/binding/DependencyProperty.h"
 #include <vector>
 #include <any>
+#include <memory>
 
 namespace fk::ui {
 
@@ -82,13 +84,107 @@ public:
     }
     UIElement* ItemsPanel() const { return GetItemsPanel(); }
 
+    // ========== 直接项集合 ==========
+    
+    /**
+     * @brief 获取直接项集合（当没有 ItemsSource 时使用）
+     */
+    ObservableCollection& GetItems() {
+        if (!items_) {
+            items_ = std::make_unique<ObservableCollection>();
+            // 监听集合变更
+            items_->CollectionChanged() += [this](const CollectionChangedEventArgs& args) {
+                OnItemsChanged(args);
+            };
+        }
+        return *items_;
+    }
+
+    // ========== 容器生成 ==========
+    
+    /**
+     * @brief 判断项是否已经是容器
+     */
+    virtual bool IsItemItsOwnContainer(const std::any& item) const {
+        // 检查是否是 UIElement*
+        try {
+            auto* element = std::any_cast<UIElement*>(item);
+            return element != nullptr;
+        } catch (...) {
+            return false;
+        }
+    }
+    
+    /**
+     * @brief 为数据项创建容器
+     */
+    virtual UIElement* GetContainerForItem(const std::any& item) {
+        // 默认实现：如果项本身是 UIElement，直接使用
+        if (IsItemItsOwnContainer(item)) {
+            return std::any_cast<UIElement*>(item);
+        }
+        
+        // 否则创建一个 ContentControl 作为容器
+        // TODO: 使用 ItemTemplate 创建内容
+        return nullptr;
+    }
+    
+    /**
+     * @brief 准备容器（设置数据上下文等）
+     */
+    virtual void PrepareContainerForItem(UIElement* container, const std::any& item) {
+        if (!container) return;
+        
+        // 设置数据上下文
+        container->SetDataContext(item);
+        
+        // TODO: 应用 ItemTemplate
+    }
+
 protected:
     /**
      * @brief 项目源变更钩子
      */
     virtual void OnItemsSourceChanged() {
+        // 当设置了 ItemsSource，清空 Items 集合
+        if (items_) {
+            items_->Clear();
+        }
+        
         // 重新生成项目容器
         GenerateContainers();
+    }
+    
+    /**
+     * @brief Items 集合变更钩子
+     */
+    virtual void OnItemsChanged(const CollectionChangedEventArgs& args) {
+        // Items 集合变更时，更新显示
+        switch (args.action) {
+            case CollectionChangeAction::Add:
+                // 为新项生成容器
+                for (const auto& item : args.newItems) {
+                    AddItemContainer(item);
+                }
+                break;
+                
+            case CollectionChangeAction::Remove:
+                // 移除旧项的容器
+                for (const auto& item : args.oldItems) {
+                    RemoveItemContainer(item);
+                }
+                break;
+                
+            case CollectionChangeAction::Reset:
+                // 清空并重建
+                RegenerateItemContainers();
+                break;
+                
+            default:
+                break;
+        }
+        
+        this->InvalidateMeasure();
     }
     
     /**
@@ -103,15 +199,62 @@ protected:
      * @brief 生成项目容器
      */
     virtual void GenerateContainers() {
-        // TODO: 为每个数据项创建 UI 容器
+        // 清除现有容器
+        ClearItemContainers();
+        
+        // 从 ItemsSource 或 Items 生成容器
+        std::any itemsSource = GetItemsSource();
+        
+        if (itemsSource.has_value()) {
+            // TODO: 遍历 ItemsSource 生成容器
+            // 需要实现 IEnumerable 接口支持
+        } else if (items_) {
+            // 从 Items 集合生成
+            for (const auto& item : items_->GetItems()) {
+                AddItemContainer(item);
+            }
+        }
     }
     
     /**
      * @brief 重新生成项目容器
      */
     virtual void RegenerateItemContainers() {
-        // TODO: 清除并重建所有容器
+        GenerateContainers();
+        this->InvalidateMeasure();
     }
+    
+    /**
+     * @brief 为单个项添加容器
+     */
+    virtual void AddItemContainer(const std::any& item) {
+        UIElement* container = GetContainerForItem(item);
+        if (container) {
+            PrepareContainerForItem(container, item);
+            itemContainers_.push_back(container);
+            // TODO: 添加到面板中
+        }
+    }
+    
+    /**
+     * @brief 移除单个项的容器
+     */
+    virtual void RemoveItemContainer(const std::any& item) {
+        // TODO: 从 itemContainers_ 中查找并移除
+        // 简化实现：重新生成所有容器
+        RegenerateItemContainers();
+    }
+    
+    /**
+     * @brief 清除所有项容器
+     */
+    virtual void ClearItemContainers() {
+        itemContainers_.clear();
+    }
+
+private:
+    std::unique_ptr<ObservableCollection> items_;           // 直接项集合
+    std::vector<UIElement*> itemContainers_;                // 生成的容器列表
 };
 
 } // namespace fk::ui

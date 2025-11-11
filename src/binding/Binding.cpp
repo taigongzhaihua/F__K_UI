@@ -58,6 +58,11 @@ Binding& Binding::ElementName(std::string name) {
     return *this;
 }
 
+Binding& Binding::IsAsync(bool async) {
+    isAsync_ = async;
+    return *this;
+}
+
 Binding& Binding::SetRelativeSource(RelativeSource relativeSource) {
     relativeSource_ = std::move(relativeSource);
     return *this;

@@ -57,8 +57,8 @@ public:
 
     // ========== 行列定义 ==========
     
-    void AddRowDefinition(const RowDefinition& row);
-    void AddColumnDefinition(const ColumnDefinition& col);
+    Grid* AddRowDefinition(const RowDefinition& row);
+    Grid* AddColumnDefinition(const ColumnDefinition& col);
     
     Grid* RowDefinitions(std::initializer_list<RowDefinition> rows);
     Grid* ColumnDefinitions(std::initializer_list<ColumnDefinition> cols);

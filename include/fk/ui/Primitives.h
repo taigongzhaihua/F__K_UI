@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 namespace fk::ui {
 
 /**
@@ -79,6 +81,34 @@ struct Matrix3x2 {
     
     static Matrix3x2 Scale(float scaleX, float scaleY) {
         return Matrix3x2(scaleX, 0.0f, 0.0f, scaleY, 0.0f, 0.0f);
+    }
+    
+    static Matrix3x2 Scaling(float scaleX, float scaleY) {
+        return Scale(scaleX, scaleY);
+    }
+    
+    static Matrix3x2 Rotation(float radians) {
+        float cos = std::cos(radians);
+        float sin = std::sin(radians);
+        return Matrix3x2(cos, sin, -sin, cos, 0.0f, 0.0f);
+    }
+    
+    // 计算逆矩阵
+    Matrix3x2 Inverse() const {
+        float det = m11 * m22 - m12 * m21;
+        if (std::abs(det) < 1e-6f) {
+            return Identity(); // 奇异矩阵，返回单位矩阵
+        }
+        
+        float invDet = 1.0f / det;
+        return Matrix3x2(
+            m22 * invDet,
+            -m12 * invDet,
+            -m21 * invDet,
+            m11 * invDet,
+            (m21 * m32 - m22 * m31) * invDet,
+            (m12 * m31 - m11 * m32) * invDet
+        );
     }
     
     // 矩阵乘法
