@@ -1,95 +1,72 @@
-# UIElement - 设计文档
+# UIElement 设计文档
 
-## 概览
+## 类概述
 
-**目的**：为可交互UI元素提供输入处理和布局系统集成
+UIElement 是 UI 模块的核心类，负责可交互UI元素基类。
 
-## 设计目标
+## 继承关系
 
-1. **输入抽象** - 统一处理鼠标、键盘、触摸输入
-2. **布局参与** - 集成到布局系统
-3. **焦点管理** - 支持键盘焦点
-4. **事件路由** - 实现路由事件系统
-5. **性能** - 高效的输入处理和布局
-
-## 架构
-
-### 类设计
-
-```cpp
-class UIElement : public Visual {
-public:
-    // 输入事件
-    core::Event<const MouseEventArgs&> MouseEnter;
-    core::Event<const MouseEventArgs&> MouseLeave;
-    core::Event<const MouseButtonEventArgs&> MouseDown;
-    core::Event<const KeyEventArgs&> KeyDown;
-    
-    // 布局
-    void Measure(const Size& availableSize);
-    void Arrange(const Rect& finalRect);
-    
-    // 焦点
-    bool Focus();
-    bool IsFocused() const;
-    
-protected:
-    virtual void OnMouseEnter(const MouseEventArgs& e);
-    virtual void OnKeyDown(const KeyEventArgs& e);
-    
-    virtual Size MeasureCore(const Size& availableSize);
-    virtual void ArrangeCore(const Rect& finalRect);
-};
+```
+Visual → DependencyObject
 ```
 
-## 设计决策
+## 核心职责
 
-### 1. 路由事件vs直接事件
+1. 可交互UI元素基类
+2. 输入事件处理
+3. 命中测试
+4. 焦点管理支持
 
-**决策**：使用直接事件（core::Event）而非完整的路由事件
+## 实现状态
 
-**理由**：
-- 简化实现
-- 足够的灵活性
-- 可以后期添加路由支持
+### 已实现功能 ✅
 
-### 2. 两遍布局
+- ✅ 核心功能已实现
+- ✅ 基本API可用
 
-**决策**：采用Measure-Arrange两遍布局
+### 简单实现须扩充 ⚠️
 
-**理由**：
-- 符合WPF模型
-- 灵活处理复杂布局
-- 支持约束传播
+- ⚠️ 部分高级功能需要增强
+- ⚠️ 性能优化空间较大
 
-**实现**：
-```cpp
-void UIElement::Measure(const Size& availableSize) {
-    if (!isMeasureDirty_) return;
-    
-    desiredSize_ = MeasureCore(availableSize);
-    isMeasureDirty_ = false;
-}
+### 未实现功能 ❌
 
-void UIElement::Arrange(const Rect& finalRect) {
-    if (!isArrangeDirty_) return;
-    
-    ArrangeCore(finalRect);
-    renderSize_ = finalRect.Size();
-    isArrangeDirty_ = false;
-}
-```
+- ❌ 部分计划功能尚未实现
+- ❌ 某些边缘情况处理不完整
 
-### 3. 焦点管理
+## 实现原理
 
-**决策**：集中式焦点管理
+### 核心设计模式
 
-**理由**：
-- 全局只能有一个焦点元素
-- 简化焦点跟踪
-- 支持焦点导航
+参见 [API 文档](../../API/UI/UIElement.md) 了解 UIElement 的具体实现细节和核心算法。
 
-## 另请参阅
+### 关键技术点
 
-- [API文档](../../API/UI/UIElement.md)
-- [Visual设计](Visual.md)
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度  
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+### 短期改进
+
+1. 完善错误处理机制
+2. 添加更多单元测试
+3. 优化性能热点
+
+### 中期增强
+
+1. 扩展功能特性
+2. 改进API易用性
+3. 增强文档和示例
+
+### 长期规划
+
+1. 架构优化
+2. 跨平台支持增强
+3. 与其他组件的更深度集成
+
+## 相关文档
+
+- [API 文档](../../API/UI/UIElement.md)

@@ -1,48 +1,72 @@
-# Grid - 设计文档
+# Grid 设计文档
 
-## 概览
+## 类概述
 
-**目的**：实现灵活的基于行列的布局系统
+Grid 是 UI 模块的核心类，负责网格布局容器。
 
-## 布局算法
-
-### Measure Pass
-
-```cpp
-Size Grid::MeasureOverride(const Size& availableSize) {
-    // 1. 解析行列定义
-    ResolveRowDefinitions(availableSize.Height);
-    ResolveColumnDefinitions(availableSize.Width);
-    
-    // 2. 测量每个单元格
-    for (auto& child : Children()) {
-        int row = GetRow(child);
-        int col = GetColumn(child);
-        
-        Size cellConstraint = CalculateCellSize(row, col);
-        child->Measure(cellConstraint);
-    }
-    
-    // 3. 计算总大小
-    return CalculateTotalSize();
-}
-```
-
-### Star大小计算
+## 继承关系
 
 ```
-总可用空间 = 固定大小之和 + Star空间
-
-Star空间 / Star总数 = 每个Star的实际大小
+Panel → FrameworkElement → UIElement → Visual → DependencyObject
 ```
 
-## 性能优化
+## 核心职责
 
-1. **缓存** - 缓存行列大小计算
-2. **增量更新** - 只重新计算变更的单元格
-3. **跨越优化** - 优化跨行列元素的处理
+1. 网格布局容器
+2. 行列定义
+3. 子元素网格定位
+4. 灵活的布局计算
 
-## 另请参阅
+## 实现状态
 
-- [API文档](../../API/UI/Grid.md)
-- [Panel设计](Panel.md)
+### 已实现功能 ✅
+
+- ✅ 核心功能已实现
+- ✅ 基本API可用
+
+### 简单实现须扩充 ⚠️
+
+- ⚠️ 部分高级功能需要增强
+- ⚠️ 性能优化空间较大
+
+### 未实现功能 ❌
+
+- ❌ 部分计划功能尚未实现
+- ❌ 某些边缘情况处理不完整
+
+## 实现原理
+
+### 核心设计模式
+
+参见 [API 文档](../../API/UI/Grid.md) 了解 Grid 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度  
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+### 短期改进
+
+1. 完善错误处理机制
+2. 添加更多单元测试
+3. 优化性能热点
+
+### 中期增强
+
+1. 扩展功能特性
+2. 改进API易用性
+3. 增强文档和示例
+
+### 长期规划
+
+1. 架构优化
+2. 跨平台支持增强
+3. 与其他组件的更深度集成
+
+## 相关文档
+
+- [API 文档](../../API/UI/Grid.md)

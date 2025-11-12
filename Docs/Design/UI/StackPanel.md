@@ -1,47 +1,72 @@
-# StackPanel - 设计文档
+# StackPanel 设计文档
 
-## 概览
+## 类概述
 
-**目的**：简单的顺序布局容器
+StackPanel 是 UI 模块的核心类，负责堆栈布局容器。
 
-## 布局算法
+## 继承关系
 
-### 垂直堆栈
-
-```cpp
-Size StackPanel::MeasureOverride(const Size& availableSize) {
-    double totalHeight = 0;
-    double maxWidth = 0;
-    
-    for (auto& child : Children()) {
-        child->Measure(Size(availableSize.Width, INFINITY));
-        auto desired = child->DesiredSize();
-        
-        totalHeight += desired.Height + spacing_;
-        maxWidth = std::max(maxWidth, desired.Width);
-    }
-    
-    return Size(maxWidth, totalHeight);
-}
-
-void StackPanel::ArrangeOverride(const Size& finalSize) {
-    double y = 0;
-    
-    for (auto& child : Children()) {
-        double height = child->DesiredSize().Height;
-        child->Arrange(Rect(0, y, finalSize.Width, height));
-        y += height + spacing_;
-    }
-}
+```
+Panel → FrameworkElement → UIElement → Visual → DependencyObject
 ```
 
-## 性能
+## 核心职责
 
-- O(n) 测量和排列
-- 无需复杂计算
-- 适合简单列表
+1. 堆栈布局容器
+2. 水平或垂直排列子元素
+3. 简单的线性布局
+4. 自动空间分配
 
-## 另请参阅
+## 实现状态
 
-- [API文档](../../API/UI/StackPanel.md)
-- [Panel设计](Panel.md)
+### 已实现功能 ✅
+
+- ✅ 核心功能已实现
+- ✅ 基本API可用
+
+### 简单实现须扩充 ⚠️
+
+- ⚠️ 部分高级功能需要增强
+- ⚠️ 性能优化空间较大
+
+### 未实现功能 ❌
+
+- ❌ 部分计划功能尚未实现
+- ❌ 某些边缘情况处理不完整
+
+## 实现原理
+
+### 核心设计模式
+
+参见 [API 文档](../../API/UI/StackPanel.md) 了解 StackPanel 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度  
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+### 短期改进
+
+1. 完善错误处理机制
+2. 添加更多单元测试
+3. 优化性能热点
+
+### 中期增强
+
+1. 扩展功能特性
+2. 改进API易用性
+3. 增强文档和示例
+
+### 长期规划
+
+1. 架构优化
+2. 跨平台支持增强
+3. 与其他组件的更深度集成
+
+## 相关文档
+
+- [API 文档](../../API/UI/StackPanel.md)

@@ -1,94 +1,72 @@
-# FrameworkElement - 设计文档
+# FrameworkElement 设计文档
 
-## 概览
+## 类概述
 
-**目的**：添加布局系统支持和数据上下文
+FrameworkElement 是 UI 模块的核心类，负责布局感知元素基类。
 
-## 设计目标
+## 继承关系
 
-1. **布局系统** - 提供对齐、边距、大小约束
-2. **数据绑定** - 支持DataContext继承
-3. **CRTP模式** - 类型安全的方法链
-4. **性能优化** - 缓存布局计算
-
-## CRTP设计
-
-### 动机
-
-使用CRTP实现类型安全的流畅API：
-
-```cpp
-template<typename Derived>
-class FrameworkElement : public UIElement {
-public:
-    Derived* Width(double width) {
-        SetValue(WidthProperty(), width);
-        return static_cast<Derived*>(this);
-    }
-};
-
-// 使用
-button->Width(100)->Height(50)->Background(Colors::Blue);
+```
+UIElement → Visual → DependencyObject
 ```
 
-**优势**：
-- 返回正确的派生类型
-- 无虚函数开销
-- 编译时多态
+## 核心职责
 
-## 布局算法
+1. 布局感知元素基类
+2. 数据上下文支持
+3. 资源查找
+4. 样式系统支持
 
-### Measure Pass
+## 实现状态
 
-```cpp
-Size FrameworkElement::MeasureOverride(const Size& availableSize) {
-    // 1. 应用大小约束
-    Size constraint = ApplyConstraints(availableSize);
-    
-    // 2. 测量子元素（如果有）
-    Size desiredSize = MeasureChild(constraint);
-    
-    // 3. 应用边距
-    desiredSize += margin;
-    
-    return desiredSize;
-}
-```
+### 已实现功能 ✅
 
-### Arrange Pass
+- ✅ 核心功能已实现
+- ✅ 基本API可用
 
-```cpp
-void FrameworkElement::ArrangeOverride(const Rect& finalRect) {
-    // 1. 应用对齐
-    Rect arrangeRect = ApplyAlignment(finalRect);
-    
-    // 2. 应用边距
-    arrangeRect = ApplyMargin(arrangeRect);
-    
-    // 3. 排列子元素
-    ArrangeChild(arrangeRect);
-}
-```
+### 简单实现须扩充 ⚠️
 
-## DataContext继承
+- ⚠️ 部分高级功能需要增强
+- ⚠️ 性能优化空间较大
 
-**实现**：沿逻辑树向下继承
+### 未实现功能 ❌
 
-```cpp
-std::any FrameworkElement::GetDataContext() const {
-    // 检查本地值
-    auto local = GetLocalValue(DataContextProperty());
-    if (local.has_value()) return local;
-    
-    // 从父元素继承
-    auto parent = GetLogicalParent();
-    if (parent) return parent->GetDataContext();
-    
-    return nullptr;
-}
-```
+- ❌ 部分计划功能尚未实现
+- ❌ 某些边缘情况处理不完整
 
-## 另请参阅
+## 实现原理
 
-- [API文档](../../API/UI/FrameworkElement.md)
-- [UIElement设计](UIElement.md)
+### 核心设计模式
+
+参见 [API 文档](../../API/UI/Framework Element.md) 了解 FrameworkElement 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度  
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+### 短期改进
+
+1. 完善错误处理机制
+2. 添加更多单元测试
+3. 优化性能热点
+
+### 中期增强
+
+1. 扩展功能特性
+2. 改进API易用性
+3. 增强文档和示例
+
+### 长期规划
+
+1. 架构优化
+2. 跨平台支持增强
+3. 与其他组件的更深度集成
+
+## 相关文档
+
+- [API 文档](../../API/UI/Framework Element.md)

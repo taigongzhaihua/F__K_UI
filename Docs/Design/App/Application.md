@@ -1,67 +1,72 @@
-# Application - 设计文档
+# Application 设计文档
 
-## 概览
+## 类概述
 
-**目的**：应用程序生命周期和全局资源管理
+Application 是 App 模块的核心类，负责应用程序生命周期管理。
 
-## 设计目标
-
-1. **单例模式** - 全局唯一的Application实例
-2. **窗口管理** - 创建和管理窗口
-3. **消息循环** - 运行UI线程消息泵
-4. **资源共享** - 应用程序级资源
-
-## 应用程序生命周期
+## 继承关系
 
 ```
-创建Application
-  ↓
-Startup事件
-  ↓
-创建主窗口
-  ↓
-Run() - 启动消息循环
-  ↓
-消息处理
-  ↓
-Shutdown()
-  ↓
-Exit事件
+无基类（单例类）
 ```
 
-## 消息循环
+## 核心职责
 
-```cpp
-int Application::Run() {
-    while (isRunning_) {
-        // 处理Windows消息
-        ProcessPlatformMessages();
-        
-        // 处理Dispatcher队列
-        dispatcher_->ProcessQueue();
-        
-        // 渲染所有窗口
-        RenderAllWindows();
-    }
-    
-    return exitCode_;
-}
-```
+1. 应用程序生命周期管理
+2. 全局资源管理
+3. 窗口管理
+4. 消息循环运行
 
-## 单例实现
+## 实现状态
 
-```cpp
-std::shared_ptr<Application> Application::Create() {
-    if (instance_) {
-        throw std::runtime_error("Application already exists");
-    }
-    
-    instance_ = std::shared_ptr<Application>(new Application());
-    return instance_;
-}
-```
+### 已实现功能 ✅
 
-## 另请参阅
+- ✅ 核心功能已实现
+- ✅ 基本API可用
 
-- [API文档](../../API/App/Application.md)
-- [Window设计](../UI/Window.md)
+### 简单实现须扩充 ⚠️
+
+- ⚠️ 部分高级功能需要增强
+- ⚠️ 性能优化空间较大
+
+### 未实现功能 ❌
+
+- ❌ 部分计划功能尚未实现
+- ❌ 某些边缘情况处理不完整
+
+## 实现原理
+
+### 核心设计模式
+
+参见 [API 文档](../../API/App/Application.md) 了解 Application 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度  
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+### 短期改进
+
+1. 完善错误处理机制
+2. 添加更多单元测试
+3. 优化性能热点
+
+### 中期增强
+
+1. 扩展功能特性
+2. 改进API易用性
+3. 增强文档和示例
+
+### 长期规划
+
+1. 架构优化
+2. 跨平台支持增强
+3. 与其他组件的更深度集成
+
+## 相关文档
+
+- [API 文档](../../API/App/Application.md)

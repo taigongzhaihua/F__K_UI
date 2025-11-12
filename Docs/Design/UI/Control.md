@@ -1,67 +1,72 @@
-# Control - 设计文档
+# Control 设计文档
 
-## 概览
+## 类概述
 
-**目的**：为可模板化控件提供基础
+Control 是 UI 模块的核心类，负责可模板化控件的基类。
 
-## 设计目标
-
-1. **模板支持** - ControlTemplate自定义外观
-2. **样式系统** - 通过Style设置属性
-3. **默认外观** - 提供合理的默认渲染
-4. **扩展性** - 易于创建自定义控件
-
-## 模板应用流程
+## 继承关系
 
 ```
-1. Control创建
-   ↓
-2. 检查Template属性
-   ↓
-3. Template.LoadContent()
-   ↓
-4. 生成视觉树
-   ↓
-5. 应用TemplateBindings
-   ↓
-6. 添加到Control的视觉树
+FrameworkElement → UIElement → Visual → DependencyObject
 ```
 
-## 样式应用
+## 核心职责
 
-**优先级**：
-1. 本地值
-2. Style设置器
-3. 默认值
+1. 可模板化控件的基类
+2. 模板系统支持
+3. 焦点管理
+4. 前景色和背景色管理
 
-```cpp
-void Control::ApplyStyle(Style* style) {
-    for (auto& setter : style->Setters()) {
-        // 只设置没有本地值的属性
-        if (!HasLocalValue(setter->Property())) {
-            SetValue(setter->Property(), setter->Value());
-        }
-    }
-}
-```
+## 实现状态
 
-## 默认外观
+### 已实现功能 ✅
 
-派生类可以重写OnRender提供默认外观：
+- ✅ 核心功能已实现
+- ✅ 基本API可用
 
-```cpp
-void Button::OnRender(const RenderContext& context) {
-    if (!HasTemplate()) {
-        // 默认渲染
-        RenderDefaultButton(context);
-    } else {
-        // 使用模板
-        Control::OnRender(context);
-    }
-}
-```
+### 简单实现须扩充 ⚠️
 
-## 另请参阅
+- ⚠️ 部分高级功能需要增强
+- ⚠️ 性能优化空间较大
 
-- [API文档](../../API/UI/Control.md)
-- [FrameworkElement设计](FrameworkElement.md)
+### 未实现功能 ❌
+
+- ❌ 部分计划功能尚未实现
+- ❌ 某些边缘情况处理不完整
+
+## 实现原理
+
+### 核心设计模式
+
+参见 [API 文档](../../API/UI/Control.md) 了解 Control 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度  
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+### 短期改进
+
+1. 完善错误处理机制
+2. 添加更多单元测试
+3. 优化性能热点
+
+### 中期增强
+
+1. 扩展功能特性
+2. 改进API易用性
+3. 增强文档和示例
+
+### 长期规划
+
+1. 架构优化
+2. 跨平台支持增强
+3. 与其他组件的更深度集成
+
+## 相关文档
+
+- [API 文档](../../API/UI/Control.md)

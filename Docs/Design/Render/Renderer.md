@@ -1,68 +1,72 @@
-# Renderer - 设计文档
+# Renderer 设计文档
 
-## 概览
+## 类概述
 
-**目的**：主渲染管线和渲染树管理
+Renderer 是 Render 模块的核心类，负责渲染系统的主控制器。
 
-## 渲染管线
+## 继承关系
 
 ```
-视觉树
-  ↓
-RenderTreeBuilder
-  ↓
-渲染命令
-  ↓
-RenderCommandBuffer
-  ↓
-GlRenderer
-  ↓
-OpenGL
-  ↓
-屏幕
+无基类
 ```
 
-## 渲染流程
+## 核心职责
 
-### 1. 构建阶段
+1. 渲染系统的主控制器
+2. 管理渲染后端
+3. 协调渲染流程
+4. 优化渲染性能
 
-```cpp
-void Renderer::Render(Visual* root) {
-    // 清空命令缓冲
-    commandBuffer_.Clear();
-    
-    // 遍历视觉树生成命令
-    RenderTreeBuilder builder;
-    builder.Build(root, commandBuffer_);
-    
-    // 执行命令
-    backend_->Execute(commandBuffer_);
-}
-```
+## 实现状态
 
-### 2. 执行阶段
+### 已实现功能 ✅
 
-```cpp
-void GlRenderer::Execute(const RenderCommandBuffer& buffer) {
-    for (auto& command : buffer.GetCommands()) {
-        switch (command.Type) {
-            case CommandType::FillRect:
-                DrawFilledRectangle(command);
-                break;
-            // ...
-        }
-    }
-}
-```
+- ✅ 核心功能已实现
+- ✅ 基本API可用
 
-## 优化策略
+### 简单实现须扩充 ⚠️
 
-1. **批处理** - 合并相似的绘制命令
-2. **剔除** - 跳过不可见元素
-3. **缓存** - 缓存不变的渲染树部分
-4. **GPU上传** - 最小化CPU-GPU数据传输
+- ⚠️ 部分高级功能需要增强
+- ⚠️ 性能优化空间较大
 
-## 另请参阅
+### 未实现功能 ❌
 
-- [API文档](../../API/Render/Renderer.md)
-- [GlRenderer设计](GlRenderer.md)
+- ❌ 部分计划功能尚未实现
+- ❌ 某些边缘情况处理不完整
+
+## 实现原理
+
+### 核心设计模式
+
+参见 [API 文档](../../API/Render/Renderer.md) 了解 Renderer 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度  
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+### 短期改进
+
+1. 完善错误处理机制
+2. 添加更多单元测试
+3. 优化性能热点
+
+### 中期增强
+
+1. 扩展功能特性
+2. 改进API易用性
+3. 增强文档和示例
+
+### 长期规划
+
+1. 架构优化
+2. 跨平台支持增强
+3. 与其他组件的更深度集成
+
+## 相关文档
+
+- [API 文档](../../API/Render/Renderer.md)
