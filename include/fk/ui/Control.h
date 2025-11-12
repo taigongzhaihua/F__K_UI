@@ -73,16 +73,25 @@ public:
      * @brief 字体粗细依赖属性
      */
     static const binding::DependencyProperty& FontWeightProperty();
+    
+    /**
+     * @brief 样式依赖属性
+     */
+    static const binding::DependencyProperty& StyleProperty();
 
     // ========== 控件样式 ==========
     
-    Style* GetStyle() const { return style_; }
-    void SetStyle(Style* style);
-    Derived* StyleProperty(Style* style) {
+    Style* GetStyle() const {
+        return this->template GetValue<Style*>(StyleProperty());
+    }
+    void SetStyle(Style* style) {
+        this->SetValue(StyleProperty(), style);
+    }
+    Derived* Style(Style* style) {
         SetStyle(style);
         return static_cast<Derived*>(this);
     }
-    Style* StyleProperty() const { return GetStyle(); }
+    Style* Style() const { return GetStyle(); }
     
     // ========== 控件模板 ==========
     
@@ -299,8 +308,18 @@ protected:
         }
     }
 
+protected:
+    /**
+     * @brief Style属性变更回调
+     */
+    static void OnStyleChanged(
+        binding::DependencyObject& d,
+        const binding::DependencyProperty& prop,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+
 private:
-    Style* style_{nullptr};
     ControlTemplate* template_{nullptr};
     
     // 状态（非依赖属性，用于内部状态跟踪）
@@ -309,27 +328,58 @@ private:
 };
 
 // 模板实现
+
 template<typename Derived>
-void Control<Derived>::SetStyle(Style* style) {
-    if (style_ != style) {
-        // 取消应用旧样式
-        if (style_ != nullptr) {
-            style_->Unapply(this);
+const binding::DependencyProperty& Control<Derived>::StyleProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Style",
+        typeid(Style*),
+        typeid(Control<Derived>),
+        binding::PropertyMetadata{
+            std::any(static_cast<Style*>(nullptr)),
+            &Control<Derived>::OnStyleChanged
         }
-        
-        style_ = style;
-        
-        // 应用新样式
-        if (style_ != nullptr) {
-            if (!style_->IsApplicableTo(typeid(Derived))) {
+    );
+    return property;
+}
+
+template<typename Derived>
+void Control<Derived>::OnStyleChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* control = dynamic_cast<Control<Derived>*>(&d);
+    if (!control) {
+        return;
+    }
+    
+    // 取消应用旧样式
+    try {
+        auto* oldStyle = std::any_cast<Style*>(oldValue);
+        if (oldStyle != nullptr) {
+            oldStyle->Unapply(control);
+        }
+    } catch (const std::bad_any_cast&) {
+        // Ignore if cast fails
+    }
+    
+    // 应用新样式
+    try {
+        auto* newStyle = std::any_cast<Style*>(newValue);
+        if (newStyle != nullptr) {
+            if (!newStyle->IsApplicableTo(typeid(Derived))) {
                 // TODO: 记录警告日志
                 // 类型不匹配，但仍尝试应用（允许基类样式应用到派生类）
             }
-            style_->Apply(this);
+            newStyle->Apply(control);
         }
-        
-        this->InvalidateVisual();
+    } catch (const std::bad_any_cast&) {
+        // Ignore if cast fails
     }
+    
+    control->InvalidateVisual();
 }
 
 template<typename Derived>
