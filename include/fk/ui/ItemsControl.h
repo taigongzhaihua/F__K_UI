@@ -2,6 +2,7 @@
 
 #include "fk/ui/Control.h"
 #include "fk/ui/ObservableCollection.h"
+#include "fk/ui/ItemContainerGenerator.h"
 #include "fk/binding/DependencyProperty.h"
 #include <vector>
 #include <any>
@@ -39,7 +40,19 @@ public:
     static const binding::DependencyProperty& ItemsPanelProperty();
 
 public:
-    ItemsControl() = default;
+    ItemsControl() : generator_(static_cast<Derived*>(this)) {
+        // Configure generator with default factory and preparer
+        generator_.SetContainerFactory([this](const std::any& item) -> UIElement* {
+            return this->GetContainerForItem(item);
+        });
+        
+        generator_.SetContainerPreparer([this](UIElement* container, const std::any& item) {
+            this->PrepareContainerForItem(container, item);
+        });
+        
+        generator_.SetEnableRecycling(true);  // Enable recycling by default
+    }
+    
     virtual ~ItemsControl() = default;
 
     // ========== 项目源 ==========
@@ -98,6 +111,19 @@ public:
             };
         }
         return *items_;
+    }
+
+    // ========== ItemContainerGenerator ==========
+    
+    /**
+     * @brief 获取容器生成器
+     */
+    ItemContainerGenerator& GetItemContainerGenerator() {
+        return generator_;
+    }
+    
+    const ItemContainerGenerator& GetItemContainerGenerator() const {
+        return generator_;
     }
 
     // ========== 容器生成 ==========
@@ -209,10 +235,14 @@ protected:
             // TODO: 遍历 ItemsSource 生成容器
             // 需要实现 IEnumerable 接口支持
         } else if (items_) {
-            // 从 Items 集合生成
+            // 从 Items 集合生成 - 使用 ItemContainerGenerator
+            std::vector<std::any> itemVector;
             for (const auto& item : items_->GetItems()) {
-                AddItemContainer(item);
+                itemVector.push_back(item);
             }
+            
+            auto containers = generator_.GenerateContainers(itemVector);
+            // TODO: 添加到面板中
         }
     }
     
@@ -228,11 +258,11 @@ protected:
      * @brief 为单个项添加容器
      */
     virtual void AddItemContainer(const std::any& item) {
-        UIElement* container = GetContainerForItem(item);
+        bool isNew = false;
+        UIElement* container = generator_.GenerateContainer(item, isNew);
         if (container) {
-            PrepareContainerForItem(container, item);
-            itemContainers_.push_back(container);
             // TODO: 添加到面板中
+            this->InvalidateMeasure();
         }
     }
     
@@ -240,21 +270,25 @@ protected:
      * @brief 移除单个项的容器
      */
     virtual void RemoveItemContainer(const std::any& item) {
-        // TODO: 从 itemContainers_ 中查找并移除
-        // 简化实现：重新生成所有容器
-        RegenerateItemContainers();
+        auto* container = generator_.ContainerFromItem(item);
+        if (container) {
+            generator_.RecycleContainer(container);
+            // TODO: 从面板中移除
+            this->InvalidateMeasure();
+        }
     }
     
     /**
      * @brief 清除所有项容器
      */
     virtual void ClearItemContainers() {
-        itemContainers_.clear();
+        generator_.RemoveAll();
+        this->InvalidateMeasure();
     }
 
 private:
     std::unique_ptr<ObservableCollection> items_;           // 直接项集合
-    std::vector<UIElement*> itemContainers_;                // 生成的容器列表
+    ItemContainerGenerator generator_;                      // 容器生成器
 };
 
 } // namespace fk::ui

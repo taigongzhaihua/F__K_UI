@@ -1,412 +1,361 @@
-# Button API 文档
+# Button
 
-## 概述
+## Overview
 
-`Button` 是一个交互式控件，允许用户通过点击触发命令。支持圆角、自定义颜色、悬停/按下状态反馈，以及 MVVM 风格的命令绑定。
+**Purpose**: Interactive button control that responds to pointer clicks
 
-**继承链：** `UIElement` → `FrameworkElement` → `ControlBase` → `Button<Derived>`
+**Namespace**: `fk::ui`
 
-**命名空间：** `fk::ui`
+**Inheritance**: `ContentControl<Button>` → `Control` → `FrameworkElement` → `UIElement` → `Visual` → `DependencyObject`
 
-**模板参数：** `Derived = void`（通常省略，自动推导）
+**Header**: `fk/ui/Button.h`
 
----
+## Description
 
-## 核心属性（Dependency Properties）
+`Button` is a clickable control that can contain any content (text, images, or complex layouts). It provides visual feedback on hover and press, and fires a `Click` event when activated.
 
-### Background
-- **类型：** `std::string`（16 进制颜色码）
-- **默认值：** `"#0078D4"`（Fluent Accent Blue）
-- **格式：** `"#RRGGBB"` 或 `"#RRGGBBAA"`
-- **说明：** 按钮的背景颜色
+The button uses the CRTP pattern (`ContentControl<Button>`) for compile-time polymorphism and method chaining.
 
-**用法：**
+## Public Interface
+
+### Constructor
+
 ```cpp
-button->Background("#4CAF50");  // 绿色
+Button();
+virtual ~Button() = default;
 ```
 
-### Foreground
-- **类型：** `std::string`
-- **默认值：** `"#FFFFFF"`（白色）
-- **说明：** 按钮内容（通常为文字）的前景色
+Creates a new button instance.
 
-**用法：**
+**Example**:
 ```cpp
-button->Foreground("#FF0000");  // 红色文字
+auto button = std::make_shared<Button>();
 ```
 
-### CornerRadius
-- **类型：** `float`
-- **默认值：** `4.0f`
-- **说明：** 按钮四个角的圆角半径（像素）
+### Events
 
-**用法：**
+#### Click
 ```cpp
-button->CornerRadius(8.0f);  // 8 像素的圆角
+core::Event<> Click;
 ```
 
-### BorderBrush
-- **类型：** `std::string`
-- **默认值：** `"#0078D400"`（透明）
-- **说明：** 按钮边框的颜色
+Fired when the button is clicked (pointer pressed and released over the button).
 
-**用法：**
+**Usage**:
 ```cpp
-button->BorderBrush("#000000");  // 黑色边框
+button->Click += []() {
+    std::cout << "Button clicked!" << std::endl;
+};
+
+// Or with disconnection:
+auto connection = button->Click += []() { /* handler */ };
+connection.Disconnect();
 ```
 
-### BorderThickness
-- **类型：** `float`
-- **默认值：** `0.0f`
-- **说明：** 边框宽度（像素）
+## Inherited Members
 
-**用法：**
+### From ContentControl
+
+#### Content Management
 ```cpp
-button->BorderThickness(2.0f);  // 2 像素边框
+// Set content (from ContentControl)
+auto textBlock = std::make_shared<TextBlock>();
+button->SetContent(textBlock);
+
+// Get content
+auto content = button->GetContent();
 ```
 
-### HoveredBackground
-- **类型：** `std::string`
-- **默认值：** `""` (空，自动计算)
-- **说明：** 鼠标悬停时的背景颜色，空值时自动在基础颜色上微妙变亮（乘以 1.1）
+See [ContentControl](ContentControl.md) for details.
 
-**用法：**
+### From Control
+
+- **Template**: Control template support
+- **Padding**: Internal padding for content
+- **Background**, **Foreground**, **BorderBrush**, **BorderThickness**: Visual styling
+
+See [Control](Control.md) for details.
+
+### From FrameworkElement
+
+- **Width**, **Height**: Size properties
+- **MinWidth**, **MaxWidth**, **MinHeight**, **MaxHeight**: Size constraints
+- **Margin**: External spacing
+- **HorizontalAlignment**, **VerticalAlignment**: Alignment in parent
+- **DataContext**: Inherited data context
+
+See [FrameworkElement](FrameworkElement.md) for details.
+
+### From UIElement
+
+- **Visibility**: Visibility state
+- **IsEnabled**: Enabled state
+- **Opacity**: Transparency
+- **RenderTransform**: Transformations
+- **Clip**: Clipping region
+
+See [UIElement](UIElement.md) for details.
+
+## Protected Interface
+
+### Event Handlers
+
 ```cpp
-button->HoveredBackground("#FF5733");  // 明确指定悬停色
+protected:
+    void OnPointerPressed(PointerEventArgs& e) override;
+    void OnPointerReleased(PointerEventArgs& e) override;
+    void OnPointerEntered(PointerEventArgs& e) override;
+    void OnPointerExited(PointerEventArgs& e) override;
 ```
 
-### PressedBackground
-- **类型：** `std::string`
-- **默认值：** `""` (空，自动计算)
-- **说明：** 鼠标按下时的背景颜色，空值时自动在基础颜色上变暗（乘以 0.8）
+Override these methods to customize pointer interaction behavior.
 
-**用法：**
+**Default Behavior**:
+- `OnPointerPressed`: Sets `isPressed_` flag
+- `OnPointerReleased`: Fires `Click` event if pressed over button
+- `OnPointerEntered`: Visual feedback (hover state)
+- `OnPointerExited`: Clears hover state
+
+## Usage Examples
+
+### Basic Text Button
+
 ```cpp
-button->PressedBackground("#003D82");  // 明确指定按下色
+auto button = std::make_shared<Button>();
+
+// Set text content (creates TextBlock automatically via ContentControl)
+auto textBlock = std::make_shared<TextBlock>();
+textBlock->SetText("Click Me");
+button->SetContent(textBlock);
+
+// Set size
+button->SetValue(UIElement::WidthProperty(), 120.0);
+button->SetValue(UIElement::HeightProperty(), 40.0);
+
+// Handle click
+button->Click += []() {
+    std::cout << "Button clicked!" << std::endl;
+};
 ```
 
-### IsMouseOver
-- **类型：** `bool`
-- **默认值：** `false`
-- **只读：** 通常由按钮内部更新，不应手动设置
-- **说明：** 鼠标是否在按钮上方
+### Styled Button
 
-### IsPressed
-- **类型：** `bool`
-- **默认值：** `false`
-- **只读：** 通常由按钮内部更新
-- **说明：** 鼠标是否按下
-
-### Command
-- **类型：** `ICommand::Ptr` (shared_ptr\<ICommand\>)
-- **默认值：** `nullptr`
-- **说明：** 绑定的命令对象，点击时执行该命令
-- **绑定支持：** ✅ 支持数据绑定
-
-**用法：**
 ```cpp
-// 创建一个简单命令
-auto command = ui::relayCommand(
-    [](const std::any& param) {
-        std::cout << "执行命令" << std::endl;
-    },
-    [](const std::any& param) {
-        return true;  // CanExecute
-    }
-);
+auto button = std::make_shared<Button>();
 
-button->Command(command);
+// Set text
+auto text = std::make_shared<TextBlock>();
+text->SetText("Submit");
+button->SetContent(text);
 
-// 或使用数据绑定
-button->Command(bind("MyCommand"));
+// Style the button
+button->SetValue(Control::BackgroundProperty(), Color{0.0f, 0.5f, 1.0f, 1.0f});
+button->SetValue(Control::ForegroundProperty(), Color{1.0f, 1.0f, 1.0f, 1.0f});
+button->SetValue(Control::PaddingProperty(), Thickness(16, 8, 16, 8));
+button->SetValue(Control::BorderThicknessProperty(), Thickness(2));
+button->SetValue(Control::BorderBrushProperty(), Color{0.0f, 0.3f, 0.7f, 1.0f});
+
+// Set corner radius (if supported by template)
+button->SetValue(CornerRadiusProperty(), CornerRadius(4.0f));
 ```
 
-### CommandParameter
-- **类型：** `std::any`
-- **默认值：** 空
-- **说明：** 传递给命令的参数
-- **绑定支持：** ✅ 支持数据绑定
+### Button with Complex Content
 
-**用法：**
 ```cpp
-button->CommandParameter(42);
-button->Command(command);  // 点击时调用 command->Execute(42)
+auto button = std::make_shared<Button>();
+
+// Create complex content layout
+auto panel = std::make_shared<StackPanel>();
+panel->SetOrientation(Orientation::Horizontal);
+panel->SetSpacing(8.0);
+
+auto icon = std::make_shared<TextBlock>();
+icon->SetText("📁");  // Icon
+icon->SetFontSize(20.0);
+
+auto label = std::make_shared<TextBlock>();
+label->SetText("Open File");
+label->SetFontSize(14.0);
+
+panel->AddChild(icon);
+panel->AddChild(label);
+
+button->SetContent(panel);
+button->SetValue(UIElement::WidthProperty(), 150.0);
+button->SetValue(UIElement::HeightProperty(), 50.0);
+
+button->Click += []() {
+    // Open file dialog
+};
 ```
 
----
-
-## 内容设置方法
-
-### Ptr Content(ContentPtr content)
-- **参数：** 作为按钮内容的 `UIElement`
-- **返回值：** 返回 `this`，支持链式调用
-- **说明：** 设置按钮的内容为一个 UI 元素
-
-**用法：**
-```cpp
-button->Content(
-    ui::stackPanel()
-        ->Children({
-            ui::textBlock()->Text("下载"),
-            ui::textBlock()->Text("✓")
-        })
-);
-```
-
-### Ptr Content(const std::string& text)
-- **参数：** 文本字符串
-- **返回值：** 返回 `this`
-- **说明：** 便捷方法，自动创建 `TextBlock` 作为内容
-  - 字体大小：14.0f
-  - 颜色：继承按钮的 `Foreground` 颜色
-
-**用法：**
-```cpp
-button->Content("点击我");  // 快速添加文本内容
-```
-
-### Ptr Content(binding::Binding binding)
-- **参数：** 数据绑定对象
-- **说明：** 将内容绑定到 ViewModel 属性
-
----
-
-## 事件方法
-
-### Ptr OnClick(std::function\<void(ButtonBase&)\> handler)
-- **参数：** 点击事件处理函数
-- **返回值：** 返回 `this`
-- **说明：** 订阅按钮点击事件（当没有绑定 `Command` 时触发）
-
-**用法：**
-```cpp
-button->OnClick([](ButtonBase& btn) {
-    std::cout << "按钮被点击！" << std::endl;
-});
-```
-
-### core::Event\<ButtonBase&\> Click
-- **说明：** 底层点击事件信号
-- **触发时机：** 鼠标在按钮上方松开时
-- **优先级：** 如果绑定了 `Command`，优先执行命令，然后触发 `Click` 事件
-
-**用法：**
-```cpp
-button->Click += [](ButtonBase& btn) { /* ... */ };
-```
-
----
-
-## 便捷方法
-
-### Ptr Command(ICommand::Ptr command)
-- **参数：** 命令对象指针
-- **返回值：** 返回 `this`
-- **说明：** 设置按钮的命令
-
-### Ptr Command(binding::Binding binding)
-- **参数：** 数据绑定
-- **说明：** 绑定命令到 ViewModel 属性
-
-### Ptr CommandParameter(std::any parameter)
-- **参数：** 任意类型的参数
-- **返回值：** 返回 `this`
-
-### Ptr CommandParameter(binding::Binding binding)
-- **参数：** 数据绑定
-- **说明：** 绑定参数到 ViewModel 属性
-
----
-
-## 从 Control 继承的属性和方法
-
-### Padding
-```cpp
-button->Padding(12.0f, 8.0f, 12.0f, 9.0f);  // 左、上、右、下
-button->Padding(10.0f);  // 统一内边距
-```
-
-### Content（只读 getter）
-```cpp
-auto content = button->Content();
-```
-
-### IsFocused
-```cpp
-button->IsFocused(true);
-```
-
----
-
-## 从 UIElement 继承的属性
-
-- `Width`, `Height` - 尺寸
-- `Opacity` - 透明度
-- `IsEnabled` - 是否启用
-- `Visibility` - 可见性
-- `Name` - 元素名称
-- `HorizontalAlignment`, `VerticalAlignment` - 对齐方式
-- 更多详见 [UIElement.md](UIElement.md)
-
----
-
-## 命令系统集成
-
-### 自动启用/禁用
-
-当按钮绑定了命令时，按钮的 `IsEnabled` 属性会自动根据命令的 `CanExecute()` 结果同步：
+### Data-Bound Button
 
 ```cpp
-auto command = ui::relayCommand(
-    [](const std::any& p) { /* ... */ },
-    [](const std::any& p) {
-        return condition;  // 返回 false 时按钮自动禁用
-    }
-);
-
-button->Command(command);
-// 当 condition 变化时，按钮自动启用/禁用
-
-// 通知 CanExecute 状态变化
-if (auto cmd = std::dynamic_pointer_cast<ui::RelayCommand>(command)) {
-    cmd->RaiseCanExecuteChanged();  // 按钮状态同步更新
-}
-```
-
----
-
-## 样式属性查询
-
-### std::string GetActualBackground() const
-- **返回值：** 根据当前状态（Normal/Hover/Pressed）计算的实际背景颜色
-- **说明：** 用于获取渲染器使用的最终颜色
-
----
-
-## 工厂函数
-
-### static Ptr Create()
-```cpp
-auto button = Button<>::Create();
-```
-
-### 全局便捷函数
-```cpp
-auto button = ui::button()
-    ->Content("点击")
-    ->Width(100)
-    ->Height(40);
-```
-
----
-
-## 完整使用示例
-
-### 简单按钮
-
-```cpp
-auto button = ui::button()
-    ->Content("保存")
-    ->Width(100)
-    ->Height(40)
-    ->Background("#4CAF50")
-    ->Foreground("#FFFFFF")
-    ->OnClick([](auto&) {
-        std::cout << "保存成功" << std::endl;
-    });
-```
-
-### 带命令的 MVVM 按钮
-
-```cpp
-// ViewModel 中
-class MyViewModel : public fk::ObservableObject {
+// ViewModel
+class MyViewModel : public ObservableObject {
 public:
-    MyViewModel() {
-        SetCanSave(true);
-    }
+    FK_PROPERTY(std::string, ButtonLabel, "Submit")
+    FK_PROPERTY(bool, CanSubmit, true)
     
-    FK_PROPERTY(bool, CanSave)
-    
-    void SaveData() {
-        std::cout << "数据已保存" << std::endl;
-        SetCanSave(false);
+    void Submit() {
+        std::cout << "Submitting..." << std::endl;
     }
 };
 
-// UI 中
 auto viewModel = std::make_shared<MyViewModel>();
 
-auto saveCommand = ui::relayCommand(
-    [viewModel](const std::any&) {
-        viewModel->SaveData();
-    },
-    [viewModel](const std::any&) {
-        return viewModel->GetCanSave();
-    }
-);
+// Create button
+auto button = std::make_shared<Button>();
 
-auto button = ui::button()
-    ->Content("保存")
-    ->Command(saveCommand);
+// Bind content to ViewModel
+auto contentBinding = Binding("ButtonLabel");
+auto textBlock = std::make_shared<TextBlock>();
+textBlock->SetBinding(TextBlock::TextProperty(), contentBinding);
+button->SetContent(textBlock);
 
-mainWindow->SetDataContext(
-    std::static_pointer_cast<fk::INotifyPropertyChanged>(viewModel)
-);
+// Bind IsEnabled to ViewModel
+auto enabledBinding = Binding("CanSubmit");
+button->SetBinding(UIElement::IsEnabledProperty(), enabledBinding);
+
+// Handle click
+button->Click += [viewModel]() {
+    viewModel->Submit();
+};
+
+// Set DataContext
+button->SetDataContext(viewModel);
 ```
 
-### 复杂内容按钮
+### Disabled Button
 
 ```cpp
-auto complexButton = ui::button()
-    ->Width(150)
-    ->Height(60)
-    ->CornerRadius(8.0f)
-    ->Content(
-        ui::stackPanel()
-            ->Orientation(ui::Orientation::Vertical)
-            ->Spacing(5.0f)
-            ->Children({
-                ui::textBlock()
-                    ->Text("下载文件")
-                    ->FontSize(14.0f),
-                ui::textBlock()
-                    ->Text("1.5 MB")
-                    ->FontSize(12.0f)
-                    ->Foreground("#CCCCCC")
-            })
-    )
-    ->OnClick([](auto&) {
-        std::cout << "开始下载..." << std::endl;
-    });
+auto button = std::make_shared<Button>();
+auto text = std::make_shared<TextBlock>();
+text->SetText("Disabled");
+button->SetContent(text);
+
+// Disable the button
+button->SetValue(UIElement::IsEnabledProperty(), false);
+
+// Click event won't fire when disabled
+button->Click += []() {
+    // This won't be called
+};
 ```
 
----
+### Button with Transform
 
-## 视觉反馈
+```cpp
+auto button = std::make_shared<Button>();
+auto text = std::make_shared<TextBlock>();
+text->SetText("Rotated");
+button->SetContent(text);
 
-按钮在不同状态下的视觉变化：
+// Apply rotation transform
+auto rotateTransform = std::make_shared<RotateTransform>(15.0f);
+button->SetValue(UIElement::RenderTransformProperty(), rotateTransform);
+```
 
-| 状态 | 背景色计算 | 触发条件 |
-|------|----------|--------|
-| Normal | `Background` 属性值 | 初始状态 |
-| Hovered | `HoveredBackground` 或 `Background * 1.1` | 鼠标进入 |
-| Pressed | `PressedBackground` 或 `Background * 0.8` | 鼠标按下 |
-| Disabled | 自动灰化（`IsEnabled=false`） | 通常由命令 `CanExecute` 返回 false 触发 |
+## Visual States
 
----
+The button's visual appearance changes based on its state:
 
-## 性能考虑
+| State | Condition | Visual Feedback |
+|-------|-----------|-----------------|
+| Normal | Default state | Standard appearance |
+| Hover | Pointer over button | Highlight (via template) |
+| Pressed | Pointer pressed down | Pressed appearance |
+| Disabled | `IsEnabled = false` | Grayed out (via template) |
 
-- **频繁更改按钮外观：** 每次属性变化会触发重绘，考虑批量更新
-- **大量按钮列表：** 使用虚拟化容器（如 `ItemsControl` 与虚拟化）
-- **命令频繁调用 `RaiseCanExecuteChanged()`：** 如果状态变化频繁，考虑使用防抖
+Visual feedback is typically handled by the control template. The button class manages the state transitions.
 
----
+## Event Flow
 
-## 另见
+Click event sequence:
 
-- [ICommand.md](../Core/ICommand.md) - 命令系统
-- [Control.md](Control.md) - 控件基类
-- [TextBlock.md](TextBlock.md) - 文本显示
+1. **PointerPressed**: User presses pointer over button
+   - `OnPointerPressed()` called
+   - `isPressed_` flag set to `true`
 
+2. **PointerReleased**: User releases pointer
+   - `OnPointerReleased()` called
+   - If pointer still over button AND `isPressed_` is `true`:
+     - `Click` event fired
+   - `isPressed_` flag cleared
+
+3. **PointerExited**: If pointer leaves before release
+   - Click is cancelled (no event fired)
+
+## Customization
+
+### Custom Button Behavior
+
+```cpp
+class MyButton : public Button {
+public:
+    MyButton() : Button() {}
+    
+protected:
+    void OnPointerPressed(PointerEventArgs& e) override {
+        Button::OnPointerPressed(e);
+        // Custom logic
+        std::cout << "Custom press behavior" << std::endl;
+    }
+    
+    void OnPointerReleased(PointerEventArgs& e) override {
+        // Custom logic before click
+        if (validateBeforeClick()) {
+            Button::OnPointerReleased(e);
+        }
+    }
+    
+private:
+    bool validateBeforeClick() {
+        // Custom validation
+        return true;
+    }
+};
+```
+
+### Custom Visual Styling
+
+Visual styling is controlled by the Control template and Style system:
+
+```cpp
+// TODO: Add example when Style/Template system is fully documented
+```
+
+## Performance Considerations
+
+- **Event Handlers**: Keep click handlers lightweight; use async operations for heavy work
+- **Complex Content**: Avoid overly complex content hierarchies (impacts layout performance)
+- **Many Buttons**: Use templates and styles to share visual resources
+
+## Accessibility
+
+Consider adding accessibility properties:
+
+```cpp
+// Set accessible name (future feature)
+// button->SetAccessibleName("Submit Form Button");
+
+// Set accessible description
+// button->SetAccessibleDescription("Submits the registration form");
+```
+
+## Related Classes
+
+- [ContentControl](ContentControl.md) - Base class for content hosting
+- [Control](Control.md) - Templatable control base
+- [FrameworkElement](FrameworkElement.md) - Layout and sizing
+- [UIElement](UIElement.md) - Input and rendering
+- [TextBlock](TextBlock.md) - Common content type
+- [StackPanel](StackPanel.md) - For complex button content
+- [ControlTemplate](ControlTemplate.md) - Visual customization
+
+## See Also
+
+- [Design Document](../../Design/UI/Button.md)
+- [Input Events Guide](../../Development.md#input-events)
+- [Getting Started - Controls](../../GettingStarted.md#controls)

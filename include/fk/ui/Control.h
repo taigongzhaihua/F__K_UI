@@ -29,7 +29,12 @@ class Brush;
 template<typename Derived>
 class Control : public FrameworkElement<Derived> {
 public:
-    Control() = default;
+    Control() {
+        // 订阅Loaded事件以在控件加载时应用隐式样式
+        this->Loaded += [this]() {
+            this->OnLoaded();
+        };
+    }
     virtual ~Control() = default;
 
     // ========== 依赖属性声明 ==========
@@ -73,26 +78,113 @@ public:
      * @brief 字体粗细依赖属性
      */
     static const binding::DependencyProperty& FontWeightProperty();
+    
+    /**
+     * @brief 样式依赖属性
+     */
+    static const binding::DependencyProperty& StyleProperty();
+    
+    /**
+     * @brief 控件模板依赖属性
+     */
+    static const binding::DependencyProperty& TemplateProperty();
 
     // ========== 控件样式 ==========
     
-    Style* GetStyle() const { return style_; }
-    void SetStyle(Style* style);
-    Derived* StyleProperty(Style* style) {
+    fk::ui::Style* GetStyle() const {
+        return this->template GetValue<fk::ui::Style*>(StyleProperty());
+    }
+    void SetStyle(fk::ui::Style* style) {
+        this->SetValue(StyleProperty(), style);
+    }
+    Derived* StyleProperty(fk::ui::Style* style) {
         SetStyle(style);
         return static_cast<Derived*>(this);
     }
-    Style* StyleProperty() const { return GetStyle(); }
+    fk::ui::Style* StyleValue() const { return GetStyle(); }
+    
+    /**
+     * @brief 查找并应用隐式样式
+     * 
+     * 在控件初始化时自动调用，从ResourceDictionary中查找类型匹配的样式
+     * 查找规则：
+     * 1. 先在本地Resources中查找类型名称对应的样式
+     * 2. 如果未找到，向上遍历可视树查找父元素的Resources
+     * 3. 最后查找Application的Resources
+     */
+    void ApplyImplicitStyle() {
+        // 如果已经显式设置了Style，则不应用隐式样式
+        if (GetStyle() != nullptr) {
+            return;
+        }
+        
+        // 获取控件类型名称作为资源键
+        std::string typeName = typeid(Derived).name();
+        // 移除名称中的命名空间前缀，只保留类名
+        auto pos = typeName.find_last_of(':');
+        if (pos != std::string::npos) {
+            typeName = typeName.substr(pos + 1);
+        }
+        
+        // 查找隐式样式
+        auto* implicitStyle = FindResource<fk::ui::Style*>(typeName);
+        if (implicitStyle != nullptr && implicitStyle->IsApplicableTo(typeid(Derived))) {
+            SetStyle(implicitStyle);
+        }
+    }
+    
+    /**
+     * @brief 查找资源
+     * 
+     * 从当前元素的Resources开始，向上遍历可视树查找资源
+     * 
+     * @param key 资源键
+     * @return 找到的资源，未找到返回默认值
+     */
+    template<typename T>
+    T FindResource(const std::string& key) {
+        // 1. 在自身Resources中查找
+        auto& myResources = this->GetResources();
+        if (myResources.Contains(key)) {
+            return myResources.template Get<T>(key);
+        }
+        
+        // 2. 向上遍历可视树查找父元素的Resources
+        auto* parent = this->GetVisualParent();
+        while (parent != nullptr) {
+            // 尝试将parent转换为FrameworkElement以访问Resources
+            // 使用基类类型而不是Derived，因为父节点可能是不同类型
+            auto* frameworkParent = dynamic_cast<FrameworkElement<Derived>*>(parent);
+            if (frameworkParent) {
+                auto& parentResources = frameworkParent->GetResources();
+                if (parentResources.Contains(key)) {
+                    return parentResources.template Get<T>(key);
+                }
+            }
+            parent = parent->GetVisualParent();
+        }
+        
+        // 3. 查找Application的Resources（TODO: 需要Application单例支持）
+        // if (Application::Current() != nullptr) {
+        //     return Application::Current()->GetResources().template Get<T>(key);
+        // }
+        
+        return T{};  // 未找到，返回默认值
+    }
     
     // ========== 控件模板 ==========
     
-    ControlTemplate* GetTemplate() const { return template_; }
-    void SetTemplate(ControlTemplate* tmpl);
+    ControlTemplate* GetTemplate() const {
+        return this->template GetValue<ControlTemplate*>(TemplateProperty());
+    }
+    void SetTemplate(ControlTemplate* tmpl) {
+        this->SetValue(TemplateProperty(), tmpl);
+    }
     Derived* Template(ControlTemplate* tmpl) {
         SetTemplate(tmpl);
         return static_cast<Derived*>(this);
     }
-    ControlTemplate* Template() const { return GetTemplate(); }
+    ControlTemplate* TemplateValue() const { return GetTemplate(); }
 
     // ========== 外观属性 ==========
     
@@ -299,46 +391,160 @@ protected:
         }
     }
 
-private:
-    Style* style_{nullptr};
-    ControlTemplate* template_{nullptr};
+protected:
+    /**
+     * @brief Style属性变更回调
+     */
+    static void OnStyleChanged(
+        binding::DependencyObject& d,
+        const binding::DependencyProperty& prop,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
     
+    /**
+     * @brief 控件加载时的钩子函数
+     * 
+     * 在控件添加到可视树并完成初始化后调用
+     * 用于应用隐式样式和模板
+     */
+    virtual void OnLoaded() {
+        ApplyImplicitStyle();
+        ApplyImplicitTemplate();
+    }
+    
+    /**
+     * @brief Template属性变更回调
+     */
+    static void OnTemplateChanged(
+        binding::DependencyObject& d,
+        const binding::DependencyProperty& prop,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+    
+    /**
+     * @brief 应用隐式模板
+     * 
+     * 如果控件没有显式设置模板，尝试从默认样式或Resources中查找
+     */
+    void ApplyImplicitTemplate() {
+        // 如果已经有显式模板，不需要应用隐式模板
+        if (GetTemplate() != nullptr) {
+            return;
+        }
+        
+        // TODO: 从Style中获取模板
+        // 如果Style包含Template的Setter，它会在Style.Apply时自动设置
+        
+        // TODO: 从Resources中查找默认模板
+        // std::string templateKey = GetDefaultStyleKey().name() + "Template";
+        // auto* implicitTemplate = FindResource<ControlTemplate*>(templateKey);
+        // if (implicitTemplate) {
+        //     SetTemplate(implicitTemplate);
+        // }
+    }
+
+private:
     // 状态（非依赖属性，用于内部状态跟踪）
     bool isFocused_{false};
     bool isMouseOver_{false};
 };
 
 // 模板实现
+
 template<typename Derived>
-void Control<Derived>::SetStyle(Style* style) {
-    if (style_ != style) {
-        // 取消应用旧样式
-        if (style_ != nullptr) {
-            style_->Unapply(this);
+const binding::DependencyProperty& Control<Derived>::StyleProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Style",
+        typeid(Style*),
+        typeid(Control<Derived>),
+        binding::PropertyMetadata{
+            std::any(static_cast<Style*>(nullptr)),
+            &Control<Derived>::OnStyleChanged
         }
-        
-        style_ = style;
-        
-        // 应用新样式
-        if (style_ != nullptr) {
-            if (!style_->IsApplicableTo(typeid(Derived))) {
-                // TODO: 记录警告日志
-                // 类型不匹配，但仍尝试应用（允许基类样式应用到派生类）
-            }
-            style_->Apply(this);
-        }
-        
-        this->InvalidateVisual();
-    }
+    );
+    return property;
 }
 
 template<typename Derived>
-void Control<Derived>::SetTemplate(ControlTemplate* tmpl) {
-    if (template_ != tmpl) {
-        template_ = tmpl;
-        // TODO: 重新应用模板
-        this->ApplyTemplate();
+void Control<Derived>::OnStyleChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* control = dynamic_cast<Control<Derived>*>(&d);
+    if (!control) {
+        return;
     }
+    
+    // 取消应用旧样式
+    try {
+        auto* oldStyle = std::any_cast<Style*>(oldValue);
+        if (oldStyle != nullptr) {
+            oldStyle->Unapply(control);
+        }
+    } catch (const std::bad_any_cast&) {
+        // Ignore if cast fails
+    }
+    
+    // 应用新样式
+    try {
+        auto* newStyle = std::any_cast<Style*>(newValue);
+        if (newStyle != nullptr) {
+            if (!newStyle->IsApplicableTo(typeid(Derived))) {
+                // TODO: 记录警告日志
+                // 类型不匹配，但仍尝试应用（允许基类样式应用到派生类）
+            }
+            newStyle->Apply(control);
+        }
+    } catch (const std::bad_any_cast&) {
+        // Ignore if cast fails
+    }
+    
+    control->InvalidateVisual();
+}
+
+template<typename Derived>
+const binding::DependencyProperty& Control<Derived>::TemplateProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Template",
+        typeid(ControlTemplate*),
+        typeid(Control<Derived>),
+        binding::PropertyMetadata{
+            std::any(static_cast<ControlTemplate*>(nullptr)),
+            &Control<Derived>::OnTemplateChanged
+        }
+    );
+    return property;
+}
+
+template<typename Derived>
+void Control<Derived>::OnTemplateChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* control = dynamic_cast<Control<Derived>*>(&d);
+    if (!control) {
+        return;
+    }
+    
+    // 当模板改变时，重新应用模板
+    // 这会清除旧的模板视觉树并创建新的
+    try {
+        auto* newTemplate = std::any_cast<ControlTemplate*>(newValue);
+        if (newTemplate != nullptr) {
+            control->ApplyTemplate();
+        }
+    } catch (const std::bad_any_cast&) {
+        // Ignore if cast fails
+    }
+    
+    // 触发视觉更新
+    control->InvalidateVisual();
 }
 
 } // namespace fk::ui

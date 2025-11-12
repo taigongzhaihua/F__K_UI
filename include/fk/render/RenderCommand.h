@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <variant>
 #include <array>
+#include <vector>
 #include "fk/ui/UIElement.h"
 
 namespace fk::render {
@@ -16,6 +17,8 @@ enum class CommandType : std::uint8_t {
     DrawRectangle,     // 绘制矩形
     DrawText,          // 绘制文本
     DrawImage,         // 绘制图像
+    DrawPolygon,       // 绘制多边形
+    DrawPath,          // 绘制路径
     PushLayer,         // 推入图层（用于透明度/混合）
     PopLayer,          // 弹出图层
 };
@@ -76,6 +79,54 @@ struct LayerPayload {
 };
 
 /**
+ * @brief 多边形绘制载荷
+ */
+struct PolygonPayload {
+    std::vector<ui::Point> points;
+    std::array<float, 4> fillColor;   // RGBA
+    std::array<float, 4> strokeColor; // RGBA
+    float strokeThickness{0.0f};
+    bool filled{true};
+};
+
+/**
+ * @brief 路径段类型
+ */
+enum class PathSegmentType : std::uint8_t {
+    MoveTo,
+    LineTo,
+    QuadraticBezierTo,
+    CubicBezierTo,
+    ArcTo,
+    Close
+};
+
+/**
+ * @brief 路径段数据
+ */
+struct PathSegment {
+    PathSegmentType type;
+    std::vector<ui::Point> points; // 控制点/端点
+    // 用于圆弧的额外参数
+    float radiusX{0.0f};
+    float radiusY{0.0f};
+    float angle{0.0f};
+    bool largeArc{false};
+    bool sweep{false};
+};
+
+/**
+ * @brief 路径绘制载荷
+ */
+struct PathPayload {
+    std::vector<PathSegment> segments;
+    std::array<float, 4> fillColor;   // RGBA
+    std::array<float, 4> strokeColor; // RGBA
+    float strokeThickness{0.0f};
+    bool filled{true};
+};
+
+/**
  * @brief 命令载荷联合体
  */
 using CommandPayload = std::variant<
@@ -85,7 +136,9 @@ using CommandPayload = std::variant<
     RectanglePayload,
     TextPayload,
     ImagePayload,
-    LayerPayload
+    LayerPayload,
+    PolygonPayload,
+    PathPayload
 >;
 
 /**
