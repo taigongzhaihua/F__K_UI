@@ -1,415 +1,458 @@
-# Button - Design Document
+# Button - 设计文档
 
-## Overview
+## 概览
 
-**Module**: UI
+**目的**：提供可点击的交互式控件，响应用户输入并触发操作。
 
-**Purpose**: Interactive control that responds to pointer clicks and fires Click events
+**命名空间**：`fk::ui`
 
-**WPF Equivalent**: `System.Windows.Controls.Button`
+**头文件**：`fk/ui/Button.h`
 
-## Responsibilities
+## 架构
 
-The `Button` class is responsible for:
-
-1. **Click Event Handling**: Detecting and firing click events
-2. **Pointer State Tracking**: Tracking press/hover state
-3. **Visual Feedback**: Providing state to templates for visual changes
-4. **Content Hosting**: Hosting arbitrary content (via ContentControl)
-5. **Accessibility**: Supporting keyboard and assistive technology (future)
-
-## Architecture
-
-### Class Diagram
+### 类层次结构
 
 ```
-┌──────────────────────────────────┐
-│    DependencyObject              │
-└────────────┬─────────────────────┘
-             │
-┌────────────▼─────────────────────┐
-│         Visual                   │
-└────────────┬─────────────────────┘
-             │
-┌────────────▼─────────────────────┐
-│        UIElement                 │
-│  + Input event routing           │
-│  + Layout (Measure/Arrange)      │
-└────────────┬─────────────────────┘
-             │
-┌────────────▼─────────────────────┐
-│    FrameworkElement              │
-│  + Width, Height, Margin         │
-│  + DataContext                   │
-└────────────┬─────────────────────┘
-             │
-┌────────────▼─────────────────────┐
-│      Control<Derived>            │
-│  + Template support              │
-│  + Padding, Border, Background   │
-└────────────┬─────────────────────┘
-             │
-┌────────────▼─────────────────────┐
-│  ContentControl<Button>          │
-│  + Single child content          │
-│  + Content property              │
-└────────────┬─────────────────────┘
-             │
-┌────────────▼─────────────────────┐
-│          Button                  │
-│  + Click event                   │
-│  + isPressed_ state              │
-│  + OnPointerPressed/Released     │
-└──────────────────────────────────┘
+DependencyObject
+    └── Visual
+        └── UIElement
+            └── FrameworkElement
+                └── Control
+                    └── ContentControl<Button>
+                        └── Button
 ```
 
-### Key Components
+### 核心职责
 
-#### State Management
-- **isPressed_**: Boolean flag tracking press state
-- Cleared on pointer release or exit
-- Used to determine if Click should fire
+1. **输入处理** - 鼠标和键盘事件
+2. **视觉状态** - Normal、MouseOver、Pressed、Disabled
+3. **内容承载** - 承载任意 UI 内容
+4. **事件触发** - 触发 Click 事件
+5. **焦点管理** - 键盘导航支持
 
-#### Event Routing
-- Overrides pointer event handlers from UIElement
-- Implements click detection logic
-- Fires Click event through core::Event system
-
-#### CRTP Pattern
-- Uses `ContentControl<Button>` for compile-time polymorphism
-- Enables method chaining and derived-specific behavior
-- Zero runtime overhead vs virtual functions
-
-## Design Decisions
-
-### 1. CRTP vs Virtual Methods
-
-**Decision**: Use CRTP (`ContentControl<Button>`) instead of traditional inheritance
-
-**Rationale**:
-- Compile-time polymorphism (no vtable lookups)
-- Better method chaining ergonomics
-- Type-safe derived class access
-- Consistent with modern C++ patterns
-
-**Trade-offs**:
-- More complex template syntax
-- Longer compile times
-- Cannot store different button types in same container (without type erasure)
-
-### 2. Simple State Tracking
-
-**Decision**: Use single `isPressed_` flag instead of complex state machine
-
-**Rationale**:
-- Button has simple states (normal, hover, pressed)
-- Complex state machine unnecessary
-- Visual state handled by template
-- Easy to understand and maintain
-
-**Alternative Considered**: Enum-based state machine (rejected as over-engineered)
-
-### 3. Click Event Simplicity
-
-**Decision**: Click event has no parameters (`Event<>`)
-
-**Rationale**:
-- Most click handlers don't need event args
-- Simplifies common case
-- Pointer details available through pointer events if needed
-- Matches many modern UI frameworks
-
-**Alternative**: `Event<PointerEventArgs&>` (rejected as verbose for common case)
-
-### 4. No Built-in Command Pattern
-
-**Decision**: Button doesn't include ICommand property (unlike old version)
-
-**Rationale**:
-- Keeps button class simple and focused
-- Command pattern can be layered on top
-- Reduces dependencies
-- Applications can implement command binding if needed
-
-**Migration Path**:
-```cpp
-// Old API (removed):
-// button->Command(myCommand);
-
-// New API:
-button->Click += [command]() {
-    if (command->CanExecute(nullptr)) {
-        command->Execute(nullptr);
-    }
-};
-```
-
-### 5. Content via Inheritance
-
-**Decision**: Content functionality inherited from ContentControl
-
-**Rationale**:
-- Single responsibility principle
-- Code reuse across all content controls
-- Standard pattern across framework
-- Simplifies button-specific logic
-
-## Implementation Details
-
-### Memory Management
-
-#### Ownership
-- Button doesn't own its content (managed by ContentControl parent)
-- Click event connections managed by Event<> system
-- No manual memory management required
-
-#### Lifecycle
-```cpp
-// Creation
-auto button = std::make_shared<Button>();
-
-// Content lifetime managed separately
-auto content = std::make_shared<TextBlock>();
-button->SetContent(content);  // ContentControl manages reference
-
-// Event connection lifetime
-auto conn = button->Click += handler;  // Connection object manages cleanup
-
-// Destruction
-// All references released automatically
-```
-
-### Thread Safety
-
-- Not thread-safe (like all UI elements)
-- Must be accessed from UI thread only
-- Use Dispatcher for cross-thread interaction
-
-### Performance Considerations
-
-#### Event Handling Performance
-- Direct event handler invocation (no routing overhead for Click)
-- Pointer events routed through UIElement tree
-- Minimal overhead per button instance
-
-#### Memory Footprint
-- Base object: ~200 bytes (from DependencyObject)
-- Button-specific: ~8 bytes (`isPressed_` + padding)
-- Content: Variable (depends on content type)
-
-Total: ~210 bytes + content
-
-### State Transitions
-
-```
-         ┌─────────────┐
-         │   Normal    │
-         └──────┬──────┘
-                │
-      PointerEntered
-                │
-         ┌──────▼──────┐
-         │    Hover    │◄────┐
-         └──────┬──────┘     │
-                │             │
-      PointerPressed          │
-                │             │
-         ┌──────▼──────┐     │
-         │   Pressed   │     │
-         └──────┬──────┘     │
-                │             │
-   PointerReleased/Exited    │
-                │             │
-         ┌──────▼──────┐     │
-         │    Fire     │     │
-         │    Click    │     │
-         └──────┬──────┘     │
-                │             │
-                └─────────────┘
-```
-
-## Dependencies
-
-### Direct Dependencies
-- `ContentControl<Button>` - Base class providing content hosting
-- `Control` - Template and styling support
-- `FrameworkElement` - Layout and DataContext
-- `UIElement` - Input events and rendering
-- `core::Event` - Event system
-
-### Indirect Dependencies
-- `PointerEventArgs` - Event argument types
-- `RenderTransform` - Visual transformations
-- Template system - For visual customization
-
-## Usage Patterns
-
-### Pattern 1: Simple Click Handler
+### 类设计
 
 ```cpp
-auto button = std::make_shared<Button>();
-button->Click += []() {
-    // Handle click
-};
-```
-
-### Pattern 2: Contextual Click Handler
-
-```cpp
-auto button = std::make_shared<Button>();
-button->Click += [this, button]() {
-    // Access button and owner context
-    ProcessButtonClick(button);
-};
-```
-
-### Pattern 3: Conditional Behavior
-
-```cpp
-auto button = std::make_shared<Button>();
-
-// Enable/disable based on state
-UpdateUI([button, canSubmit]() {
-    button->SetValue(UIElement::IsEnabledProperty(), canSubmit);
-});
-
-// Click only fires when enabled
-button->Click += [this]() {
-    Submit();
-};
-```
-
-### Pattern 4: Async Operation
-
-```cpp
-button->Click += [this]() {
-    // Disable button during operation
-    button->SetValue(UIElement::IsEnabledProperty(), false);
+class Button : public ContentControl<Button> {
+public:
+    Button();
+    virtual ~Button() = default;
     
-    // Start async operation
-    PerformAsyncOperation([this, button]() {
-        // Re-enable when complete
-        Dispatcher()->InvokeAsync([button]() {
-            button->SetValue(UIElement::IsEnabledProperty(), true);
-        });
-    });
+    // 事件
+    core::Event<> Click;
+    
+protected:
+    // 输入处理
+    void OnMouseEnter(const MouseEventArgs& e) override;
+    void OnMouseLeave(const MouseEventArgs& e) override;
+    void OnMouseDown(const MouseButtonEventArgs& e) override;
+    void OnMouseUp(const MouseButtonEventArgs& e) override;
+    void OnKeyDown(const KeyEventArgs& e) override;
+    void OnKeyUp(const KeyEventArgs& e) override;
+    
+    // 渲染
+    void OnRender(const RenderContext& context) override;
+    
+    // 状态
+    void UpdateVisualState();
+    
+private:
+    bool isMouseOver_;
+    bool isPressed_;
+    bool isKeyPressed_;
 };
 ```
 
-## Testing Considerations
+## 设计决策
 
-### Unit Testing
-- Test click event firing
-- Verify isPressed_ state management
-- Test disabled state (no click when disabled)
-- Test pointer capture scenarios
+### 1. CRTP 模式
 
-### Integration Testing
-- Test with real pointer input
-- Verify visual feedback through template
-- Test in complex layouts
-- Performance test with many buttons
+**决策**：使用 `ContentControl<Button>` 作为基类
 
-### Test Examples
+**理由**：
+- 类型安全的方法链
+- 编译时多态
+- 无 vtable 开销
+- 流畅的 API 设计
+
+**示例**：
 ```cpp
-// Test click event
-TEST(ButtonTest, ClickEventFires) {
+button->Content("点击我")
+      ->Width(100)
+      ->Height(40);  // 返回 Button* 而不是 Control*
+```
+
+### 2. 事件处理
+
+**决策**：直接处理鼠标和键盘事件
+
+**理由**：
+- 完全控制交互行为
+- 可以实现自定义点击逻辑
+- 支持可访问性（键盘激活）
+
+**点击检测**：
+```cpp
+void Button::OnMouseUp(const MouseButtonEventArgs& e) {
+    if (isPressed_ && isMouseOver_) {
+        isPressed_ = false;
+        UpdateVisualState();
+        Click.Invoke();  // 触发 Click 事件
+    }
+}
+```
+
+### 3. 视觉状态管理
+
+**决策**：内部管理视觉状态
+
+**理由**：
+- 简单实现 - 不需要 VisualStateManager（Phase 2）
+- 性能 - 直接状态检查
+- 向后兼容 - 稍后可以迁移到 VSM
+
+**状态**：
+- `Normal` - isMouseOver_ = false, isPressed_ = false
+- `MouseOver` - isMouseOver_ = true, isPressed_ = false
+- `Pressed` - isPressed_ = true
+- `Disabled` - IsEnabled() = false
+
+### 4. 内容模型
+
+**决策**：继承自 ContentControl
+
+**理由**：
+- 可以承载任何 UI 元素
+- 自动布局和渲染
+- 与 WPF Button 一致
+
+**支持的内容**：
+```cpp
+// 文本
+button->Content("保存");
+
+// 图像
+auto image = std::make_shared<Image>();
+button->Content(image);
+
+// 复杂布局
+auto stack = std::make_shared<StackPanel>();
+button->Content(stack);
+```
+
+### 5. 键盘支持
+
+**决策**：支持 Space 和 Enter 键激活
+
+**理由**：
+- 可访问性要求
+- 键盘导航
+- 与桌面应用程序约定一致
+
+**实现**：
+```cpp
+void Button::OnKeyDown(const KeyEventArgs& e) {
+    if (e.Key == Key::Space || e.Key == Key::Enter) {
+        isKeyPressed_ = true;
+        isPressed_ = true;
+        UpdateVisualState();
+    }
+}
+
+void Button::OnKeyUp(const KeyEventArgs& e) {
+    if ((e.Key == Key::Space || e.Key == Key::Enter) && isKeyPressed_) {
+        isKeyPressed_ = false;
+        isPressed_ = false;
+        UpdateVisualState();
+        Click.Invoke();
+    }
+}
+```
+
+## 实现详情
+
+### 鼠标交互状态机
+
+```
+     [Normal]
+        ↓ MouseEnter
+    [MouseOver]
+        ↓ MouseDown
+    [Pressed]
+        ↓ MouseUp (在按钮内)
+     → Click!
+        ↓
+    [MouseOver]
+        ↓ MouseLeave
+     [Normal]
+```
+
+### 键盘交互状态机
+
+```
+     [Normal]
+        ↓ Focus
+     [Focused]
+        ↓ Space/Enter Down
+    [Pressed]
+        ↓ Space/Enter Up
+     → Click!
+        ↓
+     [Focused]
+```
+
+### 渲染逻辑
+
+```cpp
+void Button::OnRender(const RenderContext& context) {
+    // 确定背景色基于状态
+    Color bgColor = GetBackgroundColor();
+    if (!IsEnabled()) {
+        bgColor = Colors::Gray;
+    } else if (isPressed_) {
+        bgColor = DarkenColor(bgColor, 0.2f);
+    } else if (isMouseOver_) {
+        bgColor = LightenColor(bgColor, 0.1f);
+    }
+    
+    // 绘制背景
+    context.FillRectangle(GetBounds(), bgColor);
+    
+    // 绘制边框
+    context.DrawRectangle(GetBounds(), GetBorderBrush(), GetBorderThickness());
+    
+    // 渲染内容（由 ContentControl 处理）
+    ContentControl::OnRender(context);
+}
+```
+
+## 性能考虑
+
+### 事件处理
+
+- **O(1)** - 直接事件调用，无树遍历
+- **最小分配** - 状态标志是布尔值
+- **无动态调度** - CRTP 编译时解析
+
+### 渲染
+
+- **简单几何** - 矩形和边框
+- **无复杂效果** - 基本颜色转换
+- **缓存的背景** - 在状态变更时失效
+
+### 内存占用
+
+```
+Button 实例：
+- ContentControl 基础：~250 字节
+- Button 特定：~20 字节（状态标志）
+- 内容：取决于内容元素
+- 总计：~270 字节 + 内容
+```
+
+## 测试策略
+
+### 单元测试
+
+```cpp
+TEST(ButtonTest, ClickEvent) {
     auto button = std::make_shared<Button>();
     bool clicked = false;
     button->Click += [&clicked]() { clicked = true; };
     
-    // Simulate click
-    PointerEventArgs pressArgs{};
-    button->OnPointerPressed(pressArgs);
-    
-    PointerEventArgs releaseArgs{};
-    button->OnPointerReleased(releaseArgs);
+    // 模拟点击
+    button->OnMouseDown(MouseButtonEventArgs(MouseButton::Left, Point(0, 0)));
+    button->OnMouseUp(MouseButtonEventArgs(MouseButton::Left, Point(0, 0)));
     
     EXPECT_TRUE(clicked);
 }
 
-// Test disabled button
-TEST(ButtonTest, DisabledButtonNoClick) {
+TEST(ButtonTest, NoClickWhenDisabled) {
     auto button = std::make_shared<Button>();
-    button->SetValue(UIElement::IsEnabledProperty(), false);
+    button->IsEnabled(false);
     
     bool clicked = false;
     button->Click += [&clicked]() { clicked = true; };
     
-    // Simulate click
-    SimulateClick(button);
+    button->OnMouseDown(MouseButtonEventArgs(MouseButton::Left, Point(0, 0)));
+    button->OnMouseUp(MouseButtonEventArgs(MouseButton::Left, Point(0, 0)));
     
-    EXPECT_FALSE(clicked);  // Should not fire when disabled
+    EXPECT_FALSE(clicked);
+}
+
+TEST(ButtonTest, MouseOverState) {
+    auto button = std::make_shared<Button>();
+    
+    EXPECT_FALSE(button->IsMouseOver());
+    
+    button->OnMouseEnter(MouseEventArgs(Point(0, 0)));
+    EXPECT_TRUE(button->IsMouseOver());
+    
+    button->OnMouseLeave(MouseEventArgs(Point(0, 0)));
+    EXPECT_FALSE(button->IsMouseOver());
 }
 ```
 
-## Known Limitations
+### 集成测试
 
-1. **No Repeat Button**: No built-in support for continuous clicking while pressed
-2. **No Keyboard Activation**: Space/Enter key activation not yet implemented
-3. **No Command Binding**: ICommand pattern not built-in (by design)
-4. **No Menu Button**: Dropdown/popup functionality requires custom implementation
-
-## Future Enhancements
-
-### Planned Features
-1. **Keyboard Support**: Space and Enter key activation
-2. **Accessibility**: ARIA roles and accessible names
-3. **Focus Visual**: Visual indication when button has keyboard focus
-4. **Auto-Repeat**: RepeatButton variant for continuous clicks
-5. **Drop-Down**: DropDownButton and SplitButton variants
-
-### Possible Improvements
-1. **Command Support**: Optional ICommand binding helper
-2. **Gesture Recognition**: Long press, double click support
-3. **Touch Optimization**: Better touch target sizing
-4. **Animation Hooks**: Callbacks for animation integration
-
-## Migration Notes
-
-### From Old Button API
-
-**Old** (removed):
 ```cpp
-auto button = ui::button()
-    ->Content("Click Me")
-    ->Background("#0078D4")
-    ->OnClick([](auto&) { /* handler */ });
+TEST(ButtonTest, WithContent) {
+    auto button = std::make_shared<Button>();
+    auto textBlock = std::make_shared<TextBlock>();
+    textBlock->Text("点击我");
+    
+    button->Content(textBlock);
+    
+    EXPECT_EQ(button->GetContent(), textBlock);
+}
+
+TEST(ButtonTest, KeyboardActivation) {
+    auto button = std::make_shared<Button>();
+    button->Focus();
+    
+    bool clicked = false;
+    button->Click += [&clicked]() { clicked = true; };
+    
+    button->OnKeyDown(KeyEventArgs(Key::Space));
+    button->OnKeyUp(KeyEventArgs(Key::Space));
+    
+    EXPECT_TRUE(clicked);
+}
 ```
 
-**New** (current):
+## 使用模式
+
+### 命令模式
+
 ```cpp
-auto button = std::make_shared<Button>();
+class ICommand {
+public:
+    virtual void Execute() = 0;
+    virtual bool CanExecute() = 0;
+};
 
-auto text = std::make_shared<TextBlock>();
-text->SetText("Click Me");
-button->SetContent(text);
+class SaveCommand : public ICommand {
+    void Execute() override { /* 保存逻辑 */ }
+    bool CanExecute() override { return hasChanges_; }
+};
 
-button->SetValue(Control::BackgroundProperty(), Color{0.0f, 0.47f, 0.83f, 1.0f});
+auto saveCommand = std::make_shared<SaveCommand>();
+button->Click += [saveCommand]() {
+    if (saveCommand->CanExecute()) {
+        saveCommand->Execute();
+    }
+};
 
-button->Click += []() {
-    /* handler */
+// 绑定 IsEnabled 到 CanExecute
+button->SetBinding(Button::IsEnabledProperty(),
+                  Binding("CanExecute").Source(saveCommand));
+```
+
+### 异步操作
+
+```cpp
+button->Click += [button]() {
+    button->IsEnabled(false);
+    button->Content("处理中...");
+    
+    std::thread([button]() {
+        PerformLongRunningOperation();
+        
+        // 返回到 UI 线程
+        dispatcher->InvokeAsync([button]() {
+            button->IsEnabled(true);
+            button->Content("完成");
+        });
+    }).detach();
 };
 ```
 
-### Breaking Changes
-- Fluent API removed (use standard setters)
-- Command property removed (use Click event + manual command)
-- Convenience methods removed (use dependency properties)
+### 带确认的对话框
 
-## Performance Benchmarks
+```cpp
+button->Click += [window]() {
+    auto dialog = std::make_shared<ConfirmDialog>();
+    dialog->Message("确定要删除吗？");
+    
+    dialog->Confirmed += []() {
+        PerformDelete();
+    };
+    
+    window->ShowDialog(dialog);
+};
+```
 
-Typical performance characteristics:
+## 未来增强
 
-- **Event Handler Invocation**: ~10-50ns
-- **State Update**: ~100-200ns
-- **Complete Click Cycle**: ~500ns
-- **Memory per Button**: ~210 bytes + content
+### 1. VisualStateManager 集成
 
-## See Also
+```cpp
+class Button : public ContentControl<Button> {
+protected:
+    void GoToState(const std::string& stateName, bool useTransitions);
+};
 
-- [API Documentation](../../API/UI/Button.md)
-- [ContentControl Design](ContentControl.md)
-- [Control Design](Control.md)
-- [Event System Design](../Core/Event.md)
-- [Input Manager Design](InputManager.md)
+// 状态定义在 ControlTemplate 中
+```
+
+### 2. ControlTemplate 支持
+
+```cpp
+auto template = std::make_shared<ControlTemplate>();
+template->SetVisualTree([]() {
+    auto border = std::make_shared<Border>();
+    auto contentPresenter = std::make_shared<ContentPresenter>();
+    border->SetChild(contentPresenter);
+    return border;
+});
+
+button->Template(template);
+```
+
+### 3. 默认按钮支持
+
+```cpp
+button->IsDefault(true);  // Enter 激活此按钮
+button->IsCancel(true);   // Escape 激活此按钮
+```
+
+### 4. 触摸支持
+
+```cpp
+void Button::OnTouchDown(const TouchEventArgs& e);
+void Button::OnTouchUp(const TouchEventArgs& e);
+void Button::OnTouchMove(const TouchEventArgs& e);
+```
+
+### 5. 动画过渡
+
+```cpp
+// 状态变更之间的平滑动画
+button->StateChangeAnimation(
+    std::make_shared<ColorAnimation>(
+        Colors::Gray, Colors::Blue, 200ms
+    )
+);
+```
+
+## 可访问性
+
+### 当前支持
+
+- 键盘激活（Space/Enter）
+- 焦点管理
+- IsEnabled 状态
+
+### 未来支持
+
+- 屏幕阅读器支持
+- 高对比度主题
+- 可自定义的激活键
+- ARIA 角色和属性
+
+## 另请参阅
+
+- [API 文档](../../API/UI/Button.md)
+- [ContentControl 设计](ContentControl.md)
+- [Control 设计](Control.md)
+- [事件系统设计](../../Designs/EventSystem.md)
