@@ -32,22 +32,35 @@
 - 制定实施计划
 - 明确成功标准
 
-### 步骤 2: Style DependencyProperty (进行中)
+### 步骤 2: Style DependencyProperty ✅
 将 Style 从普通成员改为 DependencyProperty
+- ✅ 添加 StyleProperty() 静态方法
+- ✅ 实现 OnStyleChanged 回调
+- ✅ 自动应用/撤销样式
 
-### 步骤 3: ImplicitStyle 查找
+### 步骤 3: ImplicitStyle 查找 ✅
 实现从 ResourceDictionary 自动查找样式
+- ✅ 实现 ApplyImplicitStyle() 方法
+- ✅ 实现 FindResource() 方法（支持向上查找）
+- ✅ 在 OnLoaded() 中自动应用隐式样式
+- ✅ 使用类型名称作为资源键
 
-### 步骤 4: 值优先级集成
+### 步骤 4: 值优先级集成 (下一步)
 确保 Local > Style > Default
+- [ ] 验证依赖属性值优先级
+- [ ] 测试Local值覆盖Style值
 
 ### 步骤 5: 测试和验证
 编写测试用例验证功能
+- [ ] 测试显式Style设置
+- [ ] 测试ImplicitStyle自动应用
+- [ ] 测试资源查找（向上遍历可视树）
+- [ ] 测试值优先级
 
 ## 成功标准
 
-- [ ] Style 是 DependencyProperty
-- [ ] ImplicitStyle 自动查找和应用
+- [x] Style 是 DependencyProperty
+- [x] ImplicitStyle 自动查找和应用
 - [ ] Local 值正确覆盖 Style 值
 - [ ] 所有测试通过
 

@@ -29,7 +29,12 @@ class Brush;
 template<typename Derived>
 class Control : public FrameworkElement<Derived> {
 public:
-    Control() = default;
+    Control() {
+        // 订阅Loaded事件以在控件加载时应用隐式样式
+        this->Loaded += [this]() {
+            this->OnLoaded();
+        };
+    }
     virtual ~Control() = default;
 
     // ========== 依赖属性声明 ==========
@@ -81,17 +86,86 @@ public:
 
     // ========== 控件样式 ==========
     
-    Style* GetStyle() const {
-        return this->template GetValue<Style*>(StyleProperty());
+    fk::ui::Style* GetStyle() const {
+        return this->template GetValue<fk::ui::Style*>(StyleProperty());
     }
-    void SetStyle(Style* style) {
+    void SetStyle(fk::ui::Style* style) {
         this->SetValue(StyleProperty(), style);
     }
-    Derived* Style(Style* style) {
+    Derived* StyleProperty(fk::ui::Style* style) {
         SetStyle(style);
         return static_cast<Derived*>(this);
     }
-    Style* Style() const { return GetStyle(); }
+    fk::ui::Style* StyleValue() const { return GetStyle(); }
+    
+    /**
+     * @brief 查找并应用隐式样式
+     * 
+     * 在控件初始化时自动调用，从ResourceDictionary中查找类型匹配的样式
+     * 查找规则：
+     * 1. 先在本地Resources中查找类型名称对应的样式
+     * 2. 如果未找到，向上遍历可视树查找父元素的Resources
+     * 3. 最后查找Application的Resources
+     */
+    void ApplyImplicitStyle() {
+        // 如果已经显式设置了Style，则不应用隐式样式
+        if (GetStyle() != nullptr) {
+            return;
+        }
+        
+        // 获取控件类型名称作为资源键
+        std::string typeName = typeid(Derived).name();
+        // 移除名称中的命名空间前缀，只保留类名
+        auto pos = typeName.find_last_of(':');
+        if (pos != std::string::npos) {
+            typeName = typeName.substr(pos + 1);
+        }
+        
+        // 查找隐式样式
+        auto* implicitStyle = FindResource<fk::ui::Style*>(typeName);
+        if (implicitStyle != nullptr && implicitStyle->IsApplicableTo(typeid(Derived))) {
+            SetStyle(implicitStyle);
+        }
+    }
+    
+    /**
+     * @brief 查找资源
+     * 
+     * 从当前元素的Resources开始，向上遍历可视树查找资源
+     * 
+     * @param key 资源键
+     * @return 找到的资源，未找到返回默认值
+     */
+    template<typename T>
+    T FindResource(const std::string& key) {
+        // 1. 在自身Resources中查找
+        auto& myResources = this->GetResources();
+        if (myResources.Contains(key)) {
+            return myResources.template Get<T>(key);
+        }
+        
+        // 2. 向上遍历可视树查找父元素的Resources
+        auto* parent = this->GetVisualParent();
+        while (parent != nullptr) {
+            // 尝试将parent转换为FrameworkElement以访问Resources
+            // 使用基类类型而不是Derived，因为父节点可能是不同类型
+            auto* frameworkParent = dynamic_cast<FrameworkElement<Derived>*>(parent);
+            if (frameworkParent) {
+                auto& parentResources = frameworkParent->GetResources();
+                if (parentResources.Contains(key)) {
+                    return parentResources.template Get<T>(key);
+                }
+            }
+            parent = parent->GetVisualParent();
+        }
+        
+        // 3. 查找Application的Resources（TODO: 需要Application单例支持）
+        // if (Application::Current() != nullptr) {
+        //     return Application::Current()->GetResources().template Get<T>(key);
+        // }
+        
+        return T{};  // 未找到，返回默认值
+    }
     
     // ========== 控件模板 ==========
     
@@ -318,6 +392,16 @@ protected:
         const std::any& oldValue,
         const std::any& newValue
     );
+    
+    /**
+     * @brief 控件加载时的钩子函数
+     * 
+     * 在控件添加到可视树并完成初始化后调用
+     * 用于应用隐式样式
+     */
+    virtual void OnLoaded() {
+        ApplyImplicitStyle();
+    }
 
 private:
     ControlTemplate* template_{nullptr};
