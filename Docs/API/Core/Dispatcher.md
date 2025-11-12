@@ -1,62 +1,62 @@
 # Dispatcher
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**状态**：✅ 已完全实现
 
-**Purpose**: Thread-safe message dispatching and task execution with priority queuing
+**目的**：线程安全的消息调度和任务执行，具有优先级队列
 
-**Namespace**: `fk::core`
+**命名空间**：`fk::core`
 
-**Inheritance**: `std::enable_shared_from_this<Dispatcher>`
+**继承**：`std::enable_shared_from_this<Dispatcher>`
 
-**Header**: `fk/core/Dispatcher.h`
+**头文件**：`fk/core/Dispatcher.h`
 
-## Description
+## 描述
 
-`Dispatcher` provides a thread-safe mechanism for queuing and executing tasks on a specific thread. It's the foundation for the UI thread model in F__K_UI, ensuring all UI operations occur on the correct thread.
+`Dispatcher` 提供了一种线程安全的机制来在特定线程上排队和执行任务。它是 F__K_UI 中 UI 线程模型的基础，确保所有 UI 操作都在正确的线程上发生。
 
-## Public Interface
+## 公共接口
 
-### Task Posting
+### 任务投递
 
 ```cpp
 void Post(Task task, Priority priority = Priority::Normal);
 DispatcherOperation BeginInvoke(Task task, Priority priority = Priority::Normal);
 DispatcherOperation PostDelayed(Task task, std::chrono::milliseconds delay, Priority priority = Priority::Normal);
-void Send(Task task);  // Synchronous
+void Send(Task task);  // 同步
 ```
 
-### Message Loop
+### 消息循环
 
 ```cpp
-void Run();  // Start message loop
-void Shutdown();  // Stop message loop
+void Run();  // 启动消息循环
+void Shutdown();  // 停止消息循环
 ```
 
-### Thread Affinity
+### 线程关联
 
 ```cpp
 bool HasThreadAccess() const;
 void VerifyAccess() const;
 ```
 
-## Usage Examples
+## 使用示例
 
 ```cpp
 auto dispatcher = std::make_shared<Dispatcher>("UI");
 
-// Post async task
+// 投递异步任务
 dispatcher->Post([]() {
-    std::cout << "On UI thread" << std::endl;
+    std::cout << "在 UI 线程上" << std::endl;
 });
 
-// Check thread
+// 检查线程
 if (!dispatcher->HasThreadAccess()) {
     dispatcher->Post([this]() { UpdateUI(); });
 }
 ```
 
-## See Also
+## 另请参阅
 
-- [Design Document](../../Design/Core/Dispatcher.md)
+- [设计文档](../../Design/Core/Dispatcher.md)

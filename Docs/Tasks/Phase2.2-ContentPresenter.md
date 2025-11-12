@@ -1,130 +1,49 @@
-# Phase 2.2: ContentPresenter Implementation
+# Phase 2.2: ContentPresenter 实现
 
-## Overview
+## 概览
 
-Implement ContentPresenter class to enable ControlTemplate functionality. ContentPresenter is the key component that displays the Content of a ContentControl within a ControlTemplate.
+实现 ContentPresenter 类以启用 ControlTemplate 功能。ContentPresenter 是在 ControlTemplate 内显示 ContentControl 内容的关键组件。
 
-## Status
+## 目标
 
-✅ **COMPLETED**
+1. 实现 ContentPresenter 类
+2. 在 ControlTemplate 应用期间集成
+3. 支持内容呈现和模板绑定
 
-## Implementation Details
+## 实现详情
 
-### Created Files
-
-1. **`include/fk/ui/ContentPresenter.h`**
-   - Full header-only implementation
-   - CRTP-based template class
-   - Inherits from FrameworkElement
-
-### Key Features
-
-#### 1. Dependency Properties
-- `ContentProperty`: Holds the content to display
-- `ContentTemplateProperty`: Template for non-UIElement content
-
-#### 2. Content Display Logic
-The `UpdateContent()` method implements smart content rendering:
-1. **Direct UIElement**: If Content is UIElement*, display it directly
-2. **Template Application**: If Content is data + ContentTemplate exists, instantiate template
-3. **Fallback**: No display if neither condition is met
-
-#### 3. Visual Child Management
-- Single visual child support
-- Automatic ownership management
-- Proper visual tree integration
-
-### Technical Implementation
+### ContentPresenter 类
 
 ```cpp
-template<typename Derived = void>
-class ContentPresenter : public FrameworkElement<...> {
+class ContentPresenter : public FrameworkElement<ContentPresenter> {
 public:
-    // Dependency Properties
-    static const binding::DependencyProperty& ContentProperty();
-    static const binding::DependencyProperty& ContentTemplateProperty();
+    // 内容属性
+    static const DependencyProperty& ContentProperty();
+    static const DependencyProperty& ContentTemplateProperty();
     
-    // Content management
-    std::any GetContent() const;
-    void SetContent(const std::any& value);
-    
-    // Template management  
-    DataTemplate* GetContentTemplate() const;
-    void SetContentTemplate(DataTemplate* tmpl);
+    // 呈现内容
+    void RenderContent(const RenderContext& context);
     
 protected:
-    virtual void UpdateContent();  // Core content update logic
-    void SetVisualChild(UIElement* child);
-    
-private:
-    UIElement* visualChild_{nullptr};
+    void OnContentChanged(const DependencyPropertyChangedEventArgs& e);
+    void ApplyContentTemplate();
 };
 ```
 
-### Integration with ControlTemplate
+## 集成步骤
 
-ContentPresenter enables templates like:
+1. 创建 ContentPresenter 类
+2. 实现内容呈现逻辑
+3. 集成到 ControlTemplate.Apply()
+4. 添加测试用例
 
-```cpp
-// Button with custom ControlTemplate
-auto* buttonTemplate = new ControlTemplate();
-buttonTemplate->SetFactory([]() -> UIElement* {
-    return (new Border())
-        ->Background(Color{0.5f, 0.5f, 0.5f, 1.0f})
-        ->Padding(Thickness{10, 5})
-        ->Child(new ContentPresenter());  // Displays button's Content
-});
+## 成功标准
 
-button->SetTemplate(buttonTemplate);
-```
+- [ ] ContentPresenter 类完全实现
+- [ ] 与 ControlTemplate 集成
+- [ ] 内容正确呈现
+- [ ] 所有测试通过
 
-### Usage with TemplateBinding
+## 状态
 
-```cpp
-// In future: TemplateBinding support
-auto* presenter = new ContentPresenter();
-presenter->SetBinding(
-    ContentPresenter::ContentProperty(),
-    TemplateBinding{ContentControl::ContentProperty()}
-);
-```
-
-## Benefits Achieved
-
-✅ **ControlTemplate Support**: Enables custom control visuals  
-✅ **Content Flexibility**: Handles both UIElement and data content  
-✅ **Template Reuse**: DataTemplate can be applied to data  
-✅ **Type Safety**: Uses std::any with type checking  
-✅ **WPF Compatible**: Matches WPF ContentPresenter behavior  
-
-## Next Steps
-
-### Phase 2.2.1: Integrate ContentPresenter with Control
-- Add Template property to Control class
-- Implement template application logic
-- Handle template changes
-
-### Phase 2.2.2: TemplateBinding Support (Future)
-- Implement TemplateBinding expression
-- Auto-bind ContentPresenter properties to templated parent
-- Support two-way binding where appropriate
-
-### Phase 2.2.3: Testing
-- Unit tests for ContentPresenter
-- Integration tests with ContentControl
-- Template application tests
-
-## Notes
-
-- ContentPresenter is header-only (template class)
-- Uses CRTP pattern for type safety
-- Automatically updates on Loaded event
-- Manages visual child lifecycle properly
-- Ready for integration with Control class
-
-## Related Files
-
-- `include/fk/ui/ContentPresenter.h` - New implementation
-- `include/fk/ui/ContentControl.h` - Uses ContentPresenter in templates
-- `include/fk/ui/ControlTemplate.h` - ContentPresenter instantiated here
-- `include/fk/ui/Control.h` - Will add Template property next
+**进行中** - 基础实现完成，等待集成测试

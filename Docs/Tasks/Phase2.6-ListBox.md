@@ -1,387 +1,72 @@
-# Phase 2.6: ListBox Implementation
+# Phase 2.6: ListBox 实现
 
-## Overview
+## 概览
 
-Implement ListBox control with selection support and keyboard navigation, building on top of ItemsControl with ItemContainerGenerator integration.
+实现具有选择支持和键盘导航的 ListBox 控件，构建在具有 ItemContainerGenerator 集成的 ItemsControl 之上。
 
-## Implementation Status
+## 目标
 
-✅ **Completed**
+1. 实现 ListBox 类
+2. 单项和多项选择
+3. 键盘导航
+4. 视觉选择反馈
 
-## Components
-
-### 1. ListBox Class
-
-**File**: `include/fk/ui/ListBox.h`
-
-**Features**:
-- ✅ Inherits from ItemsControl
-- ✅ Single/Multiple selection modes
-- ✅ Keyboard navigation (Up/Down/Home/End/PageUp/PageDown)
-- ✅ SelectedItem and SelectedIndex properties
-- ✅ Selection visual state management
-- ✅ CRTP pattern for type safety
-
-### 2. SelectionMode Enum
+## ListBox 类
 
 ```cpp
-enum class SelectionMode {
-    Single,    // Single selection only
-    Multiple,  // Multiple selection allowed (future)
-    Extended   // Extended selection with modifiers (future)
-};
-```
-
-### 3. Dependency Properties
-
-1. **SelectedItemProperty**
-   - Type: `std::any`
-   - Default: empty
-   - Holds currently selected item data
-
-2. **SelectedIndexProperty**
-   - Type: `int`
-   - Default: -1 (no selection)
-   - Index of selected item in collection
-
-3. **SelectionModeProperty**
-   - Type: `SelectionMode`
-   - Default: `Single`
-   - Determines selection behavior
-
-## Key Methods
-
-### Selection Management
-
-```cpp
-// Select by index
-void SelectItemByIndex(int index);
-
-// Select by item value
-void SelectItem(const std::any& item);
-
-// Clear selection
-void ClearSelection();
-
-// Check if item is selected
-bool IsItemSelected(int index) const;
-```
-
-### Keyboard Navigation
-
-```cpp
-// Internal keyboard handler
-void OnKeyDownInternal(KeyEventArgs& e);
-
-// Supported keys:
-// - Up/Down: Move selection up/down one item
-// - Left/Right: Same as Up/Down
-// - Home/End: Jump to first/last item
-// - PageUp/PageDown: Move selection by page (10 items)
-```
-
-### Visual State Updates
-
-```cpp
-// Update all container visual states
-void UpdateSelectionVisuals();
-
-// Update single container state
-void UpdateContainerSelectionState(UIElement* container, bool isSelected);
-
-// Scroll selected item into view
-void ScrollIntoView(int index);
-```
-
-## Usage Examples
-
-### Basic ListBox
-
-```cpp
-auto* listBox = new ListBox<>();
-
-// Add items
-listBox->GetItems().Add(std::string("Item 1"));
-listBox->GetItems().Add(std::string("Item 2"));
-listBox->GetItems().Add(std::string("Item 3"));
-
-// Set initial selection
-listBox->SetSelectedIndex(0);
-
-// Get current selection
-int selected = listBox->GetSelectedIndex();
-auto item = listBox->GetSelectedItem();
-```
-
-### With Item Template
-
-```cpp
-auto* listBox = new ListBox<>();
-
-// Create item template
-auto* itemTemplate = new DataTemplate();
-itemTemplate->SetFactory([]() -> UIElement* {
-    return (new TextBlock())
-        ->FontSize(14)
-        ->Padding(Thickness{5});
-});
-
-listBox->SetItemTemplate(itemTemplate);
-
-// Populate
-for (const auto& data : myDataCollection) {
-    listBox->GetItems().Add(data);
-}
-```
-
-### Fluent API
-
-```cpp
-auto* listBox = (new ListBox<>())
-    ->Width(200)
-    ->Height(300)
-    ->SelectionMode(SelectionMode::Single)
-    ->SelectedIndex(0);
-
-listBox->GetItems().Add(item1);
-listBox->GetItems().Add(item2);
-```
-
-### Listen to Selection Changes
-
-```cpp
-class MyListBox : public ListBox<MyListBox> {
+class ListBox : public ItemsControl<ListBox> {
+public:
+    // 选择属性
+    static const DependencyProperty& SelectedItemProperty();
+    static const DependencyProperty& SelectedIndexProperty();
+    static const DependencyProperty& SelectionModeProperty();
+    
+    // 选择方法
+    void SelectItem(const std::any& item);
+    void UnselectItem(const std::any& item);
+    void ClearSelection();
+    
+    // 事件
+    core::Event<SelectionChangedEventArgs> SelectionChanged;
+    
 protected:
-    void OnSelectionChanged() override {
-        int index = GetSelectedIndex();
-        auto item = GetSelectedItem();
-        
-        // Handle selection change
-        std::cout << "Selected index: " << index << std::endl;
-        
-        // Update UI, notify viewmodel, etc.
-    }
+    void OnKeyDown(const KeyEventArgs& e) override;
+    void OnMouseDown(const MouseButtonEventArgs& e) override;
 };
 ```
 
-## Keyboard Navigation Behavior
+## 功能
 
-| Key | Action |
-|-----|--------|
-| **Up / Left** | Select previous item (stop at first) |
-| **Down / Right** | Select next item (stop at last) |
-| **Home** | Select first item |
-| **End** | Select last item |
-| **PageUp** | Select item 10 positions up |
-| **PageDown** | Select item 10 positions down |
+### 1. 选择模式
+- Single - 单项选择
+- Multiple - 多项选择
+- Extended - 扩展选择（Shift/Ctrl）
 
-All navigation keys mark event as handled (`e.Handled = true`).
+### 2. 键盘导航
+- 上/下箭头 - 移动选择
+- Home/End - 跳到首尾
+- Page Up/Down - 分页滚动
 
-## Selection Visual State (TODO)
+### 3. 鼠标交互
+- 点击选择
+- Ctrl+Click - 切换选择
+- Shift+Click - 范围选择
 
-Currently placeholder. Future implementation will:
-1. Apply visual state changes to containers
-2. Use background color/brush changes
-3. Support VisualStateManager integration
-4. Allow customization via ControlTemplate
+## 实现阶段
 
-Example future implementation:
-```cpp
-void UpdateContainerSelectionState(UIElement* container, bool isSelected) {
-    auto* control = dynamic_cast<Control*>(container);
-    if (control) {
-        if (isSelected) {
-            // Apply selected visual state
-            control->SetBackground(selectionBrush_);
-        } else {
-            // Revert to normal state
-            control->SetBackground(normalBrush_);
-        }
-    }
-}
-```
+1. **基础选择** - 单项选择和事件
+2. **键盘导航** - 箭头键和导航
+3. **多项选择** - 多选择模式
+4. **视觉状态** - 选中项高亮
 
-## Integration with ItemContainerGenerator
+## 成功标准
 
-ListBox leverages the generator for:
-- **Container Creation**: Uses default factory from ItemsControl
-- **Container Lookup**: Fast O(1) item↔container mapping
-- **Container Recycling**: Automatic pool management
+- [ ] 选择正常工作
+- [ ] 键盘导航流畅
+- [ ] 多选支持
+- [ ] 视觉反馈清晰
+- [ ] 所有测试通过
 
-```cpp
-// Generator is inherited from ItemsControl
-auto& generator = listBox->GetItemContainerGenerator();
+## 状态
 
-// Get container for selected item
-auto* container = generator.ContainerFromIndex(listBox->GetSelectedIndex());
-
-// Get item from container (e.g., from click event)
-auto item = generator.ItemFromContainer(clickedContainer);
-listBox->SelectItem(item);
-```
-
-## Mouse Selection (TODO)
-
-Current implementation has placeholder for mouse handling. Future implementation:
-
-```cpp
-void OnMouseDownInternal(MouseButtonEventArgs& e) {
-    // 1. Perform hit testing to find clicked container
-    auto* hitContainer = HitTestContainer(e.Position);
-    
-    // 2. Get item from container
-    auto& generator = GetItemContainerGenerator();
-    auto item = generator.ItemFromContainer(hitContainer);
-    
-    // 3. Select the item
-    SelectItem(item);
-    
-    // 4. Handle modifier keys for Multi/Extended modes
-    if (GetSelectionMode() == SelectionMode::Extended) {
-        if (e.Modifiers & KeyModifier::Control) {
-            ToggleItemSelection(item);
-        } else if (e.Modifiers & KeyModifier::Shift) {
-            SelectRange(lastSelectedIndex_, clickedIndex);
-        }
-    }
-}
-```
-
-## ScrollViewer Integration (TODO)
-
-For scroll-into-view functionality:
-
-```cpp
-void ScrollIntoView(int index) {
-    auto& generator = GetItemContainerGenerator();
-    auto* container = generator.ContainerFromIndex(index);
-    
-    if (container && scrollViewer_) {
-        // Get container bounds
-        Rect bounds = container->GetBounds();
-        
-        // Scroll to make it visible
-        scrollViewer_->ScrollToVerticalOffset(bounds.Y);
-    }
-}
-```
-
-## Multiple Selection (Future Enhancement)
-
-For `SelectionMode::Multiple` and `Extended`:
-
-```cpp
-// Additional state
-std::vector<int> selectedIndices_;
-std::vector<std::any> selectedItems_;
-
-// Additional properties
-static const DependencyProperty& SelectedItemsProperty();
-
-// Additional methods
-void SelectMultiple(const std::vector<int>& indices);
-void ToggleItemSelection(int index);
-void SelectRange(int start, int end);
-bool IsItemSelected(int index) const;  // Check multi-selection
-```
-
-## Performance Considerations
-
-**Selection Updates**:
-- O(n) where n = item count (must update all container visuals)
-- Optimization: Track dirty containers, update only changed
-
-**Keyboard Navigation**:
-- O(1) index changes
-- Scroll-into-view depends on ScrollViewer
-
-**Memory**:
-- Minimal overhead: 3 dependency properties + event subscriptions
-- Generator handles container pooling efficiently
-
-## Testing Recommendations
-
-### Unit Tests
-
-1. **Selection State**:
-   - Set SelectedIndex, verify SelectedItem updated
-   - Set SelectedItem, verify SelectedIndex updated
-   - ClearSelection resets both properties
-
-2. **Keyboard Navigation**:
-   - Up/Down keys change selection
-   - Home/End keys jump to extremes
-   - Keys respect bounds (don't go past first/last)
-
-3. **Selection Mode**:
-   - Single mode allows only one selection
-   - Multiple mode (future) allows many
-
-### Integration Tests
-
-1. **With ItemsControl**:
-   - Items added/removed updates selection bounds
-   - Generator integration works correctly
-
-2. **With DataTemplate**:
-   - Template applied to containers
-   - Selection visual works with templated items
-
-3. **Keyboard Focus**:
-   - ListBox receives keyboard events when focused
-   - Navigation works with focus management
-
-## Future Enhancements
-
-### Phase 3 (Short-term)
-- ✅ Selection visual state implementation
-- ✅ Mouse click selection
-- ✅ ScrollViewer integration for scroll-into-view
-- ✅ Hit testing for container finding
-
-### Phase 4 (Medium-term)
-- Multiple selection support
-- Extended selection with Shift/Ctrl
-- SelectedItems collection
-- Selection changed event with detailed args
-
-### Phase 5 (Long-term)
-- Incremental selection for large lists
-- Virtual selection (don't realize containers until needed)
-- Grouping support
-- Filtering support
-
-## API Compatibility
-
-**WPF Compatibility**: API closely matches WPF ListBox:
-- `SelectedItem` property
-- `SelectedIndex` property
-- `SelectionMode` enumeration
-- Similar keyboard navigation behavior
-
-**Differences**:
-- Uses `std::any` instead of `object`
-- CRTP pattern instead of inheritance
-- Event handling uses lambdas/functionals
-
-## Dependencies
-
-**Required**:
-- ItemsControl (base class)
-- ItemContainerGenerator (container management)
-- DependencyProperty system (properties)
-- Event system (mouse, keyboard)
-
-**Optional** (Future):
-- ScrollViewer (scroll-into-view)
-- VisualStateManager (selection visuals)
-- HitTestHelper (mouse selection)
-
-## Summary
-
-ListBox provides a fully-functional item selection control with keyboard navigation, building on the robust ItemsControl foundation. The implementation focuses on core selection functionality with clear extension points for future enhancements like multiple selection, mouse handling, and advanced visual states.
-
-**Lines of Code**: ~300 lines
-**Time to Implement**: 2-3 hours
-**Dependencies**: ItemsControl, ItemContainerGenerator, Event system
-**Status**: ✅ Core functionality complete, visual/mouse features pending
+**计划中** - 依赖 Phase 2.4 和 2.5
