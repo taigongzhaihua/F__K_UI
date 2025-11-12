@@ -83,6 +83,11 @@ public:
      * @brief 样式依赖属性
      */
     static const binding::DependencyProperty& StyleProperty();
+    
+    /**
+     * @brief 控件模板依赖属性
+     */
+    static const binding::DependencyProperty& TemplateProperty();
 
     // ========== 控件样式 ==========
     
@@ -169,13 +174,17 @@ public:
     
     // ========== 控件模板 ==========
     
-    ControlTemplate* GetTemplate() const { return template_; }
-    void SetTemplate(ControlTemplate* tmpl);
+    ControlTemplate* GetTemplate() const {
+        return this->template GetValue<ControlTemplate*>(TemplateProperty());
+    }
+    void SetTemplate(ControlTemplate* tmpl) {
+        this->SetValue(TemplateProperty(), tmpl);
+    }
     Derived* Template(ControlTemplate* tmpl) {
         SetTemplate(tmpl);
         return static_cast<Derived*>(this);
     }
-    ControlTemplate* Template() const { return GetTemplate(); }
+    ControlTemplate* TemplateValue() const { return GetTemplate(); }
 
     // ========== 外观属性 ==========
     
@@ -397,15 +406,46 @@ protected:
      * @brief 控件加载时的钩子函数
      * 
      * 在控件添加到可视树并完成初始化后调用
-     * 用于应用隐式样式
+     * 用于应用隐式样式和模板
      */
     virtual void OnLoaded() {
         ApplyImplicitStyle();
+        ApplyImplicitTemplate();
+    }
+    
+    /**
+     * @brief Template属性变更回调
+     */
+    static void OnTemplateChanged(
+        binding::DependencyObject& d,
+        const binding::DependencyProperty& prop,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+    
+    /**
+     * @brief 应用隐式模板
+     * 
+     * 如果控件没有显式设置模板，尝试从默认样式或Resources中查找
+     */
+    void ApplyImplicitTemplate() {
+        // 如果已经有显式模板，不需要应用隐式模板
+        if (GetTemplate() != nullptr) {
+            return;
+        }
+        
+        // TODO: 从Style中获取模板
+        // 如果Style包含Template的Setter，它会在Style.Apply时自动设置
+        
+        // TODO: 从Resources中查找默认模板
+        // std::string templateKey = GetDefaultStyleKey().name() + "Template";
+        // auto* implicitTemplate = FindResource<ControlTemplate*>(templateKey);
+        // if (implicitTemplate) {
+        //     SetTemplate(implicitTemplate);
+        // }
     }
 
 private:
-    ControlTemplate* template_{nullptr};
-    
     // 状态（非依赖属性，用于内部状态跟踪）
     bool isFocused_{false};
     bool isMouseOver_{false};
@@ -467,12 +507,44 @@ void Control<Derived>::OnStyleChanged(
 }
 
 template<typename Derived>
-void Control<Derived>::SetTemplate(ControlTemplate* tmpl) {
-    if (template_ != tmpl) {
-        template_ = tmpl;
-        // TODO: 重新应用模板
-        this->ApplyTemplate();
+const binding::DependencyProperty& Control<Derived>::TemplateProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Template",
+        typeid(ControlTemplate*),
+        typeid(Control<Derived>),
+        binding::PropertyMetadata{
+            std::any(static_cast<ControlTemplate*>(nullptr)),
+            &Control<Derived>::OnTemplateChanged
+        }
+    );
+    return property;
+}
+
+template<typename Derived>
+void Control<Derived>::OnTemplateChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* control = dynamic_cast<Control<Derived>*>(&d);
+    if (!control) {
+        return;
     }
+    
+    // 当模板改变时，重新应用模板
+    // 这会清除旧的模板视觉树并创建新的
+    try {
+        auto* newTemplate = std::any_cast<ControlTemplate*>(newValue);
+        if (newTemplate != nullptr) {
+            control->ApplyTemplate();
+        }
+    } catch (const std::bad_any_cast&) {
+        // Ignore if cast fails
+    }
+    
+    // 触发视觉更新
+    control->InvalidateVisual();
 }
 
 } // namespace fk::ui
