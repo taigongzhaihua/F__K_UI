@@ -390,3 +390,216 @@ void Line::OnRender(RenderContext& context) {
 template class FrameworkElement<Shape>;
 
 } // namespace fk::ui
+
+// =============================================================================
+// Polygon 实现
+// =============================================================================
+
+Polygon::Polygon() {
+    // 构造函数初始化
+}
+
+// ========== Polygon 属性依赖属性 ==========
+
+const binding::DependencyProperty& Polygon::PointsProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Points",
+        typeid(std::vector<Point>),
+        typeid(Polygon),
+        binding::PropertyMetadata{
+            std::any(std::vector<Point>{}),
+            &Polygon::OnPointsChanged
+        }
+    );
+    return property;
+}
+
+const binding::DependencyProperty& Polygon::FillRuleProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "FillRule",
+        typeid(int),  // 0=EvenOdd, 1=NonZero
+        typeid(Polygon),
+        binding::PropertyMetadata{
+            std::any(0),  // Default: EvenOdd
+            nullptr
+        }
+    );
+    return property;
+}
+
+// ========== Polygon 属性访问器 ==========
+
+std::vector<Point> Polygon::GetPoints() const {
+    return GetValue<std::vector<Point>>(PointsProperty());
+}
+
+void Polygon::SetPoints(const std::vector<Point>& value) {
+    SetValue(PointsProperty(), value);
+}
+
+Polygon* Polygon::Points(const std::vector<Point>& value) {
+    SetPoints(value);
+    return this;
+}
+
+int Polygon::GetFillRule() const {
+    return GetValue<int>(FillRuleProperty());
+}
+
+void Polygon::SetFillRule(int value) {
+    SetValue(FillRuleProperty(), value);
+}
+
+Polygon* Polygon::FillRule(int value) {
+    SetFillRule(value);
+    return this;
+}
+
+// ========== Polygon 几何与渲染 ==========
+
+Rect Polygon::GetDefiningGeometry() const {
+    auto points = GetPoints();
+    if (points.empty()) {
+        return Rect(0, 0, 0, 0);
+    }
+    
+    float minX = points[0].x;
+    float minY = points[0].y;
+    float maxX = points[0].x;
+    float maxY = points[0].y;
+    
+    for (size_t i = 1; i < points.size(); ++i) {
+        minX = std::min(minX, points[i].x);
+        minY = std::min(minY, points[i].y);
+        maxX = std::max(maxX, points[i].x);
+        maxY = std::max(maxY, points[i].y);
+    }
+    
+    return Rect(minX, minY, maxX - minX, maxY - minY);
+}
+
+void Polygon::OnRender(RenderContext& context) {
+    Renderer* renderer = context.GetRenderer();
+    if (!renderer) return;
+    
+    auto points = GetPoints();
+    if (points.size() < 3) return;  // 需要至少3个点才能构成多边形
+    
+    // Convert Brush* to Color (simplified)
+    Color fillColor = Color::White();
+    Color strokeColor = Color::Black();
+    
+    if (GetFill() != nullptr) {
+        // TODO: Extract color from SolidColorBrush
+        fillColor = Color::White();
+    }
+    
+    if (GetStroke() != nullptr) {
+        // TODO: Extract color from SolidColorBrush
+        strokeColor = Color::Black();
+    }
+    
+    float strokeThickness = GetStrokeThickness();
+    
+    // 绘制多边形（闭合路径）
+    // TODO: Implement DrawPolygon in Renderer
+    // For now, draw lines between consecutive points and close the shape
+    for (size_t i = 0; i < points.size(); ++i) {
+        size_t next = (i + 1) % points.size();
+        renderer->DrawLine(points[i], points[next], strokeColor, strokeThickness);
+    }
+}
+
+void Polygon::OnPointsChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* polygon = dynamic_cast<Polygon*>(&d);
+    if (polygon) {
+        polygon->InvalidateMeasure();
+        polygon->InvalidateVisual();
+    }
+}
+
+// =============================================================================
+// Path 实现
+// =============================================================================
+
+Path::Path() {
+    // 构造函数初始化
+}
+
+// ========== Path 属性依赖属性 ==========
+
+const binding::DependencyProperty& Path::DataProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Data",
+        typeid(std::string),  // Path data string (SVG-like syntax)
+        typeid(Path),
+        binding::PropertyMetadata{
+            std::any(std::string{}),
+            &Path::OnDataChanged
+        }
+    );
+    return property;
+}
+
+// ========== Path 属性访问器 ==========
+
+std::string Path::GetData() const {
+    return GetValue<std::string>(DataProperty());
+}
+
+void Path::SetData(const std::string& value) {
+    SetValue(DataProperty(), value);
+}
+
+Path* Path::Data(const std::string& value) {
+    SetData(value);
+    return this;
+}
+
+// ========== Path 几何与渲染 ==========
+
+Rect Path::GetDefiningGeometry() const {
+    // Parse path data to compute bounding box
+    // Simplified implementation - returns empty rect for now
+    // TODO: Implement full path data parsing
+    return Rect(0, 0, 0, 0);
+}
+
+void Path::OnRender(RenderContext& context) {
+    Renderer* renderer = context.GetRenderer();
+    if (!renderer) return;
+    
+    std::string data = GetData();
+    if (data.empty()) return;
+    
+    // Parse and render path data
+    // TODO: Implement path parsing and rendering
+    // For now, this is a placeholder
+    
+    // Path data format (SVG-like):
+    // M x,y - MoveTo
+    // L x,y - LineTo
+    // C x1,y1 x2,y2 x,y - CubicBezierTo
+    // Q x1,y1 x,y - QuadraticBezierTo
+    // A rx,ry angle large-arc sweep x,y - ArcTo
+    // Z - ClosePath
+}
+
+void Path::OnDataChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* path = dynamic_cast<Path*>(&d);
+    if (path) {
+        path->InvalidateMeasure();
+        path->InvalidateVisual();
+    }
+}
+
