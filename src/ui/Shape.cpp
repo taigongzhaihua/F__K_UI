@@ -574,20 +574,63 @@ void Path::OnRender(RenderContext& context) {
     Renderer* renderer = context.GetRenderer();
     if (!renderer) return;
     
-    std::string data = GetData();
-    if (data.empty()) return;
+    if (segments_.empty()) return;
     
-    // Parse and render path data
-    // TODO: Implement path parsing and rendering
-    // For now, this is a placeholder
+    // Render path using segments
+    Color fillColor = GetFill();
+    Color strokeColor = GetStroke();
+    float strokeWidth = GetStrokeThickness();
     
-    // Path data format (SVG-like):
-    // M x,y - MoveTo
-    // L x,y - LineTo
-    // C x1,y1 x2,y2 x,y - CubicBezierTo
-    // Q x1,y1 x,y - QuadraticBezierTo
-    // A rx,ry angle large-arc sweep x,y - ArcTo
-    // Z - ClosePath
+    // Begin path rendering
+    // TODO: Implement actual path rendering using DrawCommand system
+    // This would require extending DrawCommand to support path operations
+    
+    // For now, approximate with line segments
+    Point lastPoint(0, 0);
+    for (const auto& segment : segments_) {
+        switch (segment.command) {
+            case PathCommand::MoveTo:
+                if (!segment.points.empty()) {
+                    lastPoint = segment.points[0];
+                }
+                break;
+                
+            case PathCommand::LineTo:
+                if (!segment.points.empty()) {
+                    // Draw line from lastPoint to segment.points[0]
+                    // TODO: Use actual line drawing
+                    lastPoint = segment.points[0];
+                }
+                break;
+                
+            case PathCommand::QuadraticTo:
+                if (segment.points.size() >= 2) {
+                    // Approximate quadratic bezier with line segments
+                    // control = segment.points[0], end = segment.points[1]
+                    lastPoint = segment.points[1];
+                }
+                break;
+                
+            case PathCommand::CubicTo:
+                if (segment.points.size() >= 3) {
+                    // Approximate cubic bezier with line segments
+                    // control1 = segment.points[0], control2 = segment.points[1], end = segment.points[2]
+                    lastPoint = segment.points[2];
+                }
+                break;
+                
+            case PathCommand::ArcTo:
+                if (segment.points.size() >= 1) {
+                    // Approximate arc with line segments
+                    lastPoint = segment.points[0];
+                }
+                break;
+                
+            case PathCommand::Close:
+                // Close the current sub-path
+                break;
+        }
+    }
 }
 
 void Path::OnDataChanged(
@@ -601,5 +644,84 @@ void Path::OnDataChanged(
         path->InvalidateMeasure();
         path->InvalidateVisual();
     }
+}
+
+// Path building API implementation
+
+Path* Path::MoveTo(float x, float y) {
+    PathSegment segment;
+    segment.command = PathCommand::MoveTo;
+    segment.points.push_back(Point(x, y));
+    segments_.push_back(segment);
+    
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+Path* Path::LineTo(float x, float y) {
+    PathSegment segment;
+    segment.command = PathCommand::LineTo;
+    segment.points.push_back(Point(x, y));
+    segments_.push_back(segment);
+    
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+Path* Path::QuadraticTo(float cx, float cy, float x, float y) {
+    PathSegment segment;
+    segment.command = PathCommand::QuadraticTo;
+    segment.points.push_back(Point(cx, cy));  // Control point
+    segment.points.push_back(Point(x, y));    // End point
+    segments_.push_back(segment);
+    
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+Path* Path::CubicTo(float cx1, float cy1, float cx2, float cy2, float x, float y) {
+    PathSegment segment;
+    segment.command = PathCommand::CubicTo;
+    segment.points.push_back(Point(cx1, cy1));  // First control point
+    segment.points.push_back(Point(cx2, cy2));  // Second control point
+    segment.points.push_back(Point(x, y));      // End point
+    segments_.push_back(segment);
+    
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+Path* Path::ArcTo(float rx, float ry, float angle, bool largeArc, bool sweep, float x, float y) {
+    PathSegment segment;
+    segment.command = PathCommand::ArcTo;
+    segment.points.push_back(Point(rx, ry));         // Radii
+    segment.points.push_back(Point(angle, 0));       // Rotation angle
+    segment.points.push_back(Point(largeArc ? 1.0f : 0.0f, sweep ? 1.0f : 0.0f));  // Flags
+    segment.points.push_back(Point(x, y));           // End point
+    segments_.push_back(segment);
+    
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+Path* Path::Close() {
+    PathSegment segment;
+    segment.command = PathCommand::Close;
+    segments_.push_back(segment);
+    
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+void Path::ClearPath() {
+    segments_.clear();
+    InvalidateMeasure();
+    InvalidateVisual();
 }
 
