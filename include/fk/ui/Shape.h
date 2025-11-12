@@ -57,6 +57,11 @@ public:
     Shape* StrokeThickness(float thickness);
     float StrokeThickness() const;
 
+    /**
+     * @brief 收集绘制命令
+     */
+    void CollectDrawCommands(class RenderContext& context) override;
+
 protected:
     /**
      * @brief 渲染图形（派生类实现具体图形）
@@ -117,6 +122,51 @@ class Ellipse : public Shape {
 public:
     Ellipse() = default;
     virtual ~Ellipse() = default;
+
+protected:
+    Rect GetDefiningGeometry() const override;
+    void OnRender(class RenderContext& context) override;
+};
+
+/**
+ * @brief 线条图形
+ */
+class Line : public Shape {
+public:
+    Line() = default;
+    virtual ~Line() = default;
+
+    // ========== 依赖属性 ==========
+    
+    /// X1 属性：起点X坐标
+    static const binding::DependencyProperty& X1Property();
+    
+    /// Y1 属性：起点Y坐标
+    static const binding::DependencyProperty& Y1Property();
+    
+    /// X2 属性：终点X坐标
+    static const binding::DependencyProperty& X2Property();
+    
+    /// Y2 属性：终点Y坐标
+    static const binding::DependencyProperty& Y2Property();
+
+    // ========== 坐标属性 ==========
+    
+    float GetX1() const;
+    void SetX1(float value);
+    Line* X1(float x);
+    
+    float GetY1() const;
+    void SetY1(float value);
+    Line* Y1(float y);
+    
+    float GetX2() const;
+    void SetX2(float value);
+    Line* X2(float x);
+    
+    float GetY2() const;
+    void SetY2(float value);
+    Line* Y2(float y);
 
 protected:
     Rect GetDefiningGeometry() const override;
