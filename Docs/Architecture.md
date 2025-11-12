@@ -1,432 +1,432 @@
-# F__K_UI Architecture Overview
+# F__K_UI 架构概览
 
-## Introduction
+## 简介
 
-F__K_UI is a modern C++ UI framework inspired by WPF, providing a comprehensive system for building desktop applications with declarative UI, data binding, and flexible layout.
+F__K_UI 是一个受 WPF 启发的现代 C++ UI 框架，提供了一个完整的系统来构建具有声明式 UI、数据绑定和灵活布局的桌面应用程序。
 
-## Module Organization
+## 模块组织
 
-The framework is organized into 5 main modules:
+框架组织为 5 个主要模块：
 
 ```
 F__K_UI/
-├── app/        Application lifecycle and windowing
-├── binding/    Dependency properties and data binding
-├── core/       Core infrastructure and utilities
-├── render/     Rendering pipeline and graphics
-└── ui/         User interface elements and controls
+├── app/        应用程序生命周期和窗口管理
+├── binding/    依赖属性和数据绑定
+├── core/       核心基础设施和工具
+├── render/     渲染管线和图形
+└── ui/         用户界面元素和控件
 ```
 
-## Overall Architecture Diagram
+## 整体架构图
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Application Layer                        │
+│                     应用程序层                                │
 │                  (app::Application, Window)                  │
 └────────────────────────┬────────────────────────────────────┘
                          │
 ┌────────────────────────▼────────────────────────────────────┐
-│                      UI Layer                                │
+│                      UI 层                                    │
 │         (Controls, Panels, Shapes, Visual Tree)              │
-│  Button, TextBlock, Border, Image, StackPanel, Grid, etc.   │
+│  Button, TextBlock, Border, Image, StackPanel, Grid, 等      │
 └────────────────────────┬────────────────────────────────────┘
                          │
 ┌────────────────────────▼────────────────────────────────────┐
-│                    Binding Layer                             │
-│     (Dependency Properties, Data Binding, Validation)        │
-│   DependencyObject, Binding, BindingExpression, etc.        │
+│                    绑定层                                     │
+│     (依赖属性、数据绑定、验证)                                  │
+│   DependencyObject, Binding, BindingExpression, 等           │
 └────────────────────────┬────────────────────────────────────┘
                          │
 ┌────────────────────────▼────────────────────────────────────┐
-│                    Render Layer                              │
-│        (Rendering Pipeline, OpenGL Backend, Text)            │
+│                    渲染层                                     │
+│        (渲染管线、OpenGL 后端、文本)                            │
 │      Renderer, GlRenderer, RenderBackend, TextRenderer      │
 └────────────────────────┬────────────────────────────────────┘
                          │
 ┌────────────────────────▼────────────────────────────────────┐
-│                     Core Layer                               │
-│          (Threading, Events, Time, Logging)                  │
+│                     核心层                                    │
+│          (线程、事件、时间、日志)                               │
 │         Dispatcher, Event, Clock, Timer, Logger             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Class Hierarchy and Relationships
+## 类层次结构和关系
 
-### Complete Class Hierarchy
+### 完整类层次结构
 
 ```
-Core Infrastructure
-└── core::Dispatcher (thread-safe message loop)
-    └── core::DispatcherOperation (queued operation)
-└── core::Event<T> (type-safe event system)
-└── core::Clock (time tracking)
-└── core::Timer (timer implementation)
-└── core::Logger (logging interface)
+核心基础设施
+└── core::Dispatcher (线程安全消息循环)
+    └── core::DispatcherOperation (队列操作)
+└── core::Event<T> (类型安全事件系统)
+└── core::Clock (时间跟踪)
+└── core::Timer (定时器实现)
+└── core::Logger (日志接口)
     ├── core::ConsoleLogger
     ├── core::NullLogger
     └── core::LoggerManager
 
-Binding System
-└── binding::DependencyObject (property system base)
-    ├── binding::ObservableObject (ViewModel base with INPC)
-    └── ui::Visual (visual tree base)
-        └── ui::UIElement (interactive element)
-            └── ui::FrameworkElement<Derived> (layout support)
-                ├── ui::Control<Derived> (templatable control)
-                │   ├── ui::ContentControl<Derived> (single content)
+绑定系统
+└── binding::DependencyObject (属性系统基类)
+    ├── binding::ObservableObject (带 INPC 的 ViewModel 基类)
+    └── ui::Visual (视觉树基类)
+        └── ui::UIElement (交互元素)
+            └── ui::FrameworkElement<Derived> (布局支持)
+                ├── ui::Control<Derived> (可模板化控件)
+                │   ├── ui::ContentControl<Derived> (单内容)
                 │   │   ├── ui::Button
                 │   │   └── ui::Window
-                │   └── ui::ItemsControl<Derived> (multiple items)
-                ├── ui::Panel<Derived> (multi-child container)
+                │   └── ui::ItemsControl<Derived> (多项目)
+                ├── ui::Panel<Derived> (多子元素容器)
                 │   ├── ui::StackPanel
                 │   └── ui::Grid
-                ├── ui::Shape (vector graphics base)
+                ├── ui::Shape (矢量图形基类)
                 │   ├── ui::Rectangle
                 │   └── ui::Ellipse
-                ├── ui::TextBlock (text display)
-                ├── ui::Border (decorator)
-                └── ui::Image (bitmap display)
+                ├── ui::TextBlock (文本显示)
+                ├── ui::Border (装饰器)
+                └── ui::Image (位图显示)
 
-└── binding::DependencyProperty (property metadata)
-└── binding::Binding (binding configuration)
-    └── binding::TemplateBinding (template binding)
-└── binding::MultiBinding (multi-source binding)
-└── binding::BindingExpression (active binding)
-└── binding::MultiBindingExpression (active multi-binding)
-└── binding::BindingContext (manages bindings for object)
-└── binding::BindingPath (property path parser)
-└── binding::PropertyStore (value storage)
-└── binding::PropertyAccessorRegistry (property accessors)
-└── binding::RelativeSource (relative binding source)
+└── binding::DependencyProperty (属性元数据)
+└── binding::Binding (绑定配置)
+    └── binding::TemplateBinding (模板绑定)
+└── binding::MultiBinding (多源绑定)
+└── binding::BindingExpression (活动绑定)
+└── binding::MultiBindingExpression (活动多绑定)
+└── binding::BindingContext (管理对象的绑定)
+└── binding::BindingPath (属性路径解析器)
+└── binding::PropertyStore (值存储)
+└── binding::PropertyAccessorRegistry (属性访问器)
+└── binding::RelativeSource (相对绑定源)
 
-Value Converters
-└── binding::IValueConverter (converter interface)
+值转换器
+└── binding::IValueConverter (转换器接口)
     ├── binding::DefaultValueConverter
     └── binding::BooleanToStringConverter
-└── binding::IMultiValueConverter (multi-value converter)
+└── binding::IMultiValueConverter (多值转换器)
 
-Validation
-└── binding::ValidationRule (validation base)
+验证
+└── binding::ValidationRule (验证基类)
     ├── binding::EmailValidationRule
     ├── binding::NotEmptyValidationRule
     ├── binding::RangeValidationRule
     ├── binding::StringLengthValidationRule
     └── binding::FunctionValidationRule
 
-Interfaces
-└── binding::INotifyPropertyChanged (property change notification)
-└── binding::INotifyDataErrorInfo (error notification)
+接口
+└── binding::INotifyPropertyChanged (属性变更通知接口)
+└── binding::INotifyDataErrorInfo (错误通知接口)
 
-Rendering System
-└── render::IRenderer (renderer interface)
-    └── render::GlRenderer (OpenGL implementation)
-└── render::Renderer (main renderer)
-└── render::RenderBackend (platform abstraction)
+渲染系统
+└── render::IRenderer (渲染器接口)
+    └── render::GlRenderer (OpenGL 实现)
+└── render::Renderer (主渲染器)
+└── render::RenderBackend (平台抽象)
     └── render::OpenGLRenderBackend
-└── render::RenderContext (rendering context)
-└── render::RenderHost (render host management)
-└── render::RenderScene (scene management)
-└── render::RenderTreeBuilder (builds render tree)
-└── render::RenderCommandBuffer (command buffering)
-└── render::RenderList (render list management)
-└── render::TextRenderer (FreeType text rendering)
-└── render::ColorUtils (color utilities)
+└── render::RenderContext (渲染上下文)
+└── render::RenderHost (渲染宿主管理)
+└── render::RenderScene (场景管理)
+└── render::RenderTreeBuilder (构建渲染树)
+└── render::RenderCommandBuffer (命令缓冲)
+└── render::RenderList (渲染列表管理)
+└── render::TextRenderer (FreeType 文本渲染)
+└── render::ColorUtils (颜色工具)
 
-UI Elements - Input Management
-└── ui::InputManager (input event routing)
-└── ui::FocusManager (focus management)
-└── ui::RoutedEvent (routed event system)
+UI 元素 - 输入管理
+└── ui::InputManager (输入事件路由)
+└── ui::FocusManager (焦点管理)
+└── ui::RoutedEvent (路由事件系统)
 
-UI Elements - Collections
-└── ui::VisualCollection (visual children collection)
-└── ui::ObservableCollection<T> (observable collection)
+UI 元素 - 集合
+└── ui::VisualCollection (视觉子元素集合)
+└── ui::ObservableCollection<T> (可观察集合)
 
-UI Elements - Transforms
-└── ui::Transform (transform base)
-    ├── ui::TranslateTransform (translation)
-    ├── ui::ScaleTransform (scaling)
-    ├── ui::RotateTransform (rotation)
-    ├── ui::SkewTransform (skewing)
-    ├── ui::MatrixTransform (matrix)
-    └── ui::TransformGroup (composite)
+UI 元素 - 变换
+└── ui::Transform (变换基类)
+    ├── ui::TranslateTransform (平移)
+    ├── ui::ScaleTransform (缩放)
+    ├── ui::RotateTransform (旋转)
+    ├── ui::SkewTransform (倾斜)
+    ├── ui::MatrixTransform (矩阵)
+    └── ui::TransformGroup (组合)
 
-UI Elements - Styles and Templates
-└── ui::Style (style definition)
-└── ui::Setter (property setter)
-└── ui::SetterCollection (setter collection)
-└── ui::FrameworkTemplate (template base)
-    ├── ui::ControlTemplate (control template)
-    └── ui::DataTemplate (data template)
-└── ui::ResourceDictionary (resource storage)
+UI 元素 - 样式和模板
+└── ui::Style (样式定义)
+└── ui::Setter (属性设置器)
+└── ui::SetterCollection (设置器集合)
+└── ui::FrameworkTemplate (模板基类)
+    ├── ui::ControlTemplate (控件模板)
+    └── ui::DataTemplate (数据模板)
+└── ui::ResourceDictionary (资源存储)
 
-UI Elements - Rendering
-└── ui::DrawCommand (drawing command)
+UI 元素 - 渲染
+└── ui::DrawCommand (绘图命令)
 
-Application
-└── app::Application (application singleton)
+应用程序
+└── app::Application (应用程序单例)
 ```
 
-## Implementation Status Legend
+## 实现状态图例
 
-- ✅ **已实现** - Fully implemented and tested
-- 🔧 **需扩充** - Implemented but needs enhancement
-- ⚠️ **假实现** - Stub/placeholder implementation
-- ❌ **未实现** - Not yet implemented
+- ✅ **已实现** - 完全实现并测试
+- 🔧 **需扩充** - 已实现但需要增强
+- ⚠️ **假实现** - 存根/占位符实现
+- ❌ **未实现** - 尚未实现
 
-## Module Responsibilities
+## 模块职责
 
-### App Module
+### App 模块
 
-**Purpose**: Application lifecycle and top-level window management
+**目的**：应用程序生命周期和顶级窗口管理
 
-**Classes (1)**:
-- ✅ `Application` - Application singleton, window creation, message loop
+**类（1 个）**：
+- ✅ `Application` - 应用程序单例、窗口创建、消息循环
 
-**Responsibilities**:
-- Application initialization and shutdown
-- Window creation and management
-- Message pump and event loop
-- Application-wide resources
+**职责**：
+- 应用程序初始化和关闭
+- 窗口创建和管理
+- 消息泵和事件循环
+- 应用程序级资源
 
-**Key Dependencies**: Core (Dispatcher), UI (Window)
-
----
-
-### Core Module
-
-**Purpose**: Fundamental infrastructure and utilities
-
-**Classes (9)**:
-- ✅ `Dispatcher` - Thread-safe message dispatching and invocation
-- ✅ `DispatcherOperation` - Represents a queued operation
-- ✅ `Event<T>` - Type-safe event system with connections
-- ✅ `Clock` - Frame time tracking and timing
-- ✅ `Timer` - Timer implementation with callbacks
-- ✅ `Logger` - Logging interface
-- ✅ `LoggerManager` - Manages logger instances
-- ✅ `ConsoleLogger` - Console output logger
-- ✅ `NullLogger` - No-op logger
-
-**Responsibilities**:
-- Thread synchronization and marshalling
-- Event subscription and notification
-- Time measurement and frame timing
-- Logging infrastructure
-
-**Key Dependencies**: None (base layer)
+**关键依赖**：Core (Dispatcher)、UI (Window)
 
 ---
 
-### Binding Module
+### Core 模块
 
-**Purpose**: Dependency property system and data binding infrastructure
+**目的**：基础设施和工具
 
-**Classes (25)**:
+**类（9 个）**：
+- ✅ `Dispatcher` - 线程安全消息调度和调用
+- ✅ `DispatcherOperation` - 表示队列操作
+- ✅ `Event<T>` - 带连接的类型安全事件系统
+- ✅ `Clock` - 帧时间跟踪和计时
+- ✅ `Timer` - 带回调的定时器实现
+- ✅ `Logger` - 日志接口
+- ✅ `LoggerManager` - 管理日志实例
+- ✅ `ConsoleLogger` - 控制台输出日志
+- ✅ `NullLogger` - 无操作日志
 
-**Core Binding**:
-- ✅ `DependencyObject` - Base class with dependency property support (120%)
-- ✅ `DependencyProperty` - Property metadata and registration (110%)
-- ✅ `Binding` - Data binding configuration
-- ✅ `BindingExpression` - Active binding instance (115%)
-- ✅ `BindingContext` - Manages bindings for an object
-- ✅ `BindingPath` - Property path parsing and resolution
-- ✅ `MultiBinding` - Multi-source binding configuration
-- ✅ `MultiBindingExpression` - Active multi-binding instance
-- 🔧 `TemplateBinding` - Template property binding (needs enhancement)
-- 🔧 `RelativeSource` - Relative binding source specification (needs enhancement)
+**职责**：
+- 线程同步和编组
+- 事件订阅和通知
+- 时间测量和帧计时
+- 日志基础设施
 
-**Value Conversion**:
-- ✅ `IValueConverter` - Value converter interface
-- 🔧 `IMultiValueConverter` - Multi-value converter interface (basic impl)
-- ✅ `DefaultValueConverter` - Default type conversion
-- ✅ `BooleanToStringConverter` - Boolean to string conversion
-
-**Validation**:
-- ✅ `ValidationRule` - Validation rule base class
-- ✅ `EmailValidationRule` - Email format validation
-- ✅ `NotEmptyValidationRule` - Non-empty validation
-- ✅ `RangeValidationRule` - Numeric range validation
-- ✅ `StringLengthValidationRule` - String length validation
-- ✅ `FunctionValidationRule` - Custom function validation
-
-**Interfaces**:
-- ✅ `INotifyPropertyChanged` - Property change notification interface
-- ✅ `INotifyDataErrorInfo` - Error notification interface
-
-**ViewModels**:
-- ✅ `ObservableObject` - ViewModel base class
-
-**Storage**:
-- ✅ `PropertyStore` - Property value storage
-- ✅ `PropertyAccessorRegistry` - Property accessor registration
-
-**Responsibilities**:
-- Property change notification and propagation
-- Data binding between UI and data sources
-- Value conversion and validation
-- Property value storage and prioritization
-- Logical tree and DataContext inheritance
-
-**Key Dependencies**: Core (Event, Dispatcher)
+**关键依赖**：无（基础层）
 
 ---
 
-### Render Module
+### Binding 模块
 
-**Purpose**: Rendering pipeline and graphics backend
+**目的**：依赖属性系统和数据绑定基础设施
 
-**Classes (13)**:
-- ✅ `IRenderer` - Renderer interface
-- ✅ `Renderer` - Main renderer implementation (115%)
-- ✅ `GlRenderer` - OpenGL-specific renderer
-- ✅ `RenderBackend` - Platform abstraction (100%)
-- ✅ `OpenGLRenderBackend` - OpenGL backend implementation
-- ✅ `RenderContext` - Rendering context and state
-- ✅ `RenderHost` - Manages render surface
-- ✅ `RenderScene` - Scene graph management
-- ✅ `RenderTreeBuilder` - Builds render tree from visual tree (110%)
-- 🔧 `RenderCommandBuffer` - Command buffer for rendering (needs batching)
-- 🔧 `RenderList` - Manages list of render commands (needs optimization)
-- ✅ `TextRenderer` - Text rendering using FreeType
-- ✅ `ColorUtils` - Color manipulation utilities
+**类（25 个）**：
 
-**Responsibilities**:
-- Visual tree to render tree conversion
-- OpenGL rendering and state management
-- Text rendering with fonts
-- Command buffering and batching
-- Platform abstraction
+**核心绑定**：
+- ✅ `DependencyObject` - 具有依赖属性支持的基类（120%）
+- ✅ `DependencyProperty` - 属性元数据和注册（110%）
+- ✅ `Binding` - 数据绑定配置
+- ✅ `BindingExpression` - 活动绑定实例（115%）
+- ✅ `BindingContext` - 管理对象的绑定
+- ✅ `BindingPath` - 属性路径解析和解析
+- ✅ `MultiBinding` - 多源绑定配置
+- ✅ `MultiBindingExpression` - 活动多绑定实例
+- 🔧 `TemplateBinding` - 模板属性绑定（需要增强）
+- 🔧 `RelativeSource` - 相对绑定源规范（需要增强）
 
-**Key Dependencies**: Core (no direct UI dependencies at render level)
+**值转换**：
+- ✅ `IValueConverter` - 值转换器接口
+- 🔧 `IMultiValueConverter` - 多值转换器接口（基本实现）
+- ✅ `DefaultValueConverter` - 默认类型转换
+- ✅ `BooleanToStringConverter` - 布尔到字符串转换
 
----
+**验证**：
+- ✅ `ValidationRule` - 验证规则基类
+- ✅ `EmailValidationRule` - 电子邮件格式验证
+- ✅ `NotEmptyValidationRule` - 非空验证
+- ✅ `RangeValidationRule` - 数值范围验证
+- ✅ `StringLengthValidationRule` - 字符串长度验证
+- ✅ `FunctionValidationRule` - 自定义函数验证
 
-### UI Module
+**接口**：
+- ✅ `INotifyPropertyChanged` - 属性变更通知接口
+- ✅ `INotifyDataErrorInfo` - 错误通知接口
 
-**Purpose**: User interface elements, controls, and visual tree
+**ViewModels**：
+- ✅ `ObservableObject` - ViewModel 基类
 
-**Classes (50+)**:
+**存储**：
+- ✅ `PropertyStore` - 属性值存储
+- ✅ `PropertyAccessorRegistry` - 属性访问器注册
 
-**Base Classes (7)**:
-- ✅ `Visual` - Visual tree node base (100%)
-- ✅ `UIElement` - Interactive element with input and layout (110%)
-- ✅ `FrameworkElement<Derived>` - Layout-aware element with sizing (115%)
-- ✅ `Control<Derived>` - Templatable control base (95%)
-- ✅ `ContentControl<Derived>` - Single-content host (95%)
-- ✅ `Panel<Derived>` - Multi-child container base (95%)
-- 🔧 `ItemsControl<Derived>` - Items collection control (85% - needs container generation)
+**职责**：
+- 属性变更通知和传播
+- UI 和数据源之间的数据绑定
+- 值转换和验证
+- 属性值存储和优先级
+- 逻辑树和 DataContext 继承
 
-**Layout Containers (2)**:
-- ✅ `StackPanel` - Sequential layout (horizontal/vertical) (100%)
-- ✅ `Grid` - Grid-based layout with rows/columns (95%)
-
-**Controls (5)**:
-- ✅ `Button` - Clickable button
-- ✅ `TextBlock` - Text display (100%)
-- ✅ `Border` - Border and background decorator (120%)
-- ✅ `Image` - Bitmap image display (100%)
-- ✅ `Window` - Top-level window
-
-**Shapes (3)**:
-- ⚠️ `Shape` - Vector shape base (stub only, 0%)
-- ❌ `Rectangle` - Rectangle shape (not implemented)
-- ❌ `Ellipse` - Ellipse/circle shape (not implemented)
-
-**Transforms (7)**:
-- ✅ `Transform` - Transform base (100%)
-- ✅ `TranslateTransform` - Translation (100%)
-- ✅ `ScaleTransform` - Scaling (100%)
-- ✅ `RotateTransform` - Rotation (100%)
-- ✅ `SkewTransform` - Skewing (100%)
-- ✅ `MatrixTransform` - Matrix transformation (100%)
-- ✅ `TransformGroup` - Composite transforms (100%)
-
-**Styles and Templates (7)**:
-- ⚠️ `Style` - Style definition (0% - not implemented)
-- ✅ `Setter` - Property setter
-- 🔧 `SetterCollection` - Collection of setters (basic impl)
-- ⚠️ `FrameworkTemplate` - Template base (stub only)
-- ⚠️ `ControlTemplate` - Control visual template (stub only)
-- ⚠️ `DataTemplate` - Data presentation template (stub only)
-- ✅ `ResourceDictionary` - Resource storage (100%)
-
-**Input Management (3)**:
-- ✅ `InputManager` - Input event routing and hit testing (98%)
-- ✅ `FocusManager` - Keyboard focus management (98%)
-- ✅ `RoutedEvent` - Routed event system
-
-**Collections (2)**:
-- ✅ `VisualCollection` - Visual children collection (105%)
-- ✅ `ObservableCollection<T>` - Observable collection with notifications
-
-**Rendering (1)**:
-- ✅ `DrawCommand` - Drawing command structure (110%)
-
-**Primitives and Types (6)**:
-- ✅ `Primitives` - Point, Size, Rect, Matrix3x2, Color
-- ✅ `Thickness` - Four-sided thickness
-- ✅ `CornerRadius` - Corner radius specification
-- ✅ `Enums` - Visibility, Orientation, Alignment enums
-- ✅ `TextEnums` - Text-specific enums
-- ✅ `Alignment` - Alignment enumerations
-
-**Responsibilities**:
-- Visual tree construction and management
-- Layout (measure and arrange)
-- Input event handling and routing
-- Rendering via DrawCommands
-- Control templating and styling
-- Focus and keyboard navigation
-
-**Key Dependencies**: Binding (DependencyObject, properties), Core (Event, Dispatcher), Render (DrawCommand)
+**关键依赖**：Core (Event, Dispatcher)
 
 ---
 
-## Key Design Patterns
+### Render 模块
 
-### 1. Dependency Property System
+**目的**：渲染管线和图形后端
 
-**Pattern**: Attached Behavior with Metadata
+**类（13 个）**：
+- ✅ `IRenderer` - 渲染器接口
+- ✅ `Renderer` - 主渲染器实现（115%）
+- ✅ `GlRenderer` - OpenGL 特定渲染器
+- ✅ `RenderBackend` - 平台抽象（100%）
+- ✅ `OpenGLRenderBackend` - OpenGL 后端实现
+- ✅ `RenderContext` - 渲染上下文和状态
+- ✅ `RenderHost` - 管理渲染表面
+- ✅ `RenderScene` - 场景图管理
+- ✅ `RenderTreeBuilder` - 从视觉树构建渲染树（110%）
+- 🔧 `RenderCommandBuffer` - 渲染命令缓冲（需要批处理）
+- 🔧 `RenderList` - 管理渲染命令列表（需要优化）
+- ✅ `TextRenderer` - 使用 FreeType 的文本渲染
+- ✅ `ColorUtils` - 颜色操作工具
 
-**Implementation**:
+**职责**：
+- 视觉树到渲染树的转换
+- OpenGL 渲染和状态管理
+- 使用字体的文本渲染
+- 命令缓冲和批处理
+- 平台抽象
+
+**关键依赖**：Core（渲染级别没有直接 UI 依赖）
+
+---
+
+### UI 模块
+
+**目的**：用户界面元素、控件和视觉树
+
+**类（50+ 个）**：
+
+**基类（7 个）**：
+- ✅ `Visual` - 视觉树节点基类（100%）
+- ✅ `UIElement` - 带输入和布局的交互元素（110%）
+- ✅ `FrameworkElement<Derived>` - 带大小的布局感知元素（115%）
+- ✅ `Control<Derived>` - 可模板化控件基类（95%）
+- ✅ `ContentControl<Derived>` - 单内容宿主（95%）
+- ✅ `Panel<Derived>` - 多子元素容器基类（95%）
+- 🔧 `ItemsControl<Derived>` - 项目集合控件（85% - 需要容器生成）
+
+**布局容器（2 个）**：
+- ✅ `StackPanel` - 顺序布局（水平/垂直）（100%）
+- ✅ `Grid` - 基于网格的布局（95%）
+
+**控件（5 个）**：
+- ✅ `Button` - 可点击按钮
+- ✅ `TextBlock` - 文本显示（100%）
+- ✅ `Border` - 边框和背景装饰器（120%）
+- ✅ `Image` - 位图图像显示（100%）
+- ✅ `Window` - 顶级窗口
+
+**形状（3 个）**：
+- ⚠️ `Shape` - 矢量形状基类（仅存根，0%）
+- ❌ `Rectangle` - 矩形形状（未实现）
+- ❌ `Ellipse` - 椭圆/圆形形状（未实现）
+
+**变换（7 个）**：
+- ✅ `Transform` - 变换基类（100%）
+- ✅ `TranslateTransform` - 平移（100%）
+- ✅ `ScaleTransform` - 缩放（100%）
+- ✅ `RotateTransform` - 旋转（100%）
+- ✅ `SkewTransform` - 倾斜（100%）
+- ✅ `MatrixTransform` - 矩阵变换（100%）
+- ✅ `TransformGroup` - 组合变换（100%）
+
+**样式和模板（7 个）**：
+- ⚠️ `Style` - 样式定义（0% - 未实现）
+- ✅ `Setter` - 属性设置器
+- 🔧 `SetterCollection` - 设置器集合（基本实现）
+- ⚠️ `FrameworkTemplate` - 模板基类（仅存根）
+- ⚠️ `ControlTemplate` - 控件视觉模板（仅存根）
+- ⚠️ `DataTemplate` - 数据呈现模板（仅存根）
+- ✅ `ResourceDictionary` - 资源存储（100%）
+
+**输入管理（3 个）**：
+- ✅ `InputManager` - 输入事件路由和命中测试（98%）
+- ✅ `FocusManager` - 键盘焦点管理（98%）
+- ✅ `RoutedEvent` - 路由事件系统
+
+**集合（2 个）**：
+- ✅ `VisualCollection` - 视觉子元素集合（105%）
+- ✅ `ObservableCollection<T>` - 带通知的可观察集合
+
+**渲染（1 个）**：
+- ✅ `DrawCommand` - 绘图命令结构（110%）
+
+**基本类型和类型（6 个）**：
+- ✅ `Primitives` - Point、Size、Rect、Matrix3x2、Color
+- ✅ `Thickness` - 四边厚度
+- ✅ `CornerRadius` - 圆角半径规范
+- ✅ `Enums` - Visibility、Orientation、Alignment 枚举
+- ✅ `TextEnums` - 文本特定枚举
+- ✅ `Alignment` - 对齐枚举
+
+**职责**：
+- 视觉树构建和管理
+- 布局（测量和排列）
+- 输入事件处理和路由
+- 通过 DrawCommands 渲染
+- 控件模板化和样式化
+- 焦点和键盘导航
+
+**关键依赖**：Binding (DependencyObject, 属性)、Core (Event, Dispatcher)、Render (DrawCommand)
+
+---
+
+## 关键设计模式
+
+### 1. 依赖属性系统
+
+**模式**：带元数据的附加行为
+
+**实现**：
 ```
 DependencyObject
-    └── PropertyStore (maps DependencyProperty -> value)
-    └── BindingContext (maps DependencyProperty -> BindingExpression)
+    └── PropertyStore (映射 DependencyProperty -> 值)
+    └── BindingContext (映射 DependencyProperty -> BindingExpression)
 
 DependencyProperty
-    └── PropertyMetadata (default value, callbacks, coercion)
+    └── PropertyMetadata (默认值、回调、强制转换)
 ```
 
-**Flow**:
-1. Property registered with metadata
-2. Values stored in PropertyStore
-3. Changes trigger callbacks and events
-4. Bindings automatically update on changes
+**流程**：
+1. 使用元数据注册属性
+2. 值存储在 PropertyStore 中
+3. 变更触发回调和事件
+4. 绑定在变更时自动更新
 
-### 2. Visual Tree / Logical Tree
+### 2. 视觉树 / 逻辑树
 
-**Pattern**: Composite with dual hierarchies
+**模式**：具有双层次结构的组合
 
-**Visual Tree**: Rendering and hit-testing
+**视觉树**：渲染和命中测试
 ```
 Visual
     └── children_: vector<Visual*>
     └── parent_: Visual*
 ```
 
-**Logical Tree**: DataContext inheritance and element lookup
+**逻辑树**：DataContext 继承和元素查找
 ```
 DependencyObject
     └── logicalChildren_: vector<DependencyObject*>
     └── logicalParent_: DependencyObject*
 ```
 
-### 3. Data Binding
+### 3. 数据绑定
 
-**Pattern**: Observer with bidirectional propagation
+**模式**：具有双向传播的观察者
 
-**Components**:
+**组件**：
 ```
 Source (ViewModel)
     └── INotifyPropertyChanged
@@ -435,22 +435,22 @@ Binding Configuration
     └── Source, Path, Mode, Converter
 
 BindingExpression (Active)
-    └── Subscribes to source changes
-    └── Updates target property
-    └── Updates source on TwoWay
+    └── 订阅源变更
+    └── 更新目标属性
+    └── 在 TwoWay 时更新源
 ```
 
-**Flow**:
-1. Binding created with source/path
-2. BindingExpression resolves source object
-3. Subscribes to PropertyChanged
-4. Updates flow based on BindingMode
+**流程**：
+1. 使用 source/path 创建绑定
+2. BindingExpression 解析源对象
+3. 订阅 PropertyChanged
+4. 根据 BindingMode 更新流
 
-### 4. CRTP for Type-Safe Derivation
+### 4. CRTP 用于类型安全派生
 
-**Pattern**: Curiously Recurring Template Pattern
+**模式**：好奇的递归模板模式
 
-**Example**:
+**示例**：
 ```cpp
 template<typename Derived>
 class FrameworkElement : public UIElement {
@@ -458,18 +458,18 @@ class FrameworkElement : public UIElement {
 };
 
 class Button : public ContentControl<Button> {
-    // Inherits type-safe methods via CRTP
+    // 通过 CRTP 继承类型安全方法
 };
 ```
 
-**Benefits**:
-- Compile-time polymorphism
-- No vtable overhead
-- Type-safe method chaining
+**优点**：
+- 编译时多态
+- 没有 vtable 开销
+- 类型安全的方法链
 
-### 5. Template System
+### 5. 模板系统
 
-**Pattern**: Strategy with delayed instantiation
+**模式**：具有延迟实例化的策略
 
 ```
 Control
@@ -478,216 +478,216 @@ Control
 ControlTemplate
     └── VisualTreeFactory: function
 
-Apply Template:
-    1. Call VisualTreeFactory
-    2. Set as visual child
-    3. Apply TemplateBindings
+应用模板：
+    1. 调用 VisualTreeFactory
+    2. 设置为视觉子元素
+    3. 应用 TemplateBindings
 ```
 
-### 6. Routed Events
+### 6. 路由事件
 
-**Pattern**: Event bubbling and tunneling
+**模式**：事件冒泡和隧道
 
-**Flow**:
+**流程**：
 ```
-Target Element (Direct)
-    ↓ Tunnel (PreviewXxx)
-Root → Parent → ... → Target
-    ↑ Bubble (Xxx)
-Target → ... → Parent → Root
+目标元素 (直接)
+    ↓ 隧道 (PreviewXxx)
+根 → 父 → ... → 目标
+    ↑ 冒泡 (Xxx)
+目标 → ... → 父 → 根
 ```
 
-### 7. Layout System
+### 7. 布局系统
 
-**Pattern**: Two-pass constraint-based layout
+**模式**：两遍基于约束的布局
 
-**Measure Pass**: Calculate desired sizes
+**测量遍**：计算期望大小
 ```
 Parent.Measure(availableSize)
     → Child.Measure(childConstraint)
         → Child.DesiredSize
 ```
 
-**Arrange Pass**: Position elements
+**排列遍**：定位元素
 ```
 Parent.Arrange(finalRect)
     → Child.Arrange(childRect)
         → Child.RenderSize
 ```
 
-## Data Flow Diagrams
+## 数据流图
 
-### Binding Update Flow
+### 绑定更新流
 
 ```
-ViewModel Property Changes
+ViewModel 属性变更
     ↓
 INotifyPropertyChanged.PropertyChanged
     ↓
-BindingExpression receives notification
+BindingExpression 接收通知
     ↓
 BindingExpression.UpdateTarget()
     ↓
-DependencyObject.SetValue() [Binding source]
+DependencyObject.SetValue() [绑定源]
     ↓
-PropertyStore updates value
+PropertyStore 更新值
     ↓
-DependencyObject.PropertyChanged event
+DependencyObject.PropertyChanged 事件
     ↓
 UIElement.InvalidateVisual()
     ↓
-Re-render
+重新渲染
 ```
 
-### Input Event Flow
+### 输入事件流
 
 ```
-Platform Input (Mouse/Keyboard)
+平台输入 (鼠标/键盘)
     ↓
-RenderBackend captures event
+RenderBackend 捕获事件
     ↓
 InputManager.ProcessInput()
     ↓
-Hit Testing (with transforms)
+命中测试 (带变换)
     ↓
-Find target UIElement
+查找目标 UIElement
     ↓
-Raise Routed Event (Preview + Bubble)
+引发路由事件 (Preview + Bubble)
     ↓
-Element event handlers
+元素事件处理程序
     ↓
-Update visual state if needed
+如需要更新视觉状态
 ```
 
-### Render Pipeline
+### 渲染管线
 
 ```
-Visual Tree
+视觉树
     ↓
-Layout Pass (Measure + Arrange)
+布局遍 (Measure + Arrange)
     ↓
-RenderTreeBuilder traversal
+RenderTreeBuilder 遍历
     ↓
-Generate DrawCommands
+生成 DrawCommands
     ↓
 RenderCommandBuffer
     ↓
-GlRenderer processes commands
+GlRenderer 处理命令
     ↓
-OpenGL draw calls
+OpenGL 绘制调用
     ↓
-Frame buffer → Screen
+帧缓冲 → 屏幕
 ```
 
-## Threading Model
+## 线程模型
 
-### UI Thread Affinity
+### UI 线程关联
 
-All UI objects are single-threaded and must be accessed from the UI thread only.
+所有 UI 对象都是单线程的，必须仅从 UI 线程访问。
 
 ```
-Background Thread
+后台线程
     ↓
 Dispatcher.InvokeAsync(action)
     ↓
-Message Queue
+消息队列
     ↓
-UI Thread processes action
+UI 线程处理操作
     ↓
-Safe to access UI objects
+安全访问 UI 对象
 ```
 
-### Dispatcher Operations
+### Dispatcher 操作
 
 ```cpp
-// From background thread
+// 从后台线程
 std::thread([dispatcher, element]() {
-    // Do work...
+    // 做工作...
     
     dispatcher->InvokeAsync([element]() {
-        // Update UI (now on UI thread)
+        // 更新 UI（现在在 UI 线程上）
         element->SetValue(Property, value);
     });
 }).detach();
 ```
 
-## Memory Management Strategy
+## 内存管理策略
 
-### Ownership Rules
+### 所有权规则
 
-1. **Visual Tree**: Parent doesn't own children (weak references)
-2. **Logical Tree**: Parent doesn't own children (weak references)
-3. **Shared Ownership**: Public API uses `shared_ptr`
-4. **Bindings**: BindingContext owns BindingExpressions
-5. **Event Connections**: Connection objects manage lifetime
+1. **视觉树**：父不拥有子（弱引用）
+2. **逻辑树**：父不拥有子（弱引用）
+3. **共享所有权**：公共 API 使用 `shared_ptr`
+4. **绑定**：BindingContext 拥有 BindingExpressions
+5. **事件连接**：连接对象管理生命周期
 
-### Lifecycle
+### 生命周期
 
 ```
-Application owns Windows
-Windows hold shared_ptr to root content
-Content holds shared_ptr to children
-Bindings keep source alive while active
-Event connections auto-disconnect on destruction
+Application 拥有 Windows
+Windows 持有对根内容的 shared_ptr
+内容持有对子元素的 shared_ptr
+绑定在活动时保持源存活
+事件连接在销毁时自动断开
 ```
 
-## Performance Characteristics
+## 性能特征
 
-### Property Access
-- Get: O(1) hash lookup
-- Set: O(1) + notification overhead
-- Binding: Additional source resolution
+### 属性访问
+- Get：O(1) 哈希查找
+- Set：O(1) + 通知开销
+- Binding：额外的源解析
 
-### Layout
-- Measure: O(n) where n = element count
-- Arrange: O(n)
-- Invalidation: O(1) flag set, deferred recompute
+### 布局
+- Measure：O(n)，其中 n = 元素数
+- Arrange：O(n)
+- 失效：O(1) 标志设置，延迟重新计算
 
-### Rendering
-- Build render tree: O(n)
-- Draw commands: O(n)
-- OpenGL calls: Batched where possible
+### 渲染
+- 构建渲染树：O(n)
+- 绘制命令：O(n)
+- OpenGL 调用：尽可能批处理
 
-### Memory Footprint
-- DependencyObject: ~200 bytes
-- UIElement: +~100 bytes
-- Control: +~50 bytes
-- Per binding: ~100 bytes
+### 内存占用
+- DependencyObject：~200 字节
+- UIElement：+~100 字节
+- Control：+~50 字节
+- 每个绑定：~100 字节
 
-## Extension Points
+## 扩展点
 
-### Custom Controls
-1. Inherit from `Control<MyControl>`
-2. Override `OnRender()` for custom drawing
-3. Override layout methods if needed
-4. Define dependency properties
+### 自定义控件
+1. 继承 `Control<MyControl>`
+2. 重写 `OnRender()` 进行自定义绘制
+3. 如需要重写布局方法
+4. 定义依赖属性
 
-### Custom Panels
-1. Inherit from `Panel<MyPanel>`
-2. Override `MeasureOverride()`
-3. Override `ArrangeOverride()`
+### 自定义面板
+1. 继承 `Panel<MyPanel>`
+2. 重写 `MeasureOverride()`
+3. 重写 `ArrangeOverride()`
 
-### Custom Binding Converters
-1. Implement `IValueConverter`
-2. Implement `Convert()` and `ConvertBack()`
+### 自定义绑定转换器
+1. 实现 `IValueConverter`
+2. 实现 `Convert()` 和 `ConvertBack()`
 
-### Custom Validation
-1. Inherit from `ValidationRule`
-2. Override `Validate()`
+### 自定义验证
+1. 继承 `ValidationRule`
+2. 重写 `Validate()`
 
-## Future Architecture Enhancements
+## 未来架构增强
 
-1. **Animation System**: Timeline-based property animations
-2. **Composition Layer**: Off-thread rendering and animations
-3. **Resource Management**: Texture atlases, shader compilation
-4. **Accessibility**: Screen reader support, keyboard navigation
-5. **Touch Input**: Gesture recognition, multi-touch
-6. **3D Support**: 3D transforms and camera
-7. **Hardware Acceleration**: GPU-accelerated effects
+1. **动画系统**：基于时间轴的属性动画
+2. **合成层**：离线程渲染和动画
+3. **资源管理**：纹理图集、着色器编译
+4. **可访问性**：屏幕阅读器支持、键盘导航
+5. **触摸输入**：手势识别、多点触控
+6. **3D 支持**：3D 变换和相机
+7. **硬件加速**：GPU 加速效果
 
-## See Also
+## 另请参阅
 
-- [Getting Started Guide](GettingStarted.md)
-- [Development Guide](Development.md)
-- [API Reference](API/README.md)
-- [Implementation Status](Implementation-Status.md)
+- [入门指南](GettingStarted.md)
+- [开发指南](Development.md)
+- [API 参考](API/README.md)
+- [实现状态](Implementation-Status.md)
