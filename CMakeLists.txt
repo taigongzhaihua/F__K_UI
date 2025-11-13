@@ -228,6 +228,9 @@ if(OPENGL_FOUND)
 endif()
 
 # ===== 示例可执行文件 (临时测试) =====
+add_executable(example_app examples/main.cpp)
+target_link_libraries(example_app PRIVATE fk)
+
 add_executable(style_api_test examples/style_api_test.cpp)
 target_link_libraries(style_api_test PRIVATE fk)
 
