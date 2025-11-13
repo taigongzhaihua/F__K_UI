@@ -105,14 +105,14 @@ public:
     
     std::chrono::milliseconds GetCurrentTime() const { return currentTime_; }
     double GetProgress() const;  // 返回0.0-1.0的进度
+    
+    // 更新方法（公开用于手动驱动动画）
+    void Update(std::chrono::milliseconds deltaTime);
 
 protected:
     // 子类需要实现的方法
     virtual Duration GetNaturalDuration() const;
     virtual void OnCurrentTimeInvalidated();
-    
-    // 内部更新方法
-    void Update(std::chrono::milliseconds deltaTime);
     virtual void UpdateCurrentValue(double progress) = 0;
 
 private:

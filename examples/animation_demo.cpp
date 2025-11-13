@@ -170,8 +170,8 @@ void Test_ColorAnimation() {
     ui::Color endColor(0, 0, 255);      // 蓝色
     obj->SetColor(startColor);
 
-    std::cout << "初始颜色: RGB(" << (int)startColor.R << ", " 
-              << (int)startColor.G << ", " << (int)startColor.B << ")\n";
+    std::cout << "初始颜色: RGB(" << (int)(startColor.r * 255) << ", " 
+              << (int)(startColor.g * 255) << ", " << (int)(startColor.b * 255) << ")\n";
 
     // 创建颜色动画
     auto animation = std::make_shared<animation::ColorAnimation>(
@@ -187,12 +187,12 @@ void Test_ColorAnimation() {
         animation->Update(std::chrono::milliseconds(100));
         auto color = obj->GetColor();
         std::cout << "  进度 " << (i * 10) << "%: RGB(" 
-                  << (int)color.R << ", " << (int)color.G << ", " << (int)color.B << ")\n";
+                  << (int)(color.r * 255) << ", " << (int)(color.g * 255) << ", " << (int)(color.b * 255) << ")\n";
     }
 
     auto finalColor = obj->GetColor();
-    std::cout << "动画完成！最终颜色: RGB(" << (int)finalColor.R << ", " 
-              << (int)finalColor.G << ", " << (int)finalColor.B << ")\n";
+    std::cout << "动画完成！最终颜色: RGB(" << (int)(finalColor.r * 255) << ", " 
+              << (int)(finalColor.g * 255) << ", " << (int)(finalColor.b * 255) << ")\n";
 }
 
 void Test_PointAnimation() {
@@ -203,7 +203,7 @@ void Test_PointAnimation() {
     ui::Point endPos{100.0f, 200.0f};
     obj->SetPosition(startPos);
 
-    std::cout << "初始位置: (" << startPos.X << ", " << startPos.Y << ")\n";
+    std::cout << "初始位置: (" << startPos.x << ", " << startPos.y << ")\n";
 
     // 创建位置动画
     auto animation = std::make_shared<animation::PointAnimation>(
@@ -219,11 +219,11 @@ void Test_PointAnimation() {
         animation->Update(std::chrono::milliseconds(100));
         auto pos = obj->GetPosition();
         std::cout << "  进度 " << (i * 10) << "%: 位置 = (" 
-                  << pos.X << ", " << pos.Y << ")\n";
+                  << pos.x << ", " << pos.y << ")\n";
     }
 
     auto finalPos = obj->GetPosition();
-    std::cout << "动画完成！最终位置: (" << finalPos.X << ", " << finalPos.Y << ")\n";
+    std::cout << "动画完成！最终位置: (" << finalPos.x << ", " << finalPos.y << ")\n";
 }
 
 void Test_RepeatBehavior() {
