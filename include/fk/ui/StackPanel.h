@@ -40,11 +40,11 @@ public:
     Orientation GetOrientation() const { return GetValue<enum ui::Orientation>(OrientationProperty()); }
     void SetOrientation(Orientation value) { SetValue(OrientationProperty(), value); }
     
-    StackPanel* Orientation(enum Orientation value) {
+    // 流式 API：使用 SetOrientation 避免与枚举类型名称冲突
+    StackPanel* SetOrient(enum Orientation value) {
         SetOrientation(value);
         return this;
     }
-    enum Orientation Orientation() const { return GetOrientation(); }
     
     // ========== 间距 ==========
     

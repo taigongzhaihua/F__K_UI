@@ -79,11 +79,11 @@ public:
     WindowState GetWindowState() const { return GetValue<ui::WindowState>(WindowStateProperty()); }
     void SetWindowState(WindowState value);
     
-    Window* WindowState(ui::WindowState value) {
+    // 流式 API：使用 State 避免与枚举类型名称冲突
+    Window* State(ui::WindowState value) {
         SetWindowState(value);
         return this;
     }
-    ui::WindowState WindowState() const { return GetWindowState(); }
 
     // ========== 窗口位置 ==========
     
