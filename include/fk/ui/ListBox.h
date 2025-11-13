@@ -50,8 +50,9 @@ public:
 public:
     ListBox() : Base() {
         // Subscribe to mouse and keyboard events
-        this->MouseDown += [this](auto& sender, auto& e) { OnMouseDownInternal(e); };
-        this->KeyDown += [this](auto& sender, auto& e) { OnKeyDownInternal(e); };
+        // TODO: Connect to actual event system when available
+        // this->MouseDown += [this](auto& sender, auto& e) { OnMouseDownInternal(e); };
+        // this->KeyDown += [this](auto& sender, auto& e) { OnKeyDownInternal(e); };
     }
     
     virtual ~ListBox() = default;
@@ -59,7 +60,8 @@ public:
     // ========== Selected Item ==========
     
     std::any GetSelectedItem() const { 
-        return this->template GetValue<std::any>(SelectedItemProperty()); 
+        // 直接调用GetValue而不使用模板，因为返回值本身就是std::any
+        return this->GetValue(SelectedItemProperty()); 
     }
     
     void SetSelectedItem(const std::any& item) { 
@@ -80,6 +82,8 @@ public:
     
     void SetSelectedIndex(int index) { 
         this->SetValue(SelectedIndexProperty(), index);
+        // 同步更新SelectedItem
+        SyncSelectedItem(index);
     }
     
     ActualDerived* SelectedIndex(int index) {
@@ -90,11 +94,11 @@ public:
 
     // ========== Selection Mode ==========
     
-    SelectionMode GetSelectionMode() const { 
-        return this->template GetValue<SelectionMode>(SelectionModeProperty()); 
+    ::fk::ui::SelectionMode GetSelectionMode() const { 
+        return this->template GetValue<::fk::ui::SelectionMode>(SelectionModeProperty()); 
     }
     
-    void SetSelectionMode(SelectionMode mode) { 
+    void SetSelectionMode(::fk::ui::SelectionMode mode) { 
         this->SetValue(SelectionModeProperty(), mode);
     }
     
@@ -166,66 +170,67 @@ protected:
     
     /**
      * @brief Handle mouse down on list item
+     * TODO: Implement when event system is available
      */
-    virtual void OnMouseDownInternal(MouseButtonEventArgs& e) {
-        // Find which container was clicked
-        // TODO: Hit testing to find container
-        // For now, this is a placeholder
-    }
+    // virtual void OnMouseDownInternal(MouseButtonEventArgs& e) {
+    //     // Find which container was clicked
+    //     // TODO: Hit testing to find container
+    // }
     
     /**
      * @brief Handle keyboard navigation
+     * TODO: Implement when event system is available
      */
-    virtual void OnKeyDownInternal(KeyEventArgs& e) {
-        int currentIndex = GetSelectedIndex();
-        int itemCount = static_cast<int>(this->GetItems().Count());
-        
-        if (itemCount == 0) return;
-        
-        int newIndex = currentIndex;
-        
-        switch (e.Key) {
-            case Key::Up:
-            case Key::Left:
-                newIndex = (currentIndex <= 0) ? 0 : currentIndex - 1;
-                e.Handled = true;
-                break;
-                
-            case Key::Down:
-            case Key::Right:
-                newIndex = (currentIndex >= itemCount - 1) ? itemCount - 1 : currentIndex + 1;
-                e.Handled = true;
-                break;
-                
-            case Key::Home:
-                newIndex = 0;
-                e.Handled = true;
-                break;
-                
-            case Key::End:
-                newIndex = itemCount - 1;
-                e.Handled = true;
-                break;
-                
-            case Key::PageUp:
-                newIndex = std::max(0, currentIndex - 10);  // TODO: Calculate based on visible items
-                e.Handled = true;
-                break;
-                
-            case Key::PageDown:
-                newIndex = std::min(itemCount - 1, currentIndex + 10);
-                e.Handled = true;
-                break;
-                
-            default:
-                break;
-        }
-        
-        if (newIndex != currentIndex) {
-            SelectItemByIndex(newIndex);
-            ScrollIntoView(newIndex);
-        }
-    }
+    // virtual void OnKeyDownInternal(KeyEventArgs& e) {
+    //     int currentIndex = GetSelectedIndex();
+    //     int itemCount = static_cast<int>(this->GetItems().Count());
+    //     
+    //     if (itemCount == 0) return;
+    //     
+    //     int newIndex = currentIndex;
+    //     
+    //     switch (e.Key) {
+    //         case Key::Up:
+    //         case Key::Left:
+    //             newIndex = (currentIndex <= 0) ? 0 : currentIndex - 1;
+    //             e.Handled = true;
+    //             break;
+    //             
+    //         case Key::Down:
+    //         case Key::Right:
+    //             newIndex = (currentIndex >= itemCount - 1) ? itemCount - 1 : currentIndex + 1;
+    //             e.Handled = true;
+    //             break;
+    //             
+    //         case Key::Home:
+    //             newIndex = 0;
+    //             e.Handled = true;
+    //             break;
+    //             
+    //         case Key::End:
+    //             newIndex = itemCount - 1;
+    //             e.Handled = true;
+    //             break;
+    //             
+    //         case Key::PageUp:
+    //             newIndex = std::max(0, currentIndex - 10);
+    //             e.Handled = true;
+    //             break;
+    //             
+    //         case Key::PageDown:
+    //             newIndex = std::min(itemCount - 1, currentIndex + 10);
+    //             e.Handled = true;
+    //             break;
+    //             
+    //         default:
+    //             break;
+    //     }
+    //     
+    //     if (newIndex != currentIndex) {
+    //         SelectItemByIndex(newIndex);
+    //         ScrollIntoView(newIndex);
+    //     }
+    // }
     
     /**
      * @brief Selection changed event handler
@@ -270,6 +275,21 @@ protected:
 private:
     // Selection state
     // Note: SelectedItem and SelectedIndex stored in dependency properties
+    
+    /**
+     * @brief 同步SelectedItem到指定索引的项目
+     */
+    void SyncSelectedItem(int index) {
+        if (index < 0 || index >= static_cast<int>(this->GetItems().Count())) {
+            // 索引无效，清空SelectedItem
+            this->SetValue(SelectedItemProperty(), std::any{});
+        } else {
+            // 获取对应索引的项目并设置SelectedItem
+            auto& items = this->GetItems();
+            std::any item = items[index];
+            this->SetValue(SelectedItemProperty(), item);
+        }
+    }
 };
 
 // ========== Dependency Property Implementations ==========

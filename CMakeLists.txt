@@ -168,12 +168,18 @@ add_library(fk STATIC
     src/ui/FocusManager.cpp
     src/ui/Panel.cpp
     src/ui/ItemsControl.cpp
+    src/ui/ItemContainerGenerator.cpp
     src/ui/Button.cpp
     src/ui/StackPanel.cpp
     src/ui/Grid.cpp
     src/ui/Brush.cpp
     src/ui/ContentPresenter.cpp
     src/ui/Shape.cpp
+    src/ui/ScrollBar.cpp
+    src/ui/ScrollViewer.cpp
+    src/ui/ListBox.cpp
+    src/ui/Popup.cpp
+    src/ui/ComboBox.cpp
     src/ui/DrawCommand.cpp
     src/ui/Renderer.cpp
     src/ui/RenderBackend.cpp
@@ -265,6 +271,19 @@ target_link_libraries(brush_system_demo PRIVATE fk)
 
 add_executable(contentpresenter_demo examples/contentpresenter_demo.cpp)
 target_link_libraries(contentpresenter_demo PRIVATE fk)
+
+# Phase 3 演示程序
+add_executable(gradient_brush_demo examples/gradient_brush_demo.cpp)
+target_link_libraries(gradient_brush_demo PRIVATE fk)
+
+add_executable(scrollviewer_demo examples/scrollviewer_demo.cpp)
+target_link_libraries(scrollviewer_demo PRIVATE fk)
+
+add_executable(listbox_demo examples/listbox_demo.cpp)
+target_link_libraries(listbox_demo PRIVATE fk)
+
+add_executable(combobox_demo examples/combobox_demo.cpp)
+target_link_libraries(combobox_demo PRIVATE fk)
 
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库
