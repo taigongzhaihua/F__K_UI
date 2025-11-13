@@ -160,6 +160,11 @@ add_library(fk STATIC
     # resources 模块 (Phase 4.3)
     src/resources/ThemeManager.cpp
     
+    # performance 模块 (Phase 4.4)
+    src/performance/GeometryCache.cpp
+    src/performance/MaterialPool.cpp
+    src/performance/RenderBatcher.cpp
+    
     # ui 模块（新架构）
     src/ui/Visual.cpp
     src/ui/VisualCollection.cpp
@@ -300,6 +305,9 @@ target_link_libraries(window_test PRIVATE fk)
 
 add_executable(theme_manager_demo examples/theme_manager_demo.cpp)
 target_link_libraries(theme_manager_demo PRIVATE fk)
+
+add_executable(performance_demo examples/performance_demo.cpp)
+target_link_libraries(performance_demo PRIVATE fk)
 
 # Phase 3 演示程序
 add_executable(gradient_brush_demo examples/gradient_brush_demo.cpp)
