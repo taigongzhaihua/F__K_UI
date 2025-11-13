@@ -1,17 +1,10 @@
 #pragma once
 
 #include "fk/ui/Panel.h"
+#include "fk/ui/Enums.h"
 #include "fk/binding/DependencyProperty.h"
 
 namespace fk::ui {
-
-/**
- * @brief 方向枚举
- */
-enum class Orientation {
-    Horizontal,
-    Vertical
-};
 
 /**
  * @brief 堆栈面板

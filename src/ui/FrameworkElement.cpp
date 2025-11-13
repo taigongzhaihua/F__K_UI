@@ -127,6 +127,8 @@ const binding::DependencyProperty& FrameworkElement<Derived>::VerticalAlignmentP
 
 // 显式实例化需要的额外头文件
 #include "fk/ui/ContentPresenter.h"
+#include "fk/ui/ScrollBar.h"
+#include "fk/ui/ScrollViewer.h"
 
 // 显式实例化 FrameworkElement 模板（必须在命名空间之外）
 // 注意：Rectangle、Ellipse、Line 等继承自 Shape，不直接继承 FrameworkElement
@@ -139,3 +141,5 @@ template class fk::ui::FrameworkElement<fk::ui::StackPanel>;
 template class fk::ui::FrameworkElement<fk::ui::Grid>;
 template class fk::ui::FrameworkElement<fk::ui::Shape>;
 template class fk::ui::FrameworkElement<fk::ui::ContentPresenter<>>;
+template class fk::ui::FrameworkElement<fk::ui::ScrollBar>;
+template class fk::ui::FrameworkElement<fk::ui::ScrollViewer>;

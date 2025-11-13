@@ -98,6 +98,10 @@ const binding::DependencyProperty& Control<Derived>::FontWeightProperty() {
 
 } // namespace fk::ui
 
+// 显式实例化需要的额外头文件
+#include "fk/ui/ScrollBar.h"
+
 // 显式实例化 Control 模板（必须在命名空间之外）
 template class fk::ui::Control<fk::ui::Button>;
 template class fk::ui::Control<fk::ui::Window>;
+template class fk::ui::Control<fk::ui::ScrollBar>;
