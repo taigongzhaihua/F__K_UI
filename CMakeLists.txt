@@ -40,9 +40,9 @@ if(WIN32)
             IMPORTED_LOCATION "${THIRD_PARTY_DIR}/lib/glfw3.dll"
             INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
         )
-        target_compile_definitions(fk PUBLIC GLFW_DLL)
         message(STATUS "Using Windows GLFW DLL from third_party")
         set(GLFW_AVAILABLE TRUE)
+        set(GLFW_IS_DLL TRUE)
     elseif(EXISTS "${THIRD_PARTY_DIR}/lib/libglfw3.a")
         # 使用静态库版本（MinGW）
         add_library(glfw3 STATIC IMPORTED)
@@ -210,6 +210,10 @@ target_link_libraries(fk PUBLIC
 if(GLFW_AVAILABLE)
     target_compile_definitions(fk PUBLIC FK_HAS_GLFW)
     message(STATUS "GLFW is available - defining FK_HAS_GLFW")
+    if(GLFW_IS_DLL)
+        target_compile_definitions(fk PUBLIC GLFW_DLL)
+        message(STATUS "GLFW is DLL - defining GLFW_DLL")
+    endif()
 endif()
 
 if(OPENGL_FOUND)
