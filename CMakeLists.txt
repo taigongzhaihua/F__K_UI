@@ -262,6 +262,10 @@ target_link_libraries(brush_system_demo PRIVATE fk)
 add_executable(contentpresenter_demo examples/contentpresenter_demo.cpp)
 target_link_libraries(contentpresenter_demo PRIVATE fk)
 
+# Phase 3 演示程序
+add_executable(gradient_brush_demo examples/gradient_brush_demo.cpp)
+target_link_libraries(gradient_brush_demo PRIVATE fk)
+
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库
 # 
