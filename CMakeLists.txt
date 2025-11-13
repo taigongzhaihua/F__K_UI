@@ -155,6 +155,7 @@ add_library(fk STATIC
     src/animation/PointAnimation.cpp
     src/animation/ThicknessAnimation.cpp
     src/animation/Storyboard.cpp
+    src/animation/VisualStateManager.cpp
     
     # ui 模块（新架构）
     src/ui/Visual.cpp
@@ -287,6 +288,9 @@ target_link_libraries(animation_demo PRIVATE fk)
 
 add_executable(keyframe_animation_demo examples/keyframe_animation_demo.cpp)
 target_link_libraries(keyframe_animation_demo PRIVATE fk)
+
+add_executable(visual_state_demo examples/visual_state_demo.cpp)
+target_link_libraries(visual_state_demo PRIVATE fk)
 
 # Phase 3 演示程序
 add_executable(gradient_brush_demo examples/gradient_brush_demo.cpp)
