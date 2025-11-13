@@ -154,11 +154,11 @@ public:
     HorizontalAlignment GetHorizontalAlignment() const { 
         return GetValue<ui::HorizontalAlignment>(HorizontalAlignmentProperty()); 
     }
-    Derived* HorizontalAlignment(ui::HorizontalAlignment value) { 
+    // 流式 API：使用 SetHorizontalAlignment 避免与枚举类型名称冲突
+    Derived* SetHAlign(ui::HorizontalAlignment value) { 
         SetHorizontalAlignment(value); 
         return static_cast<Derived*>(this); 
     }
-    ui::HorizontalAlignment HorizontalAlignment() const { return GetHorizontalAlignment(); }
     
     void SetVerticalAlignment(VerticalAlignment value) { 
         SetValue(VerticalAlignmentProperty(), value); 
@@ -167,11 +167,11 @@ public:
     VerticalAlignment GetVerticalAlignment() const { 
         return GetValue<ui::VerticalAlignment>(VerticalAlignmentProperty()); 
     }
-    Derived* VerticalAlignment(ui::VerticalAlignment value) { 
+    // 流式 API：使用 SetVAlign 避免与枚举类型名称冲突
+    Derived* SetVAlign(ui::VerticalAlignment value) { 
         SetVerticalAlignment(value); 
         return static_cast<Derived*>(this); 
     }
-    ui::VerticalAlignment VerticalAlignment() const { return GetVerticalAlignment(); }
 
     // ========== 样式和资源 ==========
     
