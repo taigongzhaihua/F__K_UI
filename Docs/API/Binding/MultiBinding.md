@@ -1,36 +1,59 @@
 # MultiBinding
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：多源数据绑定配置
 
-**Purpose**: Multi-source binding configuration
+**命名空间**：`fk::binding`
 
-**Namespace**: `fk::binding`
+**头文件**：`fk/binding/MultiBinding.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/binding/MultiBinding.h`
+`MultiBinding` 允许将多个源属性绑定到单个目标属性，通过转换器合并值。
 
-## Description
+## 公共接口
 
-Multi-source binding configuration
+### 添加绑定
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/binding/MultiBinding.h`]
-
-## Usage Examples
-
+#### AddBinding
 ```cpp
-// TODO: Add usage examples
+MultiBinding& AddBinding(const Binding& binding);
 ```
 
-## Related Classes
+添加一个绑定源。
 
-- [Design Document](../../Design/Binding/MultiBinding.md)
-- [API Index](../README.md)
+### 转换器
 
-## See Also
+#### Converter
+```cpp
+MultiBinding& Converter(std::shared_ptr<IMultiValueConverter> converter);
+```
 
-- [Architecture Overview](../../Architecture.md)
+设置多值转换器。
+
+## 使用示例
+
+### 组合多个属性
+```cpp
+class FullNameConverter : public IMultiValueConverter {
+public:
+    std::any Convert(const std::vector<std::any>& values, ...) override {
+        auto firstName = std::any_cast<std::string>(values[0]);
+        auto lastName = std::any_cast<std::string>(values[1]);
+        return firstName + " " + lastName;
+    }
+};
+
+MultiBinding multiBinding;
+multiBinding.AddBinding(Binding("FirstName"))
+            .AddBinding(Binding("LastName"))
+            .Converter(std::make_shared<FullNameConverter>());
+
+textBlock->SetValue(TextBlock::TextProperty(), multiBinding);
+```
+
+## 相关类
+
+- [Binding](Binding.md)
+- [IMultiValueConverter](IMultiValueConverter.md)

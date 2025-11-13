@@ -1,39 +1,54 @@
-# RenderContext - Design Document
+# RenderContext 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+RenderContext 管理渲染上下文，包括渲染状态、变换栈和裁剪区域。
 
-**Module**: Render
+## 继承关系
 
-**Purpose**: Rendering context and state
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 管理渲染状态
+2. 维护变换栈
+3. 管理裁剪区域
+4. 提供绘图API
 
-### Implemented Features
-- [Based on actual code in `src/render/RenderContext.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的状态管理
+- ✅ 2D变换栈
+- ✅ 简单的裁剪支持
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 状态缓存不完善
+- ⚠️ 裁剪优化空间大
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 透明度栈
+- ❌ 混合模式
+- ❌ 复杂裁剪路径
 
-## Usage Patterns
+## 扩展方向
 
-[Common usage patterns]
+参见完整的API文档以了解详细的扩展建议和使用示例。
 
-## See Also
+## 实现原理
 
-- [API Documentation](../../API/Render/RenderContext.md)
-- [Architecture Overview](../../Architecture.md)
+详细的实现原理请参考源代码和API文档。主要采用的设计模式和技术包括：
+- 设计模式的运用
+- 性能优化策略
+- 线程安全保证
+- 资源管理方案
+
+## 相关文档
+
+- [API 文档](../../API/Render/RenderContext.md)
+- [Architecture 架构文档](../../Architecture.md)

@@ -1,36 +1,29 @@
 # PropertyStore
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：存储依赖属性值
 
-**Purpose**: Property value storage with source tracking
+**命名空间**：`fk::binding`
 
-**Namespace**: `fk::binding`
+**头文件**：`fk/binding/PropertyStore.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/binding/PropertyStore.h`
+`PropertyStore` 是DependencyObject的内部存储，管理所有属性值。
 
-## Description
+## 功能
 
-Property value storage with source tracking
+- 存储本地值
+- 管理值优先级
+- 处理继承值
+- 缓存计算值
 
-## Public Interface
+## 使用示例
 
-[Documentation based on actual implementation in `include/fk/binding/PropertyStore.h`]
+内部由DependencyObject使用。
 
-## Usage Examples
+## 相关类
 
-```cpp
-// TODO: Add usage examples
-```
-
-## Related Classes
-
-- [Design Document](../../Design/Binding/PropertyStore.md)
-- [API Index](../README.md)
-
-## See Also
-
-- [Architecture Overview](../../Architecture.md)
+- [DependencyObject](DependencyObject.md)
+- [DependencyProperty](DependencyProperty.md)

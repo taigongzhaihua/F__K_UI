@@ -1,36 +1,69 @@
 # Timer
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：定时器实现
 
-**Purpose**: Timer with interval callbacks
+**命名空间**：`fk::core`
 
-**Namespace**: `fk::core`
+**头文件**：`fk/core/Timer.h`
 
-**Inheritance**: enable_shared_from_this
+## 描述
 
-**Header**: `fk/core/Timer.h`
+`Timer` 提供定时回调功能。
 
-## Description
+## 公共接口
 
-Timer with interval callbacks
+### 创建定时器
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/core/Timer.h`]
-
-## Usage Examples
-
+#### Timer
 ```cpp
-// TODO: Add usage examples
+Timer(std::chrono::milliseconds interval, std::function<void()> callback);
 ```
 
-## Related Classes
+创建定时器。
 
-- [Design Document](../../Design/Core/Timer.md)
-- [API Index](../README.md)
+### 控制
 
-## See Also
+#### Start / Stop
+```cpp
+void Start();
+void Stop();
+```
 
-- [Architecture Overview](../../Architecture.md)
+启动和停止定时器。
+
+## 使用示例
+
+### 周期性任务
+```cpp
+auto timer = std::make_shared<Timer>(
+    std::chrono::seconds(1),
+    []() {
+        std::cout << "每秒执行" << std::endl;
+    }
+);
+
+timer->Start();
+
+// 稍后停止
+timer->Stop();
+```
+
+### 一次性任务
+```cpp
+auto timer = std::make_shared<Timer>(
+    std::chrono::seconds(5),
+    []() {
+        std::cout << "5秒后执行一次" << std::endl;
+    }
+);
+
+timer->SetRepeating(false);
+timer->Start();
+```
+
+## 相关类
+
+- [Clock](Clock.md)
+- [Dispatcher](Dispatcher.md)

@@ -1,36 +1,51 @@
 # Renderer
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented (115%)
+**目的**：主渲染器，管理渲染管线
 
-**Purpose**: Main renderer implementation
+**命名空间**：`fk::render`
 
-**Namespace**: `fk::render`
+**头文件**：`fk/render/Renderer.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/render/Renderer.h`
+`Renderer` 是主渲染器，负责将视觉树渲染到屏幕。
 
-## Description
+## 公共接口
 
-Main renderer implementation
+### 渲染
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/render/Renderer.h`]
-
-## Usage Examples
-
+#### Render
 ```cpp
-// TODO: Add usage examples
+void Render(Visual* root);
 ```
 
-## Related Classes
+渲染视觉树。
 
-- [Design Document](../../Design/Render/Renderer.md)
-- [API Index](../README.md)
+#### SetBackend
+```cpp
+void SetBackend(std::shared_ptr<IRenderer> backend);
+```
 
-## See Also
+设置渲染后端。
 
-- [Architecture Overview](../../Architecture.md)
+## 使用示例
+
+### 基本渲染
+```cpp
+auto renderer = std::make_shared<Renderer>();
+auto glBackend = std::make_shared<GlRenderer>();
+renderer->SetBackend(glBackend);
+
+// 渲染循环
+while (running) {
+    renderer->Render(rootVisual);
+}
+```
+
+## 相关类
+
+- [IRenderer](IRenderer.md)
+- [GlRenderer](GlRenderer.md)
+- [RenderBackend](RenderBackend.md)

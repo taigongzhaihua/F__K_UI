@@ -1,39 +1,61 @@
-# PropertyStore - Design Document
+# PropertyStore 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+PropertyStore 是依赖属性值的存储管理器，负责高效地存储和检索属性值。
 
-**Module**: Binding
+## 继承关系
 
-**Purpose**: Property value storage with source tracking
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 存储属性值
+2. 提供快速属性访问
+3. 管理属性值优先级
+4. 优化内存使用
 
-### Implemented Features
-- [Based on actual code in `src/binding/PropertyStore.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的哈希表存储
+- ✅ 属性ID索引
+- ✅ 默认值处理
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 优先级系统较简单
+- ⚠️ 内存优化空间大
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 完整的优先级系统
+- ❌ 稀疏存储优化
+- ❌ 值清除机制
 
-## Usage Patterns
 
-[Common usage patterns]
+## 实现原理
 
-## See Also
+### 核心设计模式
 
-- [API Documentation](../../API/Binding/PropertyStore.md)
-- [Architecture Overview](../../Architecture.md)
+参见 API 文档了解 PropertyStore 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+参见完整的API文档以了解详细的扩展建议。
+
+## 相关文档
+
+- [API 文档](../../API/Binding/PropertyStore.md)
+- [DependencyObject 设计文档](./DependencyObject.md)
+- [Binding 设计文档](./Binding.md)

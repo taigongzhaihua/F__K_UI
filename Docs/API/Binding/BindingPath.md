@@ -1,36 +1,35 @@
 # BindingPath
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：解析和遍历属性路径
 
-**Purpose**: Property path parser and resolver
+**命名空间**：`fk::binding`
 
-**Namespace**: `fk::binding`
+**头文件**：`fk/binding/BindingPath.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/binding/BindingPath.h`
+`BindingPath` 解析属性路径字符串并提供遍历功能。
 
-## Description
+## 支持的路径语法
 
-Property path parser and resolver
+- 简单属性：`"PropertyName"`
+- 嵌套属性：`"Object.Property.SubProperty"`
+- 索引器：`"Collection[0]"`
+- 附加属性：`"(OwnerType.PropertyName)"`
 
-## Public Interface
+## 使用示例
 
-[Documentation based on actual implementation in `include/fk/binding/BindingPath.h`]
-
-## Usage Examples
-
+### 路径解析
 ```cpp
-// TODO: Add usage examples
+BindingPath path("User.Address.City");
+
+// 遍历路径
+auto value = path.GetValue(sourceObject);
 ```
 
-## Related Classes
+## 相关类
 
-- [Design Document](../../Design/Binding/BindingPath.md)
-- [API Index](../README.md)
-
-## See Also
-
-- [Architecture Overview](../../Architecture.md)
+- [Binding](Binding.md)
+- [BindingExpression](BindingExpression.md)

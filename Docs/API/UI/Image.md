@@ -1,36 +1,101 @@
 # Image
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：显示位图图像
 
-**Purpose**: Bitmap image display
+**命名空间**：`fk::ui`
 
-**Namespace**: `fk::ui`
+**继承**：`FrameworkElement` → `UIElement` → `Visual`
 
-**Inheritance**: FrameworkElement
+**头文件**：`fk/ui/Image.h`
 
-**Header**: `fk/ui/Image.h`
+## 描述
 
-## Description
+`Image` 元素用于显示位图图像。支持多种图像格式（PNG、JPEG等）和不同的拉伸模式。
 
-Bitmap image display
+## 公共接口
 
-## Public Interface
+### 图像源
 
-[Documentation based on actual implementation in `include/fk/ui/Image.h`]
-
-## Usage Examples
-
+#### Source
 ```cpp
-// TODO: Add usage examples
+static const DependencyProperty& SourceProperty();
+Image* Source(const std::string& path);
 ```
 
-## Related Classes
+设置图像文件路径。
 
-- [Design Document](../../Design/UI/Image.md)
-- [API Index](../README.md)
+**示例**：
+```cpp
+image->Source("assets/logo.png");
+```
 
-## See Also
+### 拉伸模式
 
-- [Architecture Overview](../../Architecture.md)
+#### Stretch
+```cpp
+static const DependencyProperty& StretchProperty();
+Image* Stretch(Stretch stretch);
+```
+
+控制图像如何适应可用空间：
+- `None` - 原始大小
+- `Fill` - 填充整个空间（可能变形）
+- `Uniform` - 保持宽高比，适应空间
+- `UniformToFill` - 保持宽高比，填充空间（可能裁剪）
+
+**示例**：
+```cpp
+image->Stretch(Stretch::Uniform);
+```
+
+### 大小
+
+#### Width / Height
+```cpp
+Image* Width(double width);
+Image* Height(double height);
+```
+
+显式设置图像显示大小。
+
+**示例**：
+```cpp
+image->Width(200)->Height(150);
+```
+
+## 使用示例
+
+### 基本图像显示
+```cpp
+auto image = std::make_shared<Image>();
+image->Source("images/photo.jpg")
+     ->Width(300)
+     ->Height(200)
+     ->Stretch(Stretch::Uniform);
+```
+
+### 作为按钮内容
+```cpp
+auto button = std::make_shared<Button>();
+auto image = std::make_shared<Image>();
+image->Source("icons/save.png")
+     ->Width(16)
+     ->Height(16);
+button->Content(image);
+```
+
+### 数据绑定
+```cpp
+image->SetValue(Image::SourceProperty(),
+               Binding("ImagePath").Source(viewModel));
+```
+
+## 相关类
+
+- [FrameworkElement](FrameworkElement.md) - 基类
+
+## 另请参阅
+
+- [设计文档](../../Design/UI/Image.md)

@@ -1,39 +1,51 @@
-# IRenderer - Design Document
+# IRenderer 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+IRenderer 是渲染器的抽象接口，定义了渲染系统的标准API。
 
-**Module**: Render
+## 继承关系
 
-**Purpose**: Renderer interface
+```
+无基类（纯接口）
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 定义渲染接口
+2. 抽象渲染后端
+3. 支持多种渲染实现
 
-### Implemented Features
-- [Based on actual code in `src/render/IRenderer.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 核心渲染接口定义
+- ✅ 几何体渲染接口
+- ✅ 文本渲染接口
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 接口粒度可优化
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 高级渲染接口（特效、滤镜）
+- ❌ 3D渲染接口
 
-## Usage Patterns
+## 扩展方向
 
-[Common usage patterns]
+参见完整的API文档以了解详细的扩展建议和使用示例。
 
-## See Also
+## 实现原理
 
-- [API Documentation](../../API/Render/IRenderer.md)
-- [Architecture Overview](../../Architecture.md)
+详细的实现原理请参考源代码和API文档。主要采用的设计模式和技术包括：
+- 设计模式的运用
+- 性能优化策略
+- 线程安全保证
+- 资源管理方案
+
+## 相关文档
+
+- [API 文档](../../API/Render/IRenderer.md)
+- [Architecture 架构文档](../../Architecture.md)

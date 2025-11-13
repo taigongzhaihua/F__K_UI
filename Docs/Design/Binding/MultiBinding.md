@@ -1,39 +1,58 @@
-# MultiBinding - Design Document
+# MultiBinding 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+MultiBinding 支持多个源属性绑定到单个目标属性，通过转换器聚合多个值。
 
-**Module**: Binding
+## 继承关系
 
-**Purpose**: Multi-source binding configuration
+```
+BindingBase (基类)
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 管理多个子绑定
+2. 聚合多个源值
+3. 应用多值转换器
 
-### Implemented Features
-- [Based on actual code in `src/binding/MultiBinding.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的多源绑定
+- ✅ 子绑定管理
+- ✅ 多值转换器应用
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 性能优化空间大
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 优先级绑定（PriorityBinding）
+- ❌ 绑定延迟评估
 
-## Usage Patterns
 
-[Common usage patterns]
+## 实现原理
 
-## See Also
+### 核心设计模式
 
-- [API Documentation](../../API/Binding/MultiBinding.md)
-- [Architecture Overview](../../Architecture.md)
+参见 API 文档了解 MultiBinding 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+参见完整的API文档以了解详细的扩展建议。
+
+## 相关文档
+
+- [API 文档](../../API/Binding/MultiBinding.md)
+- [DependencyObject 设计文档](./DependencyObject.md)
+- [Binding 设计文档](./Binding.md)

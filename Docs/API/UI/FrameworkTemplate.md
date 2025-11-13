@@ -1,36 +1,31 @@
 # FrameworkTemplate
 
-## Overview
+## 概览
 
-**Status**: ⚠️ Stub only
+**目的**：模板系统基类
 
-**Purpose**: Template base class
+**命名空间**：`fk::ui`
 
-**Namespace**: `fk::ui`
+**头文件**：`fk/ui/FrameworkTemplate.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/ui/FrameworkTemplate.h`
+`FrameworkTemplate` 是所有模板的基类。
 
-## Description
+## 派生类
 
-Template base class
+- [ControlTemplate](ControlTemplate.md) - 控件模板
+- [DataTemplate](DataTemplate.md) - 数据模板
 
-## Public Interface
+## 公共接口
 
-[Documentation based on actual implementation in `include/fk/ui/FrameworkTemplate.h`]
+### 应用模板
 
-## Usage Examples
-
+#### LoadContent
 ```cpp
-// TODO: Add usage examples
+virtual std::shared_ptr<UIElement> LoadContent() = 0;
 ```
 
-## Related Classes
+## 相关类
 
-- [Design Document](../../Design/UI/FrameworkTemplate.md)
-- [API Index](../README.md)
-
-## See Also
-
-- [Architecture Overview](../../Architecture.md)
+- [Control](Control.md)

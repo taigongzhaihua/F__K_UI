@@ -1,39 +1,54 @@
-# RenderTreeBuilder - Design Document
+# RenderTreeBuilder 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented (110%)
+RenderTreeBuilder 构建渲染树，将UI元素树转换为优化的渲染指令序列。
 
-**Module**: Render
+## 继承关系
 
-**Purpose**: Builds render tree from visual tree
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented (110%)
+1. 遍历视觉树
+2. 生成渲染命令
+3. 优化渲染顺序
+4. 处理层叠和Z顺序
 
-### Implemented Features
-- [Based on actual code in `src/render/RenderTreeBuilder.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的树遍历
+- ✅ 简单的命令生成
+- ✅ Z顺序排序
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 批处理优化不足
+- ⚠️ 脏区域检测简单
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 渲染层（Render Layers）
+- ❌ 增量更新
+- ❌ 硬件加速层
 
-## Usage Patterns
+## 扩展方向
 
-[Common usage patterns]
+参见完整的API文档以了解详细的扩展建议和使用示例。
 
-## See Also
+## 实现原理
 
-- [API Documentation](../../API/Render/RenderTreeBuilder.md)
-- [Architecture Overview](../../Architecture.md)
+详细的实现原理请参考源代码和API文档。主要采用的设计模式和技术包括：
+- 设计模式的运用
+- 性能优化策略
+- 线程安全保证
+- 资源管理方案
+
+## 相关文档
+
+- [API 文档](../../API/Render/RenderTreeBuilder.md)
+- [Architecture 架构文档](../../Architecture.md)

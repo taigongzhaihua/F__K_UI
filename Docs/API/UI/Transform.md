@@ -1,36 +1,58 @@
 # Transform
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：2D变换的基类
 
-**Purpose**: Transform base class
+**命名空间**：`fk::ui`
 
-**Namespace**: `fk::ui`
+**头文件**：`fk/ui/Transform.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/ui/Transform.h`
+`Transform` 是所有2D变换的基类。
 
-## Description
+## 派生类
 
-Transform base class
+- **TranslateTransform** - 平移
+- **ScaleTransform** - 缩放
+- **RotateTransform** - 旋转
+- **SkewTransform** - 倾斜
+- **MatrixTransform** - 矩阵变换
+- **TransformGroup** - 组合变换
 
-## Public Interface
+## 使用示例
 
-[Documentation based on actual implementation in `include/fk/ui/Transform.h`]
-
-## Usage Examples
-
+### 平移
 ```cpp
-// TODO: Add usage examples
+auto translate = std::make_shared<TranslateTransform>();
+translate->X(50)->Y(100);
+element->SetRenderTransform(translate.get());
 ```
 
-## Related Classes
+### 旋转
+```cpp
+auto rotate = std::make_shared<RotateTransform>();
+rotate->Angle(45)->CenterX(50)->CenterY(50);
+element->SetRenderTransform(rotate.get());
+```
 
-- [Design Document](../../Design/UI/Transform.md)
-- [API Index](../README.md)
+### 缩放
+```cpp
+auto scale = std::make_shared<ScaleTransform>();
+scale->ScaleX(2.0)->ScaleY(2.0);
+element->SetRenderTransform(scale.get());
+```
 
-## See Also
+### 组合变换
+```cpp
+auto group = std::make_shared<TransformGroup>();
+group->AddTransform(std::make_shared<ScaleTransform>(2.0, 2.0));
+group->AddTransform(std::make_shared<RotateTransform>(45));
+element->SetRenderTransform(group.get());
+```
 
-- [Architecture Overview](../../Architecture.md)
+## 相关类
+
+- [Visual](Visual.md)
+- [UIElement](UIElement.md)

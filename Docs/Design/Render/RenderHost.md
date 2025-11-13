@@ -1,39 +1,54 @@
-# RenderHost - Design Document
+# RenderHost 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+RenderHost 管理渲染宿主，连接UI系统和底层渲染后端。
 
-**Module**: Render
+## 继承关系
 
-**Purpose**: Manages render surface
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 管理渲染窗口
+2. 处理渲染循环
+3. 管理渲染资源
+4. 同步UI和渲染线程
 
-### Implemented Features
-- [Based on actual code in `src/render/RenderHost.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的窗口管理
+- ✅ 简单的渲染循环
+- ✅ 资源生命周期管理
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 线程同步较简单
+- ⚠️ 资源共享机制不完善
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 多窗口渲染
+- ❌ 离屏渲染
+- ❌ 渲染线程池
 
-## Usage Patterns
+## 扩展方向
 
-[Common usage patterns]
+参见完整的API文档以了解详细的扩展建议和使用示例。
 
-## See Also
+## 实现原理
 
-- [API Documentation](../../API/Render/RenderHost.md)
-- [Architecture Overview](../../Architecture.md)
+详细的实现原理请参考源代码和API文档。主要采用的设计模式和技术包括：
+- 设计模式的运用
+- 性能优化策略
+- 线程安全保证
+- 资源管理方案
+
+## 相关文档
+
+- [API 文档](../../API/Render/RenderHost.md)
+- [Architecture 架构文档](../../Architecture.md)

@@ -1,36 +1,68 @@
 # ControlTemplate
 
-## Overview
+## 概览
 
-**Status**: ⚠️ Stub only
+**目的**：定义控件的视觉结构
 
-**Purpose**: Control visual template
+**命名空间**：`fk::ui`
 
-**Namespace**: `fk::ui`
+**头文件**：`fk/ui/ControlTemplate.h`
 
-**Inheritance**: FrameworkTemplate
+## 描述
 
-**Header**: `fk/ui/ControlTemplate.h`
+`ControlTemplate` 定义控件的视觉外观，允许完全自定义控件的呈现方式。
 
-## Description
+## 公共接口
 
-Control visual template
+### 设置模板
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/ui/ControlTemplate.h`]
-
-## Usage Examples
-
+#### SetVisualTree
 ```cpp
-// TODO: Add usage examples
+void SetVisualTree(std::function<std::shared_ptr<UIElement>()> factory);
 ```
 
-## Related Classes
+设置创建视觉树的工厂函数。
 
-- [Design Document](../../Design/UI/ControlTemplate.md)
-- [API Index](../README.md)
+## 使用示例
 
-## See Also
+### 自定义按钮模板
+```cpp
+auto template = std::make_shared<ControlTemplate>();
 
-- [Architecture Overview](../../Architecture.md)
+template->SetVisualTree([]() {
+    auto border = std::make_shared<Border>();
+    border->Background(Colors::LightBlue)
+          ->BorderBrush(Colors::Blue)
+          ->BorderThickness(Thickness(2))
+          ->CornerRadius(CornerRadius(5))
+          ->Padding(Thickness(10, 5));
+    
+    auto contentPresenter = std::make_shared<ContentPresenter>();
+    border->SetChild(contentPresenter);
+    
+    return border;
+});
+
+button->SetTemplate(template.get());
+```
+
+### 使用TemplateBinding
+```cpp
+template->SetVisualTree([]() {
+    auto border = std::make_shared<Border>();
+    
+    // 绑定到模板化父控件的属性
+    border->SetValue(
+        Border::BackgroundProperty(),
+        TemplateBinding(Control::BackgroundProperty())
+    );
+    
+    return border;
+});
+```
+
+## 相关类
+
+- [Control](Control.md)
+- [ContentPresenter](ContentPresenter.md)
+- [TemplateBinding](../Binding/TemplateBinding.md)

@@ -1,36 +1,59 @@
 # FocusManager
 
-## Overview
+## 概览
 
-**Status**: ✅ Implemented (98%)
+**目的**：键盘焦点管理
 
-**Purpose**: Keyboard focus management
+**命名空间**：`fk::ui`
 
-**Namespace**: `fk::ui`
+**头文件**：`fk/ui/FocusManager.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/ui/FocusManager.h`
+`FocusManager` 管理键盘焦点和焦点导航。
 
-## Description
+## 公共接口
 
-Keyboard focus management
+### 焦点控制
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/ui/FocusManager.h`]
-
-## Usage Examples
-
+#### SetFocus
 ```cpp
-// TODO: Add usage examples
+bool SetFocus(UIElement* element);
 ```
 
-## Related Classes
+设置焦点到指定元素。
 
-- [Design Document](../../Design/UI/FocusManager.md)
-- [API Index](../README.md)
+#### GetFocusedElement
+```cpp
+UIElement* GetFocusedElement() const;
+```
 
-## See Also
+获取当前焦点元素。
 
-- [Architecture Overview](../../Architecture.md)
+### 焦点导航
+
+#### MoveFocus
+```cpp
+bool MoveFocus(FocusNavigationDirection direction);
+```
+
+按方向移动焦点（Next、Previous、Up、Down等）。
+
+## 使用示例
+
+### 设置焦点
+```cpp
+auto focusManager = FocusManager::Instance();
+focusManager->SetFocus(textBox.get());
+```
+
+### 焦点导航
+```cpp
+// Tab键导航
+focusManager->MoveFocus(FocusNavigationDirection::Next);
+```
+
+## 相关类
+
+- [UIElement](UIElement.md)
+- [InputManager](InputManager.md)

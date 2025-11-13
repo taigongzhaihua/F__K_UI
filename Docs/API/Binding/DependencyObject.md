@@ -1,29 +1,29 @@
 # DependencyObject
 
-## Overview
+## 概览
 
-**Purpose**: Base class for objects that support dependency properties, data binding, and logical tree relationships.
+**目的**：支持依赖属性、数据绑定和逻辑树关系的对象基类。
 
-**Namespace**: `fk::binding`
+**命名空间**：`fk::binding`
 
-**Inheritance**: None (root base class)
+**继承**：无（根基类）
 
-**Header**: `fk/binding/DependencyObject.h`
+**头文件**：`fk/binding/DependencyObject.h`
 
-## Description
+## 描述
 
-`DependencyObject` is the foundational base class for the F__K_UI property system. It provides infrastructure for:
+`DependencyObject` 是 F__K_UI 属性系统的基础基类。它为以下内容提供基础设施：
 
-- **Dependency Properties**: Properties with metadata, change notification, and value coercion
-- **Data Binding**: Automatic synchronization between properties and data sources
-- **Logical Tree**: Parent-child relationships for element name resolution and DataContext inheritance
-- **Value Sources**: Tracking where property values come from (local, binding, default, etc.)
+- **依赖属性**：具有元数据、变更通知和值强制转换的属性
+- **数据绑定**：属性和数据源之间的自动同步
+- **逻辑树**：用于元素名称解析和 DataContext 继承的父子关系
+- **值来源**：跟踪属性值来源（本地、绑定、默认值等）
 
-All UI elements and many framework classes derive from `DependencyObject`.
+所有 UI 元素和许多框架类都派生自 `DependencyObject`。
 
-## Public Interface
+## 公共接口
 
-### Property Value Management
+### 属性值管理
 
 #### GetValue
 ```cpp
@@ -32,14 +32,14 @@ const std::any& GetValue(const DependencyProperty& property) const;
 template<typename T>
 T GetValue(const DependencyProperty& property) const;
 ```
-Gets the current effective value of a dependency property.
+获取依赖属性的当前有效值。
 
-**Parameters**:
-- `property`: The dependency property to query
+**参数**：
+- `property`：要查询的依赖属性
 
-**Returns**: The property value (typed or as `std::any`)
+**返回**：属性值（类型化或作为 `std::any`）
 
-**Example**:
+**示例**：
 ```cpp
 double width = element->GetValue<double>(UIElement::WidthProperty());
 ```
@@ -53,16 +53,16 @@ void SetValue(const DependencyProperty& property, T&& value);
 
 void SetValue(const DependencyProperty& property, Binding binding);
 ```
-Sets the local value of a dependency property.
+设置依赖属性的本地值。
 
-**Parameters**:
-- `property`: The dependency property to set
-- `value`: The new value (or Binding for data binding)
+**参数**：
+- `property`：要设置的依赖属性
+- `value`：新值（或用于数据绑定的 Binding）
 
-**Example**:
+**示例**：
 ```cpp
 element->SetValue(UIElement::WidthProperty(), 200.0);
-// Or with binding:
+// 或使用绑定：
 element->SetValue(UIElement::WidthProperty(), Binding("Width"));
 ```
 
@@ -70,300 +70,217 @@ element->SetValue(UIElement::WidthProperty(), Binding("Width"));
 ```cpp
 void ClearValue(const DependencyProperty& property);
 ```
-Clears the local value, reverting to default or inherited value.
+清除本地值，恢复为默认值或继承值。
 
 #### GetValueSource
 ```cpp
 ValueSource GetValueSource(const DependencyProperty& property) const;
 ```
-Returns where the current value comes from (Local, Default, Binding, etc.).
+返回当前值的来源（Local、Default、Binding 等）。
 
-### Data Binding
+### 逻辑树
 
-#### SetBinding
-```cpp
-void SetBinding(const DependencyProperty& property, Binding binding);
-void SetBinding(const DependencyProperty& property, MultiBinding binding);
-```
-Establishes a data binding on a property.
-
-**Example**:
-```cpp
-auto binding = Binding("UserName");
-binding.SetMode(BindingMode::TwoWay);
-element->SetBinding(TextBox::TextProperty(), binding);
-```
-
-#### ClearBinding
-```cpp
-void ClearBinding(const DependencyProperty& property);
-```
-Removes the binding from a property.
-
-#### GetBinding
-```cpp
-std::shared_ptr<BindingExpression> GetBinding(const DependencyProperty& property) const;
-```
-Gets the active binding expression for a property (if any).
-
-#### UpdateSource
-```cpp
-void UpdateSource(const DependencyProperty& property);
-```
-Manually triggers UpdateSource for a two-way binding.
-
-### DataContext Management
-
-#### SetDataContext
-```cpp
-void SetDataContext(std::any value);
-
-template<typename T>
-void SetDataContext(T&& value);
-```
-Sets the data context for this element and its descendants.
-
-**Example**:
-```cpp
-auto viewModel = std::make_shared<MyViewModel>();
-window->SetDataContext(viewModel);
-```
-
-#### GetDataContext
-```cpp
-const std::any& GetDataContext() const noexcept;
-bool HasDataContext() const noexcept;
-```
-Gets the data context or checks if one is set.
-
-#### ClearDataContext
-```cpp
-void ClearDataContext();
-```
-Clears the local data context.
-
-#### SetDataContextParent
-```cpp
-void SetDataContextParent(DependencyObject* parent);
-```
-Internal method to set up DataContext inheritance.
-
-### Logical Tree Management
-
-#### Element Naming
-```cpp
-void SetElementName(std::string name);
-const std::string& GetElementName() const noexcept;
-```
-Sets/gets the element's name for ElementName binding.
-
-#### Parent-Child Relationships
+#### SetLogicalParent / GetLogicalParent
 ```cpp
 void SetLogicalParent(DependencyObject* parent);
-DependencyObject* GetLogicalParent() const noexcept;
+DependencyObject* GetLogicalParent() const;
+```
+管理逻辑父子关系。
 
+#### AddLogicalChild / RemoveLogicalChild
+```cpp
 void AddLogicalChild(DependencyObject* child);
 void RemoveLogicalChild(DependencyObject* child);
-const std::vector<DependencyObject*>& GetLogicalChildren() const noexcept;
 ```
-Manages logical parent-child relationships.
+管理逻辑子元素。
 
-#### Element Lookup
+### DataContext
+
+#### DataContext
 ```cpp
-DependencyObject* FindElementByName(std::string_view name);
-const DependencyObject* FindElementByName(std::string_view name) const;
+static const DependencyProperty& DataContextProperty();
 ```
-Searches the logical tree for an element by name.
+数据绑定上下文属性。沿逻辑树继承。
 
-### Binding Context
-
+**示例**：
 ```cpp
-BindingContext& GetBindingContext() noexcept;
-const BindingContext& GetBindingContext() const noexcept;
+// 设置数据上下文
+window->SetValue(FrameworkElement::DataContextProperty(), viewModel);
+
+// 子元素自动继承
+textBlock->SetValue(TextBlock::TextProperty(), Binding("Username"));
 ```
-Gets the binding context managing all bindings for this object.
 
-## Events
+### 属性变更通知
 
-### PropertyChanged
+#### PropertyChanged
 ```cpp
-PropertyChangedEvent PropertyChanged;
+core::Event<const DependencyPropertyChangedEventArgs&> PropertyChanged;
 ```
-**Signature**: `Event<const DependencyProperty&, const std::any& oldValue, const std::any& newValue, ValueSource oldSource, ValueSource newSource>`
+任何依赖属性变更时触发的事件。
 
-Fired when any dependency property value changes.
-
-**Example**:
+**示例**：
 ```cpp
-element->PropertyChanged += [](const DependencyProperty& prop, 
-                                const std::any& oldVal, 
-                                const std::any& newVal,
-                                ValueSource oldSrc,
-                                ValueSource newSrc) {
-    std::cout << "Property changed!" << std::endl;
+obj->PropertyChanged += [](const DependencyPropertyChangedEventArgs& e) {
+    std::cout << "属性 " << e.Property.Name() << " 变更" << std::endl;
 };
 ```
 
-### BindingChanged
-```cpp
-BindingChangedEvent BindingChanged;
-```
-**Signature**: `Event<const DependencyProperty&, const std::shared_ptr<BindingExpression>& old, const std::shared_ptr<BindingExpression>& new>`
+## 值优先级
 
-Fired when a binding is added or removed from a property.
+属性值按优先级确定：
 
-### DataContextChanged
-```cpp
-DataContextChangedEvent DataContextChanged;
-```
-**Signature**: `Event<const std::any& oldValue, const std::any& newValue>`
+1. **动画值**（尚未实现）
+2. **本地值** - 通过 SetValue() 设置
+3. **模板父值**（尚未实现）
+4. **样式值**（部分实现）
+5. **继承值** - 从父元素继承
+6. **默认值** - 在属性元数据中定义
 
-Fired when the DataContext changes.
+## 使用示例
 
-## Protected Interface
-
-### Virtual Callbacks
+### 基本属性操作
 
 ```cpp
-protected:
-    virtual void OnPropertyChanged(const DependencyProperty& property, 
-                                   const std::any& oldValue, 
-                                   const std::any& newValue, 
-                                   ValueSource oldSource, 
-                                   ValueSource newSource);
-    
-    virtual void OnBindingChanged(const DependencyProperty& property, 
-                                  const std::shared_ptr<BindingExpression>& oldBinding, 
-                                  const std::shared_ptr<BindingExpression>& newBinding);
-    
-    virtual void OnDataContextChanged(const std::any& oldValue, 
-                                      const std::any& newValue);
-```
-
-Override these methods in derived classes to respond to changes.
-
-### Property Store Access
-
-```cpp
-protected:
-    PropertyStore& MutablePropertyStore() noexcept;
-    const PropertyStore& GetPropertyStore() const noexcept;
-```
-
-Direct access to the underlying property storage (for advanced scenarios).
-
-## Usage Examples
-
-### Basic Property Usage
-
-```cpp
-// Create an element
+// 创建对象
 auto element = std::make_shared<UIElement>();
 
-// Set properties
+// 设置值
 element->SetValue(UIElement::WidthProperty(), 200.0);
 element->SetValue(UIElement::HeightProperty(), 100.0);
 
-// Get properties
+// 获取值
 double width = element->GetValue<double>(UIElement::WidthProperty());
 
-// Clear value (revert to default)
+// 清除值
 element->ClearValue(UIElement::WidthProperty());
+
+// 检查值来源
+auto source = element->GetValueSource(UIElement::WidthProperty());
+if (source == ValueSource::Local) {
+    std::cout << "本地设置的值" << std::endl;
+}
 ```
 
-### Data Binding
+### 数据绑定
 
 ```cpp
-// Create ViewModel
+// 创建 ViewModel
 class MyViewModel : public ObservableObject {
-public:
-    FK_PROPERTY(std::string, Title, "Hello")
-    FK_PROPERTY(double, Width, 300.0)
+    PROPERTY(std::string, Username, "")
 };
 
 auto viewModel = std::make_shared<MyViewModel>();
+viewModel->SetUsername("John");
 
-// Set DataContext
-window->SetDataContext(viewModel);
+// 设置 DataContext
+element->SetValue(FrameworkElement::DataContextProperty(), viewModel);
 
-// Bind properties
-auto titleBinding = Binding("Title");
-textBlock->SetBinding(TextBlock::TextProperty(), titleBinding);
+// 创建绑定
+element->SetValue(
+    TextBlock::TextProperty(),
+    Binding("Username").Mode(BindingMode::TwoWay)
+);
 
-auto widthBinding = Binding("Width");
-widthBinding.SetMode(BindingMode::TwoWay);
-element->SetBinding(UIElement::WidthProperty(), widthBinding);
-
-// When ViewModel.Title changes, TextBlock.Text updates automatically
-// When element width changes, ViewModel.Width updates (TwoWay)
+// 更新 ViewModel - UI 自动更新
+viewModel->SetUsername("Jane");
 ```
 
-### Logical Tree and Element Names
+### 属性变更通知
 
 ```cpp
-// Set element names
-button->SetElementName("SubmitButton");
-textBox->SetElementName("UserInput");
-
-// Find elements by name
-auto button = window->FindElementByName("SubmitButton");
-auto textBox = window->FindElementByName("UserInput");
-
-// Bind to another element
-auto binding = Binding("Text");
-binding.SetElementName("UserInput");
-textBlock->SetBinding(TextBlock::TextProperty(), binding);
-```
-
-### Property Change Notification
-
-```cpp
-element->PropertyChanged += [](const DependencyProperty& prop,
-                               const std::any& oldVal,
-                               const std::any& newVal,
-                               ValueSource oldSrc,
-                               ValueSource newSrc) {
-    if (&prop == &UIElement::WidthProperty()) {
-        double oldWidth = std::any_cast<double>(oldVal);
-        double newWidth = std::any_cast<double>(newVal);
-        std::cout << "Width changed from " << oldWidth 
-                  << " to " << newWidth << std::endl;
-    }
+element->PropertyChanged += [](const DependencyPropertyChangedEventArgs& e) {
+    std::cout << "属性变更：" << e.Property.Name() << std::endl;
+    std::cout << "旧值：" << std::any_cast<double>(e.OldValue) << std::endl;
+    std::cout << "新值：" << std::any_cast<double>(e.NewValue) << std::endl;
 };
+
+element->SetValue(UIElement::WidthProperty(), 300.0);
 ```
 
-## Value Source Priority
+### 逻辑树
 
-Property values can come from multiple sources. The priority order is:
+```cpp
+// 设置父子关系
+parent->AddLogicalChild(child.get());
+child->SetLogicalParent(parent.get());
 
-1. **Local** - Directly set via `SetValue()`
-2. **Binding** - From an active data binding
-3. **Default** - The default value from property metadata
+// 遍历逻辑子元素
+for (auto& child : parent->GetLogicalChildren()) {
+    // 处理子元素
+}
 
-When multiple sources exist, the highest priority source wins.
+// 向上遍历逻辑树
+auto current = element->GetLogicalParent();
+while (current) {
+    // 处理祖先
+    current = current->GetLogicalParent();
+}
+```
 
-## Thread Safety
+## 性能考虑
 
-- `DependencyObject` is NOT thread-safe by default
-- Property access should occur on the object's associated thread (usually UI thread)
-- Use `Dispatcher` to marshal calls from other threads
+### 属性访问
+- **GetValue**：O(1) - 哈希映射查找
+- **SetValue**：O(1) + 通知开销
+- **绑定解析**：首次额外开销，后续缓存
 
-## Performance Considerations
+### 内存使用
+- 基础对象：~200 字节
+- 每个设置的属性：~48 字节
+- 每个活动绑定：~100 字节
 
-- Property access is optimized with hash-based lookup
-- Bindings add overhead - use sparingly for frequently updated properties
-- Property change notifications have a cost - minimize unnecessary changes
+### 最佳实践
 
-## Related Classes
+1. **避免不必要的 SetValue 调用**
+   ```cpp
+   // 不好 - 不必要地触发通知
+   for (int i = 0; i < 100; i++) {
+       element->SetValue(Property, i);
+   }
+   
+   // 好 - 只设置最终值
+   element->SetValue(Property, 99);
+   ```
 
-- [DependencyProperty](DependencyProperty.md) - Property metadata
-- [Binding](Binding.md) - Binding configuration
-- [BindingExpression](BindingExpression.md) - Active binding
-- [PropertyStore](PropertyStore.md) - Value storage
-- [ObservableObject](ObservableObject.md) - ViewModel base
+2. **批量更新使用 BeginInit/EndInit**
+   ```cpp
+   element->BeginInit();
+   element->SetValue(WidthProperty(), 200);
+   element->SetValue(HeightProperty(), 100);
+   element->SetValue(BackgroundProperty(), color);
+   element->EndInit();  // 触发单次布局更新
+   ```
 
-## See Also
+3. **清理不需要的绑定**
+   ```cpp
+   // 明确清除绑定以释放资源
+   element->ClearValue(TextProperty());
+   ```
 
-- [Design Document](../../Design/Binding/DependencyObject.md)
-- [Data Binding Guide](../../GettingStarted.md#data-binding)
-- [Dependency Property System](../../Development.md#dependency-properties)
+## 线程安全
+
+`DependencyObject` 不是线程安全的。所有属性访问必须在创建对象的线程上进行（通常是 UI 线程）。
+
+使用 `Dispatcher` 从其他线程访问：
+
+```cpp
+dispatcher->InvokeAsync([element]() {
+    // 现在在 UI 线程上
+    element->SetValue(Property, value);
+});
+```
+
+## 相关类
+
+- [DependencyProperty](DependencyProperty.md) - 属性元数据
+- [Binding](Binding.md) - 数据绑定配置
+- [BindingExpression](BindingExpression.md) - 活动绑定
+- [ObservableObject](ObservableObject.md) - ViewModel 基类
+- [PropertyStore](PropertyStore.md) - 内部值存储
+
+## 另请参阅
+
+- [设计文档](../../Design/Binding/DependencyObject.md)
+- [API 索引](../README.md)
+- [架构概览](../../Architecture.md)

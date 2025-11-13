@@ -1,36 +1,53 @@
 # ObservableCollection
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：可观察的泛型集合
 
-**Purpose**: Observable collection with change notification
+**命名空间**：`fk::ui`
 
-**Namespace**: `fk::ui`
+**头文件**：`fk/ui/ObservableCollection.h`
 
-**Inheritance**: None (template)
+## 描述
 
-**Header**: `fk/ui/ObservableCollection.h`
+`ObservableCollection<T>` 是可观察的集合，元素变更时发出通知。
 
-## Description
+## 公共接口
 
-Observable collection with change notification
+### 集合操作
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/ui/ObservableCollection.h`]
-
-## Usage Examples
-
+#### Add / Remove / Clear
 ```cpp
-// TODO: Add usage examples
+void Add(const T& item);
+void Remove(const T& item);
+void Clear();
 ```
 
-## Related Classes
+### 事件
 
-- [Design Document](../../Design/UI/ObservableCollection.md)
-- [API Index](../README.md)
+#### CollectionChanged
+```cpp
+core::Event<CollectionChangedEventArgs> CollectionChanged;
+```
 
-## See Also
+集合变更事件。
 
-- [Architecture Overview](../../Architecture.md)
+## 使用示例
+
+### 在ItemsControl中使用
+```cpp
+auto items = std::make_shared<ObservableCollection<std::string>>();
+
+items->CollectionChanged += [](const CollectionChangedEventArgs& e) {
+    // 处理变更
+};
+
+items->Add("项目1");
+items->Add("项目2");
+
+itemsControl->SetValue(ItemsControl::ItemsProperty(), items);
+```
+
+## 相关类
+
+- [ItemsControl](ItemsControl.md)

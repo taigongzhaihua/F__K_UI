@@ -1,39 +1,54 @@
-# Clock - Design Document
+# Clock 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+Clock 提供时间和帧跟踪功能，用于动画系统和性能监控。
 
-**Module**: Core
+## 继承关系
 
-**Purpose**: Frame time tracking and delta time calculation
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 提供当前时间
+2. 跟踪帧率
+3. 管理时间刻度
+4. 支持暂停和恢复
 
-### Implemented Features
-- [Based on actual code in `src/core/Clock.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的时间获取
+- ✅ 帧计数器
+- ✅ 简单的FPS计算
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 精确度有待提高
+- ⚠️ 时间轴管理较简单
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 可调节时间速度
+- ❌ 多时间线支持
+- ❌ 时间同步机制
 
-## Usage Patterns
+## 扩展方向
 
-[Common usage patterns]
+参见完整的API文档以了解详细的扩展建议和使用示例。
 
-## See Also
+## 实现原理
 
-- [API Documentation](../../API/Core/Clock.md)
-- [Architecture Overview](../../Architecture.md)
+详细的实现原理请参考源代码和API文档。主要采用的设计模式和技术包括：
+- 设计模式的运用
+- 性能优化策略
+- 线程安全保证
+- 资源管理方案
+
+## 相关文档
+
+- [API 文档](../../API/Core/Clock.md)
+- [Architecture 架构文档](../../Architecture.md)

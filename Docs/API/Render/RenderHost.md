@@ -1,36 +1,47 @@
 # RenderHost
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：管理渲染表面和窗口集成
 
-**Purpose**: Manages render surface
+**命名空间**：`fk::render`
 
-**Namespace**: `fk::render`
+**头文件**：`fk/render/RenderHost.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/render/RenderHost.h`
+`RenderHost` 管理渲染表面和与窗口系统的集成。
 
-## Description
+## 公共接口
 
-Manages render surface
+### 表面管理
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/render/RenderHost.h`]
-
-## Usage Examples
-
+#### CreateSurface
 ```cpp
-// TODO: Add usage examples
+void CreateSurface(void* windowHandle, int width, int height);
 ```
 
-## Related Classes
+### 渲染循环
 
-- [Design Document](../../Design/Render/RenderHost.md)
-- [API Index](../README.md)
+#### BeginFrame / EndFrame
+```cpp
+void BeginFrame();
+void EndFrame();
+```
 
-## See Also
+## 使用示例
 
-- [Architecture Overview](../../Architecture.md)
+```cpp
+auto renderHost = std::make_shared<RenderHost>();
+renderHost->CreateSurface(windowHandle, 800, 600);
+
+while (running) {
+    renderHost->BeginFrame();
+    // 渲染...
+    renderHost->EndFrame();
+}
+```
+
+## 相关类
+
+- [Renderer](Renderer.md)

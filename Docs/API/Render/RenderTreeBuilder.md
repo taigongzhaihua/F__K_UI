@@ -1,36 +1,42 @@
 # RenderTreeBuilder
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented (110%)
+**目的**：从视觉树构建渲染树
 
-**Purpose**: Builds render tree from visual tree
+**命名空间**：`fk::render`
 
-**Namespace**: `fk::render`
+**头文件**：`fk/render/RenderTreeBuilder.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/render/RenderTreeBuilder.h`
+`RenderTreeBuilder` 遍历视觉树并生成渲染命令。
 
-## Description
+## 公共接口
 
-Builds render tree from visual tree
+### 构建
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/render/RenderTreeBuilder.h`]
-
-## Usage Examples
-
+#### Build
 ```cpp
-// TODO: Add usage examples
+void Build(Visual* root, RenderCommandBuffer& commandBuffer);
 ```
 
-## Related Classes
+从视觉树构建渲染命令。
 
-- [Design Document](../../Design/Render/RenderTreeBuilder.md)
-- [API Index](../README.md)
+## 使用示例
 
-## See Also
+### 构建渲染树
+```cpp
+auto builder = std::make_shared<RenderTreeBuilder>();
+RenderCommandBuffer commandBuffer;
 
-- [Architecture Overview](../../Architecture.md)
+builder->Build(rootVisual, commandBuffer);
+
+// 执行渲染命令
+renderer->Execute(commandBuffer);
+```
+
+## 相关类
+
+- [Renderer](Renderer.md)
+- [RenderCommandBuffer](RenderCommandBuffer.md)

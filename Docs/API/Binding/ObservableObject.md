@@ -1,36 +1,94 @@
 # ObservableObject
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：ViewModel基类，实现INotifyPropertyChanged接口
 
-**Purpose**: ViewModel base class with INPC
+**命名空间**：`fk::binding`
 
-**Namespace**: `fk::binding`
+**继承**：`DependencyObject`
 
-**Inheritance**: INotifyPropertyChanged
+**头文件**：`fk/binding/ObservableObject.h`
 
-**Header**: `fk/binding/ObservableObject.h`
+## 描述
 
-## Description
+`ObservableObject` 是创建ViewModel的便利基类，自动实现属性变更通知。
 
-ViewModel base class with INPC
+## 公共接口
 
-## Public Interface
+### 属性宏
 
-[Documentation based on actual implementation in `include/fk/binding/ObservableObject.h`]
-
-## Usage Examples
-
+#### PROPERTY
 ```cpp
-// TODO: Add usage examples
+PROPERTY(Type, Name, DefaultValue)
 ```
 
-## Related Classes
+定义可观察属性。
 
-- [Design Document](../../Design/Binding/ObservableObject.md)
-- [API Index](../README.md)
+**示例**：
+```cpp
+class MyViewModel : public ObservableObject {
+public:
+    PROPERTY(std::string, Username, "")
+    PROPERTY(int, Age, 0)
+    PROPERTY(bool, IsEnabled, true)
+};
+```
 
-## See Also
+### 属性变更通知
 
-- [Architecture Overview](../../Architecture.md)
+#### PropertyChanged
+```cpp
+core::Event<const std::string&> PropertyChanged;
+```
+
+属性变更时触发的事件。
+
+## 使用示例
+
+### 创建ViewModel
+```cpp
+class UserViewModel : public ObservableObject {
+public:
+    PROPERTY(std::string, FirstName, "")
+    PROPERTY(std::string, LastName, "")
+    PROPERTY(int, Age, 0)
+    
+    std::string GetFullName() const {
+        return GetFirstName() + " " + GetLastName();
+    }
+};
+
+auto viewModel = std::make_shared<UserViewModel>();
+viewModel->SetFirstName("张");
+viewModel->SetLastName("三");
+```
+
+### 绑定到UI
+```cpp
+auto textBox = std::make_shared<TextBox>();
+textBox->SetValue(
+    TextBox::TextProperty(),
+    Binding("FirstName").Source(viewModel).Mode(BindingMode::TwoWay)
+);
+
+// UI更新会自动同步到ViewModel
+```
+
+### 订阅变更
+```cpp
+viewModel->PropertyChanged += [](const std::string& propertyName) {
+    std::cout << "属性变更: " << propertyName << std::endl;
+};
+
+viewModel->SetAge(25);  // 触发PropertyChanged
+```
+
+## 相关类
+
+- [INotifyPropertyChanged](INotifyPropertyChanged.md)
+- [Binding](Binding.md)
+
+## 另请参阅
+
+- [设计文档](../../Design/Binding/ObservableObject.md)

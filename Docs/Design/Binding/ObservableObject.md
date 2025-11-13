@@ -1,39 +1,59 @@
-# ObservableObject - Design Document
+# ObservableObject 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+ObservableObject 是ViewModel的基类，实现INotifyPropertyChanged接口，提供属性变更通知功能。
 
-**Module**: Binding
+## 继承关系
 
-**Purpose**: ViewModel base class with INPC
+```
+INotifyPropertyChanged (接口)
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 实现属性变更通知
+2. 简化属性setter的编写
+3. 管理PropertyChanged事件
 
-### Implemented Features
-- [Based on actual code in `src/binding/ObservableObject.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ INotifyPropertyChanged接口实现
+- ✅ PropertyChanged事件触发
+- ✅ SetProperty辅助方法
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 属性依赖关系处理较简单
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 属性变更批处理
+- ❌ 事件抑制机制
+- ❌ 调试跟踪支持
 
-## Usage Patterns
 
-[Common usage patterns]
+## 实现原理
 
-## See Also
+### 核心设计模式
 
-- [API Documentation](../../API/Binding/ObservableObject.md)
-- [Architecture Overview](../../Architecture.md)
+参见 API 文档了解 ObservableObject 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+参见完整的API文档以了解详细的扩展建议。
+
+## 相关文档
+
+- [API 文档](../../API/Binding/ObservableObject.md)
+- [DependencyObject 设计文档](./DependencyObject.md)
+- [Binding 设计文档](./Binding.md)

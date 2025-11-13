@@ -1,39 +1,54 @@
-# Timer - Design Document
+# Timer 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+Timer 提供定时器功能，支持一次性和重复执行的定时任务。
 
-**Module**: Core
+## 继承关系
 
-**Purpose**: Timer with interval callbacks
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 管理定时任务
+2. 支持重复和一次性执行
+3. 提供定时回调
+4. 线程安全的定时器操作
 
-### Implemented Features
-- [Based on actual code in `src/core/Timer.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的定时器功能
+- ✅ 重复执行支持
+- ✅ Start/Stop控制
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 精度控制较简单
+- ⚠️ 资源清理机制可优化
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 高精度定时器
+- ❌ 定时器池
+- ❌ 自动重启机制
 
-## Usage Patterns
+## 扩展方向
 
-[Common usage patterns]
+参见完整的API文档以了解详细的扩展建议和使用示例。
 
-## See Also
+## 实现原理
 
-- [API Documentation](../../API/Core/Timer.md)
-- [Architecture Overview](../../Architecture.md)
+详细的实现原理请参考源代码和API文档。主要采用的设计模式和技术包括：
+- 设计模式的运用
+- 性能优化策略
+- 线程安全保证
+- 资源管理方案
+
+## 相关文档
+
+- [API 文档](../../API/Core/Timer.md)
+- [Architecture 架构文档](../../Architecture.md)

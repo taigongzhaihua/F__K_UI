@@ -1,39 +1,60 @@
-# MultiBindingExpression - Design Document
+# MultiBindingExpression 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+MultiBindingExpression 是MultiBinding的运行时实例，管理多个源到单个目标的数据流。
 
-**Module**: Binding
+## 继承关系
 
-**Purpose**: Active multi-binding instance
+```
+BindingExpressionBase (基类)
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 管理多个子表达式
+2. 监听所有源的变更
+3. 聚合值并应用转换器
+4. 更新目标属性
 
-### Implemented Features
-- [Based on actual code in `src/binding/MultiBindingExpression.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的多源监听
+- ✅ 值聚合机制
+- ✅ 转换器应用
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 变更检测优化空间大
+- ⚠️ 批量更新机制不完善
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 智能更新（仅在所有源就绪时更新）
+- ❌ 异步聚合
 
-## Usage Patterns
 
-[Common usage patterns]
+## 实现原理
 
-## See Also
+### 核心设计模式
 
-- [API Documentation](../../API/Binding/MultiBindingExpression.md)
-- [Architecture Overview](../../Architecture.md)
+参见 API 文档了解 MultiBindingExpression 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+参见完整的API文档以了解详细的扩展建议。
+
+## 相关文档
+
+- [API 文档](../../API/Binding/MultiBindingExpression.md)
+- [DependencyObject 设计文档](./DependencyObject.md)
+- [Binding 设计文档](./Binding.md)

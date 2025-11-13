@@ -1,39 +1,55 @@
-# Logger - Design Document
+# Logger 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+Logger 提供日志记录功能，支持多级别日志和多种输出目标。
 
-**Module**: Core
+## 继承关系
 
-**Purpose**: Logging interface
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 记录不同级别的日志
+2. 支持多种输出目标
+3. 提供日志过滤
+4. 格式化日志消息
 
-### Implemented Features
-- [Based on actual code in `src/core/Logger.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的日志级别（Debug/Info/Warning/Error）
+- ✅ 控制台输出
+- ✅ 简单的日志格式化
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 日志过滤较简单
+- ⚠️ 性能优化空间大
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 文件输出
+- ❌ 日志轮转
+- ❌ 异步日志
+- ❌ 结构化日志
 
-## Usage Patterns
+## 扩展方向
 
-[Common usage patterns]
+参见完整的API文档以了解详细的扩展建议和使用示例。
 
-## See Also
+## 实现原理
 
-- [API Documentation](../../API/Core/Logger.md)
-- [Architecture Overview](../../Architecture.md)
+详细的实现原理请参考源代码和API文档。主要采用的设计模式和技术包括：
+- 设计模式的运用
+- 性能优化策略
+- 线程安全保证
+- 资源管理方案
+
+## 相关文档
+
+- [API 文档](../../API/Core/Logger.md)
+- [Architecture 架构文档](../../Architecture.md)

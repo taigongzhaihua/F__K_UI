@@ -1,425 +1,649 @@
-# Development Guide
+# 开发指南
 
-## Project Structure
+## 项目结构
 
 ```
 F__K_UI/
-├── include/fk/          # Public header files
-│   ├── app/            # Application module (Application, Window)
-│   ├── binding/        # Data binding system (DependencyProperty, Binding)
-│   ├── core/           # Core utilities (Dispatcher, Event, Logger)
-│   ├── render/         # Rendering system (Renderer, RenderBackend)
-│   └── ui/             # UI controls and elements
-├── src/                # Implementation files
+├── include/fk/          # 公共头文件
+│   ├── app/            # 应用程序模块（Application、Window）
+│   ├── binding/        # 数据绑定系统（DependencyProperty、Binding）
+│   ├── core/           # 核心工具（Dispatcher、Event、Logger）
+│   ├── render/         # 渲染系统（Renderer、RenderBackend）
+│   └── ui/             # UI 控件和元素
+├── src/                # 实现文件
 │   ├── app/
 │   ├── binding/
 │   ├── core/
 │   ├── render/
 │   └── ui/
-├── examples/           # Example applications
-├── samples/            # Sample projects
-├── third_party/        # Third-party dependencies
-│   ├── glfw/          # Window management
-│   ├── freetype/      # Font rendering
-│   └── stb/           # Image loading (stb_image)
-├── Docs/              # Documentation
-│   ├── API/           # API reference
-│   ├── Designs/       # Architecture and design docs
+├── examples/           # 示例应用程序
+├── samples/            # 示例项目
+├── third_party/        # 第三方依赖
+│   ├── glfw/          # 窗口管理
+│   ├── freetype/      # 字体渲染
+│   └── stb/           # 图像加载（stb_image）
+├── Docs/              # 文档
+│   ├── API/           # API 参考
+│   ├── Designs/       # 架构和设计文档
 │   ├── GettingStarted.md
-│   ├── Development.md (this file)
+│   ├── Development.md（本文件）
 │   └── Implementation-Status.md
-└── CMakeLists.txt     # Build configuration
+└── CMakeLists.txt     # 构建配置
 ```
 
-## Architecture Overview
+## 架构概览
 
-### Module Hierarchy
+### 模块层次结构
 
 ```
 ┌─────────────────────────────────────────┐
-│          Application Layer              │
+│          应用程序层                      │
 │     (app::Application, Window)          │
 └─────────────────┬───────────────────────┘
                   │
 ┌─────────────────▼───────────────────────┐
-│           UI Layer                      │
+│           UI 层                          │
 │  (Controls, Panels, Visual Tree)        │
 └─────────────────┬───────────────────────┘
                   │
 ┌─────────────────▼───────────────────────┐
-│        Binding Layer                    │
+│        绑定层                            │
 │  (DependencyObject, Binding System)     │
 └─────────────────┬───────────────────────┘
                   │
 ┌─────────────────▼───────────────────────┐
-│        Render Layer                     │
+│        渲染层                            │
 │   (Renderer, RenderBackend, OpenGL)     │
 └─────────────────┬───────────────────────┘
                   │
 ┌─────────────────▼───────────────────────┐
-│         Core Layer                      │
+│         核心层                           │
 │  (Dispatcher, Events, Utilities)        │
 └─────────────────────────────────────────┘
 ```
 
-## Key Components
+## 关键组件
 
-### 1. Core Module (`core/`)
+### 1. Core 模块（`core/`）
 
-**Purpose**: Fundamental utilities and infrastructure
+**目的**：基础工具和基础设施
 
-**Key Classes**:
-- `Dispatcher`: Thread-safe event dispatching
-- `DispatcherObject`: Base for thread-affinity objects
-- `Event<T>`: Type-safe event system
-- `Logger`: Logging infrastructure
-- `Clock`: Time management
+**核心类**：
+- `Dispatcher`：线程安全的事件调度
+- `DispatcherObject`：线程关联对象的基类
+- `Event<T>`：类型安全的事件系统
+- `Logger`：日志基础设施
+- `Clock`：时间管理
 
-### 2. Binding Module (`binding/`)
+### 2. Binding 模块（`binding/`）
 
-**Purpose**: Dependency property and data binding system
+**目的**：依赖属性和数据绑定系统
 
-**Key Classes**:
-- `DependencyObject`: Base class with dependency properties
-- `DependencyProperty`: Property metadata and management
-- `Binding`: Data binding configuration
-- `BindingExpression`: Active binding connection
-- `ObservableObject`: Base for ViewModels with INPC
+**核心类**：
+- `DependencyObject`：具有依赖属性的基类
+- `DependencyProperty`：属性元数据和管理
+- `Binding`：数据绑定配置
+- `BindingExpression`：活动绑定连接
+- `ObservableObject`：带 INPC 的 ViewModel 基类
 
-**Key Features**:
-- Property change notification
-- Value propagation
-- Two-way binding support
-- Value converters
+**核心特性**：
+- 属性变更通知
+- 值传播
+- 双向绑定支持
+- 值转换器
 
-### 3. UI Module (`ui/`)
+### 3. UI 模块（`ui/`）
 
-**Purpose**: Visual elements and controls
+**目的**：可视元素和控件
 
-**Key Classes**:
-- `Visual`: Base visual tree node
-- `UIElement`: Interactive visual element
-- `FrameworkElement`: Layout and sizing support
-- `Control`: Templatable control base
-- `Panel`: Container for multiple children
-- `ContentControl`: Single-content container
+**核心类**：
+- `Visual`：基础视觉树节点
+- `UIElement`：交互元素基类
+- `FrameworkElement`：布局感知元素
+- `Control`：可模板化控件基类
+- `Panel`：容器基类
 
-**Controls**:
-- Layout: `StackPanel`, `Grid`, `Canvas`
-- Content: `Button`, `TextBlock`, `TextBox`, `Border`, `Image`
-- Collections: `ItemsControl`, `ListBox`, `ScrollViewer`
+**控件**：
+- `Button`：按钮控件
+- `TextBlock`：文本显示
+- `Border`：边框装饰器
+- `Image`：图像显示
+- `StackPanel`：堆栈布局
+- `Grid`：网格布局
 
-### 4. Render Module (`render/`)
+### 4. Render 模块（`render/`）
 
-**Purpose**: Rendering pipeline and graphics
+**目的**：渲染管线和图形
 
-**Key Classes**:
-- `IRenderer`: Renderer interface
-- `GlRenderer`: OpenGL implementation
-- `RenderBackend`: Platform abstraction
-- `RenderCommand`: Drawing commands
-- `TextRenderer`: Font rendering (FreeType)
+**核心类**：
+- `Renderer`：主渲染器
+- `GlRenderer`：OpenGL 实现
+- `RenderBackend`：平台抽象
+- `TextRenderer`：文本渲染
 
-### 5. App Module (`app/`)
+### 5. App 模块（`app/`）
 
-**Purpose**: Application lifecycle and windowing
+**目的**：应用程序生命周期
 
-**Key Classes**:
-- `Application`: Application singleton
-- `Window`: Top-level window
+**核心类**：
+- `Application`：应用程序单例
+- `Window`：顶级窗口
 
-## Development Workflow
+## 构建系统
 
-### Setting Up Development Environment
+### CMake 配置
 
-1. **Install Dependencies**:
-   - CMake 3.20+
-   - C++17/20 compiler
-   - OpenGL 3.3+ drivers
+框架使用 CMake 作为构建系统。主要目标：
 
-2. **Clone and Build**:
-   ```bash
-   git clone https://github.com/taigongzhaihua/F__K_UI.git
-   cd F__K_UI
-   mkdir build && cd build
-   cmake ..
-   cmake --build . -j8
-   ```
+```cmake
+# 库目标
+add_library(fk_ui STATIC ...)
 
-3. **IDE Configuration**:
-   - Visual Studio: Open `F__K_UI.sln` (generated by CMake)
-   - CLion: Open `CMakeLists.txt` as project
-   - VS Code: Use CMake Tools extension
-
-### Building the Project
-
-```bash
-# Debug build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-cmake --build .
-
-# Release build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build .
-
-# Clean build
-rm -rf build
-mkdir build && cd build
-cmake ..
-cmake --build .
+# 示例可执行文件
+add_executable(hello_world examples/hello_world.cpp)
+target_link_libraries(hello_world fk_ui)
 ```
 
-### Code Style
+### 构建步骤
 
-- **Naming**:
-  - Classes: `PascalCase`
-  - Methods: `PascalCase`
-  - Variables: `camelCase`
-  - Private members: `m_camelCase`
-  - Constants: `UPPER_SNAKE_CASE` or `kPascalCase`
+```bash
+# 配置
+mkdir build && cd build
+cmake ..
 
-- **Formatting**:
-  - Indent: 4 spaces
-  - Braces: Same line for functions/classes
-  - Max line length: 120 characters
+# 构建
+cmake --build . -j8
 
-- **Comments**:
-  - Use `///` for documentation comments
-  - Explain "why", not "what"
-  - Document public APIs
+# 运行测试
+ctest
+```
 
-### Adding a New Control
+### 构建选项
 
-1. **Create header** (`include/fk/ui/MyControl.h`):
+```cmake
+# 调试/发布
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+cmake .. -DCMAKE_BUILD_TYPE=Release
+
+# 启用示例
+cmake .. -DBUILD_EXAMPLES=ON
+
+# 启用测试
+cmake .. -DBUILD_TESTS=ON
+```
+
+## 代码风格
+
+### 命名约定
+
+- **类名**：PascalCase（`Button`、`DependencyObject`）
+- **方法名**：PascalCase（`GetValue`、`SetValue`）
+- **变量名**：camelCase（`fontSize`、`isEnabled`）
+- **私有成员**：camelCase_ 带下划线（`width_`、`parent_`）
+- **常量**：PascalCase 或 UPPER_CASE
+
+### 文件组织
+
+- **头文件**：`include/fk/module/ClassName.h`
+- **实现文件**：`src/module/ClassName.cpp`
+- **一个类一个文件**
+- **头文件使用保护宏**：`FK_MODULE_CLASSNAME_H`
+
+### 代码格式
 
 ```cpp
-#pragma once
-#include "Control.h"
-
+// 命名空间
 namespace fk::ui {
 
-class MyControl : public Control {
+// 类定义
+class Button : public ContentControl<Button> {
 public:
-    MyControl();
-    virtual ~MyControl() = default;
-
-    // Properties
-    static DependencyProperty* MyPropertyProperty;
-    void SetMyProperty(const std::string& value);
-    std::string GetMyProperty() const;
-
-protected:
-    // Override for custom rendering
-    virtual void OnRender(render::RenderContext* context) override;
+    // 公共方法
+    Button();
+    ~Button();
     
-    // Override for custom layout
-    virtual Size MeasureOverride(const Size& availableSize) override;
-    virtual Size ArrangeOverride(const Size& finalSize) override;
-
+    // 流畅 API
+    Button* Content(const std::string& text);
+    Button* Width(double width);
+    
+protected:
+    // 保护方法
+    void OnRender(const RenderContext& context) override;
+    
 private:
-    void OnMyPropertyChanged(const std::string& oldValue, const std::string& newValue);
+    // 私有成员
+    std::string content_;
+    double width_;
 };
 
 } // namespace fk::ui
 ```
 
-2. **Implement** (`src/ui/MyControl.cpp`):
+### 最佳实践
+
+1. **使用智能指针**：
+   ```cpp
+   auto button = std::make_shared<Button>();
+   ```
+
+2. **RAII 资源管理**：
+   ```cpp
+   class Resource {
+   public:
+       Resource() { /* 获取资源 */ }
+       ~Resource() { /* 释放资源 */ }
+   };
+   ```
+
+3. **Const 正确性**：
+   ```cpp
+   const std::string& GetText() const;
+   void SetText(const std::string& text);
+   ```
+
+4. **避免原始指针所有权**：
+   ```cpp
+   // 好
+   std::shared_ptr<Control> control;
+   
+   // 不好
+   Control* control = new Control();
+   ```
+
+## 添加新控件
+
+### 步骤 1：创建头文件
+
+`include/fk/ui/MyControl.h`：
+
+```cpp
+#pragma once
+#include "fk/ui/Control.h"
+
+namespace fk::ui {
+
+class MyControl : public Control<MyControl> {
+public:
+    MyControl();
+    virtual ~MyControl() = default;
+    
+    // 依赖属性
+    static const DependencyProperty& MyPropertyProperty();
+    
+    // 流畅 API
+    MyControl* MyProperty(int value);
+    
+protected:
+    void OnRender(const RenderContext& context) override;
+    void MeasureOverride(const Size& availableSize) override;
+    void ArrangeOverride(const Size& finalSize) override;
+    
+private:
+    int myProperty_;
+};
+
+} // namespace fk::ui
+```
+
+### 步骤 2：创建实现文件
+
+`src/ui/MyControl.cpp`：
 
 ```cpp
 #include "fk/ui/MyControl.h"
 
 namespace fk::ui {
 
-DependencyProperty* MyControl::MyPropertyProperty = 
-    DependencyProperty::Register("MyProperty", 
-                                 typeid(std::string),
-                                 typeid(MyControl),
-                                 new PropertyMetadata("default"));
-
-MyControl::MyControl() {
-    // Initialize
+// 依赖属性注册
+const DependencyProperty& MyControl::MyPropertyProperty() {
+    static auto prop = DependencyProperty::Register<MyControl, int>(
+        "MyProperty",
+        PropertyMetadata::Create(0)
+    );
+    return prop;
 }
 
-void MyControl::SetMyProperty(const std::string& value) {
-    SetValue(MyPropertyProperty, value);
+MyControl::MyControl() : myProperty_(0) {
+    // 初始化
 }
 
-std::string MyControl::GetMyProperty() const {
-    return GetValue<std::string>(MyPropertyProperty);
+MyControl* MyControl::MyProperty(int value) {
+    SetValue(MyPropertyProperty(), value);
+    return this;
 }
 
-void MyControl::OnRender(render::RenderContext* context) {
-    Control::OnRender(context);
-    // Custom rendering
+void MyControl::OnRender(const RenderContext& context) {
+    // 自定义渲染
 }
 
 Size MyControl::MeasureOverride(const Size& availableSize) {
-    // Calculate desired size
-    return Size(100, 100);
+    // 自定义测量逻辑
+    return Size(100, 50);
 }
 
 Size MyControl::ArrangeOverride(const Size& finalSize) {
-    // Arrange children
+    // 自定义排列逻辑
     return finalSize;
 }
 
 } // namespace fk::ui
 ```
 
-3. **Update CMakeLists.txt**:
+### 步骤 3：更新 CMakeLists.txt
 
 ```cmake
-set(UI_SOURCES
-    # ... existing files ...
+target_sources(fk_ui PRIVATE
     src/ui/MyControl.cpp
 )
 ```
 
-### Adding a Dependency Property
+### 步骤 4：创建示例
 
-```cpp
-// In header
-static DependencyProperty* MyPropertyProperty;
-
-// In implementation
-DependencyProperty* MyClass::MyPropertyProperty = 
-    DependencyProperty::Register(
-        "MyProperty",                          // Property name
-        typeid(MyPropertyType),                // Property type
-        typeid(MyClass),                       // Owner type
-        new PropertyMetadata(
-            defaultValue,                      // Default value
-            [](DependencyObject* d, const DependencyPropertyChangedEventArgs& e) {
-                // Property changed callback
-                auto obj = static_cast<MyClass*>(d);
-                obj->OnMyPropertyChanged(e);
-            }
-        )
-    );
-```
-
-### Debugging Tips
-
-1. **Enable Logging**:
-   ```cpp
-   Logger::SetLogLevel(LogLevel::Debug);
-   ```
-
-2. **Visual Tree Inspection**:
-   ```cpp
-   void PrintVisualTree(Visual* root, int indent = 0) {
-       for (int i = 0; i < indent; i++) std::cout << "  ";
-       std::cout << typeid(*root).name() << std::endl;
-       
-       for (int i = 0; i < root->GetVisualChildrenCount(); i++) {
-           PrintVisualTree(root->GetVisualChild(i), indent + 1);
-       }
-   }
-   ```
-
-3. **Property Value Debugging**:
-   ```cpp
-   auto value = element->GetValue(PropertyName);
-   std::cout << "Property value: " << value << std::endl;
-   ```
-
-## Testing
-
-### Running Examples
-
-```bash
-cd build
-
-# Run specific example
-./hello_world
-
-# Run all examples
-./phase1_enhancement_demo
-./button_example
-./image_demo
-```
-
-### Creating a Test Application
+`examples/my_control_example.cpp`：
 
 ```cpp
 #include "fk/app/Application.h"
-// ... your test code ...
+#include "fk/ui/Window.h"
+#include "fk/ui/MyControl.h"
 
 int main() {
     auto app = app::Application::Create();
-    // Test setup
+    auto window = app->CreateWindow();
+    
+    auto control = window->SetContent<MyControl>();
+    control->MyProperty(42);
+    
     return app->Run();
 }
 ```
 
-Add to `examples/CMakeLists.txt`:
+## 依赖属性实现
 
-```cmake
-add_executable(my_test my_test.cpp)
-target_link_libraries(my_test fk_ui)
+### 注册依赖属性
+
+```cpp
+static const DependencyProperty& WidthProperty() {
+    static auto prop = DependencyProperty::Register<UIElement, double>(
+        "Width",
+        PropertyMetadata::Create(
+            NAN,  // 默认值
+            [](DependencyObject* d, const DependencyPropertyChangedEventArgs& e) {
+                // 变更回调
+                auto element = static_cast<UIElement*>(d);
+                element->InvalidateMeasure();
+            }
+        )
+    );
+    return prop;
+}
 ```
 
-## Performance Considerations
+### 属性包装器
 
-### Layout Performance
+```cpp
+UIElement* Width(double width) {
+    SetValue(WidthProperty(), width);
+    return this;
+}
 
-- Minimize nested layouts
-- Use cached layout results
-- Avoid unnecessary `InvalidateMeasure()`/`InvalidateArrange()` calls
+double GetWidth() const {
+    return GetValue<double>(WidthProperty());
+}
+```
 
-### Rendering Performance
+## 数据绑定实现
 
-- Batch similar draw calls
-- Use texture atlases for images
-- Implement dirty region tracking
-- Cache render commands when possible
+### 创建可观察 ViewModel
 
-### Memory Management
+```cpp
+class MyViewModel : public ObservableObject {
+public:
+    // 定义属性
+    PROPERTY(std::string, Username, "")
+    PROPERTY(int, Age, 0)
+    
+    void UpdateUsername(const std::string& name) {
+        SetUsername(name);
+        // 自动触发 PropertyChanged
+    }
+};
+```
 
-- Use smart pointers (`std::shared_ptr`, `std::unique_ptr`)
-- Clean up event handlers to avoid leaks
-- Be careful with circular references in binding
+### 绑定到 UI
 
-## Contributing
+```cpp
+auto viewModel = std::make_shared<MyViewModel>();
 
-### Pull Request Process
+textBox->SetValue(
+    TextBox::TextProperty(),
+    Binding("Username")
+        .Source(viewModel)
+        .Mode(BindingMode::TwoWay)
+);
+```
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Make changes and commit: `git commit -am 'Add new feature'`
-4. Push to branch: `git push origin feature/my-feature`
-5. Open a Pull Request
+## 调试技巧
 
-### Code Review Checklist
+### 1. 启用日志
 
-- [ ] Code follows style guidelines
-- [ ] New APIs are documented
-- [ ] Changes don't break existing functionality
-- [ ] Examples demonstrate new features
-- [ ] Build succeeds without warnings
+```cpp
+core::LoggerManager::Instance().SetLogger(
+    std::make_shared<core::ConsoleLogger>()
+);
+```
 
-## Roadmap
+### 2. 视觉树检查
 
-See [Implementation-Status.md](Implementation-Status.md) for current progress.
+```cpp
+void PrintVisualTree(Visual* element, int depth = 0) {
+    std::string indent(depth * 2, ' ');
+    std::cout << indent << typeid(*element).name() << std::endl;
+    
+    for (auto child : element->GetChildren()) {
+        PrintVisualTree(child, depth + 1);
+    }
+}
+```
 
-### Phase 2 (In Progress)
-- Style system
-- Control templates
-- Data templates
-- Shape graphics
+### 3. 属性调试
 
-### Phase 3 (Planned)
-- Advanced animations
-- Resource dictionaries
-- Themes
-- Triggers
+```cpp
+// 获取值来源
+auto source = element->GetValueSource(UIElement::WidthProperty());
+switch (source) {
+    case ValueSource::Local: 
+        std::cout << "本地设置" << std::endl;
+        break;
+    case ValueSource::Binding:
+        std::cout << "来自绑定" << std::endl;
+        break;
+    // ...
+}
+```
 
-## Resources
+### 4. 断点调试
 
-- [Architecture Documentation](Designs/Architecture-Refactoring.md)
-- [API Reference](API/README.md)
-- [WPF Documentation](https://docs.microsoft.com/en-us/dotnet/desktop/wpf/) (Inspiration)
+建议的断点位置：
+- `DependencyObject::SetValue`：属性变更
+- `UIElement::Measure`/`Arrange`：布局
+- `Renderer::Render`：渲染
+- `InputManager::ProcessInput`：输入处理
+
+## 测试
+
+### 单元测试
+
+使用 Google Test 框架：
+
+```cpp
+#include <gtest/gtest.h>
+#include "fk/ui/Button.h"
+
+TEST(ButtonTest, ContentProperty) {
+    auto button = std::make_shared<Button>();
+    button->Content("Test");
+    
+    EXPECT_EQ(button->GetContent(), "Test");
+}
+```
+
+### 运行测试
+
+```bash
+cd build
+ctest --output-on-failure
+```
+
+## 性能优化
+
+### 1. 避免不必要的布局
+
+```cpp
+// 批量更新
+element->BeginInit();
+element->Width(100);
+element->Height(50);
+element->Background(Colors::Blue);
+element->EndInit();  // 只触发一次布局
+```
+
+### 2. 使用对象池
+
+```cpp
+// 重用对象而不是创建新对象
+class ObjectPool {
+    std::vector<std::shared_ptr<Object>> pool_;
+    
+public:
+    std::shared_ptr<Object> Acquire() {
+        if (!pool_.empty()) {
+            auto obj = pool_.back();
+            pool_.pop_back();
+            return obj;
+        }
+        return std::make_shared<Object>();
+    }
+    
+    void Release(std::shared_ptr<Object> obj) {
+        pool_.push_back(obj);
+    }
+};
+```
+
+### 3. 延迟计算
+
+```cpp
+class LazyValue {
+    mutable std::optional<int> cached_;
+    
+public:
+    int GetValue() const {
+        if (!cached_) {
+            cached_ = ComputeExpensiveValue();
+        }
+        return *cached_;
+    }
+};
+```
+
+## 贡献指南
+
+### 提交代码
+
+1. Fork 仓库
+2. 创建特性分支
+3. 提交变更
+4. 推送到分支
+5. 创建 Pull Request
+
+### 提交消息格式
+
+```
+[模块] 简短描述
+
+详细描述变更内容和原因。
+
+- 变更点 1
+- 变更点 2
+```
+
+示例：
+```
+[UI] 添加 ListBox 控件
+
+实现 ListBox 控件，支持项目选择和键盘导航。
+
+- 添加 ListBox 类
+- 实现选择逻辑
+- 添加键盘导航支持
+```
+
+### 代码审查检查清单
+
+- [ ] 代码遵循风格指南
+- [ ] 添加了适当的注释
+- [ ] 更新了文档
+- [ ] 添加了单元测试
+- [ ] 所有测试通过
+- [ ] 没有编译警告
+- [ ] 性能已考虑
+
+## 常见问题
+
+### Q: 如何处理线程安全？
+
+A: 所有 UI 对象必须在 UI 线程上访问。使用 `Dispatcher` 跨线程调用：
+
+```cpp
+dispatcher->InvokeAsync([element]() {
+    element->SetValue(Property, value);
+});
+```
+
+### Q: 如何实现自定义布局？
+
+A: 继承 `Panel` 并重写 `MeasureOverride` 和 `ArrangeOverride`：
+
+```cpp
+class MyPanel : public Panel<MyPanel> {
+protected:
+    Size MeasureOverride(const Size& availableSize) override {
+        // 测量逻辑
+    }
+    
+    Size ArrangeOverride(const Size& finalSize) override {
+        // 排列逻辑
+    }
+};
+```
+
+### Q: 如何添加新的依赖属性？
+
+A: 使用 `DependencyProperty::Register`：
+
+```cpp
+static const DependencyProperty& MyPropertyProperty() {
+    static auto prop = DependencyProperty::Register<MyClass, int>(
+        "MyProperty",
+        PropertyMetadata::Create(defaultValue)
+    );
+    return prop;
+}
+```
+
+## 资源
+
+- [入门指南](GettingStarted.md)
+- [API 文档](API/README.md)
+- [架构文档](Architecture.md)
+- [实现状态](Implementation-Status.md)
+
+## 许可证
+
+本项目采用 MIT 许可证。详见 LICENSE 文件。
 
 ---
 
-**Questions? Open an issue on GitHub!**
+**快乐编码！🚀**
+
+*最后更新：2025年11月*

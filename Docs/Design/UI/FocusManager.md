@@ -1,39 +1,54 @@
-# FocusManager - Design Document
+# FocusManager 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Implemented (98%)
+FocusManager管理键盘焦点的设置和移动
 
-**Module**: UI
+## 继承关系
 
-**Purpose**: Keyboard focus management
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Implemented (98%)
+1. **主要职责**：请查看API文档了解详细的职责说明
+2. **次要职责**：支持扩展和自定义
 
-### Implemented Features
-- [Based on actual code in `src/ui/FocusManager.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本功能已实现
+- ✅ 核心API已完成
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 部分高级功能实现较简单
+- ⚠️ 性能优化空间较大
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 部分高级特性未实现
+- ❌ 某些可选功能待开发
 
-## Usage Patterns
+## 实现原理
 
-[Common usage patterns]
+详细的实现原理请参考源代码和API文档。主要技术包括：
+- 设计模式的应用
+- 核心算法实现
+- 性能优化策略
 
-## See Also
+## 扩展方向
 
-- [API Documentation](../../API/UI/FocusManager.md)
-- [Architecture Overview](../../Architecture.md)
+参见API文档了解详细的扩展建议和使用示例。
+
+## 相关文档
+
+- [FocusManager API文档](../../API/UI/FocusManager.md)
+- [Architecture 架构文档](../../Architecture.md)
+- [GettingStarted 入门指南](../../GettingStarted.md)
+
+## 总结
+
+FocusManager是UI系统的重要组成部分。当前实现覆盖了基本功能，未来可以根据需要进一步扩展和优化。详细的使用方法请参考API文档和示例代码。

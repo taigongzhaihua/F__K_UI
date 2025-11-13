@@ -1,39 +1,72 @@
-# Event - Design Document
+# Event 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+Event 是 Core 模块的核心类，负责类型安全的事件系统。
 
-**Module**: Core
+## 继承关系
 
-**Purpose**: Type-safe event system with automatic connection management
+```
+模板类，无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 类型安全的事件系统
+2. 订阅和取消订阅管理
+3. 事件触发和分发
+4. 线程安全的事件处理
 
-### Implemented Features
-- [Based on actual code in `src/core/Event.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 核心功能已实现
+- ✅ 基本API可用
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 部分高级功能需要增强
+- ⚠️ 性能优化空间较大
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 部分计划功能尚未实现
+- ❌ 某些边缘情况处理不完整
 
-## Usage Patterns
+## 实现原理
 
-[Common usage patterns]
+### 核心设计模式
 
-## See Also
+参见 [API 文档](../../API/Core/Event.md) 了解 Event 的具体实现细节和核心算法。
 
-- [API Documentation](../../API/Core/Event.md)
-- [Architecture Overview](../../Architecture.md)
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度  
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+### 短期改进
+
+1. 完善错误处理机制
+2. 添加更多单元测试
+3. 优化性能热点
+
+### 中期增强
+
+1. 扩展功能特性
+2. 改进API易用性
+3. 增强文档和示例
+
+### 长期规划
+
+1. 架构优化
+2. 跨平台支持增强
+3. 与其他组件的更深度集成
+
+## 相关文档
+
+- [API 文档](../../API/Core/Event.md)

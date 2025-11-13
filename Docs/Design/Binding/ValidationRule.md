@@ -1,39 +1,58 @@
-# ValidationRule - Design Document
+# ValidationRule 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+ValidationRule 是数据验证规则的基类，用于定义自定义验证逻辑。
 
-**Module**: Binding
+## 继承关系
 
-**Purpose**: Validation rule base class
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 定义验证接口
+2. 执行验证逻辑
+3. 返回验证结果
 
-### Implemented Features
-- [Based on actual code in `src/binding/ValidationRule.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本验证框架
+- ✅ 验证结果类型
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 内置验证规则较少
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 异步验证规则
+- ❌ 验证规则链
+- ❌ 条件验证
 
-## Usage Patterns
 
-[Common usage patterns]
+## 实现原理
 
-## See Also
+### 核心设计模式
 
-- [API Documentation](../../API/Binding/ValidationRule.md)
-- [Architecture Overview](../../Architecture.md)
+参见 API 文档了解 ValidationRule 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+参见完整的API文档以了解详细的扩展建议。
+
+## 相关文档
+
+- [API 文档](../../API/Binding/ValidationRule.md)
+- [DependencyObject 设计文档](./DependencyObject.md)
+- [Binding 设计文档](./Binding.md)

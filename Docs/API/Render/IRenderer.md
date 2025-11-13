@@ -1,36 +1,42 @@
 # IRenderer
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：渲染器接口
 
-**Purpose**: Renderer interface
+**命名空间**：`fk::render`
 
-**Namespace**: `fk::render`
+**头文件**：`fk/render/IRenderer.h`
 
-**Inheritance**: None (interface)
+## 描述
 
-**Header**: `fk/render/IRenderer.h`
+`IRenderer` 定义渲染器的接口。
 
-## Description
+## 公共接口
 
-Renderer interface
-
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/render/IRenderer.h`]
-
-## Usage Examples
+### 绘图命令
 
 ```cpp
-// TODO: Add usage examples
+virtual void DrawRectangle(const Rect& rect, const Color& color, double thickness) = 0;
+virtual void FillRectangle(const Rect& rect, const Color& color) = 0;
+virtual void DrawEllipse(const Point& center, double rx, double ry, const Color& color) = 0;
+virtual void FillEllipse(const Point& center, double rx, double ry, const Color& color) = 0;
+virtual void DrawText(const std::string& text, const Rect& bounds, const TextStyle& style) = 0;
 ```
 
-## Related Classes
+### 状态管理
 
-- [Design Document](../../Design/Render/IRenderer.md)
-- [API Index](../README.md)
+```cpp
+virtual void PushTransform(const Matrix3x2& transform) = 0;
+virtual void PopTransform() = 0;
+virtual void PushClip(const Rect& clipRect) = 0;
+virtual void PopClip() = 0;
+```
 
-## See Also
+## 实现
 
-- [Architecture Overview](../../Architecture.md)
+- [GlRenderer](GlRenderer.md) - OpenGL实现
+
+## 相关类
+
+- [Renderer](Renderer.md)

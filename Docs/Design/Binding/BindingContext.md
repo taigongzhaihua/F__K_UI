@@ -1,39 +1,60 @@
-# BindingContext - Design Document
+# BindingContext 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+BindingContext 管理绑定的上下文环境，包括数据上下文（DataContext）和绑定源的解析。
 
-**Module**: Binding
+## 继承关系
 
-**Purpose**: Manages bindings for a DependencyObject
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 存储和管理DataContext
+2. 处理DataContext继承
+3. 解析绑定源
+4. 管理命名作用域
 
-### Implemented Features
-- [Based on actual code in `src/binding/BindingContext.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的DataContext存储
+- ✅ 简单的继承机制
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ DataContext继承链较简单
+- ⚠️ 作用域解析功能有限
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 动态资源查找
+- ❌ x:Name命名作用域
+- ❌ RelativeSource支持
 
-## Usage Patterns
 
-[Common usage patterns]
+## 实现原理
 
-## See Also
+### 核心设计模式
 
-- [API Documentation](../../API/Binding/BindingContext.md)
-- [Architecture Overview](../../Architecture.md)
+参见 API 文档了解 BindingContext 的具体实现细节和核心算法。
+
+### 关键技术点
+
+1. **数据结构** - 使用的主要数据结构和存储方式
+2. **算法复杂度** - 关键操作的时间和空间复杂度
+3. **线程安全** - 并发访问的处理策略
+4. **内存管理** - 资源的分配和释放机制
+
+## 扩展方向
+
+参见完整的API文档以了解详细的扩展建议。
+
+## 相关文档
+
+- [API 文档](../../API/Binding/BindingContext.md)
+- [DependencyObject 设计文档](./DependencyObject.md)
+- [Binding 设计文档](./Binding.md)

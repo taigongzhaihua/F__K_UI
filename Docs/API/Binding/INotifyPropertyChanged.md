@@ -1,36 +1,62 @@
 # INotifyPropertyChanged
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：属性变更通知接口
 
-**Purpose**: Property change notification interface
+**命名空间**：`fk::binding`
 
-**Namespace**: `fk::binding`
+**头文件**：`fk/binding/INotifyPropertyChanged.h`
 
-**Inheritance**: None (interface)
+## 描述
 
-**Header**: `fk/binding/INotifyPropertyChanged.h`
+`INotifyPropertyChanged` 是一个接口，实现此接口的类可以在属性值变更时通知绑定系统。
 
-## Description
+## 公共接口
 
-Property change notification interface
+### 事件
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/binding/INotifyPropertyChanged.h`]
-
-## Usage Examples
-
+#### PropertyChanged
 ```cpp
-// TODO: Add usage examples
+virtual core::Event<const std::string&>& PropertyChanged() = 0;
 ```
 
-## Related Classes
+属性变更时触发的事件，参数为属性名称。
 
-- [Design Document](../../Design/Binding/INotifyPropertyChanged.md)
-- [API Index](../README.md)
+## 使用示例
 
-## See Also
+### 实现接口
+```cpp
+class MyClass : public INotifyPropertyChanged {
+public:
+    core::Event<const std::string&>& PropertyChanged() override {
+        return propertyChanged_;
+    }
+    
+    void SetName(const std::string& name) {
+        if (name_ != name) {
+            name_ = name;
+            propertyChanged_.Invoke("Name");
+        }
+    }
+    
+private:
+    std::string name_;
+    core::Event<const std::string&> propertyChanged_;
+};
+```
 
-- [Architecture Overview](../../Architecture.md)
+### 在绑定中使用
+```cpp
+auto obj = std::make_shared<MyClass>();
+element->SetValue(property, Binding("Name").Source(obj));
+
+// 变更会自动更新UI
+obj->SetName("新值");
+```
+
+## 相关类
+
+- [ObservableObject](ObservableObject.md)
+- [Binding](Binding.md)
+- [BindingExpression](BindingExpression.md)

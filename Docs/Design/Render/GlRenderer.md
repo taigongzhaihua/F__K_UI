@@ -1,39 +1,57 @@
-# GlRenderer - Design Document
+# GlRenderer 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+GlRenderer 是基于OpenGL的渲染器实现，负责将UI元素渲染到屏幕。
 
-**Module**: Render
+## 继承关系
 
-**Purpose**: OpenGL-specific renderer
+```
+IRenderer (接口)
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. OpenGL上下文管理
+2. 几何体渲染
+3. 文本渲染
+4. 图像渲染
+5. 着色器管理
 
-### Implemented Features
-- [Based on actual code in `src/render/GlRenderer.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的OpenGL初始化
+- ✅ 简单几何体渲染（矩形、圆形）
+- ✅ 2D变换支持
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 着色器系统较简单
+- ⚠️ 批处理渲染不完善
+- ⚠️ 资源管理需优化
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 3D渲染支持
+- ❌ 高级特效（阴影、模糊）
+- ❌ GPU加速文本渲染
+- ❌ 渲染状态缓存
 
-## Usage Patterns
+## 扩展方向
 
-[Common usage patterns]
+参见完整的API文档以了解详细的扩展建议和使用示例。
 
-## See Also
+## 实现原理
 
-- [API Documentation](../../API/Render/GlRenderer.md)
-- [Architecture Overview](../../Architecture.md)
+详细的实现原理请参考源代码和API文档。主要采用的设计模式和技术包括：
+- 设计模式的运用
+- 性能优化策略
+- 线程安全保证
+- 资源管理方案
+
+## 相关文档
+
+- [API 文档](../../API/Render/GlRenderer.md)
+- [Architecture 架构文档](../../Architecture.md)

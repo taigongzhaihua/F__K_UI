@@ -1,36 +1,80 @@
 # Clock
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：时间和帧跟踪
 
-**Purpose**: Frame time tracking and delta time calculation
+**命名空间**：`fk::core`
 
-**Namespace**: `fk::core`
+**头文件**：`fk/core/Clock.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/core/Clock.h`
+`Clock` 提供高精度时间测量和帧时间跟踪，用于动画和性能分析。
 
-## Description
+## 公共接口
 
-Frame time tracking and delta time calculation
+### 时间测量
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/core/Clock.h`]
-
-## Usage Examples
-
+#### GetElapsedTime
 ```cpp
-// TODO: Add usage examples
+std::chrono::milliseconds GetElapsedTime() const;
 ```
 
-## Related Classes
+获取自Clock启动以来的经过时间。
 
-- [Design Document](../../Design/Core/Clock.md)
-- [API Index](../README.md)
+#### GetDeltaTime
+```cpp
+std::chrono::milliseconds GetDeltaTime() const;
+```
 
-## See Also
+获取上一帧到当前帧的时间差。
 
-- [Architecture Overview](../../Architecture.md)
+### 帧统计
+
+#### GetFrameCount
+```cpp
+uint64_t GetFrameCount() const;
+```
+
+获取总帧数。
+
+#### GetFPS
+```cpp
+double GetFPS() const;
+```
+
+获取当前帧率（每秒帧数）。
+
+## 使用示例
+
+### 基本使用
+```cpp
+Clock clock;
+
+// 游戏循环
+while (running) {
+    clock.Tick();  // 更新时钟
+    
+    auto deltaTime = clock.GetDeltaTime();
+    auto fps = clock.GetFPS();
+    
+    Update(deltaTime);
+    Render();
+}
+```
+
+### 动画
+```cpp
+double animationTime = 0;
+
+void Update(std::chrono::milliseconds deltaTime) {
+    animationTime += deltaTime.count() / 1000.0;
+    
+    // 使用animationTime计算动画帧
+}
+```
+
+## 相关类
+
+- [Timer](Timer.md)

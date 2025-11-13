@@ -1,36 +1,40 @@
 # VisualCollection
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented (105%)
+**目的**：视觉子元素集合
 
-**Purpose**: Visual children collection
+**命名空间**：`fk::ui`
 
-**Namespace**: `fk::ui`
+**头文件**：`fk/ui/VisualCollection.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/ui/VisualCollection.h`
+`VisualCollection` 管理视觉树的子元素集合。
 
-## Description
+## 公共接口
 
-Visual children collection
+### 元素管理
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/ui/VisualCollection.h`]
-
-## Usage Examples
-
+#### Add / Remove / Clear
 ```cpp
-// TODO: Add usage examples
+void Add(Visual* visual);
+void Remove(Visual* visual);
+void Clear();
 ```
 
-## Related Classes
+### 访问
 
-- [Design Document](../../Design/UI/VisualCollection.md)
-- [API Index](../README.md)
+#### Count / operator[]
+```cpp
+size_t Count() const;
+Visual* operator[](size_t index) const;
+```
 
-## See Also
+## 使用示例
 
-- [Architecture Overview](../../Architecture.md)
+内部由Visual类使用。
+
+## 相关类
+
+- [Visual](Visual.md)

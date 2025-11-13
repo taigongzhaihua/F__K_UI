@@ -1,36 +1,56 @@
 # GlRenderer
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：OpenGL渲染器实现
 
-**Purpose**: OpenGL-specific renderer
+**命名空间**：`fk::render`
 
-**Namespace**: `fk::render`
+**继承**：`IRenderer`
 
-**Inheritance**: IRenderer
+**头文件**：`fk/render/GlRenderer.h`
 
-**Header**: `fk/render/GlRenderer.h`
+## 描述
 
-## Description
+`GlRenderer` 是使用OpenGL的渲染器实现。
 
-OpenGL-specific renderer
+## 公共接口
 
-## Public Interface
+### 初始化
 
-[Documentation based on actual implementation in `include/fk/render/GlRenderer.h`]
-
-## Usage Examples
-
+#### Initialize
 ```cpp
-// TODO: Add usage examples
+void Initialize();
 ```
 
-## Related Classes
+初始化OpenGL上下文。
 
-- [Design Document](../../Design/Render/GlRenderer.md)
-- [API Index](../README.md)
+### 渲染命令
 
-## See Also
+#### DrawRectangle / FillRectangle
+```cpp
+void DrawRectangle(const Rect& rect, const Color& color, double thickness);
+void FillRectangle(const Rect& rect, const Color& color);
+```
 
-- [Architecture Overview](../../Architecture.md)
+绘制矩形。
+
+#### DrawText
+```cpp
+void DrawText(const std::string& text, const Point& position, const TextStyle& style);
+```
+
+绘制文本。
+
+## 使用示例
+
+### 创建渲染器
+```cpp
+auto glRenderer = std::make_shared<GlRenderer>();
+glRenderer->Initialize();
+```
+
+## 相关类
+
+- [IRenderer](IRenderer.md)
+- [Renderer](Renderer.md)

@@ -1,36 +1,69 @@
 # ResourceDictionary
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：存储和管理资源（样式、模板等）
 
-**Purpose**: Resource storage
+**命名空间**：`fk::ui`
 
-**Namespace**: `fk::ui`
+**头文件**：`fk/ui/ResourceDictionary.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/ui/ResourceDictionary.h`
+`ResourceDictionary` 是键值对集合，用于存储和查找资源。
 
-## Description
+## 公共接口
 
-Resource storage
+### 添加资源
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/ui/ResourceDictionary.h`]
-
-## Usage Examples
-
+#### Add
 ```cpp
-// TODO: Add usage examples
+void Add(const std::string& key, std::shared_ptr<Object> resource);
+void Add(const std::type_info& key, std::shared_ptr<Object> resource);
 ```
 
-## Related Classes
+添加资源。
 
-- [Design Document](../../Design/UI/ResourceDictionary.md)
-- [API Index](../README.md)
+### 查找资源
 
-## See Also
+#### Find / TryFind
+```cpp
+std::shared_ptr<Object> Find(const std::string& key);
+bool TryFind(const std::string& key, std::shared_ptr<Object>& resource);
+```
 
-- [Architecture Overview](../../Architecture.md)
+查找资源。
+
+## 使用示例
+
+### 存储样式
+```cpp
+auto resources = std::make_shared<ResourceDictionary>();
+
+// 添加按钮样式
+auto buttonStyle = std::make_shared<Style>(typeid(Button));
+buttonStyle->AddSetter(Control::BackgroundProperty(), Colors::Blue);
+resources->Add("PrimaryButtonStyle", buttonStyle);
+
+// 添加颜色
+resources->Add("PrimaryColor", Colors::Blue);
+
+// 使用资源
+auto style = resources->Find("PrimaryButtonStyle");
+button->SetStyle(std::static_pointer_cast<Style>(style).get());
+```
+
+### 隐式样式
+```cpp
+// 按类型存储样式
+resources->Add(typeid(Button), buttonStyle);
+
+// 自动应用
+button->ApplyImplicitStyle();
+```
+
+## 相关类
+
+- [Style](Style.md)
+- [ControlTemplate](ControlTemplate.md)
+- [FrameworkElement](FrameworkElement.md)

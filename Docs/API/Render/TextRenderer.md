@@ -1,36 +1,53 @@
 # TextRenderer
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：文本渲染（使用FreeType）
 
-**Purpose**: Text rendering using FreeType
+**命名空间**：`fk::render`
 
-**Namespace**: `fk::render`
+**头文件**：`fk/render/TextRenderer.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/render/TextRenderer.h`
+`TextRenderer` 使用FreeType库渲染文本。
 
-## Description
+## 公共接口
 
-Text rendering using FreeType
+### 渲染文本
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/render/TextRenderer.h`]
-
-## Usage Examples
-
+#### RenderText
 ```cpp
-// TODO: Add usage examples
+void RenderText(
+    const std::string& text,
+    const Point& position,
+    const Font& font,
+    const Color& color
+);
 ```
 
-## Related Classes
+渲染文本字符串。
 
-- [Design Document](../../Design/Render/TextRenderer.md)
-- [API Index](../README.md)
+### 测量文本
 
-## See Also
+#### MeasureText
+```cpp
+Size MeasureText(const std::string& text, const Font& font);
+```
 
-- [Architecture Overview](../../Architecture.md)
+测量文本大小。
+
+## 使用示例
+
+### 渲染文本
+```cpp
+auto textRenderer = std::make_shared<TextRenderer>();
+
+Font font("Arial", 14);
+textRenderer->RenderText("Hello", Point(10, 10), font, Colors::Black);
+```
+
+## 相关类
+
+- [GlRenderer](GlRenderer.md)
+- [TextBlock](../UI/TextBlock.md)

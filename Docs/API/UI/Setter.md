@@ -1,36 +1,43 @@
 # Setter
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：样式中的属性设置器
 
-**Purpose**: Property setter
+**命名空间**：`fk::ui`
 
-**Namespace**: `fk::ui`
+**头文件**：`fk/ui/Setter.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/ui/Setter.h`
+`Setter` 在样式中设置单个属性值。
 
-## Description
+## 公共接口
 
-Property setter
-
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/ui/Setter.h`]
-
-## Usage Examples
+### 创建设置器
 
 ```cpp
-// TODO: Add usage examples
+Setter(const DependencyProperty& property, const std::any& value);
 ```
 
-## Related Classes
+## 使用示例
 
-- [Design Document](../../Design/UI/Setter.md)
-- [API Index](../README.md)
+### 在样式中使用
+```cpp
+auto style = std::make_shared<Style>(typeid(Button));
 
-## See Also
+style->Setters().Add(
+    std::make_shared<Setter>(Control::BackgroundProperty(), Colors::Blue)
+);
+style->Setters().Add(
+    std::make_shared<Setter>(Control::ForegroundProperty(), Colors::White)
+);
+style->Setters().Add(
+    std::make_shared<Setter>(Control::FontSizeProperty(), 14.0)
+);
+```
 
-- [Architecture Overview](../../Architecture.md)
+## 相关类
+
+- [Style](Style.md)
+- [DependencyProperty](../Binding/DependencyProperty.md)

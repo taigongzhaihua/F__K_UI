@@ -1,36 +1,38 @@
 # BindingContext
 
-## Overview
+## 概览
 
-**Status**: ✅ Fully implemented
+**目的**：管理对象的所有绑定
 
-**Purpose**: Manages bindings for a DependencyObject
+**命名空间**：`fk::binding`
 
-**Namespace**: `fk::binding`
+**头文件**：`fk/binding/BindingContext.h`
 
-**Inheritance**: None
+## 描述
 
-**Header**: `fk/binding/BindingContext.h`
+`BindingContext` 管理单个DependencyObject上的所有活动绑定。
 
-## Description
+## 公共接口
 
-Manages bindings for a DependencyObject
+### 绑定管理
 
-## Public Interface
-
-[Documentation based on actual implementation in `include/fk/binding/BindingContext.h`]
-
-## Usage Examples
-
+#### SetBinding / GetBinding
 ```cpp
-// TODO: Add usage examples
+void SetBinding(const DependencyProperty& property, 
+                std::shared_ptr<BindingExpression> expression);
+std::shared_ptr<BindingExpression> GetBinding(const DependencyProperty& property);
 ```
 
-## Related Classes
+#### ClearBinding
+```cpp
+void ClearBinding(const DependencyProperty& property);
+```
 
-- [Design Document](../../Design/Binding/BindingContext.md)
-- [API Index](../README.md)
+## 使用示例
 
-## See Also
+内部由DependencyObject使用，通常不需要直接操作。
 
-- [Architecture Overview](../../Architecture.md)
+## 相关类
+
+- [DependencyObject](DependencyObject.md)
+- [BindingExpression](BindingExpression.md)

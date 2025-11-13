@@ -1,39 +1,56 @@
-# TextRenderer - Design Document
+# TextRenderer 设计文档
 
-## Overview
+## 类概述
 
-**Status**: ✅ Fully implemented
+TextRenderer 专门负责文本渲染，支持字体、布局和排版。
 
-**Module**: Render
+## 继承关系
 
-**Purpose**: Text rendering using FreeType
+```
+无基类
+```
 
-## Implementation Status
+## 核心职责
 
-**Current State**: Fully implemented
+1. 字体加载和管理
+2. 文本布局计算
+3. 字形渲染
+4. 文本样式支持
 
-### Implemented Features
-- [Based on actual code in `src/render/TextRenderer.cpp`]
+## 实现状态
 
-### Not Yet Implemented
-- [List missing features if any]
+### 已实现功能 ✅
 
-### Needs Enhancement
-- [List areas needing improvement if applicable]
+- ✅ 基本的文本渲染
+- ✅ 简单字体支持
+- ✅ 左对齐文本
 
-## Responsibilities
+### 简单实现须扩充 ⚠️
 
-[Key responsibilities of this class]
+- ⚠️ 字体缓存简单
+- ⚠️ 布局算法基础
+- ⚠️ 性能有待优化
 
-## Architecture
+### 未实现功能 ❌
 
-[Design and architecture details]
+- ❌ 复杂文本布局（双向文本、竖排）
+- ❌ 高级排版（连字、字距调整）
+- ❌ 文本选择和编辑支持
+- ❌ 子像素渲染
 
-## Usage Patterns
+## 扩展方向
 
-[Common usage patterns]
+参见完整的API文档以了解详细的扩展建议和使用示例。
 
-## See Also
+## 实现原理
 
-- [API Documentation](../../API/Render/TextRenderer.md)
-- [Architecture Overview](../../Architecture.md)
+详细的实现原理请参考源代码和API文档。主要采用的设计模式和技术包括：
+- 设计模式的运用
+- 性能优化策略
+- 线程安全保证
+- 资源管理方案
+
+## 相关文档
+
+- [API 文档](../../API/Render/TextRenderer.md)
+- [Architecture 架构文档](../../Architecture.md)
