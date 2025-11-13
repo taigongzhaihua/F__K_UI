@@ -385,94 +385,55 @@ void Line::OnRender(RenderContext& context) {
     renderer->DrawLine(start, end, lineColor, strokeThickness);
 }
 
-// ========== 模板显式实例化 ==========
-// 只需实例化 Shape，Rectangle 和 Ellipse 继承自 Shape
-template class FrameworkElement<Shape>;
+// ========== Polygon 点集合管理 ==========
 
-} // namespace fk::ui
-
-// =============================================================================
-// Polygon 实现
-// =============================================================================
-
-Polygon::Polygon() {
-    // 构造函数初始化
+void Polygon::AddPoint(const Point& point) {
+    points_.push_back(point);
+    InvalidateMeasure();
+    InvalidateVisual();
 }
 
-// ========== Polygon 属性依赖属性 ==========
-
-const binding::DependencyProperty& Polygon::PointsProperty() {
-    static auto& property = binding::DependencyProperty::Register(
-        "Points",
-        typeid(std::vector<Point>),
-        typeid(Polygon),
-        binding::PropertyMetadata{
-            std::any(std::vector<Point>{}),
-            &Polygon::OnPointsChanged
-        }
-    );
-    return property;
+void Polygon::SetPoints(const std::vector<Point>& points) {
+    points_ = points;
+    InvalidateMeasure();
+    InvalidateVisual();
 }
 
-const binding::DependencyProperty& Polygon::FillRuleProperty() {
-    static auto& property = binding::DependencyProperty::Register(
-        "FillRule",
-        typeid(int),  // 0=EvenOdd, 1=NonZero
-        typeid(Polygon),
-        binding::PropertyMetadata{
-            std::any(0),  // Default: EvenOdd
-            nullptr
-        }
-    );
-    return property;
+void Polygon::ClearPoints() {
+    points_.clear();
+    InvalidateMeasure();
+    InvalidateVisual();
 }
 
-// ========== Polygon 属性访问器 ==========
-
-std::vector<Point> Polygon::GetPoints() const {
-    return GetValue<std::vector<Point>>(PointsProperty());
+Point Polygon::GetPoint(size_t index) const {
+    if (index >= points_.size()) {
+        return Point(0, 0);
+    }
+    return points_[index];
 }
 
-void Polygon::SetPoints(const std::vector<Point>& value) {
-    SetValue(PointsProperty(), value);
-}
-
-Polygon* Polygon::Points(const std::vector<Point>& value) {
-    SetPoints(value);
-    return this;
-}
-
-int Polygon::GetFillRule() const {
-    return GetValue<int>(FillRuleProperty());
-}
-
-void Polygon::SetFillRule(int value) {
-    SetValue(FillRuleProperty(), value);
-}
-
-Polygon* Polygon::FillRule(int value) {
-    SetFillRule(value);
+Polygon* Polygon::Points(const std::vector<Point>& points) {
+    SetPoints(points);
     return this;
 }
 
 // ========== Polygon 几何与渲染 ==========
 
 Rect Polygon::GetDefiningGeometry() const {
-    auto points = GetPoints();
-    if (points.empty()) {
+    if (points_.empty()) {
         return Rect(0, 0, 0, 0);
     }
     
-    float minX = points[0].x;
-    float minY = points[0].y;
-    float maxX = points[0].x;
-    float maxY = points[0].y;
+    float minX = points_[0].x;
+    float minY = points_[0].y;
+    float maxX = points_[0].x;
+    float maxY = points_[0].y;
     
-    for (size_t i = 1; i < points.size(); ++i) {
-        minX = std::min(minX, points[i].x);
-        minY = std::min(minY, points[i].y);
-        maxX = std::max(maxX, points[i].x);
-        maxY = std::max(maxY, points[i].y);
+    for (size_t i = 1; i < points_.size(); ++i) {
+        minX = std::min(minX, points_[i].x);
+        minY = std::min(minY, points_[i].y);
+        maxX = std::max(maxX, points_[i].x);
+        maxY = std::max(maxY, points_[i].y);
     }
     
     return Rect(minX, minY, maxX - minX, maxY - minY);
@@ -482,20 +443,17 @@ void Polygon::OnRender(RenderContext& context) {
     Renderer* renderer = context.GetRenderer();
     if (!renderer) return;
     
-    auto points = GetPoints();
-    if (points.size() < 3) return;  // 需要至少3个点才能构成多边形
+    if (points_.size() < 3) return;  // 需要至少3个点才能构成多边形
     
     // Convert Brush* to Color (simplified)
-    Color fillColor = Color::White();
-    Color strokeColor = Color::Black();
+    Color fillColor = Color::Transparent();
+    Color strokeColor = Color::Transparent();
     
     if (GetFill() != nullptr) {
-        // TODO: Extract color from SolidColorBrush
-        fillColor = Color::White();
+        fillColor = Color(0.7f, 0.7f, 0.7f, 1.0f);  // Gray fill as placeholder
     }
     
     if (GetStroke() != nullptr) {
-        // TODO: Extract color from SolidColorBrush
         strokeColor = Color::Black();
     }
     
@@ -504,70 +462,128 @@ void Polygon::OnRender(RenderContext& context) {
     // 绘制多边形（闭合路径）
     // TODO: Implement DrawPolygon in Renderer
     // For now, draw lines between consecutive points and close the shape
-    for (size_t i = 0; i < points.size(); ++i) {
-        size_t next = (i + 1) % points.size();
-        renderer->DrawLine(points[i], points[next], strokeColor, strokeThickness);
+    for (size_t i = 0; i < points_.size(); ++i) {
+        size_t next = (i + 1) % points_.size();
+        renderer->DrawLine(points_[i], points_[next], strokeColor, strokeThickness);
     }
 }
 
-void Polygon::OnPointsChanged(
-    binding::DependencyObject& d,
-    const binding::DependencyProperty& prop,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* polygon = dynamic_cast<Polygon*>(&d);
-    if (polygon) {
-        polygon->InvalidateMeasure();
-        polygon->InvalidateVisual();
-    }
-}
+// ========== Path 路径构建API ==========
 
-// =============================================================================
-// Path 实现
-// =============================================================================
-
-Path::Path() {
-    // 构造函数初始化
-}
-
-// ========== Path 属性依赖属性 ==========
-
-const binding::DependencyProperty& Path::DataProperty() {
-    static auto& property = binding::DependencyProperty::Register(
-        "Data",
-        typeid(std::string),  // Path data string (SVG-like syntax)
-        typeid(Path),
-        binding::PropertyMetadata{
-            std::any(std::string{}),
-            &Path::OnDataChanged
-        }
-    );
-    return property;
-}
-
-// ========== Path 属性访问器 ==========
-
-std::string Path::GetData() const {
-    return GetValue<std::string>(DataProperty());
-}
-
-void Path::SetData(const std::string& value) {
-    SetValue(DataProperty(), value);
-}
-
-Path* Path::Data(const std::string& value) {
-    SetData(value);
+Path* Path::MoveTo(const Point& point) {
+    PathSegment segment(PathCommand::MoveTo, point);
+    segments_.push_back(segment);
+    currentPoint_ = point;
+    InvalidateMeasure();
+    InvalidateVisual();
     return this;
+}
+
+Path* Path::MoveTo(float x, float y) {
+    return MoveTo(Point(x, y));
+}
+
+Path* Path::LineTo(const Point& point) {
+    PathSegment segment(PathCommand::LineTo, point);
+    segments_.push_back(segment);
+    currentPoint_ = point;
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+Path* Path::LineTo(float x, float y) {
+    return LineTo(Point(x, y));
+}
+
+Path* Path::QuadraticTo(const Point& control, const Point& end) {
+    PathSegment segment(PathCommand::QuadraticTo);
+    segment.points.push_back(control);
+    segment.points.push_back(end);
+    segments_.push_back(segment);
+    currentPoint_ = end;
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+Path* Path::QuadraticTo(float cx, float cy, float ex, float ey) {
+    return QuadraticTo(Point(cx, cy), Point(ex, ey));
+}
+
+Path* Path::CubicTo(const Point& control1, const Point& control2, const Point& end) {
+    PathSegment segment(PathCommand::CubicTo);
+    segment.points.push_back(control1);
+    segment.points.push_back(control2);
+    segment.points.push_back(end);
+    segments_.push_back(segment);
+    currentPoint_ = end;
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+Path* Path::CubicTo(float c1x, float c1y, float c2x, float c2y, float ex, float ey) {
+    return CubicTo(Point(c1x, c1y), Point(c2x, c2y), Point(ex, ey));
+}
+
+Path* Path::ArcTo(const Point& end, float radiusX, float radiusY, float angle, bool largeArc, bool sweep) {
+    PathSegment segment(PathCommand::ArcTo);
+    segment.points.push_back(Point(radiusX, radiusY));
+    segment.points.push_back(Point(angle, 0));
+    segment.points.push_back(Point(largeArc ? 1.0f : 0.0f, sweep ? 1.0f : 0.0f));
+    segment.points.push_back(end);
+    segments_.push_back(segment);
+    currentPoint_ = end;
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+Path* Path::Close() {
+    PathSegment segment(PathCommand::Close);
+    segments_.push_back(segment);
+    InvalidateMeasure();
+    InvalidateVisual();
+    return this;
+}
+
+void Path::ClearPath() {
+    segments_.clear();
+    currentPoint_ = Point(0, 0);
+    InvalidateMeasure();
+    InvalidateVisual();
 }
 
 // ========== Path 几何与渲染 ==========
 
 Rect Path::GetDefiningGeometry() const {
-    // Parse path data to compute bounding box
+    // Parse path segments to compute bounding box
     // Simplified implementation - returns empty rect for now
-    // TODO: Implement full path data parsing
-    return Rect(0, 0, 0, 0);
+    // TODO: Implement full path bounding box calculation
+    if (segments_.empty()) {
+        return Rect(0, 0, 0, 0);
+    }
+    
+    float minX = 0, minY = 0, maxX = 0, maxY = 0;
+    bool first = true;
+    
+    for (const auto& segment : segments_) {
+        for (const auto& pt : segment.points) {
+            if (first) {
+                minX = maxX = pt.x;
+                minY = maxY = pt.y;
+                first = false;
+            } else {
+                minX = std::min(minX, pt.x);
+                minY = std::min(minY, pt.y);
+                maxX = std::max(maxX, pt.x);
+                maxY = std::max(maxY, pt.y);
+            }
+        }
+    }
+    
+    return Rect(minX, minY, maxX - minX, maxY - minY);
 }
 
 void Path::OnRender(RenderContext& context) {
@@ -576,15 +592,15 @@ void Path::OnRender(RenderContext& context) {
     
     if (segments_.empty()) return;
     
+    // Convert Brush* to Color (simplified)
+    Color strokeColor = Color::Black();
+    if (GetStroke() != nullptr) {
+        strokeColor = Color::Black();  // TODO: Extract from brush
+    }
+    
+    float strokeThickness = GetStrokeThickness();
+    
     // Render path using segments
-    Color fillColor = GetFill();
-    Color strokeColor = GetStroke();
-    float strokeWidth = GetStrokeThickness();
-    
-    // Begin path rendering
-    // TODO: Implement actual path rendering using DrawCommand system
-    // This would require extending DrawCommand to support path operations
-    
     // For now, approximate with line segments
     Point lastPoint(0, 0);
     for (const auto& segment : segments_) {
@@ -597,131 +613,30 @@ void Path::OnRender(RenderContext& context) {
                 
             case PathCommand::LineTo:
                 if (!segment.points.empty()) {
-                    // Draw line from lastPoint to segment.points[0]
-                    // TODO: Use actual line drawing
+                    renderer->DrawLine(lastPoint, segment.points[0], strokeColor, strokeThickness);
                     lastPoint = segment.points[0];
                 }
                 break;
                 
             case PathCommand::QuadraticTo:
-                if (segment.points.size() >= 2) {
-                    // Approximate quadratic bezier with line segments
-                    // control = segment.points[0], end = segment.points[1]
-                    lastPoint = segment.points[1];
-                }
-                break;
-                
             case PathCommand::CubicTo:
-                if (segment.points.size() >= 3) {
-                    // Approximate cubic bezier with line segments
-                    // control1 = segment.points[0], control2 = segment.points[1], end = segment.points[2]
-                    lastPoint = segment.points[2];
-                }
-                break;
-                
             case PathCommand::ArcTo:
-                if (segment.points.size() >= 1) {
-                    // Approximate arc with line segments
-                    lastPoint = segment.points[0];
+                // TODO: Implement proper curve rendering
+                if (!segment.points.empty()) {
+                    renderer->DrawLine(lastPoint, segment.points.back(), strokeColor, strokeThickness);
+                    lastPoint = segment.points.back();
                 }
                 break;
                 
             case PathCommand::Close:
-                // Close the current sub-path
+                // Close path - would draw back to start point
                 break;
         }
     }
 }
 
-void Path::OnDataChanged(
-    binding::DependencyObject& d,
-    const binding::DependencyProperty& prop,
-    const std::any& oldValue,
-    const std::any& newValue
-) {
-    auto* path = dynamic_cast<Path*>(&d);
-    if (path) {
-        path->InvalidateMeasure();
-        path->InvalidateVisual();
-    }
-}
+// ========== 模板显式实例化 ==========
+// 只需实例化 Shape，Rectangle 和 Ellipse 继承自 Shape
+template class FrameworkElement<Shape>;
 
-// Path building API implementation
-
-Path* Path::MoveTo(float x, float y) {
-    PathSegment segment;
-    segment.command = PathCommand::MoveTo;
-    segment.points.push_back(Point(x, y));
-    segments_.push_back(segment);
-    
-    InvalidateMeasure();
-    InvalidateVisual();
-    return this;
-}
-
-Path* Path::LineTo(float x, float y) {
-    PathSegment segment;
-    segment.command = PathCommand::LineTo;
-    segment.points.push_back(Point(x, y));
-    segments_.push_back(segment);
-    
-    InvalidateMeasure();
-    InvalidateVisual();
-    return this;
-}
-
-Path* Path::QuadraticTo(float cx, float cy, float x, float y) {
-    PathSegment segment;
-    segment.command = PathCommand::QuadraticTo;
-    segment.points.push_back(Point(cx, cy));  // Control point
-    segment.points.push_back(Point(x, y));    // End point
-    segments_.push_back(segment);
-    
-    InvalidateMeasure();
-    InvalidateVisual();
-    return this;
-}
-
-Path* Path::CubicTo(float cx1, float cy1, float cx2, float cy2, float x, float y) {
-    PathSegment segment;
-    segment.command = PathCommand::CubicTo;
-    segment.points.push_back(Point(cx1, cy1));  // First control point
-    segment.points.push_back(Point(cx2, cy2));  // Second control point
-    segment.points.push_back(Point(x, y));      // End point
-    segments_.push_back(segment);
-    
-    InvalidateMeasure();
-    InvalidateVisual();
-    return this;
-}
-
-Path* Path::ArcTo(float rx, float ry, float angle, bool largeArc, bool sweep, float x, float y) {
-    PathSegment segment;
-    segment.command = PathCommand::ArcTo;
-    segment.points.push_back(Point(rx, ry));         // Radii
-    segment.points.push_back(Point(angle, 0));       // Rotation angle
-    segment.points.push_back(Point(largeArc ? 1.0f : 0.0f, sweep ? 1.0f : 0.0f));  // Flags
-    segment.points.push_back(Point(x, y));           // End point
-    segments_.push_back(segment);
-    
-    InvalidateMeasure();
-    InvalidateVisual();
-    return this;
-}
-
-Path* Path::Close() {
-    PathSegment segment;
-    segment.command = PathCommand::Close;
-    segments_.push_back(segment);
-    
-    InvalidateMeasure();
-    InvalidateVisual();
-    return this;
-}
-
-void Path::ClearPath() {
-    segments_.clear();
-    InvalidateMeasure();
-    InvalidateVisual();
-}
-
+} // namespace fk::ui
