@@ -146,6 +146,9 @@ target_link_libraries(template_system_demo PRIVATE fk)
 add_executable(p2_features_demo examples/p2_features_demo.cpp)
 target_link_libraries(p2_features_demo PRIVATE fk)
 
+add_executable(phase2_demo examples/phase2_demo.cpp)
+target_link_libraries(phase2_demo PRIVATE fk)
+
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库
 # 
