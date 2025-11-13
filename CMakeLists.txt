@@ -147,6 +147,24 @@ add_library(fk STATIC
     src/core/Logger.cpp
     src/core/Timer.cpp
     
+    # animation 模块 (Phase 4)
+    src/animation/Timeline.cpp
+    src/animation/AnimationClock.cpp
+    src/animation/DoubleAnimation.cpp
+    src/animation/ColorAnimation.cpp
+    src/animation/PointAnimation.cpp
+    src/animation/ThicknessAnimation.cpp
+    src/animation/Storyboard.cpp
+    src/animation/VisualStateManager.cpp
+    
+    # resources 模块 (Phase 4.3)
+    src/resources/ThemeManager.cpp
+    
+    # performance 模块 (Phase 4.4)
+    src/performance/GeometryCache.cpp
+    src/performance/MaterialPool.cpp
+    src/performance/RenderBatcher.cpp
+    
     # ui 模块（新架构）
     src/ui/Visual.cpp
     src/ui/VisualCollection.cpp
@@ -271,6 +289,25 @@ target_link_libraries(brush_system_demo PRIVATE fk)
 
 add_executable(contentpresenter_demo examples/contentpresenter_demo.cpp)
 target_link_libraries(contentpresenter_demo PRIVATE fk)
+
+# Phase 4 - Animation System Demo
+add_executable(animation_demo examples/animation_demo.cpp)
+target_link_libraries(animation_demo PRIVATE fk)
+
+add_executable(keyframe_animation_demo examples/keyframe_animation_demo.cpp)
+target_link_libraries(keyframe_animation_demo PRIVATE fk)
+
+add_executable(visual_state_demo examples/visual_state_demo.cpp)
+target_link_libraries(visual_state_demo PRIVATE fk)
+
+add_executable(window_test examples/window_test.cpp)
+target_link_libraries(window_test PRIVATE fk)
+
+add_executable(theme_manager_demo examples/theme_manager_demo.cpp)
+target_link_libraries(theme_manager_demo PRIVATE fk)
+
+add_executable(performance_demo examples/performance_demo.cpp)
+target_link_libraries(performance_demo PRIVATE fk)
 
 # Phase 3 演示程序
 add_executable(gradient_brush_demo examples/gradient_brush_demo.cpp)
