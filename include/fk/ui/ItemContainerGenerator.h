@@ -10,6 +10,7 @@ namespace fk::ui {
 
 // 前向声明
 class UIElement;
+template<typename Derived = void>
 class ItemsControl;
 
 /**

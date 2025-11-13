@@ -1,5 +1,6 @@
 #include "fk/binding/DependencyProperty.h"
 
+#include <memory>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>

@@ -40,7 +40,7 @@ private:
 public:
     ContentPresenter() {
         // 订阅 Loaded 事件以应用内容
-        this->Loaded += [this](auto&) {
+        this->Loaded += [this]() {
             this->UpdateContent();
         };
     }
@@ -76,7 +76,7 @@ public:
     
     auto* Content(const std::any& value) {
         SetContent(value);
-        return static_cast<typename Base::DerivedType*>(this);
+        return static_cast<std::conditional_t<std::is_void_v<Derived>, ContentPresenter<>*, Derived*>>(this);
     }
     
     std::any Content() const { return GetContent(); }
@@ -94,7 +94,7 @@ public:
     
     auto* ContentTemplate(DataTemplate* tmpl) {
         SetContentTemplate(tmpl);
-        return static_cast<typename Base::DerivedType*>(this);
+        return static_cast<std::conditional_t<std::is_void_v<Derived>, ContentPresenter<>*, Derived*>>(this);
     }
     
     DataTemplate* ContentTemplate() const { return GetContentTemplate(); }
