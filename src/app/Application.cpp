@@ -1,6 +1,9 @@
 #include "fk/app/Application.h"
 
+#ifdef FK_HAS_GLFW
 #include <GLFW/glfw3.h>
+#endif
+
 #include <iostream>
 
 namespace fk {

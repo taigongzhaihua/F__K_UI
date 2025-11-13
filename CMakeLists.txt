@@ -27,6 +27,8 @@ add_library(glad STATIC
 target_include_directories(glad PUBLIC ${THIRD_PARTY_DIR}/include)
 
 # ===== GLFW 跨平台配置 =====
+set(GLFW_AVAILABLE FALSE)
+
 if(WIN32)
     # Windows 平台：使用第三方库（MinGW 预编译）
     # 支持两种模式：DLL 或静态库
@@ -40,6 +42,7 @@ if(WIN32)
         )
         target_compile_definitions(fk PUBLIC GLFW_DLL)
         message(STATUS "Using Windows GLFW DLL from third_party")
+        set(GLFW_AVAILABLE TRUE)
     elseif(EXISTS "${THIRD_PARTY_DIR}/lib/libglfw3.a")
         # 使用静态库版本（MinGW）
         add_library(glfw3 STATIC IMPORTED)
@@ -48,6 +51,7 @@ if(WIN32)
             INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
         )
         message(STATUS "Using Windows GLFW static library from third_party")
+        set(GLFW_AVAILABLE TRUE)
     else()
         message(FATAL_ERROR "GLFW library not found in third_party/lib/")
     endif()
@@ -58,6 +62,7 @@ else()
     message(STATUS "Linux platform: attempting to use system-installed GLFW")
     
     # 优先使用 pkg-config 查找 GLFW
+    set(GLFW_AVAILABLE FALSE)
     find_package(PkgConfig)
     if(PKG_CONFIG_FOUND)
         pkg_check_modules(GLFW3 glfw3)
@@ -69,6 +74,7 @@ else()
                 INTERFACE_LINK_LIBRARIES "${GLFW3_LIBRARIES}"
                 INTERFACE_LINK_DIRECTORIES "${GLFW3_LIBRARY_DIRS}"
             )
+            set(GLFW_AVAILABLE TRUE)
         endif()
     endif()
     
@@ -78,6 +84,7 @@ else()
         if(glfw3_FOUND)
             message(STATUS "Found GLFW3 via CMake: ${glfw3_VERSION}")
             # glfw3 目标已由 find_package 创建
+            set(GLFW_AVAILABLE TRUE)
         else()
             message(WARNING "GLFW3 not found on system. Please install: sudo apt-get install libglfw3-dev")
             message(WARNING "Building without GLFW - examples may not work")
@@ -196,6 +203,17 @@ target_link_libraries(fk PUBLIC
     ${OPENGL_LIBS}     # OpenGL 库（如果可用）
     ${PLATFORM_LIBS}   # 平台特定的库
 )
+
+# 添加 GLFW 和 OpenGL 可用性编译定义
+if(GLFW_AVAILABLE)
+    target_compile_definitions(fk PUBLIC FK_HAS_GLFW)
+    message(STATUS "GLFW is available - defining FK_HAS_GLFW")
+endif()
+
+if(OPENGL_FOUND)
+    target_compile_definitions(fk PUBLIC FK_HAS_OPENGL)
+    message(STATUS "OpenGL is available - defining FK_HAS_OPENGL")
+endif()
 
 # ===== 示例可执行文件 (临时测试) =====
 add_executable(style_api_test examples/style_api_test.cpp)
