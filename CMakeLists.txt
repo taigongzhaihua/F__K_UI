@@ -292,6 +292,9 @@ target_link_libraries(keyframe_animation_demo PRIVATE fk)
 add_executable(visual_state_demo examples/visual_state_demo.cpp)
 target_link_libraries(visual_state_demo PRIVATE fk)
 
+add_executable(window_test examples/window_test.cpp)
+target_link_libraries(window_test PRIVATE fk)
+
 # Phase 3 演示程序
 add_executable(gradient_brush_demo examples/gradient_brush_demo.cpp)
 target_link_libraries(gradient_brush_demo PRIVATE fk)

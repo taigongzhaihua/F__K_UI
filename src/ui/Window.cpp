@@ -1,6 +1,55 @@
 #include "fk/ui/Window.h"
 
+#ifdef FK_HAS_GLFW
+#include <GLFW/glfw3.h>
+#ifdef FK_HAS_OPENGL
+#include <GL/gl.h>
+#endif
+#endif
+
+#include <iostream>
+#include <chrono>
+#include <thread>
+
 namespace fk::ui {
+
+// 模拟窗口句柄结构（用于无GLFW环境）
+struct SimulatedWindow {
+    std::string title;
+    int width;
+    int height;
+    bool shouldClose{false};
+    std::chrono::steady_clock::time_point lastFrame;
+    
+    SimulatedWindow(const std::string& t, int w, int h) 
+        : title(t), width(w), height(h), lastFrame(std::chrono::steady_clock::now()) {}
+};
+
+#ifdef FK_HAS_GLFW
+// GLFW 错误回调
+static void glfwErrorCallback(int error, const char* description) {
+    std::cerr << "GLFW Error " << error << ": " << description << std::endl;
+}
+
+// GLFW 初始化辅助函数（单例）
+static bool InitializeGLFW() {
+    static bool initialized = false;
+    static bool initSuccess = false;
+    
+    if (!initialized) {
+        initialized = true;
+        glfwSetErrorCallback(glfwErrorCallback);
+        initSuccess = (glfwInit() == GLFW_TRUE);
+        if (initSuccess) {
+            std::cout << "GLFW initialized successfully" << std::endl;
+        } else {
+            std::cerr << "Failed to initialize GLFW" << std::endl;
+        }
+    }
+    
+    return initSuccess;
+}
+#endif
 
 // ========== 依赖属性注册 ==========
 
@@ -74,7 +123,17 @@ Window::Window() {
 
 Window::~Window() {
     if (nativeHandle_) {
-        // TODO: 释放原生窗口句柄
+#ifdef FK_HAS_GLFW
+        GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
+        glfwDestroyWindow(window);
+        std::cout << "Window destroyed" << std::endl;
+#else
+        // 模拟窗口
+        SimulatedWindow* window = static_cast<SimulatedWindow*>(nativeHandle_);
+        delete window;
+        std::cout << "Simulated window destroyed" << std::endl;
+#endif
+        nativeHandle_ = nullptr;
     }
 }
 
@@ -86,7 +145,24 @@ void Window::SetWindowState(enum WindowState value) {
     
     if (oldState != value) {
         OnWindowStateChanged(oldState, value);
-        // TODO: 更新原生窗口状态
+        
+#ifdef FK_HAS_GLFW
+        if (nativeHandle_) {
+            GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
+            
+            switch (value) {
+                case WindowState::Maximized:
+                    glfwMaximizeWindow(window);
+                    break;
+                case WindowState::Minimized:
+                    glfwIconifyWindow(window);
+                    break;
+                case WindowState::Normal:
+                    glfwRestoreWindow(window);
+                    break;
+            }
+        }
+#endif
     }
 }
 
@@ -101,12 +177,76 @@ void Window::Show() {
         return; // 模态窗口不能用 Show()
     }
     
+    // 创建窗口（如果还未创建）
+    if (!nativeHandle_) {
+#ifdef FK_HAS_GLFW
+        if (!InitializeGLFW()) {
+            std::cerr << "Cannot create window: GLFW not initialized" << std::endl;
+            return;
+        }
+        
+        // 设置窗口提示
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        
+        // 获取窗口尺寸
+        int width = static_cast<int>(GetWidth());
+        int height = static_cast<int>(GetHeight());
+        
+        // 创建GLFW窗口
+        GLFWwindow* window = glfwCreateWindow(
+            width, 
+            height, 
+            GetTitle().c_str(), 
+            nullptr, 
+            nullptr
+        );
+        
+        if (!window) {
+            std::cerr << "Failed to create GLFW window" << std::endl;
+            return;
+        }
+        
+        nativeHandle_ = window;
+        
+        // 设置OpenGL上下文
+        glfwMakeContextCurrent(window);
+        
+        // 启用垂直同步
+        glfwSwapInterval(1);
+        
+        // 设置窗口位置（如果指定）
+        float left = GetLeft();
+        float top = GetTop();
+        if (left != 0.0f || top != 0.0f) {
+            glfwSetWindowPos(window, static_cast<int>(left), static_cast<int>(top));
+        }
+        
+        std::cout << "GLFW window created: " << GetTitle() 
+                  << " (" << width << "x" << height << ")" << std::endl;
+#else
+        // 模拟窗口创建
+        int width = static_cast<int>(GetWidth());
+        int height = static_cast<int>(GetHeight());
+        
+        SimulatedWindow* window = new SimulatedWindow(GetTitle(), width, height);
+        nativeHandle_ = window;
+        
+        std::cout << "Simulated window created: " << GetTitle() 
+                  << " (" << width << "x" << height << ")" << std::endl;
+#endif
+    }
+    
     isVisible_ = true;
     
-    // TODO: 创建并显示原生窗口
-    // 1. 如果 nativeHandle_ 为空，创建窗口
-    // 2. 应用布局
-    // 3. 显示窗口
+#ifdef FK_HAS_GLFW
+    if (nativeHandle_) {
+        GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
+        glfwShowWindow(window);
+    }
+#endif
 }
 
 bool Window::ShowDialog() {
@@ -136,35 +276,140 @@ void Window::Close() {
     
     Closing();  // 触发事件
     
-    // TODO: 关闭原生窗口
-    // 1. 销毁窗口句柄
-    // 2. 如果是模态窗口，退出消息循环
+    isVisible_ = false;
+    
+#ifdef FK_HAS_GLFW
+    if (nativeHandle_) {
+        GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+#else
+    if (nativeHandle_) {
+        SimulatedWindow* window = static_cast<SimulatedWindow*>(nativeHandle_);
+        window->shouldClose = true;
+    }
+#endif
     
     OnClosed();
     Closed();  // 触发事件
     
-    nativeHandle_ = nullptr;
     isClosing_ = false;
 }
 
 void Window::Activate() {
-    // TODO: 激活窗口（置于前台）
+#ifdef FK_HAS_GLFW
+    if (nativeHandle_) {
+        GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
+        glfwFocusWindow(window);
+    }
+#else
+    // 模拟窗口激活
+    std::cout << "Window activated: " << GetTitle() << std::endl;
+#endif
     Activated();  // 触发事件
 }
 
 void Window::Hide() {
     isVisible_ = false;
-    // TODO: 隐藏窗口（不销毁）
+#ifdef FK_HAS_GLFW
+    if (nativeHandle_) {
+        GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
+        glfwHideWindow(window);
+    }
+#else
+    std::cout << "Window hidden: " << GetTitle() << std::endl;
+#endif
 }
 
 bool Window::ProcessEvents() {
-    // TODO: 处理窗口事件
-    // 返回 true 表示继续运行，false 表示关闭
+#ifdef FK_HAS_GLFW
+    if (!nativeHandle_) {
+        return false;
+    }
+    
+    GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
+    
+    // 检查窗口是否应该关闭
+    if (glfwWindowShouldClose(window)) {
+        isVisible_ = false;
+        return false;
+    }
+    
+    // 处理事件
+    glfwPollEvents();
+    
     return isVisible_ && !isClosing_;
+#else
+    // 模拟事件处理
+    if (!nativeHandle_) {
+        return false;
+    }
+    
+    SimulatedWindow* window = static_cast<SimulatedWindow*>(nativeHandle_);
+    
+    if (window->shouldClose) {
+        isVisible_ = false;
+        return false;
+    }
+    
+    // 模拟帧率控制（60 FPS）
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now - window->lastFrame
+    ).count();
+    
+    if (elapsed < 16) { // 约 60 FPS
+        std::this_thread::sleep_for(std::chrono::milliseconds(16 - elapsed));
+    }
+    
+    window->lastFrame = std::chrono::steady_clock::now();
+    
+    return isVisible_ && !isClosing_;
+#endif
 }
 
 void Window::RenderFrame() {
-    // TODO: 渲染窗口内容
+#ifdef FK_HAS_GLFW
+    if (!nativeHandle_) {
+        return;
+    }
+    
+    GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
+    
+    // 获取窗口尺寸
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    
+#ifdef FK_HAS_OPENGL
+    // 设置视口
+    glViewport(0, 0, width, height);
+    
+    // 清除屏幕
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+#endif
+    
+    // TODO: 渲染UI内容
+    // 这里应该调用渲染系统来绘制所有UI元素
+    
+    // 交换缓冲区
+    glfwSwapBuffers(window);
+#else
+    // 模拟渲染
+    if (!nativeHandle_) {
+        return;
+    }
+    
+    // 在模拟环境中，我们只是打印一条消息表示渲染发生了
+    static int frameCount = 0;
+    frameCount++;
+    
+    if (frameCount % 60 == 0) {
+        SimulatedWindow* window = static_cast<SimulatedWindow*>(nativeHandle_);
+        std::cout << "Rendering frame " << frameCount 
+                  << " for window: " << window->title << std::endl;
+    }
+#endif
 }
 
 } // namespace fk::ui
