@@ -4,6 +4,7 @@
  */
 
 #include "fk/ui/Shape.h"
+#include "fk/ui/Brush.h"
 #include "fk/ui/Renderer.h"
 #include "fk/ui/Primitives.h"
 #include <algorithm>
@@ -12,9 +13,6 @@
 #include "FrameworkElement.cpp"
 
 namespace fk::ui {
-
-// 前向声明
-class Brush;
 
 // ========== Shape 依赖属性 ==========
 
@@ -194,17 +192,18 @@ void Rectangle::OnRender(RenderContext& context) {
     float radiusX = GetRadiusX();
     float radiusY = GetRadiusY();
     
-    // Convert Brush* to Color (simplified - assumes SolidColorBrush)
-    // TODO: Proper Brush system implementation
+    // 从 Brush 获取颜色
     Color fillColor = Color::Transparent();
     Color strokeColor = Color::Transparent();
     
-    // For now, use placeholder colors if brushes are set
-    if (GetFill() != nullptr) {
-        fillColor = Color(0.7f, 0.7f, 0.7f, 1.0f);  // Gray fill as placeholder
+    Brush* fillBrush = GetFill();
+    if (fillBrush != nullptr) {
+        fillColor = fillBrush->GetColor();
     }
-    if (GetStroke() != nullptr) {
-        strokeColor = Color::Black();
+    
+    Brush* strokeBrush = GetStroke();
+    if (strokeBrush != nullptr) {
+        strokeColor = strokeBrush->GetColor();
     }
     
     float strokeThickness = GetStrokeThickness();
@@ -236,17 +235,18 @@ void Ellipse::OnRender(RenderContext& context) {
     Point center(bounds.x + bounds.width / 2.0f, bounds.y + bounds.height / 2.0f);
     float radius = std::min(bounds.width, bounds.height) / 2.0f;
     
-    // Convert Brush* to Color (simplified - assumes SolidColorBrush)
-    // TODO: Proper Brush system implementation
+    // 从 Brush 获取颜色
     Color fillColor = Color::Transparent();
     Color strokeColor = Color::Transparent();
     
-    // For now, use placeholder colors if brushes are set
-    if (GetFill() != nullptr) {
-        fillColor = Color(0.7f, 0.7f, 0.7f, 1.0f);  // Gray fill as placeholder
+    Brush* fillBrush = GetFill();
+    if (fillBrush != nullptr) {
+        fillColor = fillBrush->GetColor();
     }
-    if (GetStroke() != nullptr) {
-        strokeColor = Color::Black();
+    
+    Brush* strokeBrush = GetStroke();
+    if (strokeBrush != nullptr) {
+        strokeColor = strokeBrush->GetColor();
     }
     
     renderer->DrawCircle(center, radius, fillColor, strokeColor);
@@ -371,13 +371,13 @@ void Line::OnRender(RenderContext& context) {
     Point start(GetX1(), GetY1());
     Point end(GetX2(), GetY2());
     
-    // Convert Brush* to Color (simplified)
-    // Line uses Stroke for color, not Fill
-    Color lineColor = Color::Black();  // Default
+    // 从 Brush 获取颜色
+    // Line 使用 Stroke 作为线条颜色，不使用 Fill
+    Color lineColor = Color::Black();  // 默认黑色
     
-    if (GetStroke() != nullptr) {
-        // TODO: Extract color from SolidColorBrush
-        lineColor = Color::Black();
+    Brush* strokeBrush = GetStroke();
+    if (strokeBrush != nullptr) {
+        lineColor = strokeBrush->GetColor();
     }
     
     float strokeThickness = GetStrokeThickness();
@@ -445,16 +445,18 @@ void Polygon::OnRender(RenderContext& context) {
     
     if (points_.size() < 3) return;  // 需要至少3个点才能构成多边形
     
-    // Convert Brush* to Color (simplified)
+    // 从 Brush 获取颜色
     Color fillColor = Color::Transparent();
     Color strokeColor = Color::Transparent();
     
-    if (GetFill() != nullptr) {
-        fillColor = Color(0.7f, 0.7f, 0.7f, 1.0f);  // Gray fill as placeholder
+    Brush* fillBrush = GetFill();
+    if (fillBrush != nullptr) {
+        fillColor = fillBrush->GetColor();
     }
     
-    if (GetStroke() != nullptr) {
-        strokeColor = Color::Black();
+    Brush* strokeBrush = GetStroke();
+    if (strokeBrush != nullptr) {
+        strokeColor = strokeBrush->GetColor();
     }
     
     float strokeThickness = GetStrokeThickness();
@@ -592,10 +594,12 @@ void Path::OnRender(RenderContext& context) {
     
     if (segments_.empty()) return;
     
-    // Convert Brush* to Color (simplified)
-    Color strokeColor = Color::Black();
-    if (GetStroke() != nullptr) {
-        strokeColor = Color::Black();  // TODO: Extract from brush
+    // 从 Brush 获取颜色
+    Color strokeColor = Color::Black();  // 默认黑色
+    
+    Brush* strokeBrush = GetStroke();
+    if (strokeBrush != nullptr) {
+        strokeColor = strokeBrush->GetColor();
     }
     
     float strokeThickness = GetStrokeThickness();

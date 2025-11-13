@@ -171,6 +171,7 @@ add_library(fk STATIC
     src/ui/Button.cpp
     src/ui/StackPanel.cpp
     src/ui/Grid.cpp
+    src/ui/Brush.cpp
     src/ui/Shape.cpp
     src/ui/DrawCommand.cpp
     src/ui/Renderer.cpp
@@ -251,6 +252,9 @@ target_link_libraries(p2_features_demo PRIVATE fk)
 
 add_executable(phase2_demo examples/phase2_demo.cpp)
 target_link_libraries(phase2_demo PRIVATE fk)
+
+add_executable(brush_system_demo examples/brush_system_demo.cpp)
+target_link_libraries(brush_system_demo PRIVATE fk)
 
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库

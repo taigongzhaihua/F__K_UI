@@ -38,11 +38,34 @@ struct Color {
         return Color(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
     }
     
+    // 转换为 ARGB 整数
+    uint32_t ToArgb() const {
+        return (static_cast<uint32_t>(a * 255) << 24) | 
+               (static_cast<uint32_t>(r * 255) << 16) | 
+               (static_cast<uint32_t>(g * 255) << 8) | 
+               static_cast<uint32_t>(b * 255);
+    }
+    
+    // 相等比较
+    bool operator==(const Color& other) const {
+        return r == other.r && g == other.g && b == other.b && a == other.a;
+    }
+    
+    bool operator!=(const Color& other) const {
+        return !(*this == other);
+    }
+    
     static Color White() { return Color(1, 1, 1, 1); }
     static Color Black() { return Color(0, 0, 0, 1); }
     static Color Red() { return Color(1, 0, 0, 1); }
     static Color Green() { return Color(0, 1, 0, 1); }
     static Color Blue() { return Color(0, 0, 1, 1); }
+    static Color Yellow() { return Color(1, 1, 0, 1); }
+    static Color Cyan() { return Color(0, 1, 1, 1); }
+    static Color Magenta() { return Color(1, 0, 1, 1); }
+    static Color Gray() { return Color(0.5f, 0.5f, 0.5f, 1); }
+    static Color LightGray() { return Color(0.75f, 0.75f, 0.75f, 1); }
+    static Color DarkGray() { return Color(0.25f, 0.25f, 0.25f, 1); }
     static Color Transparent() { return Color(0, 0, 0, 0); }
 };
 
