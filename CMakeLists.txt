@@ -153,6 +153,7 @@ add_library(fk STATIC
     src/animation/DoubleAnimation.cpp
     src/animation/ColorAnimation.cpp
     src/animation/PointAnimation.cpp
+    src/animation/ThicknessAnimation.cpp
     src/animation/Storyboard.cpp
     
     # ui 模块（新架构）
@@ -283,6 +284,9 @@ target_link_libraries(contentpresenter_demo PRIVATE fk)
 # Phase 4 - Animation System Demo
 add_executable(animation_demo examples/animation_demo.cpp)
 target_link_libraries(animation_demo PRIVATE fk)
+
+add_executable(keyframe_animation_demo examples/keyframe_animation_demo.cpp)
+target_link_libraries(keyframe_animation_demo PRIVATE fk)
 
 # Phase 3 演示程序
 add_executable(gradient_brush_demo examples/gradient_brush_demo.cpp)
