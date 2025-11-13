@@ -251,8 +251,10 @@ target_link_libraries(template_system_demo PRIVATE fk)
 add_executable(p2_features_demo examples/p2_features_demo.cpp)
 target_link_libraries(p2_features_demo PRIVATE fk)
 
-add_executable(phase2_demo examples/phase2_demo.cpp)
-target_link_libraries(phase2_demo PRIVATE fk)
+# phase2_demo 已移除（有 API 兼容性问题）
+# 使用 brush_system_demo 和 contentpresenter_demo 代替
+# add_executable(phase2_demo examples/phase2_demo.cpp)
+# target_link_libraries(phase2_demo PRIVATE fk)
 
 add_executable(brush_system_demo examples/brush_system_demo.cpp)
 target_link_libraries(brush_system_demo PRIVATE fk)
