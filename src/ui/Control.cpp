@@ -1,4 +1,5 @@
 #include "fk/ui/Control.h"
+#include "fk/ui/ControlTemplate.h"
 
 namespace fk::ui {
 
@@ -88,6 +89,87 @@ const binding::DependencyProperty& Control<Derived>::FontWeightProperty() {
         {ui::FontWeight::Normal}
     );
     return property;
+}
+
+template<typename Derived>
+const binding::DependencyProperty& Control<Derived>::StyleProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Style",
+        typeid(fk::ui::Style*),
+        typeid(Control<Derived>),
+        binding::PropertyMetadata{
+            std::any(static_cast<fk::ui::Style*>(nullptr)),
+            &Control<Derived>::OnStyleChanged
+        }
+    );
+    return property;
+}
+
+template<typename Derived>
+const binding::DependencyProperty& Control<Derived>::TemplateProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Template",
+        typeid(ControlTemplate*),
+        typeid(Control<Derived>),
+        binding::PropertyMetadata{
+            std::any(static_cast<ControlTemplate*>(nullptr)),
+            &Control<Derived>::OnTemplateChanged
+        }
+    );
+    return property;
+}
+
+template<typename Derived>
+void Control<Derived>::OnStyleChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* control = dynamic_cast<Control<Derived>*>(&d);
+    if (!control) {
+        return;
+    }
+    
+    // 撤销旧样式
+    if (oldValue.has_value() && oldValue.type() == typeid(fk::ui::Style*)) {
+        auto* oldStyle = std::any_cast<fk::ui::Style*>(oldValue);
+        if (oldStyle) {
+            oldStyle->Unapply(control);
+        }
+    }
+    
+    // 应用新样式
+    if (newValue.has_value() && newValue.type() == typeid(fk::ui::Style*)) {
+        auto* newStyle = std::any_cast<fk::ui::Style*>(newValue);
+        if (newStyle) {
+            newStyle->Apply(control);
+        }
+    }
+    
+    // 触发重新渲染
+    control->InvalidateVisual();
+    control->InvalidateMeasure();
+}
+
+template<typename Derived>
+void Control<Derived>::OnTemplateChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* control = dynamic_cast<Control<Derived>*>(&d);
+    if (!control) {
+        return;
+    }
+    
+    // 应用新模板
+    control->ApplyTemplate();
+    
+    // 触发重新布局和渲染
+    control->InvalidateMeasure();
+    control->InvalidateVisual();
 }
 
 } // namespace fk::ui
