@@ -40,7 +40,7 @@ public:
     static const binding::DependencyProperty& ItemsPanelProperty();
 
 public:
-    ItemsControl() : generator_(static_cast<Derived*>(this)) {
+    ItemsControl() : generator_(reinterpret_cast<ItemsControl<void>*>(this)) {
         // Configure generator with default factory and preparer
         generator_.SetContainerFactory([this](const std::any& item) -> UIElement* {
             return this->GetContainerForItem(item);

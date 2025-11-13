@@ -129,6 +129,7 @@ const binding::DependencyProperty& FrameworkElement<Derived>::VerticalAlignmentP
 #include "fk/ui/ContentPresenter.h"
 #include "fk/ui/ScrollBar.h"
 #include "fk/ui/ScrollViewer.h"
+#include "fk/ui/ListBox.h"
 
 // 显式实例化 FrameworkElement 模板（必须在命名空间之外）
 // 注意：Rectangle、Ellipse、Line 等继承自 Shape，不直接继承 FrameworkElement
@@ -143,3 +144,4 @@ template class fk::ui::FrameworkElement<fk::ui::Shape>;
 template class fk::ui::FrameworkElement<fk::ui::ContentPresenter<>>;
 template class fk::ui::FrameworkElement<fk::ui::ScrollBar>;
 template class fk::ui::FrameworkElement<fk::ui::ScrollViewer>;
+template class fk::ui::FrameworkElement<fk::ui::ListBox<>>;
