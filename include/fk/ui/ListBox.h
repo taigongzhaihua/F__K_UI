@@ -60,7 +60,8 @@ public:
     // ========== Selected Item ==========
     
     std::any GetSelectedItem() const { 
-        return this->template GetValue<std::any>(SelectedItemProperty()); 
+        // 直接调用GetValue而不使用模板，因为返回值本身就是std::any
+        return this->GetValue(SelectedItemProperty()); 
     }
     
     void SetSelectedItem(const std::any& item) { 
@@ -81,6 +82,8 @@ public:
     
     void SetSelectedIndex(int index) { 
         this->SetValue(SelectedIndexProperty(), index);
+        // 同步更新SelectedItem
+        SyncSelectedItem(index);
     }
     
     ActualDerived* SelectedIndex(int index) {
@@ -272,6 +275,21 @@ protected:
 private:
     // Selection state
     // Note: SelectedItem and SelectedIndex stored in dependency properties
+    
+    /**
+     * @brief 同步SelectedItem到指定索引的项目
+     */
+    void SyncSelectedItem(int index) {
+        if (index < 0 || index >= static_cast<int>(this->GetItems().Count())) {
+            // 索引无效，清空SelectedItem
+            this->SetValue(SelectedItemProperty(), std::any{});
+        } else {
+            // 获取对应索引的项目并设置SelectedItem
+            auto& items = this->GetItems();
+            std::any item = items[index];
+            this->SetValue(SelectedItemProperty(), item);
+        }
+    }
 };
 
 // ========== Dependency Property Implementations ==========
