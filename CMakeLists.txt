@@ -178,6 +178,8 @@ add_library(fk STATIC
     src/ui/ScrollBar.cpp
     src/ui/ScrollViewer.cpp
     src/ui/ListBox.cpp
+    src/ui/Popup.cpp
+    src/ui/ComboBox.cpp
     src/ui/DrawCommand.cpp
     src/ui/Renderer.cpp
     src/ui/RenderBackend.cpp
@@ -275,6 +277,9 @@ target_link_libraries(scrollviewer_demo PRIVATE fk)
 
 add_executable(listbox_demo examples/listbox_demo.cpp)
 target_link_libraries(listbox_demo PRIVATE fk)
+
+add_executable(combobox_demo examples/combobox_demo.cpp)
+target_link_libraries(combobox_demo PRIVATE fk)
 
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库

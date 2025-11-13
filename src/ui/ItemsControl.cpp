@@ -39,6 +39,8 @@ const binding::DependencyProperty& ItemsControl<Derived>::ItemsPanelProperty() {
 
 // 显式实例化需要的额外头文件
 #include "fk/ui/ListBox.h"
+#include "fk/ui/ComboBox.h"
 
 // 显式实例化常用类型
 template class fk::ui::ItemsControl<fk::ui::ListBox<>>;
+template class fk::ui::ItemsControl<fk::ui::ComboBox<>>;
