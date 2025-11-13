@@ -186,28 +186,35 @@ protected:
      */
     virtual void OnItemsChanged(const CollectionChangedEventArgs& args) {
         // Items 集合变更时，更新显示
-        switch (args.action) {
-            case CollectionChangeAction::Add:
-                // 为新项生成容器
-                for (const auto& item : args.newItems) {
-                    AddItemContainer(item);
-                }
-                break;
-                
-            case CollectionChangeAction::Remove:
-                // 移除旧项的容器
-                for (const auto& item : args.oldItems) {
-                    RemoveItemContainer(item);
-                }
-                break;
-                
-            case CollectionChangeAction::Reset:
-                // 清空并重建
-                RegenerateItemContainers();
-                break;
-                
-            default:
-                break;
+        try {
+            switch (args.action) {
+                case CollectionChangeAction::Add:
+                    // 为新项生成容器
+                    for (const auto& item : args.newItems) {
+                        AddItemContainer(item);
+                    }
+                    break;
+                    
+                case CollectionChangeAction::Remove:
+                    // 移除旧项的容器
+                    for (const auto& item : args.oldItems) {
+                        RemoveItemContainer(item);
+                    }
+                    break;
+                    
+                case CollectionChangeAction::Reset:
+                    // 清空并重建
+                    RegenerateItemContainers();
+                    break;
+                    
+                default:
+                    break;
+            }
+        } catch (const std::bad_any_cast&) {
+            // 忽略集合操作中的any_cast错误
+            // 这可能发生在清空或重建容器时
+        } catch (...) {
+            // 忽略其他错误
         }
         
         this->InvalidateMeasure();

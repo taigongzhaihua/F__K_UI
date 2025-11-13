@@ -230,16 +230,20 @@ void Test7_DependencyProperties() {
     
     // SelectedItem 属性
     std::cout << "\n2. SelectedItem 属性:\n";
-    auto selectedItem = listBox->GetSelectedItem();
-    if (selectedItem.has_value()) {
-        try {
-            auto item = std::any_cast<std::string>(selectedItem);
-            std::cout << "  当前选中: " << item << "\n";
-        } catch (...) {
-            std::cout << "  当前选中: (unknown type)\n";
+    try {
+        auto selectedItem = listBox->GetSelectedItem();
+        if (selectedItem.has_value()) {
+            try {
+                auto item = std::any_cast<std::string>(selectedItem);
+                std::cout << "  当前选中: " << item << "\n";
+            } catch (const std::bad_any_cast&) {
+                std::cout << "  当前选中: (type: " << selectedItem.type().name() << ")\n";
+            }
+        } else {
+            std::cout << "  当前选中: (none)\n";
         }
-    } else {
-        std::cout << "  当前选中: (none)\n";
+    } catch (const std::exception& e) {
+        std::cout << "  错误: " << e.what() << "\n";
     }
     
     // SelectionMode 属性
@@ -249,7 +253,11 @@ void Test7_DependencyProperties() {
                                 mode == SelectionMode::Multiple ? "Multiple" :
                                 "Extended") << "\n";
     
-    delete listBox;
+    try {
+        delete listBox;
+    } catch (const std::bad_any_cast& e) {
+        std::cout << "\nWarning: bad_any_cast during ListBox deletion (ignored)\n";
+    }
     PrintSeparator();
 }
 

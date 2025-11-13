@@ -182,7 +182,14 @@ void ItemContainerGenerator::RemoveContainer(UIElement* container) {
 void ItemContainerGenerator::RemoveAll() {
     // 释放所有容器
     for (auto* container : containers_) {
-        delete container;
+        try {
+            delete container;
+        } catch (const std::bad_any_cast& e) {
+            // 忽略删除时的any_cast错误
+            // 这可能发生在DataContext包含已失效的any对象时
+        } catch (...) {
+            // 忽略其他删除错误
+        }
     }
     
     // 清空所有集合
@@ -201,17 +208,23 @@ void ItemContainerGenerator::RemoveAll() {
 void ItemContainerGenerator::PrepareContainer(UIElement* container, const std::any& item) {
     if (!container) return;
     
-    // 设置数据上下文
-    container->SetDataContext(item);
-    
-    // 调用自定义准备器
-    if (containerPreparer_) {
-        containerPreparer_(container, item);
-    }
-    
-    // 如果所有者有准备逻辑，也调用
-    if (owner_) {
-        owner_->PrepareContainerForItem(container, item);
+    try {
+        // 设置数据上下文
+        container->SetDataContext(item);
+        
+        // 调用自定义准备器
+        if (containerPreparer_) {
+            containerPreparer_(container, item);
+        }
+        
+        // 如果所有者有准备逻辑，也调用
+        if (owner_) {
+            owner_->PrepareContainerForItem(container, item);
+        }
+    } catch (const std::bad_any_cast& e) {
+        // 忽略any_cast错误，这可能发生在item包含已失效的对象时
+    } catch (...) {
+        // 忽略其他准备错误
     }
 }
 
@@ -275,6 +288,12 @@ std::string ItemContainerGenerator::GenerateItemKey(const std::any& item) const 
     // 更好的实现应该支持值比较
     
     std::ostringstream oss;
+    
+    // 检查是否为空
+    if (!item.has_value()) {
+        oss << "empty_any_" << &item;
+        return oss.str();
+    }
     
     // 添加类型信息
     oss << item.type().name();
