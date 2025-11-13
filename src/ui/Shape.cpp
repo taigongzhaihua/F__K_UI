@@ -636,7 +636,6 @@ void Path::OnRender(RenderContext& context) {
 }
 
 // ========== 模板显式实例化 ==========
-// 只需实例化 Shape，Rectangle 和 Ellipse 继承自 Shape
-template class FrameworkElement<Shape>;
+// Shape 的实例化在 FrameworkElement.cpp 中统一处理
 
 } // namespace fk::ui

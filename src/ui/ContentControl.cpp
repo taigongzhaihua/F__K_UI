@@ -1,5 +1,7 @@
 #include "fk/ui/ContentControl.h"
 #include "fk/binding/DependencyProperty.h"
+#include "fk/ui/Button.h"
+#include "fk/ui/Window.h"
 
 namespace fk::ui {
 
@@ -28,3 +30,7 @@ const binding::DependencyProperty& ContentControl<Derived>::ContentTemplatePrope
 }
 
 } // namespace fk::ui
+
+// 显式实例化 ContentControl 模板（必须在命名空间之外）
+template class fk::ui::ContentControl<fk::ui::Button>;
+template class fk::ui::ContentControl<fk::ui::Window>;

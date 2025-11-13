@@ -1,6 +1,16 @@
 #include "fk/ui/FrameworkElement.h"
 #include <limits>
 
+// 显式实例化所需的头文件（必须在命名空间之外）
+#include "fk/ui/Border.h"
+#include "fk/ui/TextBlock.h"
+#include "fk/ui/Image.h"
+#include "fk/ui/Button.h"
+#include "fk/ui/Window.h"
+#include "fk/ui/StackPanel.h"
+#include "fk/ui/Grid.h"
+#include "fk/ui/Shape.h"
+
 namespace fk::ui {
 
 template<typename Derived>
@@ -113,7 +123,15 @@ const binding::DependencyProperty& FrameworkElement<Derived>::VerticalAlignmentP
     return property;
 }
 
-// 显式实例化常用的模板版本（避免链接错误）
-// 注意：这些实例化由各个具体类型的 .cpp 文件完成（如 StackPanel.cpp）
-
 } // namespace fk::ui
+
+// 显式实例化 FrameworkElement 模板（必须在命名空间之外）
+// 注意：Rectangle、Ellipse、Line 等继承自 Shape，不直接继承 FrameworkElement
+template class fk::ui::FrameworkElement<fk::ui::Border>;
+template class fk::ui::FrameworkElement<fk::ui::TextBlock>;
+template class fk::ui::FrameworkElement<fk::ui::Image>;
+template class fk::ui::FrameworkElement<fk::ui::Button>;
+template class fk::ui::FrameworkElement<fk::ui::Window>;
+template class fk::ui::FrameworkElement<fk::ui::StackPanel>;
+template class fk::ui::FrameworkElement<fk::ui::Grid>;
+template class fk::ui::FrameworkElement<fk::ui::Shape>;

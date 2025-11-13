@@ -1,5 +1,7 @@
 #include "fk/ui/Control.h"
 #include "fk/ui/ControlTemplate.h"
+#include "fk/ui/Button.h"
+#include "fk/ui/Window.h"
 
 namespace fk::ui {
 
@@ -95,3 +97,7 @@ const binding::DependencyProperty& Control<Derived>::FontWeightProperty() {
 // 因为 Control 是模板类，所有方法实现都应该在头文件中
 
 } // namespace fk::ui
+
+// 显式实例化 Control 模板（必须在命名空间之外）
+template class fk::ui::Control<fk::ui::Button>;
+template class fk::ui::Control<fk::ui::Window>;

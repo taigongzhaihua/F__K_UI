@@ -1,4 +1,6 @@
 #include "fk/ui/Panel.h"
+#include "fk/ui/StackPanel.h"
+#include "fk/ui/Grid.h"
 
 namespace fk::ui {
 
@@ -13,9 +15,8 @@ const binding::DependencyProperty& Panel<Derived>::BackgroundProperty() {
     return property;
 }
 
-// 显式实例化常用类型（如果需要）
-// template class Panel<StackPanel>;
-// template class Panel<Grid>;
-// 等等...
-
 } // namespace fk::ui
+
+// 显式实例化 Panel 模板（必须在命名空间之外）
+template class fk::ui::Panel<fk::ui::StackPanel>;
+template class fk::ui::Panel<fk::ui::Grid>;
