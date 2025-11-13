@@ -4,6 +4,17 @@ project(FK_UI_Minimal VERSION 0.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# ===== 平台检测 =====
+if(WIN32)
+    message(STATUS "Platform: Windows")
+elseif(UNIX AND NOT APPLE)
+    message(STATUS "Platform: Linux")
+elseif(APPLE)
+    message(STATUS "Platform: macOS")
+else()
+    message(STATUS "Platform: Unknown")
+endif()
+
 set(THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/third_party")
 set(FREETYPE_SOURCE_DIR "${THIRD_PARTY_DIR}/src/freetype")
 set(FREETYPE_BINARY_DIR "${CMAKE_BINARY_DIR}/third_party/src/freetype")
@@ -15,12 +26,38 @@ add_library(glad STATIC
 )
 target_include_directories(glad PUBLIC ${THIRD_PARTY_DIR}/include)
 
-add_library(glfw3 SHARED IMPORTED)
-set_target_properties(glfw3 PROPERTIES
-    IMPORTED_IMPLIB "${THIRD_PARTY_DIR}/lib/glfw3dll.lib"
-    IMPORTED_LOCATION "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-    INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
-)
+# ===== GLFW 跨平台配置 =====
+if(WIN32)
+    # Windows 平台：使用 DLL
+    add_library(glfw3 SHARED IMPORTED)
+    set_target_properties(glfw3 PROPERTIES
+        IMPORTED_IMPLIB "${THIRD_PARTY_DIR}/lib/glfw3dll.lib"
+        IMPORTED_LOCATION "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+        INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
+    )
+    # Windows 需要 GLFW_DLL 宏定义
+    set(GLFW_DLL_DEFINE GLFW_DLL)
+    set(PLATFORM_LIBS "")
+else()
+    # Linux/Unix 平台：使用静态库
+    add_library(glfw3 STATIC IMPORTED)
+    set_target_properties(glfw3 PROPERTIES
+        IMPORTED_LOCATION "${THIRD_PARTY_DIR}/lib/libglfw3.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
+    )
+    
+    # Linux 需要链接系统库
+    # 尝试查找 X11（可选），如果在无头环境中可以跳过
+    find_package(X11)
+    if(X11_FOUND)
+        message(STATUS "Found X11: ${X11_LIBRARIES}")
+        set(PLATFORM_LIBS ${X11_LIBRARIES} ${CMAKE_DL_LIBS} pthread)
+    else()
+        message(WARNING "X11 not found. Using headless configuration.")
+        # 无头环境：仅链接必要的系统库
+        set(PLATFORM_LIBS ${CMAKE_DL_LIBS} pthread)
+    endif()
+endif()
 
 set(WITH_ZLIB OFF CACHE BOOL "Disable zlib dependency for FreeType" FORCE)
 set(WITH_BZIP2 OFF CACHE BOOL "Disable bzip2 dependency for FreeType" FORCE)
@@ -30,7 +67,18 @@ set(SKIP_INSTALL_ALL ON CACHE BOOL "Skip FreeType install targets" FORCE)
 
 add_subdirectory(${FREETYPE_SOURCE_DIR})
 
-find_package(OpenGL REQUIRED)
+# ===== OpenGL 配置 =====
+# 在无头环境中 OpenGL 可能不可用，设为可选
+find_package(OpenGL)
+if(OPENGL_FOUND)
+    message(STATUS "Found OpenGL: ${OPENGL_LIBRARIES}")
+    set(OPENGL_LIBS OpenGL::GL)
+else()
+    message(WARNING "OpenGL not found. Building without OpenGL support.")
+    # 创建一个空的 OpenGL 目标以避免链接错误
+    add_library(OpenGL_stub INTERFACE)
+    set(OPENGL_LIBS OpenGL_stub)
+endif()
 
 add_library(fk STATIC
     # app 模块
@@ -107,10 +155,14 @@ target_link_libraries(fk PUBLIC
     glad
     glfw3
     freetype
-    OpenGL::GL
+    ${OPENGL_LIBS}     # OpenGL 库（如果可用）
+    ${PLATFORM_LIBS}   # 平台特定的库
 )
 
-target_compile_definitions(fk PUBLIC GLFW_DLL)
+# 仅在 Windows 平台定义 GLFW_DLL
+if(WIN32)
+    target_compile_definitions(fk PUBLIC GLFW_DLL)
+endif()
 
 # ===== 示例可执行文件 (临时测试) =====
 add_executable(style_api_test examples/style_api_test.cpp)
