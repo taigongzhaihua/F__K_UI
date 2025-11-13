@@ -28,33 +28,71 @@ target_include_directories(glad PUBLIC ${THIRD_PARTY_DIR}/include)
 
 # ===== GLFW 跨平台配置 =====
 if(WIN32)
-    # Windows 平台：使用 DLL
-    add_library(glfw3 SHARED IMPORTED)
-    set_target_properties(glfw3 PROPERTIES
-        IMPORTED_IMPLIB "${THIRD_PARTY_DIR}/lib/glfw3dll.lib"
-        IMPORTED_LOCATION "${THIRD_PARTY_DIR}/lib/glfw3.dll"
-        INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
-    )
-    # Windows 需要 GLFW_DLL 宏定义
-    set(GLFW_DLL_DEFINE GLFW_DLL)
+    # Windows 平台：使用第三方库（MinGW 预编译）
+    # 支持两种模式：DLL 或静态库
+    if(EXISTS "${THIRD_PARTY_DIR}/lib/glfw3dll.lib")
+        # 使用 DLL 版本
+        add_library(glfw3 SHARED IMPORTED)
+        set_target_properties(glfw3 PROPERTIES
+            IMPORTED_IMPLIB "${THIRD_PARTY_DIR}/lib/glfw3dll.lib"
+            IMPORTED_LOCATION "${THIRD_PARTY_DIR}/lib/glfw3.dll"
+            INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
+        )
+        target_compile_definitions(fk PUBLIC GLFW_DLL)
+        message(STATUS "Using Windows GLFW DLL from third_party")
+    elseif(EXISTS "${THIRD_PARTY_DIR}/lib/libglfw3.a")
+        # 使用静态库版本（MinGW）
+        add_library(glfw3 STATIC IMPORTED)
+        set_target_properties(glfw3 PROPERTIES
+            IMPORTED_LOCATION "${THIRD_PARTY_DIR}/lib/libglfw3.a"
+            INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
+        )
+        message(STATUS "Using Windows GLFW static library from third_party")
+    else()
+        message(FATAL_ERROR "GLFW library not found in third_party/lib/")
+    endif()
     set(PLATFORM_LIBS "")
 else()
-    # Linux/Unix 平台：使用静态库
-    add_library(glfw3 STATIC IMPORTED)
-    set_target_properties(glfw3 PROPERTIES
-        IMPORTED_LOCATION "${THIRD_PARTY_DIR}/lib/libglfw3.a"
-        INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
-    )
+    # Linux/Unix 平台：使用系统安装的 GLFW
+    # 第三方目录中的 .a 文件是 Windows MinGW 库，不适用于 Linux
+    message(STATUS "Linux platform: attempting to use system-installed GLFW")
     
-    # Linux 需要链接系统库
-    # 尝试查找 X11（可选），如果在无头环境中可以跳过
+    # 优先使用 pkg-config 查找 GLFW
+    find_package(PkgConfig)
+    if(PKG_CONFIG_FOUND)
+        pkg_check_modules(GLFW3 glfw3)
+        if(GLFW3_FOUND)
+            message(STATUS "Found GLFW3 via pkg-config: ${GLFW3_VERSION}")
+            add_library(glfw3 INTERFACE IMPORTED)
+            set_target_properties(glfw3 PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${GLFW3_INCLUDE_DIRS}"
+                INTERFACE_LINK_LIBRARIES "${GLFW3_LIBRARIES}"
+                INTERFACE_LINK_DIRECTORIES "${GLFW3_LIBRARY_DIRS}"
+            )
+        endif()
+    endif()
+    
+    # 如果 pkg-config 未找到，尝试使用 CMake 的 find_package
+    if(NOT GLFW3_FOUND)
+        find_package(glfw3 3.3)
+        if(glfw3_FOUND)
+            message(STATUS "Found GLFW3 via CMake: ${glfw3_VERSION}")
+            # glfw3 目标已由 find_package 创建
+        else()
+            message(WARNING "GLFW3 not found on system. Please install: sudo apt-get install libglfw3-dev")
+            message(WARNING "Building without GLFW - examples may not work")
+            # 创建一个空目标以避免链接错误
+            add_library(glfw3 INTERFACE)
+        endif()
+    endif()
+    
+    # Linux 系统库
     find_package(X11)
     if(X11_FOUND)
         message(STATUS "Found X11: ${X11_LIBRARIES}")
         set(PLATFORM_LIBS ${X11_LIBRARIES} ${CMAKE_DL_LIBS} pthread)
     else()
         message(WARNING "X11 not found. Using headless configuration.")
-        # 无头环境：仅链接必要的系统库
         set(PLATFORM_LIBS ${CMAKE_DL_LIBS} pthread)
     endif()
 endif()
@@ -158,11 +196,6 @@ target_link_libraries(fk PUBLIC
     ${OPENGL_LIBS}     # OpenGL 库（如果可用）
     ${PLATFORM_LIBS}   # 平台特定的库
 )
-
-# 仅在 Windows 平台定义 GLFW_DLL
-if(WIN32)
-    target_compile_definitions(fk PUBLIC GLFW_DLL)
-endif()
 
 # ===== 示例可执行文件 (临时测试) =====
 add_executable(style_api_test examples/style_api_test.cpp)
