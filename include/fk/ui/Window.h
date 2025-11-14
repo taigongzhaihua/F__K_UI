@@ -5,6 +5,13 @@
 #include <string>
 #include <memory>
 
+// 前向声明
+namespace fk::render {
+    class GlRenderer;
+    class RenderList;
+    class TextRenderer;
+}
+
 namespace fk::ui {
 
 /**
@@ -197,6 +204,10 @@ private:
     bool isModal_{false};           // 是否为模态窗口
     bool isClosing_{false};         // 正在关闭标志
     bool isVisible_{false};         // 窗口可见性标志
+    
+    // 渲染系统
+    std::unique_ptr<render::GlRenderer> renderer_;     // OpenGL 渲染器
+    std::unique_ptr<render::RenderList> renderList_;   // 渲染命令列表
 };
 
 // 窗口智能指针类型（用于 Application 管理）

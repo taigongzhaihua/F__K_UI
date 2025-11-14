@@ -30,6 +30,11 @@ public:
      * @brief 获取 TextRenderer 实例(用于文本测量)
      */
     TextRenderer* GetTextRenderer() const { return textRenderer_.get(); }
+    
+    /**
+     * @brief 检查渲染器是否已初始化
+     */
+    bool IsInitialized() const { return initialized_; }
 
 private:
     /**

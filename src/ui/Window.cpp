@@ -1,4 +1,8 @@
 #include "fk/ui/Window.h"
+#include "fk/render/GlRenderer.h"
+#include "fk/render/RenderList.h"
+#include "fk/render/RenderContext.h"
+#include "fk/render/TextRenderer.h"
 
 #ifdef FK_HAS_GLFW
 #include <GLFW/glfw3.h>
@@ -119,6 +123,12 @@ Window::Window() {
     // 窗口默认尺寸
     SetWidth(800);
     SetHeight(600);
+    
+    // 初始化渲染系统（仅在支持OpenGL时）
+#ifdef FK_HAS_OPENGL
+    renderList_ = std::make_unique<render::RenderList>();
+    renderer_ = std::make_unique<render::GlRenderer>();
+#endif
 }
 
 Window::~Window() {
@@ -389,8 +399,45 @@ void Window::RenderFrame() {
     glClear(GL_COLOR_BUFFER_BIT);
 #endif
     
-    // TODO: 渲染UI内容
-    // 这里应该调用渲染系统来绘制所有UI元素
+    // 渲染UI内容
+#ifdef FK_HAS_OPENGL
+    if (renderer_ && renderList_) {
+        // 初始化渲染器（如果还没初始化）
+        if (!renderer_->IsInitialized()) {
+            render::RendererInitParams params;
+            params.viewportWidth = width;
+            params.viewportHeight = height;
+            renderer_->Initialize(params);
+        }
+        
+        // 清空渲染命令列表
+        renderList_->Clear();
+        
+        // 创建渲染上下文
+        render::RenderContext context(renderList_.get(), renderer_->GetTextRenderer());
+        
+        // 从Content开始收集绘制命令
+        auto content = GetContent();
+        if (content) {
+            // 执行布局（如果需要）
+            auto availableSize = Size(static_cast<float>(width), static_cast<float>(height));
+            content->Measure(availableSize);
+            content->Arrange(Rect(0, 0, availableSize.width, availableSize.height));
+            
+            // 收集绘制命令
+            content->CollectDrawCommands(context);
+        }
+        
+        // 渲染所有命令
+        render::FrameContext frameCtx;
+        frameCtx.frameNumber = 0;
+        frameCtx.deltaTime = 0.016f;
+        
+        renderer_->BeginFrame(frameCtx);
+        renderer_->Draw(*renderList_);
+        renderer_->EndFrame();
+    }
+#endif
     
     // 交换缓冲区
     glfwSwapBuffers(window);
