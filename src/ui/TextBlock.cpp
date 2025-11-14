@@ -6,6 +6,14 @@
 
 namespace fk::ui {
 
+// ========== 构造函数 ==========
+
+TextBlock::TextBlock() {
+    // TextBlock 默认不拉伸，使用内容的自然尺寸
+    SetHorizontalAlignment(HorizontalAlignment::Left);
+    SetVerticalAlignment(VerticalAlignment::Top);
+}
+
 // ========== 依赖属性注册 ==========
 
 const binding::DependencyProperty& TextBlock::TextProperty() {
@@ -127,13 +135,9 @@ Size TextBlock::MeasureOverride(const Size& availableSize) {
 }
 
 Size TextBlock::ArrangeOverride(const Size& finalSize) {
-    // 返回期望尺寸和最终尺寸中较小的那个
-    // 这样可以防止文本被拉伸
-    auto desiredSize = GetDesiredSize();
-    return Size(
-        std::min(desiredSize.width, finalSize.width),
-        std::min(desiredSize.height, finalSize.height)
-    );
+    // 返回 finalSize，这是由 FrameworkElement::ArrangeCore 
+    // 根据对齐方式计算出的实际尺寸
+    return finalSize;
 }
 
 void TextBlock::CollectDrawCommands(render::RenderContext& context) {

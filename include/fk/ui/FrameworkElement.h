@@ -291,8 +291,11 @@ protected:
             finalHeight = std::min(desiredHeight, arrangeHeight);
         }
         
-        // 4. 调用派生类的排列逻辑
-        ArrangeOverride(Size(finalWidth, finalHeight));
+        // 4. 调用派生类的排列逻辑，获取实际渲染尺寸
+        auto actualSize = ArrangeOverride(Size(finalWidth, finalHeight));
+        
+        // 5. 设置渲染尺寸
+        SetRenderSize(actualSize);
     }
 
 private:

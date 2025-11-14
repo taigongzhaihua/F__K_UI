@@ -238,6 +238,11 @@ protected:
      * 父对象析构时会自动释放所有拥有的子对象
      */
     void TakeOwnership(UIElement* child);
+    
+    /**
+     * @brief 设置渲染尺寸（由 ArrangeCore 使用）
+     */
+    void SetRenderSize(const Size& size) { renderSize_ = size; }
 
 private:
     Size desiredSize_;

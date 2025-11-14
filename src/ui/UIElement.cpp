@@ -58,6 +58,7 @@ const binding::DependencyProperty& UIElement::RenderTransformProperty() {
 UIElement::UIElement() 
     : desiredSize_(0, 0)
     , renderSize_(0, 0)
+    , layoutRect_(0, 0, 0, 0)
     , measureDirty_(true)
     , arrangeDirty_(true) {
     // 初始化默认值
@@ -100,8 +101,8 @@ void UIElement::Arrange(const Rect& finalRect) {
     // 存储布局矩形
     layoutRect_ = finalRect;
     
+    // ArrangeCore 负责设置 renderSize_
     ArrangeCore(finalRect);
-    renderSize_ = Size(finalRect.width, finalRect.height);
     arrangeDirty_ = false;
 }
 
@@ -313,7 +314,7 @@ Size UIElement::MeasureCore(const Size& availableSize) {
 
 void UIElement::ArrangeCore(const Rect& finalRect) {
     // 默认实现：使用最终矩形的尺寸
-    renderSize_ = Size(finalRect.width, finalRect.height);
+    SetRenderSize(Size(finalRect.width, finalRect.height));
 }
 
 void UIElement::TakeOwnership(UIElement* child) {
