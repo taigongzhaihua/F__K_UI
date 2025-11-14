@@ -1,4 +1,5 @@
 #include "fk/ui/UIElement.h"
+#include "fk/render/RenderContext.h"
 #include <algorithm>
 
 namespace fk::ui {
@@ -57,6 +58,7 @@ const binding::DependencyProperty& UIElement::RenderTransformProperty() {
 UIElement::UIElement() 
     : desiredSize_(0, 0)
     , renderSize_(0, 0)
+    , layoutRect_(0, 0, 0, 0)
     , measureDirty_(true)
     , arrangeDirty_(true) {
     // 初始化默认值
@@ -91,12 +93,16 @@ void UIElement::Arrange(const Rect& finalRect) {
     auto visibility = GetValue<Visibility>(VisibilityProperty());
     if (visibility == Visibility::Collapsed) {
         renderSize_ = Size(0, 0);
+        layoutRect_ = Rect(0, 0, 0, 0);
         arrangeDirty_ = false;
         return;
     }
     
+    // 存储布局矩形
+    layoutRect_ = finalRect;
+    
+    // ArrangeCore 负责设置 renderSize_
     ArrangeCore(finalRect);
-    renderSize_ = Size(finalRect.width, finalRect.height);
     arrangeDirty_ = false;
 }
 
@@ -308,13 +314,30 @@ Size UIElement::MeasureCore(const Size& availableSize) {
 
 void UIElement::ArrangeCore(const Rect& finalRect) {
     // 默认实现：使用最终矩形的尺寸
-    renderSize_ = Size(finalRect.width, finalRect.height);
+    SetRenderSize(Size(finalRect.width, finalRect.height));
 }
 
 void UIElement::TakeOwnership(UIElement* child) {
     if (child) {
         ownedChildren_.emplace_back(child);
     }
+}
+
+void UIElement::CollectDrawCommands(render::RenderContext& context) {
+    // 检查可见性
+    auto visibility = GetVisibility();
+    if (visibility == Visibility::Collapsed || visibility == Visibility::Hidden) {
+        return;  // 不渲染不可见或折叠的元素
+    }
+    
+    // 推入布局偏移
+    context.PushTransform(layoutRect_.x, layoutRect_.y);
+    
+    // 调用基类实现，收集子元素的绘制命令
+    Visual::CollectDrawCommands(context);
+    
+    // 弹出变换
+    context.PopTransform();
 }
 
 } // namespace fk::ui

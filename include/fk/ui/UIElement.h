@@ -102,6 +102,11 @@ public:
      */
     Size GetRenderSize() const { return renderSize_; }
     
+    /**
+     * @brief 获取布局矩形（元素在父容器中的位置和尺寸）
+     */
+    Rect GetLayoutRect() const { return layoutRect_; }
+    
     // ========== 模板支持 ==========
     
     /**
@@ -206,6 +211,15 @@ public:
      * 注意：返回的指针需要调用者管理内存
      */
     virtual UIElement* Clone() const;
+    
+    // ========== 渲染 ==========
+    
+    /**
+     * @brief 收集绘制命令（重写 Visual 的方法）
+     * 
+     * UIElement 在此处理布局偏移，将元素的布局位置转换为渲染坐标
+     */
+    void CollectDrawCommands(render::RenderContext& context) override;
 
 protected:
     /**
@@ -224,10 +238,16 @@ protected:
      * 父对象析构时会自动释放所有拥有的子对象
      */
     void TakeOwnership(UIElement* child);
+    
+    /**
+     * @brief 设置渲染尺寸（由 ArrangeCore 使用）
+     */
+    void SetRenderSize(const Size& size) { renderSize_ = size; }
 
 private:
     Size desiredSize_;
     Size renderSize_;
+    Rect layoutRect_;  // 布局矩形（父容器坐标系）
     bool measureDirty_{true};
     bool arrangeDirty_{true};
     

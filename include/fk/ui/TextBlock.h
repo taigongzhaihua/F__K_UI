@@ -52,7 +52,7 @@ public:
     static const binding::DependencyProperty& TextWrappingProperty();
 
 public:
-    TextBlock() = default;
+    TextBlock();
     virtual ~TextBlock() = default;
 
     // ========== 文本内容 ==========
