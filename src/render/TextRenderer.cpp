@@ -54,6 +54,14 @@ int TextRenderer::LoadFont(const std::string& fontPath, unsigned int fontSize) {
         return -1;
     }
 
+    // Phase 5.0.3: 检查缓存
+    FontCacheKey cacheKey{fontPath, fontSize};
+    auto cacheIt = fontCache_.find(cacheKey);
+    if (cacheIt != fontCache_.end()) {
+        std::cout << "Font loaded from cache: " << fontPath << " (ID: " << cacheIt->second << ")" << std::endl;
+        return cacheIt->second;
+    }
+
     // 创建新的字体
     auto fontFace = std::make_unique<FontFace>();
 
@@ -65,10 +73,17 @@ int TextRenderer::LoadFont(const std::string& fontPath, unsigned int fontSize) {
 
     // 设置字体大小
     FT_Set_Pixel_Sizes(fontFace->face, 0, fontSize);
+    
+    // Phase 5.0.3: 存储字体信息
+    fontFace->fontPath = fontPath;
+    fontFace->fontSize = fontSize;
 
     // 先添加到fonts_向量,获取fontId
     int fontId = static_cast<int>(fonts_.size());
     fonts_.push_back(std::move(fontFace));
+    
+    // Phase 5.0.3: 添加到缓存
+    fontCache_[cacheKey] = fontId;
 
     // 禁用字节对齐限制
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -78,6 +93,11 @@ int TextRenderer::LoadFont(const std::string& fontPath, unsigned int fontSize) {
         if (!LoadCharacter(c, fontId)) {
             std::cerr << "ERROR::FREETYPE: Failed to load character: " << c << std::endl;
         }
+    }
+    
+    // Phase 5.0.3: 如果是第一个字体，设为默认
+    if (defaultFontId_ == -1) {
+        defaultFontId_ = fontId;
     }
 
     std::cout << "Font loaded: " << fontPath << " (ID: " << fontId << ")" << std::endl;
@@ -240,6 +260,148 @@ const Glyph* TextRenderer::GetGlyph(char32_t c, int fontId) {
 
     auto it = font->glyphs.find(c);
     return (it != font->glyphs.end()) ? &it->second : nullptr;
+}
+
+// ========== Phase 5.0.3 新增方法 ==========
+
+void TextRenderer::SetDefaultFont(int fontId) {
+    if (fontId >= 0 && fontId < fonts_.size()) {
+        defaultFontId_ = fontId;
+    }
+}
+
+void TextRenderer::AddFallbackFont(int fontId) {
+    if (fontId >= 0 && fontId < fonts_.size()) {
+        fallbackFonts_.push_back(fontId);
+    }
+}
+
+void TextRenderer::ClearFallbackFonts() {
+    fallbackFonts_.clear();
+}
+
+const Glyph* TextRenderer::GetGlyphWithFallback(char32_t c, int fontId) {
+    // 尝试主字体
+    const Glyph* glyph = GetGlyph(c, fontId);
+    if (glyph) {
+        return glyph;
+    }
+    
+    // 尝试回退字体
+    for (int fallbackId : fallbackFonts_) {
+        glyph = GetGlyph(c, fallbackId);
+        if (glyph) {
+            return glyph;
+        }
+    }
+    
+    // 尝试默认字体
+    if (defaultFontId_ != -1 && defaultFontId_ != fontId) {
+        glyph = GetGlyph(c, defaultFontId_);
+        if (glyph) {
+            return glyph;
+        }
+    }
+    
+    return nullptr;
+}
+
+TextLayout TextRenderer::CalculateTextLayout(
+    const std::string& text,
+    int fontId,
+    float maxWidth
+) {
+    TextLayout layout;
+    
+    if (fontId < 0 || fontId >= fonts_.size() || text.empty()) {
+        return layout;
+    }
+    
+    auto& font = fonts_[fontId];
+    if (!font || !font->face) {
+        return layout;
+    }
+    
+    // 转换为 UTF-32
+    auto utf32Text = Utf8ToUtf32(text);
+    
+    if (maxWidth <= 0) {
+        // 不换行，单行文本
+        layout.lines.push_back(utf32Text);
+        
+        int lineWidth = 0;
+        for (char32_t c : utf32Text) {
+            const Glyph* glyph = GetGlyphWithFallback(c, fontId);
+            if (glyph) {
+                lineWidth += glyph->advance;
+            }
+        }
+        
+        layout.lineWidths.push_back(lineWidth);
+        layout.totalWidth = lineWidth;
+        layout.totalHeight = GetLineHeight(fontId);
+    } else {
+        // 换行模式
+        std::u32string currentLine;
+        int currentWidth = 0;
+        int lineHeight = GetLineHeight(fontId);
+        
+        for (size_t i = 0; i < utf32Text.length(); ++i) {
+            char32_t c = utf32Text[i];
+            
+            // 处理换行符
+            if (c == U'\n') {
+                layout.lines.push_back(currentLine);
+                layout.lineWidths.push_back(currentWidth);
+                layout.totalWidth = std::max(layout.totalWidth, currentWidth);
+                
+                currentLine.clear();
+                currentWidth = 0;
+                continue;
+            }
+            
+            const Glyph* glyph = GetGlyphWithFallback(c, fontId);
+            if (!glyph) {
+                continue;
+            }
+            
+            // 检查是否需要换行
+            if (currentWidth + glyph->advance > maxWidth && !currentLine.empty()) {
+                layout.lines.push_back(currentLine);
+                layout.lineWidths.push_back(currentWidth);
+                layout.totalWidth = std::max(layout.totalWidth, currentWidth);
+                
+                currentLine.clear();
+                currentWidth = 0;
+            }
+            
+            currentLine += c;
+            currentWidth += glyph->advance;
+        }
+        
+        // 添加最后一行
+        if (!currentLine.empty()) {
+            layout.lines.push_back(currentLine);
+            layout.lineWidths.push_back(currentWidth);
+            layout.totalWidth = std::max(layout.totalWidth, currentWidth);
+        }
+        
+        layout.totalHeight = static_cast<int>(layout.lines.size()) * lineHeight;
+    }
+    
+    return layout;
+}
+
+void TextRenderer::MeasureTextMultiline(
+    const std::string& text,
+    int fontId,
+    float maxWidth,
+    int& outWidth,
+    int& outHeight
+) {
+    auto layout = CalculateTextLayout(text, fontId, maxWidth);
+    outWidth = layout.totalWidth;
+    outHeight = layout.totalHeight;
 }
 
 } // namespace fk::render
