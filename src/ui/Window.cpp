@@ -405,8 +405,8 @@ void Window::RenderFrame() {
         // 初始化渲染器（如果还没初始化）
         if (!renderer_->IsInitialized()) {
             render::RendererInitParams params;
-            params.viewportWidth = width;
-            params.viewportHeight = height;
+            params.initialSize.width = static_cast<std::uint32_t>(width);
+            params.initialSize.height = static_cast<std::uint32_t>(height);
             renderer_->Initialize(params);
         }
         
@@ -416,22 +416,39 @@ void Window::RenderFrame() {
         // 创建渲染上下文
         render::RenderContext context(renderList_.get(), renderer_->GetTextRenderer());
         
-        // 从Content开始收集绘制命令
+
+        
+        // 从Content开始收集绘制命令  
         auto content = GetContent();
-        if (content) {
-            // 执行布局（如果需要）
-            auto availableSize = Size(static_cast<float>(width), static_cast<float>(height));
-            content->Measure(availableSize);
-            content->Arrange(Rect(0, 0, availableSize.width, availableSize.height));
+        
+        if (content.has_value() && content.type() == typeid(UIElement*)) {
+            auto* element = std::any_cast<UIElement*>(content);
             
-            // 收集绘制命令
-            content->CollectDrawCommands(context);
+            if (element) {
+                // 执行布局
+                auto availableSize = Size(static_cast<float>(width), static_cast<float>(height));
+                element->Measure(availableSize);
+                
+                // 将元素居中显示
+                auto desiredSize = element->GetDesiredSize();
+                float centerX = (width - desiredSize.width) / 2.0f;
+                float centerY = (height - desiredSize.height) / 2.0f;
+                element->Arrange(Rect(centerX, centerY, desiredSize.width, desiredSize.height));
+                
+                // 应用偏移到渲染上下文
+                context.PushTransform(centerX, centerY);
+                
+                // 收集绘制命令
+                element->CollectDrawCommands(context);
+                
+                context.PopTransform();
+            }
         }
         
         // 渲染所有命令
         render::FrameContext frameCtx;
-        frameCtx.frameNumber = 0;
-        frameCtx.deltaTime = 0.016f;
+        frameCtx.elapsedSeconds = 0.0;
+        frameCtx.deltaSeconds = 0.016;
         
         renderer_->BeginFrame(frameCtx);
         renderer_->Draw(*renderList_);

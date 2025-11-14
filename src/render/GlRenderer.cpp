@@ -196,6 +196,12 @@ void GlRenderer::BeginFrame(const FrameContext& ctx) {
     layerStack_.clear();
     layerStack_.push_back({1.0f}); // 根图层不透明度为 1
 
+    // 设置 OpenGL 状态（2D渲染）
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // 绑定着色器程序
     glUseProgram(shaderProgram_);
 
@@ -215,13 +221,13 @@ void GlRenderer::Draw(const RenderList& list) {
         return;
     }
 
-    const RenderCommandBuffer* buffer = list.CommandBuffer();
-    if (!buffer || buffer->IsEmpty()) {
+    if (list.IsEmpty()) {
         return;
     }
 
-    // 执行所有渲染命令
-    const auto& commands = buffer->GetCommands();
+    // 直接使用 RenderList 的 GetCommands() 方法
+    const auto& commands = list.GetCommands();
+    
     for (const auto& cmd : commands) {
         ExecuteCommand(cmd);
     }
