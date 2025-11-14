@@ -60,13 +60,13 @@ public:
     /**
      * @brief 收集绘制命令
      */
-    void CollectDrawCommands(class RenderContext& context) override;
+    void CollectDrawCommands(render::RenderContext& context) override;
 
 protected:
     /**
      * @brief 渲染图形（派生类实现具体图形）
      */
-    virtual void OnRender(class RenderContext& context);
+    virtual void OnRender(render::RenderContext& context);
     
     /**
      * @brief 获取图形定义的边界（用于布局）
@@ -112,7 +112,7 @@ public:
 
 protected:
     Rect GetDefiningGeometry() const override;
-    void OnRender(class RenderContext& context) override;
+    void OnRender(render::RenderContext& context) override;
 };
 
 /**
@@ -125,7 +125,7 @@ public:
 
 protected:
     Rect GetDefiningGeometry() const override;
-    void OnRender(class RenderContext& context) override;
+    void OnRender(render::RenderContext& context) override;
 };
 
 /**
@@ -170,7 +170,7 @@ public:
 
 protected:
     Rect GetDefiningGeometry() const override;
-    void OnRender(class RenderContext& context) override;
+    void OnRender(render::RenderContext& context) override;
 };
 
 /**
@@ -208,7 +208,7 @@ public:
 
 protected:
     Rect GetDefiningGeometry() const override;
-    void OnRender(class RenderContext& context) override;
+    void OnRender(render::RenderContext& context) override;
 
 private:
     std::vector<Point> points_;
@@ -280,7 +280,7 @@ public:
 
 protected:
     Rect GetDefiningGeometry() const override;
-    void OnRender(class RenderContext& context) override;
+    void OnRender(render::RenderContext& context) override;
 
 private:
     std::vector<PathSegment> segments_;

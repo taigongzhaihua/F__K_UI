@@ -1,4 +1,5 @@
 #include "fk/ui/Border.h"
+#include "fk/render/RenderContext.h"
 
 namespace fk::ui {
 
@@ -112,7 +113,7 @@ Size Border::ArrangeOverride(const Size& finalSize) {
     return finalSize;
 }
 
-void Border::CollectDrawCommands(RenderContext& context) {
+void Border::CollectDrawCommands(render::RenderContext& context) {
     // TODO: 添加背景和边框绘制命令
     // auto background = GetBackground();
     // auto borderBrush = GetBorderBrush();

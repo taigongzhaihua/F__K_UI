@@ -381,25 +381,61 @@ void GlRenderer::DrawText(const TextPayload& payload) {
         return;
     }
 
+    // Phase 5.0.4: 改进字体加载 - 使用字体族名称和跨平台路径
     // 为每个字体大小加载单独的字体
-    static std::unordered_map<unsigned int, int> fontCache;
-    unsigned int fontSizeKey = static_cast<unsigned int>(payload.fontSize);
+    static std::unordered_map<std::string, int> fontCache; // 使用 "family_size" 作为键
+    std::string fontKey = payload.fontFamily + "_" + std::to_string(static_cast<unsigned int>(payload.fontSize));
     
     int fontId = -1;
-    auto it = fontCache.find(fontSizeKey);
+    auto it = fontCache.find(fontKey);
     if (it != fontCache.end()) {
         fontId = it->second;
     } else {
-        // 加载新的字体大小
-        fontId = textRenderer_->LoadFont("C:/Windows/Fonts/msyh.ttc", fontSizeKey);
-        if (fontId < 0) {
-            fontId = textRenderer_->LoadFont("C:/Windows/Fonts/simhei.ttf", fontSizeKey);
+        // Phase 5.0.4: 跨平台字体路径
+        std::vector<std::string> fontPaths;
+        
+        #ifdef _WIN32
+            // Windows 字体路径
+            fontPaths = {
+                "C:/Windows/Fonts/msyh.ttc",      // 微软雅黑
+                "C:/Windows/Fonts/simhei.ttf",    // 黑体
+                "C:/Windows/Fonts/arial.ttf",     // Arial
+                "C:/Windows/Fonts/times.ttf"      // Times
+            };
+        #elif __APPLE__
+            // macOS 字体路径
+            fontPaths = {
+                "/System/Library/Fonts/PingFang.ttc",           // 苹方
+                "/System/Library/Fonts/Helvetica.ttc",          // Helvetica
+                "/Library/Fonts/Arial Unicode.ttf"               // Arial Unicode
+            };
+        #else
+            // Linux 字体路径
+            fontPaths = {
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+            };
+        #endif
+        
+        // 尝试加载字体
+        unsigned int fontSizeKey = static_cast<unsigned int>(payload.fontSize);
+        for (const auto& path : fontPaths) {
+            fontId = textRenderer_->LoadFont(path, fontSizeKey);
+            if (fontId >= 0) {
+                break;
+            }
         }
+        
         if (fontId < 0) {
             std::cerr << "Failed to load any font for size " << fontSizeKey << "!" << std::endl;
-            return;
+            // Phase 5.0.4: 尝试使用默认字体
+            fontId = textRenderer_->GetDefaultFont();
+            if (fontId < 0) {
+                return;
+            }
         }
-        fontCache[fontSizeKey] = fontId;
+        fontCache[fontKey] = fontId;
     }
     
     // 保存当前着色器程序
@@ -526,8 +562,26 @@ void GlRenderer::DrawText(const TextPayload& payload) {
         // 将 UTF-8 文本转换为 UTF-32
         std::u32string utf32Text = textRenderer_->Utf8ToUtf32(line);
         
-        // 渲染每个字符
+        // Phase 5.0.4: 计算行宽用于对齐
+        float lineWidth = 0.0f;
+        for (char32_t c : utf32Text) {
+            const auto* glyph = textRenderer_->GetGlyph(c, fontId);
+            if (glyph) {
+                lineWidth += glyph->advance;
+            }
+        }
+        
+        // Phase 5.0.4: 根据对齐方式计算起始 X 位置
         float x = 0.0f;
+        float maxWidth = payload.maxWidth > 0.0f ? payload.maxWidth : lineWidth;
+        
+        // TODO: 使用 payload.textAlignment (需要在 TextPayload 中添加)
+        // 暂时默认左对齐
+        // if (alignment == TextAlignment::Center) {
+        //     x = (maxWidth - lineWidth) / 2.0f;
+        // } else if (alignment == TextAlignment::Right) {
+        //     x = maxWidth - lineWidth;
+        // }
         
         for (char32_t c : utf32Text) {
             const auto* glyph = textRenderer_->GetGlyph(c, fontId);

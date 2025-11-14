@@ -7,6 +7,7 @@
 #include "fk/ui/Brush.h"
 #include "fk/ui/Renderer.h"
 #include "fk/ui/Primitives.h"
+#include "fk/render/RenderContext.h"
 #include <algorithm>
 
 // 包含 FrameworkElement 模板实现（用于显式实例化）
@@ -115,11 +116,11 @@ Size Shape::ArrangeOverride(const Size& finalSize) {
     return finalSize;
 }
 
-void Shape::OnRender(RenderContext& context) {
+void Shape::OnRender(render::RenderContext& context) {
     // 派生类实现具体渲染
 }
 
-void Shape::CollectDrawCommands(RenderContext& context) {
+void Shape::CollectDrawCommands(render::RenderContext& context) {
     // Call OnRender to submit draw commands for this shape
     OnRender(context);
     
@@ -184,37 +185,28 @@ Rect Rectangle::GetDefiningGeometry() const {
     return Rect(0, 0, size.width, size.height);
 }
 
-void Rectangle::OnRender(RenderContext& context) {
-    Renderer* renderer = context.GetRenderer();
-    if (!renderer) return;
-    
+void Rectangle::OnRender(render::RenderContext& context) {
     Rect bounds = GetDefiningGeometry();
     float radiusX = GetRadiusX();
     float radiusY = GetRadiusY();
     
-    // 从 Brush 获取颜色
-    Color fillColor = Color::Transparent();
-    Color strokeColor = Color::Transparent();
+    // 从 Brush 获取颜色（转换为 RenderContext 格式）
+    auto brushToColor = [](Brush* brush) -> std::array<float, 4> {
+        if (!brush) return {{0.0f, 0.0f, 0.0f, 0.0f}};  // 透明
+        if (auto solidBrush = dynamic_cast<SolidColorBrush*>(brush)) {
+            auto color = solidBrush->GetColor();
+            return {{color.r, color.g, color.b, color.a}};
+        }
+        return {{0.0f, 0.0f, 0.0f, 0.0f}};
+    };
     
-    Brush* fillBrush = GetFill();
-    if (fillBrush != nullptr) {
-        fillColor = fillBrush->GetColor();
-    }
-    
-    Brush* strokeBrush = GetStroke();
-    if (strokeBrush != nullptr) {
-        strokeColor = strokeBrush->GetColor();
-    }
-    
+    std::array<float, 4> fillColor = brushToColor(GetFill());
+    std::array<float, 4> strokeColor = brushToColor(GetStroke());
     float strokeThickness = GetStrokeThickness();
     
-    // Draw rounded rectangle if radius specified, otherwise regular rectangle
-    if (radiusX > 0 || radiusY > 0) {
-        float radius = std::max(radiusX, radiusY);
-        renderer->DrawRoundedRectangle(bounds, radius, fillColor, strokeColor);
-    } else {
-        renderer->DrawRectangle(bounds, fillColor, strokeColor, strokeThickness);
-    }
+    // 使用 RenderContext 绘制矩形
+    float radius = std::max(radiusX, radiusY);
+    context.DrawRectangle(bounds, fillColor, strokeColor, strokeThickness, radius);
 }
 
 // ========== Ellipse 几何与渲染 ==========
@@ -225,31 +217,25 @@ Rect Ellipse::GetDefiningGeometry() const {
     return Rect(0, 0, size.width, size.height);
 }
 
-void Ellipse::OnRender(RenderContext& context) {
-    Renderer* renderer = context.GetRenderer();
-    if (!renderer) return;
-    
+void Ellipse::OnRender(render::RenderContext& context) {
     Rect bounds = GetDefiningGeometry();
     
-    // Calculate center and radius from bounds
-    Point center(bounds.x + bounds.width / 2.0f, bounds.y + bounds.height / 2.0f);
-    float radius = std::min(bounds.width, bounds.height) / 2.0f;
+    // 从 Brush 获取颜色（转换为 RenderContext 格式）
+    auto brushToColor = [](Brush* brush) -> std::array<float, 4> {
+        if (!brush) return {{0.0f, 0.0f, 0.0f, 0.0f}};  // 透明
+        if (auto solidBrush = dynamic_cast<SolidColorBrush*>(brush)) {
+            auto color = solidBrush->GetColor();
+            return {{color.r, color.g, color.b, color.a}};
+        }
+        return {{0.0f, 0.0f, 0.0f, 0.0f}};
+    };
     
-    // 从 Brush 获取颜色
-    Color fillColor = Color::Transparent();
-    Color strokeColor = Color::Transparent();
+    std::array<float, 4> fillColor = brushToColor(GetFill());
+    std::array<float, 4> strokeColor = brushToColor(GetStroke());
+    float strokeThickness = GetStrokeThickness();
     
-    Brush* fillBrush = GetFill();
-    if (fillBrush != nullptr) {
-        fillColor = fillBrush->GetColor();
-    }
-    
-    Brush* strokeBrush = GetStroke();
-    if (strokeBrush != nullptr) {
-        strokeColor = strokeBrush->GetColor();
-    }
-    
-    renderer->DrawCircle(center, radius, fillColor, strokeColor);
+    // 使用 RenderContext 绘制椭圆
+    context.DrawEllipse(bounds, fillColor, strokeColor, strokeThickness);
 }
 
 // ========== Line 依赖属性 ==========
@@ -364,25 +350,31 @@ Rect Line::GetDefiningGeometry() const {
     return Rect(minX, minY, maxX - minX, maxY - minY);
 }
 
-void Line::OnRender(RenderContext& context) {
-    Renderer* renderer = context.GetRenderer();
-    if (!renderer) return;
-    
+void Line::OnRender(render::RenderContext& context) {
     Point start(GetX1(), GetY1());
     Point end(GetX2(), GetY2());
     
-    // 从 Brush 获取颜色
     // Line 使用 Stroke 作为线条颜色，不使用 Fill
-    Color lineColor = Color::Black();  // 默认黑色
+    auto brushToColor = [](Brush* brush) -> std::array<float, 4> {
+        if (!brush) return {{0.0f, 0.0f, 0.0f, 0.0f}};  // 透明
+        if (auto solidBrush = dynamic_cast<SolidColorBrush*>(brush)) {
+            auto color = solidBrush->GetColor();
+            return {{color.r, color.g, color.b, color.a}};
+        }
+        return {{0.0f, 0.0f, 0.0f, 0.0f}};
+    };
     
-    Brush* strokeBrush = GetStroke();
-    if (strokeBrush != nullptr) {
-        lineColor = strokeBrush->GetColor();
+    std::array<float, 4> lineColor = brushToColor(GetStroke());
+    
+    // 如果没有设置 Stroke，默认使用黑色
+    if (lineColor[3] == 0.0f) {
+        lineColor = {{0.0f, 0.0f, 0.0f, 1.0f}};
     }
     
     float strokeThickness = GetStrokeThickness();
     
-    renderer->DrawLine(start, end, lineColor, strokeThickness);
+    // 使用 RenderContext 绘制线条
+    context.DrawLine(start, end, lineColor, strokeThickness);
 }
 
 // ========== Polygon 点集合管理 ==========
@@ -439,35 +431,25 @@ Rect Polygon::GetDefiningGeometry() const {
     return Rect(minX, minY, maxX - minX, maxY - minY);
 }
 
-void Polygon::OnRender(RenderContext& context) {
-    Renderer* renderer = context.GetRenderer();
-    if (!renderer) return;
-    
+void Polygon::OnRender(render::RenderContext& context) {
     if (points_.size() < 3) return;  // 需要至少3个点才能构成多边形
     
-    // 从 Brush 获取颜色
-    Color fillColor = Color::Transparent();
-    Color strokeColor = Color::Transparent();
+    // 从 Brush 获取颜色（转换为 RenderContext 格式）
+    auto brushToColor = [](Brush* brush) -> std::array<float, 4> {
+        if (!brush) return {{0.0f, 0.0f, 0.0f, 0.0f}};  // 透明
+        if (auto solidBrush = dynamic_cast<SolidColorBrush*>(brush)) {
+            auto color = solidBrush->GetColor();
+            return {{color.r, color.g, color.b, color.a}};
+        }
+        return {{0.0f, 0.0f, 0.0f, 0.0f}};
+    };
     
-    Brush* fillBrush = GetFill();
-    if (fillBrush != nullptr) {
-        fillColor = fillBrush->GetColor();
-    }
-    
-    Brush* strokeBrush = GetStroke();
-    if (strokeBrush != nullptr) {
-        strokeColor = strokeBrush->GetColor();
-    }
-    
+    std::array<float, 4> fillColor = brushToColor(GetFill());
+    std::array<float, 4> strokeColor = brushToColor(GetStroke());
     float strokeThickness = GetStrokeThickness();
     
-    // 绘制多边形（闭合路径）
-    // TODO: Implement DrawPolygon in Renderer
-    // For now, draw lines between consecutive points and close the shape
-    for (size_t i = 0; i < points_.size(); ++i) {
-        size_t next = (i + 1) % points_.size();
-        renderer->DrawLine(points_[i], points_[next], strokeColor, strokeThickness);
-    }
+    // 使用 RenderContext 绘制多边形
+    context.DrawPolygon(points_, fillColor, strokeColor, strokeThickness);
 }
 
 // ========== Path 路径构建API ==========
@@ -588,55 +570,66 @@ Rect Path::GetDefiningGeometry() const {
     return Rect(minX, minY, maxX - minX, maxY - minY);
 }
 
-void Path::OnRender(RenderContext& context) {
-    Renderer* renderer = context.GetRenderer();
-    if (!renderer) return;
-    
+void Path::OnRender(render::RenderContext& context) {
     if (segments_.empty()) return;
     
-    // 从 Brush 获取颜色
-    Color strokeColor = Color::Black();  // 默认黑色
+    // 从 Brush 获取颜色（转换为 RenderContext 格式）
+    auto brushToColor = [](Brush* brush) -> std::array<float, 4> {
+        if (!brush) return {{0.0f, 0.0f, 0.0f, 0.0f}};  // 透明
+        if (auto solidBrush = dynamic_cast<SolidColorBrush*>(brush)) {
+            auto color = solidBrush->GetColor();
+            return {{color.r, color.g, color.b, color.a}};
+        }
+        return {{0.0f, 0.0f, 0.0f, 0.0f}};
+    };
     
-    Brush* strokeBrush = GetStroke();
-    if (strokeBrush != nullptr) {
-        strokeColor = strokeBrush->GetColor();
+    std::array<float, 4> fillColor = brushToColor(GetFill());
+    std::array<float, 4> strokeColor = brushToColor(GetStroke());
+    
+    // 如果没有设置 Stroke，默认使用黑色
+    if (strokeColor[3] == 0.0f) {
+        strokeColor = {{0.0f, 0.0f, 0.0f, 1.0f}};
     }
     
     float strokeThickness = GetStrokeThickness();
     
-    // Render path using segments
-    // For now, approximate with line segments
-    Point lastPoint(0, 0);
-    for (const auto& segment : segments_) {
-        switch (segment.command) {
+    // 将 ui::Path::PathSegment 转换为 render::PathSegment
+    std::vector<render::PathSegment> renderSegments;
+    renderSegments.reserve(segments_.size());
+    
+    for (const auto& seg : segments_) {
+        render::PathSegment renderSeg;
+        
+        // 转换命令类型
+        switch (seg.command) {
             case PathCommand::MoveTo:
-                if (!segment.points.empty()) {
-                    lastPoint = segment.points[0];
-                }
+                renderSeg.type = render::PathSegmentType::MoveTo;
                 break;
-                
             case PathCommand::LineTo:
-                if (!segment.points.empty()) {
-                    renderer->DrawLine(lastPoint, segment.points[0], strokeColor, strokeThickness);
-                    lastPoint = segment.points[0];
-                }
+                renderSeg.type = render::PathSegmentType::LineTo;
                 break;
-                
             case PathCommand::QuadraticTo:
-            case PathCommand::CubicTo:
-            case PathCommand::ArcTo:
-                // TODO: Implement proper curve rendering
-                if (!segment.points.empty()) {
-                    renderer->DrawLine(lastPoint, segment.points.back(), strokeColor, strokeThickness);
-                    lastPoint = segment.points.back();
-                }
+                renderSeg.type = render::PathSegmentType::QuadraticBezierTo;
                 break;
-                
+            case PathCommand::CubicTo:
+                renderSeg.type = render::PathSegmentType::CubicBezierTo;
+                break;
+            case PathCommand::ArcTo:
+                renderSeg.type = render::PathSegmentType::ArcTo;
+                break;
             case PathCommand::Close:
-                // Close path - would draw back to start point
+                renderSeg.type = render::PathSegmentType::Close;
                 break;
         }
+        
+        // 复制点
+        renderSeg.points = seg.points;
+        
+        renderSegments.push_back(renderSeg);
     }
+    
+    // 使用 RenderContext 绘制路径
+    context.DrawPath(renderSegments, fillColor, strokeColor, strokeThickness);
 }
 
 // ========== 模板显式实例化 ==========

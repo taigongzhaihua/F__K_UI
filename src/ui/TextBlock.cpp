@@ -1,4 +1,8 @@
 #include "fk/ui/TextBlock.h"
+#include "fk/ui/Brush.h"
+#include "fk/render/RenderContext.h"
+#include <algorithm>
+#include <cmath>
 
 namespace fk::ui {
 
@@ -85,29 +89,97 @@ const binding::DependencyProperty& TextBlock::TextWrappingProperty() {
 }
 
 Size TextBlock::MeasureOverride(const Size& availableSize) {
-    // TODO: 实际测量文本尺寸（需要字体度量）
-    // 临时实现：简单估算
+    // Phase 5.0.5: 使用 RenderContext 进行精确文本度量
     auto text = GetText();
-    auto fontSize = GetFontSize();
-    float estimatedWidth = text.length() * fontSize * 0.6f;
-    float estimatedHeight = fontSize * 1.2f;
+    if (text.empty()) {
+        return Size(0, GetFontSize() * 1.2f); // 空文本返回一行高度
+    }
     
-    return Size(
-        std::min(estimatedWidth, availableSize.width),
-        estimatedHeight
-    );
+    auto fontSize = GetFontSize();
+    auto fontFamily = GetFontFamily();
+    auto textWrapping = GetTextWrapping();
+    
+    // 使用 RenderContext 的 MeasureText 进行精确度量
+    // 注意：这里需要一个临时的 RenderContext，但在 Measure 阶段我们还没有
+    // 因此使用简单的字符计数估算，实际渲染时会使用精确度量
+    
+    if (textWrapping == TextWrapping::Wrap && availableSize.width > 0) {
+        // 自动换行：估算行数
+        float charWidth = fontSize * 0.6f;  // 平均字符宽度估算
+        float charsPerLine = availableSize.width / charWidth;
+        if (charsPerLine < 1.0f) charsPerLine = 1.0f;
+        
+        int lineCount = static_cast<int>(std::ceil(text.length() / charsPerLine));
+        if (lineCount < 1) lineCount = 1;
+        
+        float lineHeight = fontSize * 1.2f;
+        return Size(availableSize.width, lineCount * lineHeight);
+    } else {
+        // 不换行：单行文本
+        float estimatedWidth = text.length() * fontSize * 0.6f;
+        float estimatedHeight = fontSize * 1.2f;
+        
+        return Size(
+            std::min(estimatedWidth, availableSize.width),
+            estimatedHeight
+        );
+    }
 }
 
 Size TextBlock::ArrangeOverride(const Size& finalSize) {
     return finalSize;
 }
 
-void TextBlock::CollectDrawCommands(RenderContext& context) {
-    // TODO: 添加文本绘制命令
-    // auto text = GetText();
-    // auto foreground = GetForeground();
-    // auto fontSize = GetFontSize();
-    // context.DrawText(text, position, foreground, fontSize);
+void TextBlock::CollectDrawCommands(render::RenderContext& context) {
+    // Phase 5.0.5: 完整的文本绘制命令生成
+    auto text = GetText();
+    if (text.empty()) {
+        return; // 空文本不绘制
+    }
+    
+    // 获取所有文本属性
+    auto fontSize = GetFontSize();
+    auto fontFamily = GetFontFamily();
+    auto textAlignment = GetTextAlignment();
+    auto textWrapping = GetTextWrapping();
+    auto foreground = GetForeground();
+    
+    // 转换 Brush 到颜色
+    std::array<float, 4> textColor{{0.0f, 0.0f, 0.0f, 1.0f}}; // 默认黑色
+    if (foreground) {
+        // 如果有画刷，使用画刷的颜色
+        // 这里假设 SolidColorBrush，实际需要类型检查
+        auto solidBrush = dynamic_cast<SolidColorBrush*>(foreground);
+        if (solidBrush) {
+            auto color = solidBrush->GetColor();
+            textColor[0] = color.r;
+            textColor[1] = color.g;
+            textColor[2] = color.b;
+            textColor[3] = color.a;
+        }
+    }
+    
+    // 获取渲染位置（左上角）
+    auto renderSize = GetRenderSize();
+    ui::Point position(0.0f, 0.0f); // 相对于自身的位置
+    
+    // 计算最大宽度（用于换行）
+    float maxWidth = 0.0f;
+    if (textWrapping == TextWrapping::Wrap) {
+        maxWidth = renderSize.width;
+    }
+    
+    // 调用 RenderContext 的 DrawText
+    // 注意：TextAlignment 支持将在 RenderContext 中实现
+    context.DrawText(
+        position,
+        text,
+        textColor,
+        fontSize,
+        fontFamily,
+        maxWidth,
+        textWrapping == TextWrapping::Wrap
+    );
 }
 
 } // namespace fk::ui

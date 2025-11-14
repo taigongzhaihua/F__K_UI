@@ -209,6 +209,8 @@ add_library(fk STATIC
     src/render/GlRenderer.cpp
     src/render/ColorUtils.cpp
     src/render/TextRenderer.cpp
+    src/render/RenderContext.cpp  # Phase 5.0.1
+    src/render/RenderList.cpp     # Phase 5.0.2
 )
 
 target_include_directories(fk PRIVATE
