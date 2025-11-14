@@ -86,8 +86,15 @@ void UIElement::Measure(const Size& availableSize) {
 }
 
 void UIElement::Arrange(const Rect& finalRect) {
-    if (!arrangeDirty_ && !measureDirty_) {
-        return; // 已经排列过
+    // 检查是否需要重新排列
+    // 注意：即使元素不脏，如果位置改变了也需要更新
+    bool rectChanged = (layoutRect_.x != finalRect.x || 
+                       layoutRect_.y != finalRect.y ||
+                       layoutRect_.width != finalRect.width ||
+                       layoutRect_.height != finalRect.height);
+    
+    if (!arrangeDirty_ && !measureDirty_ && !rectChanged) {
+        return; // 已经排列过且位置没有改变
     }
     
     auto visibility = GetValue<Visibility>(VisibilityProperty());
