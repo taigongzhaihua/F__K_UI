@@ -344,3 +344,7 @@ message(STATUS "  - Third-party: ${THIRD_PARTY_DIR}")
 message(STATUS "")
 message(STATUS "To build sample projects, navigate to samples/ directory")
 message(STATUS "  Example: cd samples/hello_fk_ui && mkdir build && cd build && cmake .. && cmake --build .")
+
+# Fluent API Demo
+add_executable(fluent_api_demo examples/fluent_api_demo.cpp)
+target_link_libraries(fluent_api_demo PRIVATE fk)

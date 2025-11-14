@@ -38,7 +38,7 @@ public:
     // ========== 内容 ==========
     
     std::any GetContent() const {
-        return this->template GetValue<std::any>(ContentProperty());
+        return this->GetValue(ContentProperty());
     }
     void SetContent(const std::any& value) {
         auto oldValue = GetContent();  // 保存旧值
@@ -60,12 +60,27 @@ public:
         SetContent(value);
         return static_cast<Derived*>(this);
     }
+    
+    // 流畅 API：直接接受 UIElement* 指针，无需手动包装成 std::any
+    Derived* Content(UIElement* element) {
+        SetContent(std::any(element));
+        return static_cast<Derived*>(this);
+    }
+    
     std::any Content() const { return GetContent(); }
 
     // ========== 内容模板 ==========
     
     DataTemplate* GetContentTemplate() const {
-        return this->template GetValue<DataTemplate*>(ContentTemplateProperty());
+        const auto& value = this->GetValue(ContentTemplateProperty());
+        if (!value.has_value()) {
+            return nullptr;
+        }
+        try {
+            return std::any_cast<DataTemplate*>(value);
+        } catch (const std::bad_any_cast&) {
+            return nullptr;
+        }
     }
     void SetContentTemplate(DataTemplate* tmpl) {
         this->SetValue(ContentTemplateProperty(), tmpl);
