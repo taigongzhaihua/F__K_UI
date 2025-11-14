@@ -1,5 +1,28 @@
 # F__K_UI Framework - 更新日志
 
+## [未发布] - 2025-11-14 - 窗口渲染修复 🔧
+
+### 🐛 错误修复
+- **Window 渲染系统** - 修复示例程序显示空窗口的问题
+  - 实现了 Window::RenderFrame() 中缺失的UI内容渲染逻辑
+  - 添加 GlRenderer 和 RenderList 到 Window 类
+  - 实现完整的渲染流程：布局 → 收集绘制命令 → 执行渲染
+  - 添加 GlRenderer::IsInitialized() 方法
+  - 支持条件编译，在无OpenGL环境下也能正常编译
+
+### 📝 技术细节
+- 修改文件：
+  - `include/fk/ui/Window.h` - 添加渲染器成员变量
+  - `include/fk/render/GlRenderer.h` - 添加IsInitialized方法
+  - `src/ui/Window.cpp` - 实现UI内容渲染逻辑
+- 渲染流程：
+  1. 初始化渲染器（首次调用时）
+  2. 清空渲染命令列表
+  3. 创建RenderContext
+  4. 从Content开始执行布局（Measure/Arrange）
+  5. 递归收集所有UI元素的绘制命令（CollectDrawCommands）
+  6. 执行渲染（BeginFrame → Draw → EndFrame）
+
 ## [0.82.0] - 2025-11-11 - Phase 1 增强版 ✨
 
 ### 🎉 重大更新
