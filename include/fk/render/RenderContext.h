@@ -154,7 +154,8 @@ public:
      * @param color 文本颜色
      * @param fontSize 字体大小
      * @param fontFamily 字体族
-     * @param alignment 文本对齐方式
+     * @param maxWidth 最大宽度（用于自动换行，0 表示不限制）
+     * @param textWrapping 是否自动换行
      */
     void DrawText(
         const ui::Point& position,
@@ -162,7 +163,8 @@ public:
         const std::array<float, 4>& color,
         float fontSize,
         const std::string& fontFamily = "Arial",
-        ui::TextAlignment alignment = ui::TextAlignment::Left
+        float maxWidth = 0.0f,
+        bool textWrapping = false
     );
     
     /**

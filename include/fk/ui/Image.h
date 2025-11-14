@@ -139,7 +139,7 @@ protected:
     /**
      * @brief 收集绘制命令
      */
-    void CollectDrawCommands(RenderContext& context) override;
+    void CollectDrawCommands(render::RenderContext& context) override;
 
 private:
     /**

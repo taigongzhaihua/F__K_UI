@@ -2,6 +2,7 @@
 #include "fk/ui/Primitives.h"
 #include "fk/ui/DrawCommand.h"
 #include "fk/ui/Renderer.h"
+#include "fk/render/RenderContext.h"
 #include "fk/binding/DependencyProperty.h"
 
 // 集成图像加载库
@@ -281,32 +282,16 @@ Rect Image::CalculateRenderBounds(const Size& containerSize) const {
 
 // ========== 渲染 ==========
 
-void Image::CollectDrawCommands(RenderContext& context) {
+void Image::CollectDrawCommands(render::RenderContext& context) {
+    // Phase 5.0.5: Image 渲染将在后续实现（Phase 5.0.6）
+    // 当前使用新的 RenderContext API，需要更新实现
+    // TODO: 使用 context.DrawImage() 替代旧的 DrawCommand::GetRenderer()->Submit()
+    
     if (!IsLoaded()) {
         return;
     }
     
-    Size renderSize = GetRenderSize();
-    Rect bounds = CalculateRenderBounds(renderSize);
-    
-    // 使用实际纹理渲染
-    if (imageData_->textureId != 0) {
-        DrawCommand cmd = DrawCommand::Image(
-            bounds,
-            imageData_->textureId,
-            Color::White()  // 默认白色色调（不改变图像颜色）
-        );
-        context.GetRenderer()->Submit(cmd);
-    } else {
-        // 如果纹理未加载，绘制占位矩形
-        DrawCommand cmd = DrawCommand::Rectangle(
-            bounds,
-            Color(0.5f, 0.5f, 0.5f, 1.0f),  // 灰色填充
-            Color(0.3f, 0.3f, 0.3f, 1.0f),  // 深灰边框
-            1.0f
-        );
-        context.GetRenderer()->Submit(cmd);
-    }
+    // 暂时跳过渲染，等待 Phase 5.0.6 完成 Image 控件的新 API 适配
 }
 
 } // namespace fk::ui

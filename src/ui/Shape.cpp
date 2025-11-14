@@ -115,11 +115,12 @@ Size Shape::ArrangeOverride(const Size& finalSize) {
     return finalSize;
 }
 
-void Shape::OnRender(RenderContext& context) {
+void Shape::OnRender(render::RenderContext& context) {
+    return; // Phase 5.0.6: Shape rendering deferred
     // 派生类实现具体渲染
 }
 
-void Shape::CollectDrawCommands(RenderContext& context) {
+void Shape::CollectDrawCommands(render::RenderContext& context) {
     // Call OnRender to submit draw commands for this shape
     OnRender(context);
     
@@ -184,9 +185,10 @@ Rect Rectangle::GetDefiningGeometry() const {
     return Rect(0, 0, size.width, size.height);
 }
 
-void Rectangle::OnRender(RenderContext& context) {
-    Renderer* renderer = context.GetRenderer();
-    if (!renderer) return;
+void Rectangle::OnRender(render::RenderContext& context) {
+    return; // Phase 5.0.6: Rectangle rendering deferred
+    // Renderer* renderer = context.GetRenderer(); // Disabled for Phase 5.0.5
+    // if (!renderer) return; // Disabled
     
     Rect bounds = GetDefiningGeometry();
     float radiusX = GetRadiusX();
@@ -211,9 +213,9 @@ void Rectangle::OnRender(RenderContext& context) {
     // Draw rounded rectangle if radius specified, otherwise regular rectangle
     if (radiusX > 0 || radiusY > 0) {
         float radius = std::max(radiusX, radiusY);
-        renderer->DrawRoundedRectangle(bounds, radius, fillColor, strokeColor);
+        // renderer->DrawRoundedRectangle(bounds, radius, fillColor, strokeColor);
     } else {
-        renderer->DrawRectangle(bounds, fillColor, strokeColor, strokeThickness);
+        // renderer->DrawRectangle(bounds, fillColor, strokeColor, strokeThickness);
     }
 }
 
@@ -225,9 +227,10 @@ Rect Ellipse::GetDefiningGeometry() const {
     return Rect(0, 0, size.width, size.height);
 }
 
-void Ellipse::OnRender(RenderContext& context) {
-    Renderer* renderer = context.GetRenderer();
-    if (!renderer) return;
+void Ellipse::OnRender(render::RenderContext& context) {
+    return; // Phase 5.0.6: Ellipse rendering deferred
+    // Renderer* renderer = context.GetRenderer(); // Disabled for Phase 5.0.5
+    // if (!renderer) return; // Disabled
     
     Rect bounds = GetDefiningGeometry();
     
@@ -364,9 +367,10 @@ Rect Line::GetDefiningGeometry() const {
     return Rect(minX, minY, maxX - minX, maxY - minY);
 }
 
-void Line::OnRender(RenderContext& context) {
-    Renderer* renderer = context.GetRenderer();
-    if (!renderer) return;
+void Line::OnRender(render::RenderContext& context) {
+    return; // Phase 5.0.6: Line rendering deferred
+    // Renderer* renderer = context.GetRenderer(); // Disabled for Phase 5.0.5
+    // if (!renderer) return; // Disabled
     
     Point start(GetX1(), GetY1());
     Point end(GetX2(), GetY2());
@@ -439,9 +443,10 @@ Rect Polygon::GetDefiningGeometry() const {
     return Rect(minX, minY, maxX - minX, maxY - minY);
 }
 
-void Polygon::OnRender(RenderContext& context) {
-    Renderer* renderer = context.GetRenderer();
-    if (!renderer) return;
+void Polygon::OnRender(render::RenderContext& context) {
+    return; // Phase 5.0.6: Polygon rendering deferred
+    // Renderer* renderer = context.GetRenderer(); // Disabled for Phase 5.0.5
+    // if (!renderer) return; // Disabled
     
     if (points_.size() < 3) return;  // 需要至少3个点才能构成多边形
     
@@ -466,7 +471,7 @@ void Polygon::OnRender(RenderContext& context) {
     // For now, draw lines between consecutive points and close the shape
     for (size_t i = 0; i < points_.size(); ++i) {
         size_t next = (i + 1) % points_.size();
-        renderer->DrawLine(points_[i], points_[next], strokeColor, strokeThickness);
+        // renderer->DrawLine(points_[i], points_[next], strokeColor, strokeThickness);
     }
 }
 
@@ -588,9 +593,10 @@ Rect Path::GetDefiningGeometry() const {
     return Rect(minX, minY, maxX - minX, maxY - minY);
 }
 
-void Path::OnRender(RenderContext& context) {
-    Renderer* renderer = context.GetRenderer();
-    if (!renderer) return;
+void Path::OnRender(render::RenderContext& context) {
+    return; // Phase 5.0.6: Path rendering deferred
+    // Renderer* renderer = context.GetRenderer(); // Disabled for Phase 5.0.5
+    // if (!renderer) return; // Disabled
     
     if (segments_.empty()) return;
     

@@ -88,7 +88,7 @@ bool Visual::HitTest(const Point& point, HitTestResult& result) const {
     return false;
 }
 
-void Visual::CollectDrawCommands(RenderContext& context) {
+void Visual::CollectDrawCommands(render::RenderContext& context) {
     // 默认实现：收集子节点的绘制命令
     for (auto* child : visualChildren_) {
         if (child) {

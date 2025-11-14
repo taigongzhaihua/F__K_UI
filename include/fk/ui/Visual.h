@@ -5,11 +5,16 @@
 #include <vector>
 #include <memory>
 
+namespace fk {
+    namespace render {
+        class RenderContext;
+    }
+}
+
 namespace fk::ui {
 
 // 前向声明
 class VisualCollection;
-class RenderContext;
 
 /**
  * @brief 视觉树节点基类
@@ -86,7 +91,7 @@ public:
      * @brief 收集绘制命令
      * @param context 渲染上下文
      */
-    virtual void CollectDrawCommands(RenderContext& context);
+    virtual void CollectDrawCommands(render::RenderContext& context);
     
     /**
      * @brief 获取边界框（局部坐标）

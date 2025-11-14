@@ -5,6 +5,10 @@
 #include "fk/binding/DependencyProperty.h"
 #include <string>
 
+namespace fk {
+namespace render { class RenderContext; }
+}
+
 namespace fk::ui {
 
 // 前向声明
@@ -134,7 +138,7 @@ public:
 protected:
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
-    void CollectDrawCommands(RenderContext& context) override;
+    void CollectDrawCommands(render::RenderContext& context) override;
 };
 
 } // namespace fk::ui

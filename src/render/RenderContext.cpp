@@ -199,7 +199,8 @@ void RenderContext::DrawText(
     const std::array<float, 4>& color,
     float fontSize,
     const std::string& fontFamily,
-    ui::TextAlignment alignment)
+    float maxWidth,
+    bool textWrapping)
 {
     if (text.empty() || !renderList_) {
         return;
@@ -211,14 +212,15 @@ void RenderContext::DrawText(
     // 应用透明度
     auto finalColor = ApplyOpacity(color);
     
-    // 生成绘制命令
+    // Phase 5.0.5: 生成完整的文本绘制命令
     TextPayload payload;
     payload.bounds = ui::Rect{globalPos.x, globalPos.y, 0, 0}; // 宽高由渲染器计算
     payload.color = finalColor;
     payload.text = text;
     payload.fontSize = fontSize;
     payload.fontFamily = fontFamily;
-    // TODO: 支持 TextAlignment
+    payload.maxWidth = maxWidth;
+    payload.textWrapping = textWrapping;
     
     renderList_->AddCommand(RenderCommand(CommandType::DrawText, payload));
 }
@@ -408,10 +410,28 @@ ui::Size RenderContext::MeasureText(
         return ui::Size{text.length() * fontSize * 0.6f, fontSize * 1.2f};
     }
     
-    // 使用 TextRenderer 进行精确度量
+    // Phase 5.0.5: 使用 TextRenderer 进行精确度量
+    // 使用默认字体 ID（TextRenderer 会处理字体加载和缓存）
+    int fontId = textRenderer_->GetDefaultFont();
+    if (fontId < 0) {
+        // 如果没有默认字体，尝试加载一个
+        // 使用跨平台的字体路径
+        #ifdef _WIN32
+            fontId = textRenderer_->LoadFont("C:/Windows/Fonts/arial.ttf", static_cast<unsigned int>(fontSize));
+        #elif __APPLE__
+            fontId = textRenderer_->LoadFont("/System/Library/Fonts/Helvetica.ttc", static_cast<unsigned int>(fontSize));
+        #else
+            fontId = textRenderer_->LoadFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", static_cast<unsigned int>(fontSize));
+        #endif
+        
+        if (fontId < 0) {
+            // 仍然失败，使用简单估算
+            return ui::Size{text.length() * fontSize * 0.6f, fontSize * 1.2f};
+        }
+    }
+    
     int width = 0, height = 0;
-    // TODO: 需要 fontId - 这里使用 0 作为默认字体
-    textRenderer_->MeasureText(text, 0, width, height);
+    textRenderer_->MeasureText(text, fontId, width, height);
     
     return ui::Size{static_cast<float>(width), static_cast<float>(height)};
 }
