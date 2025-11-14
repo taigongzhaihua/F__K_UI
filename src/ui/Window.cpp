@@ -429,19 +429,11 @@ void Window::RenderFrame() {
                 auto availableSize = Size(static_cast<float>(width), static_cast<float>(height));
                 element->Measure(availableSize);
                 
-                // 将元素居中显示
-                auto desiredSize = element->GetDesiredSize();
-                float centerX = (width - desiredSize.width) / 2.0f;
-                float centerY = (height - desiredSize.height) / 2.0f;
-                element->Arrange(Rect(centerX, centerY, desiredSize.width, desiredSize.height));
+                // 从左上角开始布局（移除居中逻辑）
+                element->Arrange(Rect(0, 0, static_cast<float>(width), static_cast<float>(height)));
                 
-                // 应用偏移到渲染上下文
-                context.PushTransform(centerX, centerY);
-                
-                // 收集绘制命令
+                // 收集绘制命令（不需要额外的变换偏移）
                 element->CollectDrawCommands(context);
-                
-                context.PopTransform();
             }
         }
         
