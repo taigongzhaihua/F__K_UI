@@ -127,7 +127,13 @@ Size TextBlock::MeasureOverride(const Size& availableSize) {
 }
 
 Size TextBlock::ArrangeOverride(const Size& finalSize) {
-    return finalSize;
+    // 返回期望尺寸和最终尺寸中较小的那个
+    // 这样可以防止文本被拉伸
+    auto desiredSize = GetDesiredSize();
+    return Size(
+        std::min(desiredSize.width, finalSize.width),
+        std::min(desiredSize.height, finalSize.height)
+    );
 }
 
 void TextBlock::CollectDrawCommands(render::RenderContext& context) {

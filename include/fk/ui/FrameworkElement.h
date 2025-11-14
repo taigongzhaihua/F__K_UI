@@ -245,14 +245,54 @@ protected:
 
     // 覆写基类方法
     Size MeasureCore(const Size& availableSize) override {
-        auto constrainedSize = ApplySizeConstraints(availableSize);
-        return MeasureOverride(constrainedSize);
+        // 1. 减去 Margin
+        auto margin = GetMargin();
+        float availWidth = std::max(0.0f, availableSize.width - margin.left - margin.right);
+        float availHeight = std::max(0.0f, availableSize.height - margin.top - margin.bottom);
+        
+        // 2. 应用尺寸约束
+        auto constrainedSize = ApplySizeConstraints(Size(availWidth, availHeight));
+        
+        // 3. 调用派生类的测量逻辑
+        auto desiredSize = MeasureOverride(constrainedSize);
+        
+        // 4. 加上 Margin
+        desiredSize.width += margin.left + margin.right;
+        desiredSize.height += margin.top + margin.bottom;
+        
+        return desiredSize;
     }
     
     void ArrangeCore(const Rect& finalRect) override {
-        auto finalSize = Size(finalRect.width, finalRect.height);
-        auto arrangedSize = ArrangeOverride(finalSize);
-        // TODO: 应用对齐等
+        // 1. 减去 Margin
+        auto margin = GetMargin();
+        float arrangeWidth = std::max(0.0f, finalRect.width - margin.left - margin.right);
+        float arrangeHeight = std::max(0.0f, finalRect.height - margin.top - margin.bottom);
+        
+        // 2. 获取期望尺寸（不含 Margin）
+        auto desiredSize = GetDesiredSize();
+        float desiredWidth = std::max(0.0f, desiredSize.width - margin.left - margin.right);
+        float desiredHeight = std::max(0.0f, desiredSize.height - margin.top - margin.bottom);
+        
+        // 3. 应用对齐方式
+        auto hAlign = GetHorizontalAlignment();
+        auto vAlign = GetVerticalAlignment();
+        
+        float finalWidth = arrangeWidth;
+        float finalHeight = arrangeHeight;
+        
+        // 水平对齐
+        if (hAlign != HorizontalAlignment::Stretch) {
+            finalWidth = std::min(desiredWidth, arrangeWidth);
+        }
+        
+        // 垂直对齐
+        if (vAlign != VerticalAlignment::Stretch) {
+            finalHeight = std::min(desiredHeight, arrangeHeight);
+        }
+        
+        // 4. 调用派生类的排列逻辑
+        ArrangeOverride(Size(finalWidth, finalHeight));
     }
 
 private:

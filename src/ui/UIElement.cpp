@@ -1,4 +1,5 @@
 #include "fk/ui/UIElement.h"
+#include "fk/render/RenderContext.h"
 #include <algorithm>
 
 namespace fk::ui {
@@ -91,9 +92,13 @@ void UIElement::Arrange(const Rect& finalRect) {
     auto visibility = GetValue<Visibility>(VisibilityProperty());
     if (visibility == Visibility::Collapsed) {
         renderSize_ = Size(0, 0);
+        layoutRect_ = Rect(0, 0, 0, 0);
         arrangeDirty_ = false;
         return;
     }
+    
+    // 存储布局矩形
+    layoutRect_ = finalRect;
     
     ArrangeCore(finalRect);
     renderSize_ = Size(finalRect.width, finalRect.height);
@@ -315,6 +320,23 @@ void UIElement::TakeOwnership(UIElement* child) {
     if (child) {
         ownedChildren_.emplace_back(child);
     }
+}
+
+void UIElement::CollectDrawCommands(render::RenderContext& context) {
+    // 检查可见性
+    auto visibility = GetVisibility();
+    if (visibility == Visibility::Collapsed || visibility == Visibility::Hidden) {
+        return;  // 不渲染不可见或折叠的元素
+    }
+    
+    // 推入布局偏移
+    context.PushTransform(layoutRect_.x, layoutRect_.y);
+    
+    // 调用基类实现，收集子元素的绘制命令
+    Visual::CollectDrawCommands(context);
+    
+    // 弹出变换
+    context.PopTransform();
 }
 
 } // namespace fk::ui
