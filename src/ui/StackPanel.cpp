@@ -116,7 +116,14 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
                     offset += std::max(pendingMargin, margin.top) + spacing;
                 }
 
-                float childWidth = std::max(0.0f, finalSize.width - margin.left - margin.right);
+                // 根据子元素的 HorizontalAlignment 决定宽度
+                // 垂直 StackPanel：子元素的宽度由其 HorizontalAlignment 决定
+                // - Stretch: 拉伸到整个宽度
+                // - 其他: 使用子元素的期望宽度
+                float availableWidth = std::max(0.0f, finalSize.width - margin.left - margin.right);
+                float childWidth = childDesired.width - margin.left - margin.right;  // 默认使用期望宽度
+                childWidth = std::min(childWidth, availableWidth);  // 但不超过可用宽度
+                
                 float childHeight = std::max(0.0f, childDesired.height);
                 float childX = margin.left;
                 float childY = offset;
@@ -132,7 +139,15 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
                 }
 
                 float childWidth = std::max(0.0f, childDesired.width);
-                float childHeight = std::max(0.0f, finalSize.height - margin.top - margin.bottom);
+                
+                // 根据子元素的 VerticalAlignment 决定高度
+                // 水平 StackPanel：子元素的高度由其 VerticalAlignment 决定
+                // - Stretch: 拉伸到整个高度
+                // - 其他: 使用子元素的期望高度
+                float availableHeight = std::max(0.0f, finalSize.height - margin.top - margin.bottom);
+                float childHeight = childDesired.height - margin.top - margin.bottom;  // 默认使用期望高度
+                childHeight = std::min(childHeight, availableHeight);  // 但不超过可用高度
+                
                 float childX = offset;
                 float childY = margin.top;
 
