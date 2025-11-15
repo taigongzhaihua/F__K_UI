@@ -384,3 +384,7 @@ target_link_libraries(test_main_example_issue PRIVATE fk)
 # Button Background Test
 add_executable(test_button_background test_button_background.cpp)
 target_link_libraries(test_button_background PRIVATE fk)
+
+# Example Main Simulation Test
+add_executable(test_example_main_simulation test_example_main_simulation.cpp)
+target_link_libraries(test_example_main_simulation PRIVATE fk)
