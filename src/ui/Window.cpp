@@ -410,6 +410,13 @@ void Window::RenderFrame() {
             renderer_->Initialize(params);
         }
         
+        // 更新渲染器视口大小（处理窗口调整）
+        render::Extent2D newSize{
+            static_cast<std::uint32_t>(width),
+            static_cast<std::uint32_t>(height)
+        };
+        renderer_->Resize(newSize);
+        
         // 清空渲染命令列表
         renderList_->Clear();
         
