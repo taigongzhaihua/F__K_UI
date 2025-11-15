@@ -66,7 +66,7 @@ public:
     // ========== Content 属性 ==========
     
     std::any GetContent() const {
-        return this->template GetValue<std::any>(ContentProperty());
+        return this->GetValue(ContentProperty());
     }
     
     void SetContent(const std::any& value) {
