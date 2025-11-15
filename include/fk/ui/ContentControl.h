@@ -246,6 +246,16 @@ protected:
      * @brief 从字符串创建 TextBlock
      */
     UIElement* CreateTextBlockFromString(const std::string& text);
+    
+    /**
+     * @brief 渲染内容控件
+     * 
+     * ContentControl 需要在 OnRender 中确保模板根元素被正确渲染。
+     * 根据用户需求，应该在此方法中：
+     * 1. 确保模板已实例化（如果有模板）
+     * 2. 显式调用模板根元素或内容元素的 OnRender，传递 RenderContext
+     */
+    void OnRender(render::RenderContext& context) override;
 
 private:
     // 当前内容元素（回退机制使用）

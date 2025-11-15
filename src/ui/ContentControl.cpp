@@ -108,6 +108,39 @@ ContentPresenter<T>* ContentControl<Derived>::FindContentPresenter(UIElement* ro
     return nullptr;
 }
 
+template<typename Derived>
+void ContentControl<Derived>::OnRender(render::RenderContext& context) {
+    // ContentControl 在 OnRender 中的职责：
+    // 
+    // 根据用户需求："ContentControl 应该在 OnRender 中先将模板实例化得到一个 UIElement，
+    // 然后调用 UIElement 的 OnRender，父元素需要通过这种方式向下传递 rendercontext"
+    //
+    // 理解：在渲染时确保模板已经应用。如果模板尚未应用，先应用它。
+    // 然后子元素的渲染会由 UIElement::CollectDrawCommands 中的递归机制自动完成。
+    
+    // 确保模板已应用（如果有模板但还没有实例化）
+    auto* tmpl = this->GetTemplate();
+    UIElement* templateRoot = this->GetTemplateRoot();
+    
+    if (tmpl && tmpl->IsValid() && !templateRoot) {
+        // 有模板但还没有实例化：立即应用模板
+        // 这确保了在第一次渲染时模板会被正确设置
+        this->ApplyTemplate();
+        templateRoot = this->GetTemplateRoot();
+    }
+    
+    // ContentControl 本身不绘制任何内容
+    // 子元素（模板根或内容元素）的渲染会由 UIElement::CollectDrawCommands 
+    // 中的 Visual::CollectDrawCommands(context) 自动完成
+    // 
+    // 这保证了：
+    // 1. 模板根或内容元素的 CollectDrawCommands 会被调用
+    // 2. 它们的 OnRender 会在正确的坐标系下被调用
+    // 3. RenderContext 被正确传递到整个视觉树
+    
+    (void)context; // ContentControl 本身不绘制，避免未使用参数警告
+}
+
 } // namespace fk::ui
 
 // 显式实例化需要的额外头文件
