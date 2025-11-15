@@ -186,7 +186,7 @@ void demo_ContentPresenter_Standalone() {
     auto* textBlock1 = new TextBlock();
     textBlock1->Text("直接 UIElement 内容")->FontSize(18);
     
-    presenter->SetContent(static_cast<UIElement*>(textBlock1));
+    presenter->SetContent(std::any(static_cast<UIElement*>(textBlock1)));
     std::cout << "  - ContentPresenter.Content = TextBlock" << std::endl;
     std::cout << "  - 结果：直接显示 TextBlock" << std::endl;
     
@@ -292,14 +292,14 @@ void demo_ContentPresenter_Lifecycle() {
     std::cout << "\n[步骤 1] 设置初始内容" << std::endl;
     auto* text1 = new TextBlock();
     text1->Text("初始内容");
-    presenter->SetContent(static_cast<UIElement*>(text1));
+    presenter->SetContent(std::any(static_cast<UIElement*>(text1)));
     std::cout << "  - Content = TextBlock(\"初始内容\")" << std::endl;
     
     // 步骤 2: 更新内容
     std::cout << "\n[步骤 2] 更新为新内容" << std::endl;
     auto* text2 = new TextBlock();
     text2->Text("新内容");
-    presenter->SetContent(static_cast<UIElement*>(text2));
+    presenter->SetContent(std::any(static_cast<UIElement*>(text2)));
     std::cout << "  - Content = TextBlock(\"新内容\")" << std::endl;
     std::cout << "  - 旧内容被移除，新内容被添加" << std::endl;
     
