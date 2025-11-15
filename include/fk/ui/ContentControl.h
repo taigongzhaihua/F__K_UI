@@ -50,9 +50,13 @@ public:
         this->SetValue(ContentProperty(), value);
         
         // 如果有模板，不直接管理内容元素，而是通过 ContentPresenter
-        if (this->GetTemplate() && this->GetTemplateRoot()) {
-            // 内容将通过模板中的 ContentPresenter 显示
-            UpdateContentPresenter();
+        if (this->GetTemplate()) {
+            // 有模板：内容将通过模板中的 ContentPresenter 显示
+            // 如果模板已应用，立即更新 ContentPresenter
+            if (this->GetTemplateRoot()) {
+                UpdateContentPresenter();
+            }
+            // 如果模板还没应用，OnTemplateApplied 会在模板应用时调用 UpdateContentPresenter
         } else {
             // 回退机制：没有模板时直接显示内容
             // 移除旧的内容元素
