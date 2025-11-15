@@ -102,6 +102,17 @@ const binding::DependencyProperty& FrameworkElement<Derived>::MarginProperty() {
 }
 
 template<typename Derived>
+const binding::DependencyProperty& FrameworkElement<Derived>::PaddingProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Padding",
+        typeid(Thickness),
+        typeid(FrameworkElement<Derived>),
+        {Thickness(0)}
+    );
+    return property;
+}
+
+template<typename Derived>
 const binding::DependencyProperty& FrameworkElement<Derived>::HorizontalAlignmentProperty() {
     static auto& property = binding::DependencyProperty::Register(
         "HorizontalAlignment",

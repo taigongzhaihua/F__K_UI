@@ -408,6 +408,23 @@ void Window::RenderFrame() {
             params.initialSize.width = static_cast<std::uint32_t>(width);
             params.initialSize.height = static_cast<std::uint32_t>(height);
             renderer_->Initialize(params);
+            
+            // 记录初始视口大小
+            lastViewportWidth_ = width;
+            lastViewportHeight_ = height;
+        }
+        
+        // 只在窗口大小改变时更新渲染器视口（性能优化）
+        if (width != lastViewportWidth_ || height != lastViewportHeight_) {
+            render::Extent2D newSize{
+                static_cast<std::uint32_t>(width),
+                static_cast<std::uint32_t>(height)
+            };
+            renderer_->Resize(newSize);
+            
+            // 更新缓存的视口大小
+            lastViewportWidth_ = width;
+            lastViewportHeight_ = height;
         }
         
         // 清空渲染命令列表
