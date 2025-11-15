@@ -119,6 +119,16 @@ protected:
      * @brief 设置当前显示的视觉子元素
      */
     void SetVisualChild(UIElement* child);
+    
+    /**
+     * @brief 测量内容元素
+     */
+    Size MeasureOverride(const Size& availableSize) override;
+    
+    /**
+     * @brief 排列内容元素
+     */
+    Size ArrangeOverride(const Size& finalSize) override;
 
 private:
     UIElement* visualChild_{nullptr};  ///< 当前显示的视觉子元素
@@ -203,6 +213,32 @@ void ContentPresenter<Derived>::SetVisualChild(UIElement* child) {
         this->AddVisualChild(visualChild_);
         this->TakeOwnership(visualChild_);
     }
+}
+
+// ========== MeasureOverride 实现 ==========
+
+template<typename Derived>
+Size ContentPresenter<Derived>::MeasureOverride(const Size& availableSize) {
+    // ContentPresenter 测量其视觉子元素
+    if (visualChild_) {
+        visualChild_->Measure(availableSize);
+        return visualChild_->GetDesiredSize();
+    }
+    
+    return Size(0, 0);
+}
+
+// ========== ArrangeOverride 实现 ==========
+
+template<typename Derived>
+Size ContentPresenter<Derived>::ArrangeOverride(const Size& finalSize) {
+    // ContentPresenter 排列其视觉子元素
+    if (visualChild_) {
+        visualChild_->Arrange(Rect(0, 0, finalSize.width, finalSize.height));
+        return visualChild_->GetRenderSize();
+    }
+    
+    return Size(0, 0);
 }
 
 // 特化默认模板参数

@@ -285,14 +285,14 @@ protected:
     }
     
     void ArrangeCore(const Rect& finalRect) override {
-        auto margin = GetMargin();
         auto padding = GetPadding();
         
-        // 1. 减去 Margin 和 Padding
+        // 1. 减去 Padding（注意：Margin 已由父容器处理，不在此处减去）
+        // finalRect 是父容器分配给我们的矩形，已经考虑了 Margin
         float arrangeWidth = std::max(0.0f,
-            finalRect.width - margin.left - margin.right - padding.left - padding.right);
+            finalRect.width - padding.left - padding.right);
         float arrangeHeight = std::max(0.0f,
-            finalRect.height - margin.top - margin.bottom - padding.top - padding.bottom);
+            finalRect.height - padding.top - padding.bottom);
         
         // 2. 获取期望尺寸（已经不含 Margin，但含 Padding）
         auto desiredSize = GetDesiredSize();
