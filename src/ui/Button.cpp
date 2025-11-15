@@ -3,6 +3,8 @@
 #include "fk/ui/Border.h"
 #include "fk/ui/ContentPresenter.h"
 #include "fk/ui/Brush.h"
+#include "fk/binding/TemplateBinding.h"
+#include "fk/ui/Control.h"
 
 namespace fk::ui {
 
@@ -15,9 +17,19 @@ static ControlTemplate* CreateDefaultButtonTemplate() {
     tmpl->SetFactory([]() -> UIElement* {
         auto* border = new Border();
         
-        // 默认样式
-        border->Background(new SolidColorBrush(Color(240, 240, 240, 255)));  // 浅灰色背景
-        border->BorderBrush(new SolidColorBrush(Color(172, 172, 172, 255))); // 灰色边框
+        // 使用 TemplateBinding 绑定 Button 的 Background 到 Border 的 Background
+        // 这样设置 Button 的 Background 属性时，Border 的背景色会自动更新
+        border->SetBinding(
+            Border::BackgroundProperty(),
+            binding::TemplateBinding(Control<Button>::BackgroundProperty())
+        );
+        
+        // 设置默认背景色（当 Button 的 Background 为空时使用）
+        // 注意：由于使用了 TemplateBinding，如果 Button 没有设置 Background，
+        // 这里设置的默认值可能不会生效。需要在 Button 构造函数中设置默认值。
+        // border->Background(new SolidColorBrush(Color(240, 240, 240, 255)));  // 浅灰色背景
+        
+        border->BorderBrush(new SolidColorBrush(Color::FromRGB(172, 172, 172, 255))); // 灰色边框
         border->BorderThickness(1.0f);
         border->Padding(10.0f, 5.0f, 10.0f, 5.0f);
         border->CornerRadius(3.0f);  // 统一圆角
@@ -40,9 +52,51 @@ Button::Button() : isPressed_(false) {
     SetHorizontalAlignment(HorizontalAlignment::Left);
     SetVerticalAlignment(VerticalAlignment::Top);
     
+    // 设置默认背景色（浅灰色）
+    // 用户可以通过 Background() 方法覆盖此默认值
+    if (!GetBackground()) {
+        SetBackground(new SolidColorBrush(Color::FromRGB(240, 240, 240, 255)));
+    }
+    
     // 设置默认模板
     if (!GetTemplate()) {
         SetTemplate(CreateDefaultButtonTemplate());
+    }
+}
+
+void Button::OnTemplateApplied() {
+    ContentControl<Button>::OnTemplateApplied();
+    
+    // 手动同步 Background 属性到模板中的 Border
+    // 这是因为 TemplateBinding 还没有完全实现
+    SyncBackgroundToBorder();
+}
+
+void Button::SyncBackgroundToBorder() {
+    // 获取模板根（应该是 Border）
+    if (GetVisualChildrenCount() > 0) {
+        auto* firstChild = GetVisualChild(0);
+        auto* border = dynamic_cast<Border*>(firstChild);
+        if (border) {
+            // 将 Button 的 Background 同步到 Border
+            auto* bg = GetBackground();
+            if (bg) {
+                border->Background(bg);
+            }
+        }
+    }
+}
+
+void Button::OnPropertyChanged(const binding::DependencyProperty& property, 
+                               const std::any& oldValue, 
+                               const std::any& newValue,
+                               binding::ValueSource oldSource,
+                               binding::ValueSource newSource) {
+    ContentControl<Button>::OnPropertyChanged(property, oldValue, newValue, oldSource, newSource);
+    
+    // 当 Background 属性改变时，同步到模板中的 Border
+    if (property.Name() == "Background") {
+        SyncBackgroundToBorder();
     }
 }
 
