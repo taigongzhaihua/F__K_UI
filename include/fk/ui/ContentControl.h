@@ -10,6 +10,7 @@ namespace fk::ui {
 
 // 前向声明
 class TextBlock;
+template<typename> class ContentPresenter;
 
 /**
  * @brief 内容控件基类（CRTP 模式）
@@ -48,34 +49,41 @@ public:
         auto oldValue = GetContent();  // 保存旧值
         this->SetValue(ContentProperty(), value);
         
-        // 移除旧的内容元素
-        if (contentElement_) {
-            this->RemoveVisualChild(contentElement_);
-            contentElement_ = nullptr;
-        }
-        
-        // 处理新内容
-        if (value.has_value()) {
-            if (value.type() == typeid(UIElement*)) {
-                // 内容是 UIElement*
-                auto* element = std::any_cast<UIElement*>(value);
-                if (element) {
-                    contentElement_ = element;
+        // 如果有模板，不直接管理内容元素，而是通过 ContentPresenter
+        if (this->GetTemplate() && this->GetTemplateRoot()) {
+            // 内容将通过模板中的 ContentPresenter 显示
+            UpdateContentPresenter();
+        } else {
+            // 回退机制：没有模板时直接显示内容
+            // 移除旧的内容元素
+            if (contentElement_) {
+                this->RemoveVisualChild(contentElement_);
+                contentElement_ = nullptr;
+            }
+            
+            // 处理新内容
+            if (value.has_value()) {
+                if (value.type() == typeid(UIElement*)) {
+                    // 内容是 UIElement*
+                    auto* element = std::any_cast<UIElement*>(value);
+                    if (element) {
+                        contentElement_ = element;
+                        this->AddVisualChild(contentElement_);
+                        this->TakeOwnership(element);
+                    }
+                } else if (value.type() == typeid(const char*)) {
+                    // 内容是 C 字符串
+                    const char* str = std::any_cast<const char*>(value);
+                    contentElement_ = CreateTextBlockFromString(str);
                     this->AddVisualChild(contentElement_);
-                    this->TakeOwnership(element);
+                    this->TakeOwnership(contentElement_);
+                } else if (value.type() == typeid(std::string)) {
+                    // 内容是 std::string
+                    std::string str = std::any_cast<std::string>(value);
+                    contentElement_ = CreateTextBlockFromString(str);
+                    this->AddVisualChild(contentElement_);
+                    this->TakeOwnership(contentElement_);
                 }
-            } else if (value.type() == typeid(const char*)) {
-                // 内容是 C 字符串
-                const char* str = std::any_cast<const char*>(value);
-                contentElement_ = CreateTextBlockFromString(str);
-                this->AddVisualChild(contentElement_);
-                this->TakeOwnership(contentElement_);
-            } else if (value.type() == typeid(std::string)) {
-                // 内容是 std::string
-                std::string str = std::any_cast<std::string>(value);
-                contentElement_ = CreateTextBlockFromString(str);
-                this->AddVisualChild(contentElement_);
-                this->TakeOwnership(contentElement_);
             }
         }
         
@@ -152,6 +160,13 @@ protected:
      * @brief 测量内容元素
      */
     Size MeasureCore(const Size& availableSize) override {
+        // 如果有模板根，测量模板根
+        if (this->GetTemplateRoot()) {
+            this->GetTemplateRoot()->Measure(availableSize);
+            return this->GetTemplateRoot()->GetDesiredSize();
+        }
+        
+        // 回退机制：直接测量内容元素
         if (contentElement_) {
             // 减去 Padding
             auto padding = this->GetPadding();
@@ -181,6 +196,13 @@ protected:
      * @brief 排列内容元素
      */
     void ArrangeCore(const Rect& finalRect) override {
+        // 如果有模板根，排列模板根
+        if (this->GetTemplateRoot()) {
+            this->GetTemplateRoot()->Arrange(finalRect);
+            return;
+        }
+        
+        // 回退机制：直接排列内容元素
         if (contentElement_) {
             auto padding = this->GetPadding();
             auto borderThickness = this->GetBorderThickness();
@@ -202,12 +224,31 @@ protected:
     }
     
     /**
+     * @brief 模板应用后的钩子
+     */
+    void OnTemplateApplied() override {
+        // 模板应用后，查找并更新 ContentPresenter
+        UpdateContentPresenter();
+    }
+    
+    /**
+     * @brief 更新模板中的 ContentPresenter
+     */
+    void UpdateContentPresenter();
+    
+    /**
+     * @brief 在视觉树中查找 ContentPresenter
+     */
+    template<typename T = void>
+    ContentPresenter<T>* FindContentPresenter(UIElement* root);
+
+    /**
      * @brief 从字符串创建 TextBlock
      */
     UIElement* CreateTextBlockFromString(const std::string& text);
 
 private:
-    // 当前内容元素
+    // 当前内容元素（回退机制使用）
     UIElement* contentElement_;
 };
 

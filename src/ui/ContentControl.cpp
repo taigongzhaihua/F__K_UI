@@ -3,6 +3,8 @@
 #include "fk/ui/Button.h"
 #include "fk/ui/Window.h"
 #include "fk/ui/TextBlock.h"
+#include "fk/ui/ContentPresenter.h"
+#include "fk/ui/ControlTemplate.h"
 
 namespace fk::ui {
 
@@ -46,6 +48,64 @@ UIElement* ContentControl<Derived>::CreateTextBlockFromString(const std::string&
     }
     
     return textBlock;
+}
+
+template<typename Derived>
+void ContentControl<Derived>::UpdateContentPresenter() {
+    // 在模板根中查找 ContentPresenter
+    auto* templateRoot = this->GetTemplateRoot();
+    if (!templateRoot) {
+        return;
+    }
+    
+    // 递归查找 ContentPresenter
+    ContentPresenter<>* presenter = FindContentPresenter<>(templateRoot);
+    if (presenter) {
+        // 更新 ContentPresenter 的 Content
+        auto content = GetContent();
+        
+        // 如果 Content 是字符串，转换为 UIElement
+        if (content.has_value()) {
+            if (content.type() == typeid(const char*)) {
+                const char* str = std::any_cast<const char*>(content);
+                auto* textBlock = CreateTextBlockFromString(str);
+                presenter->SetContent(std::any(textBlock));
+            } else if (content.type() == typeid(std::string)) {
+                std::string str = std::any_cast<std::string>(content);
+                auto* textBlock = CreateTextBlockFromString(str);
+                presenter->SetContent(std::any(textBlock));
+            } else {
+                presenter->SetContent(content);
+            }
+        }
+        
+        // 更新 ContentTemplate
+        presenter->SetContentTemplate(GetContentTemplate());
+    }
+}
+
+template<typename Derived>
+template<typename T>
+ContentPresenter<T>* ContentControl<Derived>::FindContentPresenter(UIElement* root) {
+    if (!root) {
+        return nullptr;
+    }
+    
+    // 检查当前元素是否是 ContentPresenter
+    auto* presenter = dynamic_cast<ContentPresenter<T>*>(root);
+    if (presenter) {
+        return presenter;
+    }
+    
+    // 递归搜索逻辑子元素
+    for (UIElement* child : root->GetLogicalChildren()) {
+        auto* found = FindContentPresenter<T>(child);
+        if (found) {
+            return found;
+        }
+    }
+    
+    return nullptr;
 }
 
 } // namespace fk::ui
