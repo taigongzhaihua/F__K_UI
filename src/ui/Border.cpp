@@ -1,4 +1,5 @@
 #include "fk/ui/Border.h"
+#include "fk/ui/Brush.h"
 #include "fk/render/RenderContext.h"
 
 namespace fk::ui {
@@ -138,6 +139,45 @@ Size Border::ArrangeOverride(const Size& finalSize) {
     }
     
     return finalSize;
+}
+
+void Border::OnRender(render::RenderContext& context) {
+    // 辅助函数：将 Brush 转换为 RenderContext 颜色格式
+    auto brushToColor = [](Brush* brush) -> std::array<float, 4> {
+        if (!brush) return {{0.0f, 0.0f, 0.0f, 0.0f}};  // 透明
+        if (auto solidBrush = dynamic_cast<SolidColorBrush*>(brush)) {
+            auto color = solidBrush->GetColor();
+            return {{color.r, color.g, color.b, color.a}};
+        }
+        return {{0.0f, 0.0f, 0.0f, 0.0f}};
+    };
+    
+    // 获取渲染大小
+    auto renderSize = GetRenderSize();
+    Rect rect(0, 0, renderSize.width, renderSize.height);
+    
+    // 获取背景和边框属性
+    auto background = GetBackground();
+    auto borderBrush = GetBorderBrush();
+    auto borderThickness = GetBorderThickness();
+    auto cornerRadius = GetCornerRadius();
+    
+    // 转换为颜色数组
+    std::array<float, 4> fillColor = brushToColor(background);
+    std::array<float, 4> strokeColor = brushToColor(borderBrush);
+    
+    // 计算边框宽度（使用平均值或最大值）
+    // 注意：RenderContext::DrawRectangle 只接受单一的 strokeWidth
+    // 这里使用平均值作为近似
+    float strokeWidth = (borderThickness.left + borderThickness.right + 
+                        borderThickness.top + borderThickness.bottom) / 4.0f;
+    
+    // 使用 CornerRadius 的平均值作为圆角半径
+    float radius = (cornerRadius.topLeft + cornerRadius.topRight + 
+                   cornerRadius.bottomRight + cornerRadius.bottomLeft) / 4.0f;
+    
+    // 绘制矩形（带背景、边框和圆角）
+    context.DrawRectangle(rect, fillColor, strokeColor, strokeWidth, radius);
 }
 
 } // namespace fk::ui
