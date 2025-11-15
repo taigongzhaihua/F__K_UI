@@ -376,3 +376,7 @@ target_link_libraries(test_simple_render PRIVATE fk)
 # Button Comprehensive Render Test
 add_executable(test_button_comprehensive_render test_button_comprehensive_render.cpp)
 target_link_libraries(test_button_comprehensive_render PRIVATE fk)
+
+# Main Example Issue Test
+add_executable(test_main_example_issue test_main_example_issue.cpp)
+target_link_libraries(test_main_example_issue PRIVATE fk)
