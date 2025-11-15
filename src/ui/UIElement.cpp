@@ -181,6 +181,10 @@ bool UIElement::HasClip() const {
     return clip.width > 0 && clip.height > 0;
 }
 
+Thickness UIElement::GetMargin() const {
+    return Thickness(0);
+}
+
 void UIElement::SetRenderTransform(Transform* value) {
     SetValue(RenderTransformProperty(), value);
     InvalidateVisual();
@@ -330,6 +334,10 @@ void UIElement::TakeOwnership(UIElement* child) {
     }
 }
 
+void UIElement::OnRender(render::RenderContext& /*context*/) {
+    // 默认不绘制，由派生类实现
+}
+
 void UIElement::CollectDrawCommands(render::RenderContext& context) {
     // 检查可见性
     auto visibility = GetVisibility();
@@ -339,10 +347,13 @@ void UIElement::CollectDrawCommands(render::RenderContext& context) {
     
     // 推入布局偏移
     context.PushTransform(layoutRect_.x, layoutRect_.y);
-    
-    // 调用基类实现，收集子元素的绘制命令
+
+    // 绘制自身内容
+    OnRender(context);
+
+    // 收集子元素绘制命令
     Visual::CollectDrawCommands(context);
-    
+
     // 弹出变换
     context.PopTransform();
 }

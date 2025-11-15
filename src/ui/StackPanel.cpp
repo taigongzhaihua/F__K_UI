@@ -1,5 +1,6 @@
 #include "fk/ui/StackPanel.h"
 #include <algorithm>
+#include <limits>
 
 namespace fk::ui {
 
@@ -37,6 +38,8 @@ Size StackPanel::MeasureOverride(const Size& availableSize) {
     float totalHeight = 0;
     float maxWidth = 0;
     float maxHeight = 0;
+    float pendingMargin = 0;
+    bool hasVisibleChild = false;
     
     Size childAvailable = availableSize;
     
@@ -46,33 +49,44 @@ Size StackPanel::MeasureOverride(const Size& availableSize) {
         childAvailable.width = std::numeric_limits<float>::infinity();
     }
     
-    int visibleChildCount = 0;
-    
     // 测量所有子元素
     for (auto* child : children_) {
         if (child && child->GetVisibility() != Visibility::Collapsed) {
             child->Measure(childAvailable);
             Size childDesired = child->GetDesiredSize();
-            
+            auto margin = child->GetMargin();
+
             if (orientation == Orientation::Vertical) {
+                if (!hasVisibleChild) {
+                    totalHeight += margin.top;
+                } else {
+                    totalHeight += std::max(pendingMargin, margin.top) + spacing;
+                }
+
                 totalHeight += childDesired.height;
-                maxWidth = std::max(maxWidth, childDesired.width);
+                pendingMargin = margin.bottom;
+                maxWidth = std::max(maxWidth, childDesired.width + margin.left + margin.right);
             } else {
+                if (!hasVisibleChild) {
+                    totalWidth += margin.left;
+                } else {
+                    totalWidth += std::max(pendingMargin, margin.left) + spacing;
+                }
+
                 totalWidth += childDesired.width;
-                maxHeight = std::max(maxHeight, childDesired.height);
+                pendingMargin = margin.right;
+                maxHeight = std::max(maxHeight, childDesired.height + margin.top + margin.bottom);
             }
-            
-            visibleChildCount++;
+
+            hasVisibleChild = true;
         }
     }
     
-    // 添加间距（子元素之间的间距，不包括最后一个元素后面）
-    if (visibleChildCount > 1) {
-        float totalSpacing = spacing * (visibleChildCount - 1);
+    if (hasVisibleChild) {
         if (orientation == Orientation::Vertical) {
-            totalHeight += totalSpacing;
+            totalHeight += pendingMargin;
         } else {
-            totalWidth += totalSpacing;
+            totalWidth += pendingMargin;
         }
     }
     
@@ -87,18 +101,47 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
     auto orientation = GetOrientation();
     auto spacing = GetSpacing();
     float offset = 0;
+    float pendingMargin = 0;
+    bool hasArrangedChild = false;
     
     for (auto* child : children_) {
         if (child && child->GetVisibility() != Visibility::Collapsed) {
             Size childDesired = child->GetDesiredSize();
+            auto margin = child->GetMargin();
             
             if (orientation == Orientation::Vertical) {
-                child->Arrange(Rect(0, offset, finalSize.width, childDesired.height));
-                offset += childDesired.height + spacing;
+                if (!hasArrangedChild) {
+                    offset += margin.top;
+                } else {
+                    offset += std::max(pendingMargin, margin.top) + spacing;
+                }
+
+                float childWidth = std::max(0.0f, finalSize.width - margin.left - margin.right);
+                float childHeight = std::max(0.0f, childDesired.height);
+                float childX = margin.left;
+                float childY = offset;
+
+                child->Arrange(Rect(childX, childY, childWidth, childHeight));
+                offset += childHeight;
+                pendingMargin = margin.bottom;
             } else {
-                child->Arrange(Rect(offset, 0, childDesired.width, finalSize.height));
-                offset += childDesired.width + spacing;
+                if (!hasArrangedChild) {
+                    offset += margin.left;
+                } else {
+                    offset += std::max(pendingMargin, margin.left) + spacing;
+                }
+
+                float childWidth = std::max(0.0f, childDesired.width);
+                float childHeight = std::max(0.0f, finalSize.height - margin.top - margin.bottom);
+                float childX = offset;
+                float childY = margin.top;
+
+                child->Arrange(Rect(childX, childY, childWidth, childHeight));
+                offset += childWidth;
+                pendingMargin = margin.right;
             }
+
+            hasArrangedChild = true;
         }
     }
     

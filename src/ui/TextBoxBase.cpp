@@ -305,7 +305,7 @@ void TextBoxBase::OnSelectionChanged() {
 
 // ========== 渲染方法 ==========
 
-void TextBoxBase::CollectDrawCommands(render::RenderContext& context) {
+void TextBoxBase::OnRender(render::RenderContext& context) {
     // 渲染文本内容
     RenderText(context);
     

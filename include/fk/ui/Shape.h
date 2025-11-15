@@ -57,11 +57,6 @@ public:
     Shape* StrokeThickness(float thickness);
     float StrokeThickness() const;
 
-    /**
-     * @brief 收集绘制命令
-     */
-    void CollectDrawCommands(render::RenderContext& context) override;
-
 protected:
     /**
      * @brief 渲染图形（派生类实现具体图形）

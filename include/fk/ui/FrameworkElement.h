@@ -138,7 +138,7 @@ public:
     // ========== 布局属性 ==========
     
     void SetMargin(const Thickness& value) { SetValue(MarginProperty(), value); InvalidateMeasure(); }
-    Thickness GetMargin() const { return GetValue<Thickness>(MarginProperty()); }
+    Thickness GetMargin() const override { return GetValue<Thickness>(MarginProperty()); }
     Derived* Margin(const Thickness& value) { SetMargin(value); return static_cast<Derived*>(this); }
     Derived* Margin(float uniform) { SetMargin(Thickness(uniform)); return static_cast<Derived*>(this); }
     Derived* Margin(float left, float top, float right, float bottom) { 

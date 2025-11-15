@@ -137,7 +137,7 @@ protected:
 
     // ========== 渲染相关 ==========
     
-    void CollectDrawCommands(render::RenderContext& context) override;
+    void OnRender(render::RenderContext& context) override;
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
     

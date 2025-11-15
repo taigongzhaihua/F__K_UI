@@ -113,19 +113,4 @@ Size Border::ArrangeOverride(const Size& finalSize) {
     return finalSize;
 }
 
-void Border::CollectDrawCommands(render::RenderContext& context) {
-    // TODO: 添加背景和边框绘制命令
-    // auto background = GetBackground();
-    // auto borderBrush = GetBorderBrush();
-    // auto borderThickness = GetBorderThickness();
-    // if (background) context.DrawRectangle(bounds, background);
-    // if (borderBrush) context.DrawBorder(bounds, borderBrush, borderThickness);
-    
-    // 收集子元素的绘制命令
-    auto child = GetChild();
-    if (child) {
-        child->CollectDrawCommands(context);
-    }
-}
-
 } // namespace fk::ui

@@ -120,13 +120,6 @@ void Shape::OnRender(render::RenderContext& context) {
     // 派生类实现具体渲染
 }
 
-void Shape::CollectDrawCommands(render::RenderContext& context) {
-    // Call OnRender to submit draw commands for this shape
-    OnRender(context);
-    
-    // Shapes don't have children, so no need to traverse
-}
-
 // ========== Rectangle 依赖属性 ==========
 
 const binding::DependencyProperty& Rectangle::RadiusXProperty() {

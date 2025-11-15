@@ -140,25 +140,20 @@ Size TextBlock::ArrangeOverride(const Size& finalSize) {
     return finalSize;
 }
 
-void TextBlock::CollectDrawCommands(render::RenderContext& context) {
-    // Phase 5.0.5: 完整的文本绘制命令生成
+void TextBlock::OnRender(render::RenderContext& context) {
     auto text = GetText();
     if (text.empty()) {
         return; // 空文本不绘制
     }
-    
-    // 获取所有文本属性
+
     auto fontSize = GetFontSize();
     auto fontFamily = GetFontFamily();
     auto textAlignment = GetTextAlignment();
     auto textWrapping = GetTextWrapping();
     auto foreground = GetForeground();
     
-    // 转换 Brush 到颜色
     std::array<float, 4> textColor{{0.0f, 0.0f, 0.0f, 1.0f}}; // 默认黑色
     if (foreground) {
-        // 如果有画刷，使用画刷的颜色
-        // 这里假设 SolidColorBrush，实际需要类型检查
         auto solidBrush = dynamic_cast<SolidColorBrush*>(foreground);
         if (solidBrush) {
             auto color = solidBrush->GetColor();
@@ -168,19 +163,12 @@ void TextBlock::CollectDrawCommands(render::RenderContext& context) {
             textColor[3] = color.a;
         }
     }
-    
-    // 获取渲染位置（左上角）
+
     auto renderSize = GetRenderSize();
-    ui::Point position(0.0f, 0.0f); // 相对于自身的位置
+    ui::Point position(0.0f, 0.0f);
+    float maxWidth = (textWrapping == TextWrapping::Wrap) ? renderSize.width : 0.0f;
+    (void)textAlignment; // 对齐支持将在 RenderContext 中实现
     
-    // 计算最大宽度（用于换行）
-    float maxWidth = 0.0f;
-    if (textWrapping == TextWrapping::Wrap) {
-        maxWidth = renderSize.width;
-    }
-    
-    // 调用 RenderContext 的 DrawText
-    // 注意：TextAlignment 支持将在 RenderContext 中实现
     context.DrawText(
         position,
         text,

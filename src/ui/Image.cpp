@@ -282,7 +282,7 @@ Rect Image::CalculateRenderBounds(const Size& containerSize) const {
 
 // ========== 渲染 ==========
 
-void Image::CollectDrawCommands(render::RenderContext& context) {
+void Image::OnRender(render::RenderContext& context) {
     // Phase 5.0.5: Image 渲染将在后续实现（Phase 5.0.6）
     // 当前使用新的 RenderContext API，需要更新实现
     // TODO: 使用 context.DrawImage() 替代旧的 DrawCommand::GetRenderer()->Submit()

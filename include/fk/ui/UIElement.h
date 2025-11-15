@@ -2,12 +2,17 @@
 
 #include "fk/ui/Visual.h"
 #include "fk/ui/Primitives.h"
+#include "fk/ui/Thickness.h"
 #include "fk/core/Event.h"
 #include "fk/binding/DependencyProperty.h"
 #include <functional>
 #include <unordered_map>
 #include <memory>
 #include <vector>
+
+namespace fk::render {
+class RenderContext;
+}
 
 namespace fk::ui {
 
@@ -106,6 +111,11 @@ public:
      * @brief 获取布局矩形（元素在父容器中的位置和尺寸）
      */
     Rect GetLayoutRect() const { return layoutRect_; }
+
+    /**
+     * @brief 获取元素外边距（默认没有边距）
+     */
+    virtual Thickness GetMargin() const;
     
     // ========== 模板支持 ==========
     
@@ -222,6 +232,11 @@ public:
     void CollectDrawCommands(render::RenderContext& context) override;
 
 protected:
+    /**
+     * @brief 派生类用于绘制自身内容
+     */
+    virtual void OnRender(render::RenderContext& context);
+    
     /**
      * @brief 核心测量逻辑（派生类覆写）
      */
