@@ -2,6 +2,7 @@
 #include "fk/binding/DependencyProperty.h"
 #include "fk/ui/Button.h"
 #include "fk/ui/Window.h"
+#include "fk/ui/TextBlock.h"
 
 namespace fk::ui {
 
@@ -27,6 +28,24 @@ const binding::DependencyProperty& ContentControl<Derived>::ContentTemplatePrope
         binding::PropertyMetadata{static_cast<DataTemplate*>(nullptr)}
     );
     return property;
+}
+
+template<typename Derived>
+UIElement* ContentControl<Derived>::CreateTextBlockFromString(const std::string& text) {
+    auto* textBlock = new TextBlock();
+    textBlock->Text(text);
+    
+    // 继承字体属性
+    textBlock->FontFamily(this->GetFontFamily());
+    textBlock->FontSize(this->GetFontSize());
+    textBlock->FontWeight(this->GetFontWeight());
+    
+    // 继承前景色
+    if (this->GetForeground()) {
+        textBlock->Foreground(this->GetForeground());
+    }
+    
+    return textBlock;
 }
 
 } // namespace fk::ui

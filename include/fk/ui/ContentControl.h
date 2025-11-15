@@ -4,8 +4,12 @@
 #include "fk/ui/DataTemplate.h"
 #include "fk/binding/DependencyProperty.h"
 #include <memory>
+#include <string>
 
 namespace fk::ui {
+
+// 前向声明
+class TextBlock;
 
 /**
  * @brief 内容控件基类（CRTP 模式）
@@ -20,7 +24,7 @@ namespace fk::ui {
 template<typename Derived>
 class ContentControl : public Control<Derived> {
 public:
-    ContentControl() = default;
+    ContentControl() : contentElement_(nullptr) {}
     virtual ~ContentControl() = default;
 
     // ========== 依赖属性声明 ==========
@@ -44,11 +48,34 @@ public:
         auto oldValue = GetContent();  // 保存旧值
         this->SetValue(ContentProperty(), value);
         
-        // 如果内容是 UIElement*，获取其所有权
-        if (value.type() == typeid(UIElement*)) {
-            auto* element = std::any_cast<UIElement*>(value);
-            if (element) {
-                this->TakeOwnership(element);
+        // 移除旧的内容元素
+        if (contentElement_) {
+            this->RemoveVisualChild(contentElement_);
+            contentElement_ = nullptr;
+        }
+        
+        // 处理新内容
+        if (value.has_value()) {
+            if (value.type() == typeid(UIElement*)) {
+                // 内容是 UIElement*
+                auto* element = std::any_cast<UIElement*>(value);
+                if (element) {
+                    contentElement_ = element;
+                    this->AddVisualChild(contentElement_);
+                    this->TakeOwnership(element);
+                }
+            } else if (value.type() == typeid(const char*)) {
+                // 内容是 C 字符串
+                const char* str = std::any_cast<const char*>(value);
+                contentElement_ = CreateTextBlockFromString(str);
+                this->AddVisualChild(contentElement_);
+                this->TakeOwnership(contentElement_);
+            } else if (value.type() == typeid(std::string)) {
+                // 内容是 std::string
+                std::string str = std::any_cast<std::string>(value);
+                contentElement_ = CreateTextBlockFromString(str);
+                this->AddVisualChild(contentElement_);
+                this->TakeOwnership(contentElement_);
             }
         }
         
@@ -120,6 +147,68 @@ protected:
      * 使用 DataTemplate 实例化视觉树并显示
      */
     virtual void ApplyContentTemplate();
+    
+    /**
+     * @brief 测量内容元素
+     */
+    Size MeasureCore(const Size& availableSize) override {
+        if (contentElement_) {
+            // 减去 Padding
+            auto padding = this->GetPadding();
+            auto borderThickness = this->GetBorderThickness();
+            
+            float paddingWidth = padding.left + padding.right + borderThickness.left + borderThickness.right;
+            float paddingHeight = padding.top + padding.bottom + borderThickness.top + borderThickness.bottom;
+            
+            Size contentAvailableSize(
+                std::max(0.0f, availableSize.width - paddingWidth),
+                std::max(0.0f, availableSize.height - paddingHeight)
+            );
+            
+            contentElement_->Measure(contentAvailableSize);
+            Size desiredSize = contentElement_->GetDesiredSize();
+            
+            return Size(
+                desiredSize.width + paddingWidth,
+                desiredSize.height + paddingHeight
+            );
+        }
+        
+        return Size(0, 0);
+    }
+    
+    /**
+     * @brief 排列内容元素
+     */
+    void ArrangeCore(const Rect& finalRect) override {
+        if (contentElement_) {
+            auto padding = this->GetPadding();
+            auto borderThickness = this->GetBorderThickness();
+            
+            float left = padding.left + borderThickness.left;
+            float top = padding.top + borderThickness.top;
+            float right = padding.right + borderThickness.right;
+            float bottom = padding.bottom + borderThickness.bottom;
+            
+            Rect contentRect(
+                left,
+                top,
+                std::max(0.0f, finalRect.width - left - right),
+                std::max(0.0f, finalRect.height - top - bottom)
+            );
+            
+            contentElement_->Arrange(contentRect);
+        }
+    }
+    
+    /**
+     * @brief 从字符串创建 TextBlock
+     */
+    UIElement* CreateTextBlockFromString(const std::string& text);
+
+private:
+    // 当前内容元素
+    UIElement* contentElement_;
 };
 
 // ApplyContentTemplate 实现

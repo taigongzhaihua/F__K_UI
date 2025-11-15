@@ -102,10 +102,12 @@ const binding::DependencyProperty& Control<Derived>::FontWeightProperty() {
 #include "fk/ui/ScrollBar.h"
 #include "fk/ui/ListBox.h"
 #include "fk/ui/ComboBox.h"
+#include "fk/ui/ScrollViewer.h"
 
 // 显式实例化 Control 模板（必须在命名空间之外）
 template class fk::ui::Control<fk::ui::Button>;
 template class fk::ui::Control<fk::ui::Window>;
 template class fk::ui::Control<fk::ui::ScrollBar>;
+template class fk::ui::Control<fk::ui::ScrollViewer>;
 template class fk::ui::Control<fk::ui::ListBox<>>;
 template class fk::ui::Control<fk::ui::ComboBox<>>;
