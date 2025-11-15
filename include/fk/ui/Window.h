@@ -208,6 +208,10 @@ private:
     // 渲染系统
     std::unique_ptr<render::GlRenderer> renderer_;     // OpenGL 渲染器
     std::unique_ptr<render::RenderList> renderList_;   // 渲染命令列表
+    
+    // 视口大小缓存（用于优化，避免每帧都调用 Resize）
+    int lastViewportWidth_{0};
+    int lastViewportHeight_{0};
 };
 
 // 窗口智能指针类型（用于 Application 管理）
