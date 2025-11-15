@@ -76,6 +76,11 @@ public:
     static const binding::DependencyProperty& MarginProperty();
     
     /**
+     * @brief 内边距依赖属性
+     */
+    static const binding::DependencyProperty& PaddingProperty();
+    
+    /**
      * @brief 水平对齐方式依赖属性
      */
     static const binding::DependencyProperty& HorizontalAlignmentProperty();
@@ -146,6 +151,16 @@ public:
         return static_cast<Derived*>(this); 
     }
     Thickness Margin() const { return GetMargin(); }
+    
+    void SetPadding(const Thickness& value) { SetValue(PaddingProperty(), value); InvalidateMeasure(); }
+    Thickness GetPadding() const { return GetValue<Thickness>(PaddingProperty()); }
+    Derived* Padding(const Thickness& value) { SetPadding(value); return static_cast<Derived*>(this); }
+    Derived* Padding(float uniform) { SetPadding(Thickness(uniform)); return static_cast<Derived*>(this); }
+    Derived* Padding(float left, float top, float right, float bottom) { 
+        SetPadding(Thickness(left, top, right, bottom)); 
+        return static_cast<Derived*>(this); 
+    }
+    Thickness Padding() const { return GetPadding(); }
     
     void SetHorizontalAlignment(HorizontalAlignment value) { 
         SetValue(HorizontalAlignmentProperty(), value); 
@@ -245,10 +260,14 @@ protected:
 
     // 覆写基类方法
     Size MeasureCore(const Size& availableSize) override {
-        // 1. 减去 Margin
         auto margin = GetMargin();
-        float availWidth = std::max(0.0f, availableSize.width - margin.left - margin.right);
-        float availHeight = std::max(0.0f, availableSize.height - margin.top - margin.bottom);
+        auto padding = GetPadding();
+        
+        // 1. 减去 Margin 和 Padding
+        float availWidth = std::max(0.0f, 
+            availableSize.width - margin.left - margin.right - padding.left - padding.right);
+        float availHeight = std::max(0.0f,
+            availableSize.height - margin.top - margin.bottom - padding.top - padding.bottom);
         
         // 2. 应用尺寸约束
         auto constrainedSize = ApplySizeConstraints(Size(availWidth, availHeight));
@@ -256,25 +275,29 @@ protected:
         // 3. 调用派生类的测量逻辑
         auto desiredSize = MeasureOverride(constrainedSize);
         
-        // 4. 不加 Margin！
+        // 4. 加上 Padding（但不加 Margin！）
         // Margin 是外边距，由父容器处理
-        // Padding 才是内边距，应该在 MeasureOverride 内部处理
-        // desiredSize.width += margin.left + margin.right;
-        // desiredSize.height += margin.top + margin.bottom;
+        // Padding 是内边距，由元素自己处理
+        desiredSize.width += padding.left + padding.right;
+        desiredSize.height += padding.top + padding.bottom;
         
         return desiredSize;
     }
     
     void ArrangeCore(const Rect& finalRect) override {
-        // 1. 减去 Margin
         auto margin = GetMargin();
-        float arrangeWidth = std::max(0.0f, finalRect.width - margin.left - margin.right);
-        float arrangeHeight = std::max(0.0f, finalRect.height - margin.top - margin.bottom);
+        auto padding = GetPadding();
         
-        // 2. 获取期望尺寸（已经不含 Margin）
+        // 1. 减去 Margin 和 Padding
+        float arrangeWidth = std::max(0.0f,
+            finalRect.width - margin.left - margin.right - padding.left - padding.right);
+        float arrangeHeight = std::max(0.0f,
+            finalRect.height - margin.top - margin.bottom - padding.top - padding.bottom);
+        
+        // 2. 获取期望尺寸（已经不含 Margin，但含 Padding）
         auto desiredSize = GetDesiredSize();
-        float desiredWidth = desiredSize.width;
-        float desiredHeight = desiredSize.height;
+        float desiredWidth = std::max(0.0f, desiredSize.width - padding.left - padding.right);
+        float desiredHeight = std::max(0.0f, desiredSize.height - padding.top - padding.bottom);
         
         // 3. 应用对齐方式
         auto hAlign = GetHorizontalAlignment();
