@@ -100,7 +100,7 @@ Size TextBlock::MeasureOverride(const Size& availableSize) {
     // Phase 5.0.5: 使用 RenderContext 进行精确文本度量
     auto text = GetText();
     if (text.empty()) {
-        return Size(0, GetFontSize()); // 空文本返回字体高度
+        return Size(0, GetFontSize() * 1.2f); // 空文本返回一行高度
     }
     
     auto fontSize = GetFontSize();
@@ -124,9 +124,8 @@ Size TextBlock::MeasureOverride(const Size& availableSize) {
         return Size(availableSize.width, lineCount * lineHeight);
     } else {
         // 不换行：单行文本
-        // 注意：单行文本不需要行高系数，避免产生过大的视觉间距
         float estimatedWidth = text.length() * fontSize * 0.6f;
-        float estimatedHeight = fontSize;  // 单行文本使用实际字体大小，不加行高系数
+        float estimatedHeight = fontSize * 1.2f;
         
         return Size(
             std::min(estimatedWidth, availableSize.width),

@@ -256,9 +256,11 @@ protected:
         // 3. 调用派生类的测量逻辑
         auto desiredSize = MeasureOverride(constrainedSize);
         
-        // 4. 加上 Margin
-        desiredSize.width += margin.left + margin.right;
-        desiredSize.height += margin.top + margin.bottom;
+        // 4. 不加 Margin！
+        // Margin 是外边距，由父容器处理
+        // Padding 才是内边距，应该在 MeasureOverride 内部处理
+        // desiredSize.width += margin.left + margin.right;
+        // desiredSize.height += margin.top + margin.bottom;
         
         return desiredSize;
     }
@@ -269,10 +271,10 @@ protected:
         float arrangeWidth = std::max(0.0f, finalRect.width - margin.left - margin.right);
         float arrangeHeight = std::max(0.0f, finalRect.height - margin.top - margin.bottom);
         
-        // 2. 获取期望尺寸（不含 Margin）
+        // 2. 获取期望尺寸（已经不含 Margin）
         auto desiredSize = GetDesiredSize();
-        float desiredWidth = std::max(0.0f, desiredSize.width - margin.left - margin.right);
-        float desiredHeight = std::max(0.0f, desiredSize.height - margin.top - margin.bottom);
+        float desiredWidth = desiredSize.width;
+        float desiredHeight = desiredSize.height;
         
         // 3. 应用对齐方式
         auto hAlign = GetHorizontalAlignment();
