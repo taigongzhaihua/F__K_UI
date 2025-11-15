@@ -118,6 +118,7 @@ public:
 protected:
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
+    void OnRender(render::RenderContext& context) override;
 };
 
 } // namespace fk::ui

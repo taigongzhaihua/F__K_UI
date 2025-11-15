@@ -97,11 +97,19 @@ ContentPresenter<T>* ContentControl<Derived>::FindContentPresenter(UIElement* ro
         return presenter;
     }
     
-    // 递归搜索逻辑子元素
-    for (UIElement* child : root->GetLogicalChildren()) {
-        auto* found = FindContentPresenter<T>(child);
-        if (found) {
-            return found;
+    // 递归搜索视觉子元素（而非逻辑子元素）
+    // 在模板中，ContentPresenter 是视觉树的一部分
+    size_t childCount = root->GetVisualChildrenCount();
+    for (size_t i = 0; i < childCount; ++i) {
+        auto* visualChild = root->GetVisualChild(i);
+        if (visualChild) {
+            auto* uiChild = dynamic_cast<UIElement*>(visualChild);
+            if (uiChild) {
+                auto* found = FindContentPresenter<T>(uiChild);
+                if (found) {
+                    return found;
+                }
+            }
         }
     }
     
