@@ -392,3 +392,11 @@ target_link_libraries(test_example_main_simulation PRIVATE fk)
 # Coordinate Issue Test
 add_executable(test_coordinate_issue test_coordinate_issue.cpp)
 target_link_libraries(test_coordinate_issue PRIVATE fk)
+
+# Simulate Renderer Test
+add_executable(test_simulate_renderer test_simulate_renderer.cpp)
+target_link_libraries(test_simulate_renderer PRIVATE fk)
+
+# Fixed Renderer Test
+add_executable(test_fixed_renderer test_fixed_renderer.cpp)
+target_link_libraries(test_fixed_renderer PRIVATE fk)

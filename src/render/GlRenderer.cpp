@@ -23,11 +23,11 @@ layout (location = 1) in vec2 aTexCoord;
 out vec2 vTexCoord;
 out vec2 vFragPos;
 
-uniform vec2 uOffset;
 uniform vec2 uViewport;
 
 void main() {
-    vec2 pos = aPos + uOffset;
+    // aPos 已经是全局坐标，不需要再加 uOffset
+    vec2 pos = aPos;
     // 转换到 NDC (-1 到 1)
     vec2 ndc = (pos / uViewport) * 2.0 - 1.0;
     ndc.y = -ndc.y; // 翻转 Y 轴
@@ -85,11 +85,11 @@ const char* textVertexShaderSource = R"(
 layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
 out vec2 TexCoords;
 
-uniform vec2 uOffset;
 uniform vec2 uViewport;
 
 void main() {
-    vec2 pos = vertex.xy + uOffset;
+    // vertex.xy 已经是全局坐标，不需要再加 uOffset
+    vec2 pos = vertex.xy;
     vec2 ndc = (pos / uViewport) * 2.0 - 1.0;
     ndc.y = -ndc.y;
     gl_Position = vec4(ndc, 0.0, 1.0);
@@ -166,9 +166,8 @@ void GlRenderer::Initialize(const RendererInitParams& params) {
     };
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, projection);
     
-    // 初始化偏移为 (0,0)
-    int offsetLoc = glGetUniformLocation(shaderProgram_, "uOffset");
-    glUniform2f(offsetLoc, 0.0f, 0.0f);
+    // uOffset 已经从着色器中移除（坐标已经是全局的）
+    // 不再需要初始化 uOffset
 
     initialized_ = true;
 }
@@ -211,9 +210,8 @@ void GlRenderer::BeginFrame(const FrameContext& ctx) {
         static_cast<float>(viewportSize_.width), 
         static_cast<float>(viewportSize_.height));
     
-    // 设置初始偏移为 0
-    int offsetLoc = glGetUniformLocation(shaderProgram_, "uOffset");
-    glUniform2f(offsetLoc, 0.0f, 0.0f);
+    // uOffset 已经从着色器中移除（坐标已经是全局的）
+    // 不再需要设置 uOffset
 }
 
 void GlRenderer::Draw(const RenderList& list) {
@@ -322,9 +320,9 @@ void GlRenderer::ApplyTransform(const TransformPayload& payload) {
     currentOffsetX_ = payload.offsetX;
     currentOffsetY_ = payload.offsetY;
 
-    // 更新 uniform
-    int offsetLoc = glGetUniformLocation(shaderProgram_, "uOffset");
-    glUniform2f(offsetLoc, currentOffsetX_, currentOffsetY_);
+    // uOffset 已经从着色器中移除（坐标已经是全局的）
+    // SetTransform 命令保留用于其他目的或兼容性，但不再设置 uOffset
+    // 不再需要更新 uniform
 }
 
 void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
@@ -457,9 +455,8 @@ void GlRenderer::DrawText(const TextPayload& payload) {
     glUniform1f(glGetUniformLocation(textShaderProgram_, "uOpacity"), 1.0f);
     glUniform2f(glGetUniformLocation(textShaderProgram_, "uViewport"), 
                 viewportSize_.width, viewportSize_.height);
-    // 使用当前的全局变换偏移,而不是 payload.bounds
-    glUniform2f(glGetUniformLocation(textShaderProgram_, "uOffset"), 
-                currentOffsetX_, currentOffsetY_);
+    // uOffset 已经从文本着色器中移除（坐标已经是全局的）
+    // 不再需要设置 uOffset
     
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(glGetUniformLocation(textShaderProgram_, "text"), 0);
