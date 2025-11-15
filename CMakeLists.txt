@@ -348,3 +348,15 @@ message(STATUS "  Example: cd samples/hello_fk_ui && mkdir build && cd build && 
 # Fluent API Demo
 add_executable(fluent_api_demo examples/fluent_api_demo.cpp)
 target_link_libraries(fluent_api_demo PRIVATE fk)
+
+# Button Render Test
+add_executable(test_button_render test_button_render.cpp)
+target_link_libraries(test_button_render PRIVATE fk)
+
+# ContentControl Comprehensive Test
+add_executable(test_contentcontrol_comprehensive test_contentcontrol_comprehensive.cpp)
+target_link_libraries(test_contentcontrol_comprehensive PRIVATE fk)
+
+# Button Template Test
+add_executable(test_button_template test_button_template.cpp)
+target_link_libraries(test_button_template PRIVATE fk)

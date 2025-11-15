@@ -4,6 +4,7 @@
 #include "fk/ui/Thickness.h"
 #include "fk/ui/TextEnums.h"
 #include "fk/ui/Style.h"
+#include "fk/ui/ControlTemplate.h"
 #include "fk/binding/DependencyProperty.h"
 #include "fk/binding/BindingExpression.h"
 #include <memory>
@@ -12,7 +13,6 @@
 namespace fk::ui {
 
 // 前向声明
-class ControlTemplate;
 class Brush;
 
 /**
@@ -324,9 +324,39 @@ public:
 
 protected:
     /**
+     * @brief 获取模板根元素
+     */
+    UIElement* GetTemplateRoot() const { return templateRoot_; }
+    
+    /**
      * @brief 模板应用钩子
      */
     void OnApplyTemplate() override {
+        // 实例化并应用 ControlTemplate
+        auto* tmpl = GetTemplate();
+        if (tmpl && tmpl->IsValid()) {
+            // 移除旧的模板根
+            if (templateRoot_) {
+                this->RemoveVisualChild(templateRoot_);
+                templateRoot_ = nullptr;
+            }
+            
+            // 实例化新模板
+            templateRoot_ = tmpl->Instantiate(static_cast<UIElement*>(this));
+            if (templateRoot_) {
+                this->AddVisualChild(templateRoot_);
+                this->TakeOwnership(templateRoot_);
+            }
+        }
+        
+        // 调用派生类的钩子（用于查找模板部件）
+        OnTemplateApplied();
+    }
+    
+    /**
+     * @brief 模板应用后的钩子（派生类覆写以获取模板部件）
+     */
+    virtual void OnTemplateApplied() {
         // 派生类覆写以获取模板部件
     }
     
@@ -449,6 +479,9 @@ private:
     // 状态（非依赖属性，用于内部状态跟踪）
     bool isFocused_{false};
     bool isMouseOver_{false};
+    
+    // 模板根元素
+    UIElement* templateRoot_{nullptr};
 };
 
 // 模板实现
