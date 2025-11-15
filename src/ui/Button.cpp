@@ -36,6 +36,10 @@ static ControlTemplate* CreateDefaultButtonTemplate() {
 }
 
 Button::Button() : isPressed_(false) {
+    // 设置默认对齐方式：Button 不应该拉伸，而是根据内容大小决定
+    SetHorizontalAlignment(HorizontalAlignment::Left);
+    SetVerticalAlignment(VerticalAlignment::Top);
+    
     // 设置默认模板
     if (!GetTemplate()) {
         SetTemplate(CreateDefaultButtonTemplate());
