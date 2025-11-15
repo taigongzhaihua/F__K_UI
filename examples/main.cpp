@@ -3,6 +3,7 @@
 #include "fk/ui/TextBlock.h"
 #include "fk/ui/Brush.h"
 #include "fk/ui/StackPanel.h"
+#include "fk/ui/Button.h"
 
 int main(int argc, char **argv)
 {
@@ -21,7 +22,9 @@ int main(int argc, char **argv)
                                       ->Text("This is a simple example of F K UI framework.")
                                       ->FontSize(16)
                                       ->Foreground(fk::ui::Brushes::DarkGray())
-                                      ->Margin(fk::Thickness(20))}));
+                                      ->Margin(fk::Thickness(20)),
+                                  (new fk::ui::Button())
+                                      ->Content("Click Me")}));
     app.Run(mainWindow);
     return 0;
 }
