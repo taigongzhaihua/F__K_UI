@@ -360,3 +360,7 @@ target_link_libraries(test_contentcontrol_comprehensive PRIVATE fk)
 # Button Template Test
 add_executable(test_button_template test_button_template.cpp)
 target_link_libraries(test_button_template PRIVATE fk)
+
+# ContentControl OnRender Test
+add_executable(test_contentcontrol_onrender test_contentcontrol_onrender.cpp)
+target_link_libraries(test_contentcontrol_onrender PRIVATE fk)
