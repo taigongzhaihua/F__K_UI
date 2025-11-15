@@ -24,7 +24,8 @@ int main(int argc, char **argv)
                                       ->Foreground(fk::ui::Brushes::DarkGray())
                                       ->Margin(fk::Thickness(20)),
                                   (new fk::ui::Button())
-                                      ->Content((new fk::ui::TextBlock())->Text("Click Me")->FontSize(20))}));
+                                  ->Background(fk::ui::Brushes::Green())
+                                      ->Content((new fk::ui::TextBlock())->Text("Click Me")->FontSize(20)->Foreground(fk::ui::Brushes::White()))}));
     app.Run(mainWindow);
     return 0;
 }
