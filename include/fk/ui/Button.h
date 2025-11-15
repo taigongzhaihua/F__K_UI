@@ -27,9 +27,18 @@ protected:
     void OnPointerReleased(PointerEventArgs& e) override;
     void OnPointerEntered(PointerEventArgs& e) override;
     void OnPointerExited(PointerEventArgs& e) override;
+    void OnTemplateApplied() override;
+    void OnPropertyChanged(const binding::DependencyProperty& property, 
+                          const std::any& oldValue, 
+                          const std::any& newValue,
+                          binding::ValueSource oldSource,
+                          binding::ValueSource newSource) override;
 
 private:
     bool isPressed_{false};
+    
+    // 辅助方法：手动同步 Background 到模板中的 Border
+    void SyncBackgroundToBorder();
 };
 
 } // namespace fk::ui

@@ -202,7 +202,12 @@ protected:
     void ArrangeCore(const Rect& finalRect) override {
         // 如果有模板根，排列模板根
         if (this->GetTemplateRoot()) {
-            this->GetTemplateRoot()->Arrange(finalRect);
+            // 模板根应该在 (0, 0) 开始，占据整个 finalRect 的尺寸
+            // 这是因为模板根是相对于 ContentControl 的坐标系
+            Rect templateRect(0, 0, finalRect.width, finalRect.height);
+            this->GetTemplateRoot()->Arrange(templateRect);
+            // 设置 ContentControl 自身的渲染尺寸为分配给它的尺寸
+            this->SetRenderSize(Size(finalRect.width, finalRect.height));
             return;
         }
         
@@ -224,6 +229,11 @@ protected:
             );
             
             contentElement_->Arrange(contentRect);
+            // 设置渲染尺寸
+            this->SetRenderSize(Size(finalRect.width, finalRect.height));
+        } else {
+            // 没有内容，仍然需要设置渲染尺寸
+            this->SetRenderSize(Size(finalRect.width, finalRect.height));
         }
     }
     
