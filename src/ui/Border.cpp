@@ -65,6 +65,33 @@ const binding::DependencyProperty& Border::PaddingProperty() {
     return property;
 }
 
+void Border::SetChild(UIElement* child) {
+    // 获取旧的 Child
+    auto* oldChild = GetChild();
+    
+    // 如果是同一个，不做任何事
+    if (oldChild == child) {
+        return;
+    }
+    
+    // 从视觉树中移除旧的 Child
+    if (oldChild) {
+        RemoveVisualChild(oldChild);
+    }
+    
+    // 设置新的 Child 属性值
+    SetValue(ChildProperty(), child);
+    
+    // 将新的 Child 添加到视觉树
+    if (child) {
+        AddVisualChild(child);
+        TakeOwnership(child);
+    }
+    
+    // 标记需要重新布局
+    InvalidateMeasure();
+}
+
 Size Border::MeasureOverride(const Size& availableSize) {
     auto borderThickness = GetBorderThickness();
     auto padding = GetPadding();

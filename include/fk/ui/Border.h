@@ -48,7 +48,7 @@ public:
     // ========== 子元素 ==========
     
     UIElement* GetChild() const { return GetValue<UIElement*>(ChildProperty()); }
-    void SetChild(UIElement* child) { SetValue(ChildProperty(), child); }
+    void SetChild(UIElement* child);
     
     Border* Child(UIElement* child) {
         SetChild(child);
