@@ -388,3 +388,7 @@ target_link_libraries(test_button_background PRIVATE fk)
 # Example Main Simulation Test
 add_executable(test_example_main_simulation test_example_main_simulation.cpp)
 target_link_libraries(test_example_main_simulation PRIVATE fk)
+
+# Coordinate Issue Test
+add_executable(test_coordinate_issue test_coordinate_issue.cpp)
+target_link_libraries(test_coordinate_issue PRIVATE fk)
