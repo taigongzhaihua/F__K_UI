@@ -307,7 +307,7 @@ UIElement* UIElement::Clone() const {
     auto* clone = new UIElement();
     
     // 克隆基本属性
-    clone->SetName(name_);
+    clone->SetName(GetElementName());
     clone->SetVisibility(GetVisibility());
     clone->SetIsEnabled(GetIsEnabled());
     clone->SetOpacity(GetOpacity());
@@ -363,8 +363,8 @@ UIElement* UIElement::FindName(const std::string& name) {
         return nullptr;
     }
     
-    // 检查当前元素的名称
-    if (name_ == name) {
+    // 检查当前元素的名称（使用DependencyObject的elementName_）
+    if (GetElementName() == name) {
         return this;
     }
     

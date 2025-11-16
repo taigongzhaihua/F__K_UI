@@ -132,13 +132,19 @@ public:
     
     /**
      * @brief 获取元素名称
+     * 
+     * 直接使用DependencyObject的elementName_，同时支持FindName和ElementName绑定
      */
-    const std::string& GetName() const { return name_; }
+    const std::string& GetName() const { return GetElementName(); }
     
     /**
-     * @brief 设置元素名称（用于模板中的 FindName）
+     * @brief 设置元素名称（用于 FindName 和 ElementName 绑定）
+     * 
+     * 统一使用DependencyObject的elementName_，避免数据冗余
      */
-    void SetName(const std::string& name) { name_ = name; }
+    void SetName(const std::string& name) { 
+        SetElementName(name);
+    }
     
     /**
      * @brief 流式API：设置元素名称并返回this指针
@@ -309,8 +315,8 @@ private:
     bool measureDirty_{true};
     bool arrangeDirty_{true};
     
-    // 元素名称（用于 FindName）
-    std::string name_;
+    // 注意：元素名称现在统一使用继承自DependencyObject的elementName_
+    // 这样FindName和ElementName绑定都使用同一个存储，避免冗余
     
     // 模板化父元素（从 ControlTemplate 实例化时设置）
     UIElement* templatedParent_{nullptr};
