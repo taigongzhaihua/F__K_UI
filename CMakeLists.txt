@@ -365,6 +365,10 @@ target_link_libraries(duplicate_names_test PRIVATE fk)
 add_executable(name_scope_demo examples/name_scope_demo.cpp)
 target_link_libraries(name_scope_demo PRIVATE fk)
 
+# ElementName Scope Demo
+add_executable(elementname_scope_demo examples/elementname_scope_demo.cpp)
+target_link_libraries(elementname_scope_demo PRIVATE fk)
+
 # Template Binding Test
 add_executable(template_binding_test examples/template_binding_test.cpp)
 target_link_libraries(template_binding_test PRIVATE fk)
