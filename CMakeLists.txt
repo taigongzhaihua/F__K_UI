@@ -408,3 +408,19 @@ target_link_libraries(test_global_coordinates PRIVATE fk)
 # Before Fix Analysis Test
 add_executable(test_before_fix_analysis test_before_fix_analysis.cpp)
 target_link_libraries(test_before_fix_analysis PRIVATE fk)
+
+# TextBlock Position Test
+add_executable(test_textblock_position test_textblock_position.cpp)
+target_link_libraries(test_textblock_position PRIVATE fk)
+
+# TextBlock Visual Check Test
+add_executable(test_textblock_visual_check test_textblock_visual_check.cpp)
+target_link_libraries(test_textblock_visual_check PRIVATE fk)
+
+# Transform Bug Test
+add_executable(test_transform_bug test_transform_bug.cpp)
+target_link_libraries(test_transform_bug PRIVATE fk)
+
+# GlRenderer Fix Verification Test
+add_executable(test_glrenderer_fix test_glrenderer_fix.cpp)
+target_link_libraries(test_glrenderer_fix PRIVATE fk)
