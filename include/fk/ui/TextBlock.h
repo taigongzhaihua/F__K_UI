@@ -64,6 +64,10 @@ public:
         SetText(value);
         return this;
     }
+    TextBlock* Text(binding::Binding binding) {
+        SetBinding(TextProperty(), std::move(binding));
+        return this;
+    }
     std::string Text() const { return GetText(); }
 
     // ========== 字体属性 ==========
@@ -75,6 +79,10 @@ public:
         SetFontFamily(value);
         return this;
     }
+    TextBlock* FontFamily(binding::Binding binding) {
+        SetBinding(FontFamilyProperty(), std::move(binding));
+        return this;
+    }
     std::string FontFamily() const { return GetFontFamily(); }
     
     float GetFontSize() const { return GetValue<float>(FontSizeProperty()); }
@@ -82,6 +90,10 @@ public:
     
     TextBlock* FontSize(float size) {
         SetFontSize(size);
+        return this;
+    }
+    TextBlock* FontSize(binding::Binding binding) {
+        SetBinding(FontSizeProperty(), std::move(binding));
         return this;
     }
     float FontSize() const { return GetFontSize(); }

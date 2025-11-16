@@ -201,6 +201,10 @@ public:
         SetForeground(brush);
         return static_cast<Derived*>(this);
     }
+    Derived* Foreground(binding::Binding binding) {
+        this->SetBinding(ForegroundProperty(), std::move(binding));
+        return static_cast<Derived*>(this);
+    }
     Brush* Foreground() const { return GetForeground(); }
     
     // 背景
@@ -215,6 +219,10 @@ public:
         SetBackground(brush);
         return static_cast<Derived*>(this);
     }
+    Derived* Background(binding::Binding binding) {
+        this->SetBinding(BackgroundProperty(), std::move(binding));
+        return static_cast<Derived*>(this);
+    }
     Brush* Background() const { return GetBackground(); }
     
     // 边框画刷
@@ -227,6 +235,10 @@ public:
     }
     Derived* BorderBrush(Brush* brush) {
         SetBorderBrush(brush);
+        return static_cast<Derived*>(this);
+    }
+    Derived* BorderBrush(binding::Binding binding) {
+        this->SetBinding(BorderBrushProperty(), std::move(binding));
         return static_cast<Derived*>(this);
     }
     Brush* BorderBrush() const { return GetBorderBrush(); }

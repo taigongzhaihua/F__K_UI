@@ -65,6 +65,10 @@ public:
         SetBackground(brush);
         return this;
     }
+    Border* Background(binding::Binding binding) {
+        SetBinding(BackgroundProperty(), std::move(binding));
+        return this;
+    }
     Brush* Background() const { return GetBackground(); }
     
     Brush* GetBorderBrush() const { return GetValue<Brush*>(BorderBrushProperty()); }
@@ -72,6 +76,10 @@ public:
     
     Border* BorderBrush(Brush* brush) {
         SetBorderBrush(brush);
+        return this;
+    }
+    Border* BorderBrush(binding::Binding binding) {
+        SetBinding(BorderBrushProperty(), std::move(binding));
         return this;
     }
     Brush* BorderBrush() const { return GetBorderBrush(); }

@@ -436,3 +436,7 @@ target_link_libraries(test_glrenderer_fix PRIVATE fk)
 # Button New Features Demo
 add_executable(button_new_features_demo examples/button_new_features_demo.cpp)
 target_link_libraries(button_new_features_demo PRIVATE fk)
+
+# Fluent Binding Demo
+add_executable(fluent_binding_demo examples/fluent_binding_demo.cpp)
+target_link_libraries(fluent_binding_demo PRIVATE fk)

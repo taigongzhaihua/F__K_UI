@@ -115,31 +115,55 @@ public:
     void SetWidth(float value) { SetValue(WidthProperty(), value); InvalidateMeasure(); }
     float GetWidth() const { return GetValue<float>(WidthProperty()); }
     Derived* Width(float value) { SetWidth(value); return static_cast<Derived*>(this); }
+    Derived* Width(binding::Binding binding) { 
+        this->SetBinding(WidthProperty(), std::move(binding)); 
+        return static_cast<Derived*>(this); 
+    }
     float Width() const { return GetWidth(); }
     
     void SetHeight(float value) { SetValue(HeightProperty(), value); InvalidateMeasure(); }
     float GetHeight() const { return GetValue<float>(HeightProperty()); }
     Derived* Height(float value) { SetHeight(value); return static_cast<Derived*>(this); }
+    Derived* Height(binding::Binding binding) { 
+        this->SetBinding(HeightProperty(), std::move(binding)); 
+        return static_cast<Derived*>(this); 
+    }
     float Height() const { return GetHeight(); }
     
     void SetMinWidth(float value) { SetValue(MinWidthProperty(), value); InvalidateMeasure(); }
     float GetMinWidth() const { return GetValue<float>(MinWidthProperty()); }
     Derived* MinWidth(float value) { SetMinWidth(value); return static_cast<Derived*>(this); }
+    Derived* MinWidth(binding::Binding binding) { 
+        this->SetBinding(MinWidthProperty(), std::move(binding)); 
+        return static_cast<Derived*>(this); 
+    }
     float MinWidth() const { return GetMinWidth(); }
     
     void SetMaxWidth(float value) { SetValue(MaxWidthProperty(), value); InvalidateMeasure(); }
     float GetMaxWidth() const { return GetValue<float>(MaxWidthProperty()); }
     Derived* MaxWidth(float value) { SetMaxWidth(value); return static_cast<Derived*>(this); }
+    Derived* MaxWidth(binding::Binding binding) { 
+        this->SetBinding(MaxWidthProperty(), std::move(binding)); 
+        return static_cast<Derived*>(this); 
+    }
     float MaxWidth() const { return GetMaxWidth(); }
     
     void SetMinHeight(float value) { SetValue(MinHeightProperty(), value); InvalidateMeasure(); }
     float GetMinHeight() const { return GetValue<float>(MinHeightProperty()); }
     Derived* MinHeight(float value) { SetMinHeight(value); return static_cast<Derived*>(this); }
+    Derived* MinHeight(binding::Binding binding) { 
+        this->SetBinding(MinHeightProperty(), std::move(binding)); 
+        return static_cast<Derived*>(this); 
+    }
     float MinHeight() const { return GetMinHeight(); }
     
     void SetMaxHeight(float value) { SetValue(MaxHeightProperty(), value); InvalidateMeasure(); }
     float GetMaxHeight() const { return GetValue<float>(MaxHeightProperty()); }
     Derived* MaxHeight(float value) { SetMaxHeight(value); return static_cast<Derived*>(this); }
+    Derived* MaxHeight(binding::Binding binding) { 
+        this->SetBinding(MaxHeightProperty(), std::move(binding)); 
+        return static_cast<Derived*>(this); 
+    }
     float MaxHeight() const { return GetMaxHeight(); }
 
     // ========== 布局属性 ==========
