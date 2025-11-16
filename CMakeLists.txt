@@ -357,6 +357,10 @@ target_link_libraries(findname_demo PRIVATE fk)
 add_executable(elementname_binding_demo examples/elementname_binding_demo.cpp)
 target_link_libraries(elementname_binding_demo PRIVATE fk)
 
+# Duplicate Names Test
+add_executable(duplicate_names_test examples/duplicate_names_test.cpp)
+target_link_libraries(duplicate_names_test PRIVATE fk)
+
 # Template Binding Test
 add_executable(template_binding_test examples/template_binding_test.cpp)
 target_link_libraries(template_binding_test PRIVATE fk)

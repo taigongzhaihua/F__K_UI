@@ -299,7 +299,36 @@ button->AddHandler(ui::Button::ClickEvent(),
 
 ### Q1: 如果有多个同名元素会怎样？
 
-A: `FindName()` 使用深度优先搜索，会返回第一个找到的元素。建议在同一逻辑树中使用唯一的名称。
+A: `FindName()` 使用深度优先搜索，会返回**第一个找到的元素**。
+
+**行为说明**：
+- 使用深度优先搜索（DFS）遍历逻辑树
+- 遇到第一个匹配的元素就立即返回，不继续搜索
+- 从不同的父元素开始查找，可能返回不同的结果
+
+**示例**：
+```cpp
+// 创建两个同名按钮
+auto* button1 = new Button();
+button1->Name("myButton");
+panel->AddChild(button1);
+
+auto* button2 = new Button();
+button2->Name("myButton");  // 重复名称！
+panel->AddChild(button2);
+
+// 查找会返回第一个
+auto* found = panel->FindName("myButton");
+// found == button1 (第一个添加的)
+```
+
+**建议**：
+- ✅ 在同一逻辑树中使用唯一的名称
+- ✅ 使用有意义的前缀区分不同区域的元素
+- ✅ 在设计阶段就规划好命名规范
+- ❌ 避免依赖查找顺序的不确定行为
+
+详细说明请参考：`DUPLICATE_NAMES_行为说明.md`
 
 ### Q2: FindName 的性能如何？
 
