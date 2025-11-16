@@ -420,3 +420,7 @@ target_link_libraries(test_textblock_visual_check PRIVATE fk)
 # Transform Bug Test
 add_executable(test_transform_bug test_transform_bug.cpp)
 target_link_libraries(test_transform_bug PRIVATE fk)
+
+# GlRenderer Fix Verification Test
+add_executable(test_glrenderer_fix test_glrenderer_fix.cpp)
+target_link_libraries(test_glrenderer_fix PRIVATE fk)

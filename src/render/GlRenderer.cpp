@@ -559,7 +559,7 @@ void GlRenderer::DrawText(const TextPayload& payload) {
     
     // 渲染每一行
     float lineHeight = payload.fontSize * 1.2f;
-    float y = 0.0f;
+    float y = payload.bounds.y;  // 修复：使用payload中的全局Y坐标
     
     for (const auto& line : lines) {
         // 将 UTF-8 文本转换为 UTF-32
@@ -575,15 +575,15 @@ void GlRenderer::DrawText(const TextPayload& payload) {
         }
         
         // Phase 5.0.4: 根据对齐方式计算起始 X 位置
-        float x = 0.0f;
+        float x = payload.bounds.x;  // 修复：使用payload中的全局X坐标
         float maxWidth = payload.maxWidth > 0.0f ? payload.maxWidth : lineWidth;
         
         // TODO: 使用 payload.textAlignment (需要在 TextPayload 中添加)
         // 暂时默认左对齐
         // if (alignment == TextAlignment::Center) {
-        //     x = (maxWidth - lineWidth) / 2.0f;
+        //     x += (maxWidth - lineWidth) / 2.0f;
         // } else if (alignment == TextAlignment::Right) {
-        //     x = maxWidth - lineWidth;
+        //     x += maxWidth - lineWidth;
         // }
         
         for (char32_t c : utf32Text) {
