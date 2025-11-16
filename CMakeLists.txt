@@ -400,3 +400,7 @@ target_link_libraries(test_simulate_renderer PRIVATE fk)
 # Fixed Renderer Test
 add_executable(test_fixed_renderer test_fixed_renderer.cpp)
 target_link_libraries(test_fixed_renderer PRIVATE fk)
+
+# Global Coordinates Test
+add_executable(test_global_coordinates test_global_coordinates.cpp)
+target_link_libraries(test_global_coordinates PRIVATE fk)
