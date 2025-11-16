@@ -440,3 +440,7 @@ target_link_libraries(button_new_features_demo PRIVATE fk)
 # Fluent Binding Demo
 add_executable(fluent_binding_demo examples/fluent_binding_demo.cpp)
 target_link_libraries(fluent_binding_demo PRIVATE fk)
+
+# Property Macros Demo
+add_executable(property_macros_demo examples/property_macros_demo.cpp)
+target_link_libraries(property_macros_demo PRIVATE fk)
