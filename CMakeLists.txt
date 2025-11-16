@@ -388,3 +388,23 @@ target_link_libraries(test_button_background PRIVATE fk)
 # Example Main Simulation Test
 add_executable(test_example_main_simulation test_example_main_simulation.cpp)
 target_link_libraries(test_example_main_simulation PRIVATE fk)
+
+# Coordinate Issue Test
+add_executable(test_coordinate_issue test_coordinate_issue.cpp)
+target_link_libraries(test_coordinate_issue PRIVATE fk)
+
+# Simulate Renderer Test
+add_executable(test_simulate_renderer test_simulate_renderer.cpp)
+target_link_libraries(test_simulate_renderer PRIVATE fk)
+
+# Fixed Renderer Test
+add_executable(test_fixed_renderer test_fixed_renderer.cpp)
+target_link_libraries(test_fixed_renderer PRIVATE fk)
+
+# Global Coordinates Test
+add_executable(test_global_coordinates test_global_coordinates.cpp)
+target_link_libraries(test_global_coordinates PRIVATE fk)
+
+# Before Fix Analysis Test
+add_executable(test_before_fix_analysis test_before_fix_analysis.cpp)
+target_link_libraries(test_before_fix_analysis PRIVATE fk)
