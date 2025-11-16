@@ -1,6 +1,8 @@
 #include "fk/binding/BindingExpression.h"
 #include "fk/binding/ValueConverters.h"
+#include "fk/binding/TemplateBinding.h"
 #include "fk/core/Dispatcher.h"
+#include "fk/ui/UIElement.h"
 
 #include <functional>
 #include <stdexcept>
@@ -299,6 +301,22 @@ void BindingExpression::Unsubscribe() {
 }
 
 std::any BindingExpression::ResolveSourceRoot() const {
+    // 检测是否为 TemplateBinding
+    if (definition_.IsTemplateBinding()) {
+        // TemplateBinding 应该绑定到 TemplatedParent
+        if (target_) {
+            // 尝试将 target 转换为 UIElement 以获取 TemplatedParent
+            if (auto* uiElement = dynamic_cast<ui::UIElement*>(target_)) {
+                auto* templatedParent = uiElement->GetTemplatedParent();
+                if (templatedParent) {
+                    return std::any(templatedParent);
+                }
+            }
+        }
+        // 如果无法获取 TemplatedParent，返回空
+        return std::any{};
+    }
+    
     if (definition_.HasExplicitSource()) {
         return definition_.GetSource();
     }

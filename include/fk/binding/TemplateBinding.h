@@ -46,12 +46,12 @@ public:
         // 由 BindingExpression 检测 TemplateBinding 并自动设置为 TemplatedParent
     }
     
-    virtual ~TemplateBinding() = default;
+    ~TemplateBinding() override = default;
     
     /**
      * @brief 标记这是一个 TemplateBinding
      */
-    bool IsTemplateBinding() const { return true; }
+    [[nodiscard]] bool IsTemplateBinding() const noexcept override { return true; }
 };
 
 } // namespace fk::binding

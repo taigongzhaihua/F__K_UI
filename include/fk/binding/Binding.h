@@ -65,6 +65,7 @@ public:
 class Binding {
 public:
     Binding() = default;
+    virtual ~Binding() = default;
 
     Binding& Path(std::string path);
     Binding& Source(std::any source);
@@ -95,6 +96,12 @@ public:
     [[nodiscard]] bool HasRelativeSource() const noexcept { return relativeSource_.has_value(); }
     [[nodiscard]] const RelativeSource& GetRelativeSource() const { return relativeSource_.value(); }
     [[nodiscard]] bool GetIsAsync() const noexcept { return isAsync_; }
+    
+    /**
+     * @brief 检查是否为 TemplateBinding
+     * @return 如果是 TemplateBinding 返回 true，否则返回 false
+     */
+    [[nodiscard]] virtual bool IsTemplateBinding() const noexcept { return false; }
 
     std::shared_ptr<BindingExpression> CreateExpression(DependencyObject* target, const DependencyProperty& targetProperty) const;
 

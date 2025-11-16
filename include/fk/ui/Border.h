@@ -3,6 +3,7 @@
 #include "fk/ui/Control.h"
 #include "fk/ui/Thickness.h"
 #include "fk/ui/CornerRadius.h"
+#include "fk/ui/PropertyMacros.h"
 #include "fk/binding/DependencyProperty.h"
 
 namespace fk::ui {
@@ -58,23 +59,9 @@ public:
 
     // ========== 外观 ==========
     
-    Brush* GetBackground() const { return GetValue<Brush*>(BackgroundProperty()); }
-    void SetBackground(Brush* value) { SetValue(BackgroundProperty(), value); }
-    
-    Border* Background(Brush* brush) {
-        SetBackground(brush);
-        return this;
-    }
-    Brush* Background() const { return GetBackground(); }
-    
-    Brush* GetBorderBrush() const { return GetValue<Brush*>(BorderBrushProperty()); }
-    void SetBorderBrush(Brush* value) { SetValue(BorderBrushProperty(), value); }
-    
-    Border* BorderBrush(Brush* brush) {
-        SetBorderBrush(brush);
-        return this;
-    }
-    Brush* BorderBrush() const { return GetBorderBrush(); }
+    // 使用 PropertyMacros 简化属性声明（从 24 行减少到 2 行）
+    FK_PROPERTY_VISUAL(Background, Brush*, Border)
+    FK_PROPERTY_VISUAL(BorderBrush, Brush*, Border)
     
     Thickness GetBorderThickness() const { return GetValue<Thickness>(BorderThicknessProperty()); }
     void SetBorderThickness(const Thickness& value) { SetValue(BorderThicknessProperty(), value); }

@@ -79,6 +79,10 @@ public:
         SetTitle(value);
         return this;
     }
+    Window* Title(binding::Binding binding) {
+        SetBinding(TitleProperty(), std::move(binding));
+        return this;
+    }
     std::string Title() const { return GetTitle(); }
 
     // ========== 窗口状态 ==========
@@ -101,6 +105,10 @@ public:
         SetLeft(value);
         return this;
     }
+    Window* Left(binding::Binding binding) {
+        SetBinding(LeftProperty(), std::move(binding));
+        return this;
+    }
     float Left() const { return GetLeft(); }
     
     float GetTop() const { return GetValue<float>(TopProperty()); }
@@ -108,6 +116,10 @@ public:
     
     Window* Top(float value) {
         SetTop(value);
+        return this;
+    }
+    Window* Top(binding::Binding binding) {
+        SetBinding(TopProperty(), std::move(binding));
         return this;
     }
     float Top() const { return GetTop(); }

@@ -349,6 +349,14 @@ message(STATUS "  Example: cd samples/hello_fk_ui && mkdir build && cd build && 
 add_executable(fluent_api_demo examples/fluent_api_demo.cpp)
 target_link_libraries(fluent_api_demo PRIVATE fk)
 
+# Template Binding Test
+add_executable(template_binding_test examples/template_binding_test.cpp)
+target_link_libraries(template_binding_test PRIVATE fk)
+
+# Binding Debug Test
+add_executable(binding_debug_test examples/binding_debug_test.cpp)
+target_link_libraries(binding_debug_test PRIVATE fk)
+
 # Button Render Test
 add_executable(test_button_render test_button_render.cpp)
 target_link_libraries(test_button_render PRIVATE fk)
@@ -424,3 +432,15 @@ target_link_libraries(test_transform_bug PRIVATE fk)
 # GlRenderer Fix Verification Test
 add_executable(test_glrenderer_fix test_glrenderer_fix.cpp)
 target_link_libraries(test_glrenderer_fix PRIVATE fk)
+
+# Button New Features Demo
+add_executable(button_new_features_demo examples/button_new_features_demo.cpp)
+target_link_libraries(button_new_features_demo PRIVATE fk)
+
+# Fluent Binding Demo
+add_executable(fluent_binding_demo examples/fluent_binding_demo.cpp)
+target_link_libraries(fluent_binding_demo PRIVATE fk)
+
+# Property Macros Demo
+add_executable(property_macros_demo examples/property_macros_demo.cpp)
+target_link_libraries(property_macros_demo PRIVATE fk)

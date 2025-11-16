@@ -4,8 +4,10 @@
 #include "fk/ui/Thickness.h"
 #include "fk/ui/Alignment.h"
 #include "fk/ui/ResourceDictionary.h"
+#include "fk/ui/PropertyMacros.h"
 #include "fk/core/Event.h"
 #include "fk/binding/DependencyProperty.h"
+#include "fk/binding/INotifyPropertyChanged.h"
 #include <any>
 #include <string>
 #include <memory>
@@ -65,10 +67,7 @@ public:
      */
     static const binding::DependencyProperty& MaxHeightProperty();
     
-    /**
-     * @brief 数据上下文依赖属性
-     */
-    static const binding::DependencyProperty& DataContextProperty();
+    // DataContext 不再作为 DependencyProperty，通过 BindingContext 管理
     
     /**
      * @brief 外边距依赖属性
@@ -91,54 +90,36 @@ public:
     static const binding::DependencyProperty& VerticalAlignmentProperty();
 
     // ========== 数据上下文 ==========
-    
-    void SetDataContext(const std::any& value) {
-        SetValue(DataContextProperty(), value);
-        InvalidateVisual();
-    }
-    
-    std::any GetDataContext() const {
-        return GetValue<std::any>(DataContextProperty());
-    }
+    // DataContext 通过 DependencyObject::SetDataContext/GetDataContext 管理
+    // 使用 BindingContext 而不是作为 DependencyProperty
     
     Derived* DataContext(const std::any& value) {
-        SetDataContext(value);
+        DependencyObject::SetDataContext(value);
+        this->InvalidateVisual();
         return static_cast<Derived*>(this);
     }
     
-    std::any DataContext() const { return GetDataContext(); }
+    // 提供类型安全的 DataContext 设置（推荐）
+    template<typename T>
+    Derived* DataContext(std::shared_ptr<T> value) {
+        static_assert(std::is_base_of_v<binding::INotifyPropertyChanged, T>, 
+                      "DataContext must be derived from INotifyPropertyChanged");
+        DependencyObject::SetDataContext(value);
+        this->InvalidateVisual();
+        return static_cast<Derived*>(this);
+    }
+    
+    const std::any& DataContext() const { return DependencyObject::GetDataContext(); }
 
     // ========== 尺寸约束 ==========
     
-    void SetWidth(float value) { SetValue(WidthProperty(), value); InvalidateMeasure(); }
-    float GetWidth() const { return GetValue<float>(WidthProperty()); }
-    Derived* Width(float value) { SetWidth(value); return static_cast<Derived*>(this); }
-    float Width() const { return GetWidth(); }
-    
-    void SetHeight(float value) { SetValue(HeightProperty(), value); InvalidateMeasure(); }
-    float GetHeight() const { return GetValue<float>(HeightProperty()); }
-    Derived* Height(float value) { SetHeight(value); return static_cast<Derived*>(this); }
-    float Height() const { return GetHeight(); }
-    
-    void SetMinWidth(float value) { SetValue(MinWidthProperty(), value); InvalidateMeasure(); }
-    float GetMinWidth() const { return GetValue<float>(MinWidthProperty()); }
-    Derived* MinWidth(float value) { SetMinWidth(value); return static_cast<Derived*>(this); }
-    float MinWidth() const { return GetMinWidth(); }
-    
-    void SetMaxWidth(float value) { SetValue(MaxWidthProperty(), value); InvalidateMeasure(); }
-    float GetMaxWidth() const { return GetValue<float>(MaxWidthProperty()); }
-    Derived* MaxWidth(float value) { SetMaxWidth(value); return static_cast<Derived*>(this); }
-    float MaxWidth() const { return GetMaxWidth(); }
-    
-    void SetMinHeight(float value) { SetValue(MinHeightProperty(), value); InvalidateMeasure(); }
-    float GetMinHeight() const { return GetValue<float>(MinHeightProperty()); }
-    Derived* MinHeight(float value) { SetMinHeight(value); return static_cast<Derived*>(this); }
-    float MinHeight() const { return GetMinHeight(); }
-    
-    void SetMaxHeight(float value) { SetValue(MaxHeightProperty(), value); InvalidateMeasure(); }
-    float GetMaxHeight() const { return GetValue<float>(MaxHeightProperty()); }
-    Derived* MaxHeight(float value) { SetMaxHeight(value); return static_cast<Derived*>(this); }
-    float MaxHeight() const { return GetMaxHeight(); }
+    // 使用 PropertyMacros 简化属性声明（从 60 行减少到 6 行）
+    FK_PROPERTY_MEASURE(Width, float, Derived)
+    FK_PROPERTY_MEASURE(Height, float, Derived)
+    FK_PROPERTY_MEASURE(MinWidth, float, Derived)
+    FK_PROPERTY_MEASURE(MaxWidth, float, Derived)
+    FK_PROPERTY_MEASURE(MinHeight, float, Derived)
+    FK_PROPERTY_MEASURE(MaxHeight, float, Derived)
 
     // ========== 布局属性 ==========
     
