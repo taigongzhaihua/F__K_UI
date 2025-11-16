@@ -169,6 +169,7 @@ add_library(fk STATIC
     src/ui/Visual.cpp
     src/ui/VisualCollection.cpp
     src/ui/UIElement.cpp
+    src/ui/NameScope.cpp
     src/ui/FrameworkElement.cpp
     src/ui/Control.cpp
     src/ui/ContentControl.cpp
@@ -368,6 +369,10 @@ target_link_libraries(name_scope_demo PRIVATE fk)
 # ElementName Scope Demo
 add_executable(elementname_scope_demo examples/elementname_scope_demo.cpp)
 target_link_libraries(elementname_scope_demo PRIVATE fk)
+
+# NameScope Performance Demo (混合优化方案)
+add_executable(namescope_performance_demo examples/namescope_performance_demo.cpp)
+target_link_libraries(namescope_performance_demo PRIVATE fk)
 
 # Template Binding Test
 add_executable(template_binding_test examples/template_binding_test.cpp)

@@ -22,6 +22,7 @@ struct RoutedEventArgs;
 struct PointerEventArgs;
 struct KeyEventArgs;
 class Transform;
+class NameScope;
 
 /**
  * @brief 可见性枚举
@@ -141,10 +142,9 @@ public:
      * @brief 设置元素名称（用于 FindName 和 ElementName 绑定）
      * 
      * 统一使用DependencyObject的elementName_，避免数据冗余
+     * 同时自动更新最近的 NameScope（如果存在）
      */
-    void SetName(const std::string& name) { 
-        SetElementName(name);
-    }
+    void SetName(const std::string& name);
     
     /**
      * @brief 流式API：设置元素名称并返回this指针
@@ -188,6 +188,62 @@ public:
      * @endcode
      */
     UIElement* FindName(const std::string& name);
+    
+    /**
+     * @brief 创建并关联 NameScope 到当前元素
+     * 
+     * NameScope 提供 O(1) 的名称查找性能，适用于大型UI或频繁查找的场景。
+     * 
+     * 注意：
+     * - Window 会自动创建 NameScope
+     * - 对于普通容器，可以选择性地创建 NameScope 以优化性能
+     * - 创建后，所有子元素的名称会自动注册到此 NameScope
+     * 
+     * 示例：
+     * @code
+     * auto* panel = new StackPanel();
+     * panel->CreateNameScope();  // 为大型面板创建 NameScope
+     * 
+     * // 添加子元素时会自动注册到 NameScope
+     * auto* button = new Button();
+     * button->Name("myButton");
+     * panel->AddChild(button);
+     * 
+     * // O(1) 查找
+     * auto* found = panel->FindName("myButton");
+     * @endcode
+     */
+    void CreateNameScope();
+    
+    /**
+     * @brief 获取当前元素关联的 NameScope
+     * 
+     * @return NameScope 指针，如果未创建返回 nullptr
+     */
+    NameScope* GetNameScope() const;
+    
+    /**
+     * @brief 查找最近的 NameScope（向上遍历逻辑树）
+     * 
+     * @return 找到的 NameScope 指针，未找到返回 nullptr
+     * 
+     * 此方法会向上遍历逻辑树，查找第一个拥有 NameScope 的祖先元素
+     */
+    NameScope* FindNearestNameScope() const;
+    
+    /**
+     * @brief 使用快速查找（优先使用 NameScope，回退到递归查找）
+     * 
+     * @param name 要查找的元素名称
+     * @return 找到的元素指针，未找到返回 nullptr
+     * 
+     * 查找策略：
+     * 1. 首先查找最近的 NameScope（O(1)）
+     * 2. 如果未找到或没有 NameScope，回退到递归查找（O(n)）
+     * 
+     * 此方法是 FindName() 的优化版本，当存在 NameScope 时提供更好的性能
+     */
+    UIElement* FindNameFast(const std::string& name);
 
     // ========== 事件处理 ==========
     
@@ -326,6 +382,12 @@ private:
     
     // 拥有的子对象（自动管理内存）
     std::vector<std::unique_ptr<UIElement>> ownedChildren_;
+    
+    // NameScope 实例（性能优化：提供 O(1) 名称查找）
+    std::unique_ptr<NameScope> nameScope_;
+    
+    // 辅助方法：递归注册子元素名称到 NameScope
+    static void RegisterNamesToScope(UIElement* element, NameScope* scope);
 };
 
 /**

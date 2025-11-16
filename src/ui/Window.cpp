@@ -129,6 +129,10 @@ Window::Window() {
     renderList_ = std::make_unique<render::RenderList>();
     renderer_ = std::make_unique<render::GlRenderer>();
 #endif
+    
+    // 自动创建 NameScope（窗口级别的命名作用域）
+    // 提供 O(1) 的名称查找性能
+    CreateNameScope();
 }
 
 Window::~Window() {
