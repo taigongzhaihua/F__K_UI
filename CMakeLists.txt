@@ -432,3 +432,7 @@ target_link_libraries(test_transform_bug PRIVATE fk)
 # GlRenderer Fix Verification Test
 add_executable(test_glrenderer_fix test_glrenderer_fix.cpp)
 target_link_libraries(test_glrenderer_fix PRIVATE fk)
+
+# Button New Features Demo
+add_executable(button_new_features_demo examples/button_new_features_demo.cpp)
+target_link_libraries(button_new_features_demo PRIVATE fk)
