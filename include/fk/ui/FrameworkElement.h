@@ -6,6 +6,7 @@
 #include "fk/ui/ResourceDictionary.h"
 #include "fk/core/Event.h"
 #include "fk/binding/DependencyProperty.h"
+#include "fk/binding/INotifyPropertyChanged.h"
 #include <any>
 #include <string>
 #include <memory>
@@ -65,10 +66,7 @@ public:
      */
     static const binding::DependencyProperty& MaxHeightProperty();
     
-    /**
-     * @brief 数据上下文依赖属性
-     */
-    static const binding::DependencyProperty& DataContextProperty();
+    // DataContext 不再作为 DependencyProperty，通过 BindingContext 管理
     
     /**
      * @brief 外边距依赖属性
@@ -91,22 +89,26 @@ public:
     static const binding::DependencyProperty& VerticalAlignmentProperty();
 
     // ========== 数据上下文 ==========
-    
-    void SetDataContext(const std::any& value) {
-        SetValue(DataContextProperty(), value);
-        InvalidateVisual();
-    }
-    
-    std::any GetDataContext() const {
-        return GetValue<std::any>(DataContextProperty());
-    }
+    // DataContext 通过 DependencyObject::SetDataContext/GetDataContext 管理
+    // 使用 BindingContext 而不是作为 DependencyProperty
     
     Derived* DataContext(const std::any& value) {
-        SetDataContext(value);
+        DependencyObject::SetDataContext(value);
+        this->InvalidateVisual();
         return static_cast<Derived*>(this);
     }
     
-    std::any DataContext() const { return GetDataContext(); }
+    // 提供类型安全的 DataContext 设置（推荐）
+    template<typename T>
+    Derived* DataContext(std::shared_ptr<T> value) {
+        static_assert(std::is_base_of_v<binding::INotifyPropertyChanged, T>, 
+                      "DataContext must be derived from INotifyPropertyChanged");
+        DependencyObject::SetDataContext(value);
+        this->InvalidateVisual();
+        return static_cast<Derived*>(this);
+    }
+    
+    const std::any& DataContext() const { return DependencyObject::GetDataContext(); }
 
     // ========== 尺寸约束 ==========
     

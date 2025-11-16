@@ -79,16 +79,7 @@ const binding::DependencyProperty& FrameworkElement<Derived>::MaxHeightProperty(
     return property;
 }
 
-template<typename Derived>
-const binding::DependencyProperty& FrameworkElement<Derived>::DataContextProperty() {
-    static auto& property = binding::DependencyProperty::Register(
-        "DataContext",
-        typeid(std::any),
-        typeid(FrameworkElement<Derived>),
-        {std::any()}
-    );
-    return property;
-}
+// DataContext 不再作为 DependencyProperty 注册，改用 BindingContext 管理
 
 template<typename Derived>
 const binding::DependencyProperty& FrameworkElement<Derived>::MarginProperty() {
