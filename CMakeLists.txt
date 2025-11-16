@@ -408,3 +408,7 @@ target_link_libraries(test_global_coordinates PRIVATE fk)
 # Before Fix Analysis Test
 add_executable(test_before_fix_analysis test_before_fix_analysis.cpp)
 target_link_libraries(test_before_fix_analysis PRIVATE fk)
+
+# TextBlock Position Test
+add_executable(test_textblock_position test_textblock_position.cpp)
+target_link_libraries(test_textblock_position PRIVATE fk)
