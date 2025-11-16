@@ -358,4 +358,27 @@ void UIElement::CollectDrawCommands(render::RenderContext& context) {
     context.PopTransform();
 }
 
+UIElement* UIElement::FindName(const std::string& name) {
+    if (name.empty()) {
+        return nullptr;
+    }
+    
+    // 检查当前元素的名称
+    if (name_ == name) {
+        return this;
+    }
+    
+    // 递归搜索所有逻辑子元素
+    for (UIElement* child : GetLogicalChildren()) {
+        if (child) {
+            UIElement* found = child->FindName(name);
+            if (found) {
+                return found;
+            }
+        }
+    }
+    
+    return nullptr;
+}
+
 } // namespace fk::ui

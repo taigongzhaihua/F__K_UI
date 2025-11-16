@@ -187,6 +187,34 @@ public:
      * @brief 渲染窗口帧
      */
     void RenderFrame();
+    
+    /**
+     * @brief 在窗口的内容树中查找指定名称的元素
+     * 
+     * @param name 要查找的元素名称
+     * @return 找到的元素指针，未找到返回 nullptr
+     * 
+     * 这是一个便捷方法，等价于调用窗口内容的FindName()。
+     * 类似于WPF中的Window.FindName()方法。
+     * 
+     * 示例：
+     * @code
+     * auto window = app->CreateWindow();
+     * auto panel = new StackPanel();
+     * auto button = new Button();
+     * button->Name("submitButton");
+     * panel->AddChild(button);
+     * window->Content(panel);
+     * 
+     * // 稍后从窗口中查找
+     * UIElement* found = window->FindName("submitButton");
+     * if (found) {
+     *     auto* btn = dynamic_cast<Button*>(found);
+     *     // 使用按钮...
+     * }
+     * @endcode
+     */
+    UIElement* FindName(const std::string& name);
 
     // ========== 窗口事件 ==========
     

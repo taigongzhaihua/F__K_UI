@@ -485,4 +485,29 @@ void Window::RenderFrame() {
 #endif
 }
 
+UIElement* Window::FindName(const std::string& name) {
+    if (name.empty()) {
+        return nullptr;
+    }
+    
+    // 检查窗口自身的名称
+    if (GetName() == name) {
+        return this;
+    }
+    
+    // 查找窗口内容
+    auto content = GetContent();
+    if (content.has_value() && content.type() == typeid(UIElement*)) {
+        auto* element = std::any_cast<UIElement*>(content);
+        if (element) {
+            UIElement* found = element->FindName(name);
+            if (found) {
+                return found;
+            }
+        }
+    }
+    
+    return nullptr;
+}
+
 } // namespace fk::ui

@@ -349,6 +349,10 @@ message(STATUS "  Example: cd samples/hello_fk_ui && mkdir build && cd build && 
 add_executable(fluent_api_demo examples/fluent_api_demo.cpp)
 target_link_libraries(fluent_api_demo PRIVATE fk)
 
+# FindName Demo
+add_executable(findname_demo examples/findname_demo.cpp)
+target_link_libraries(findname_demo PRIVATE fk)
+
 # Template Binding Test
 add_executable(template_binding_test examples/template_binding_test.cpp)
 target_link_libraries(template_binding_test PRIVATE fk)

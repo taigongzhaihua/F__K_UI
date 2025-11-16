@@ -139,6 +139,49 @@ public:
      * @brief 设置元素名称（用于模板中的 FindName）
      */
     void SetName(const std::string& name) { name_ = name; }
+    
+    /**
+     * @brief 流式API：设置元素名称并返回this指针
+     * 
+     * @param name 元素名称
+     * @return 当前元素指针，用于链式调用
+     * 
+     * 示例：
+     * @code
+     * auto* button = new Button();
+     * button->Name("myButton")->Content("Click Me");
+     * @endcode
+     */
+    UIElement* Name(const std::string& name) { 
+        SetName(name); 
+        return this; 
+    }
+    
+    /**
+     * @brief 在当前元素的逻辑树中查找指定名称的元素
+     * 
+     * @param name 要查找的元素名称
+     * @return 找到的元素指针，未找到返回 nullptr
+     * 
+     * 此方法会递归搜索当前元素及其所有逻辑子元素（通过GetLogicalChildren()获取）。
+     * 类似于WPF中的FrameworkElement.FindName()方法。
+     * 
+     * 示例：
+     * @code
+     * auto* panel = new StackPanel();
+     * auto* button = new Button();
+     * button->Name("myButton");
+     * panel->AddChild(button);
+     * 
+     * // 稍后查找
+     * UIElement* found = panel->FindName("myButton");
+     * if (found) {
+     *     auto* btn = dynamic_cast<Button*>(found);
+     *     // 使用按钮...
+     * }
+     * @endcode
+     */
+    UIElement* FindName(const std::string& name);
 
     // ========== 事件处理 ==========
     
