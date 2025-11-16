@@ -13,19 +13,23 @@ int main(int argc, char **argv)
         ->Width(800)
         ->Height(600)
         ->Content((new fk::ui::StackPanel())
-                      ->Children({(new fk::ui::TextBlock())
-                                      ->Text("Hello, F K UI!")
-                                      ->FontSize(32)
-                                      ->Foreground(fk::ui::Brushes::Blue())
-                                      ->Margin(fk::Thickness(20)),
-                                  (new fk::ui::TextBlock())
-                                      ->Text("This is a simple example of F K UI framework.")
-                                      ->FontSize(16)
-                                      ->Foreground(fk::ui::Brushes::DarkGray())
-                                      ->Margin(fk::Thickness(20)),
-                                  (new fk::ui::Button())
-                                  ->Background(fk::ui::Brushes::Green())
-                                      ->Content((new fk::ui::TextBlock())->Text("Click Me")->FontSize(20)->Foreground(fk::ui::Brushes::White()))}));
+                      ->Children(
+                          {(new fk::ui::TextBlock())
+                               ->Text("Hello, F K UI!")
+                               ->FontSize(32)
+                               ->Foreground(fk::ui::Brushes::Blue())
+                               ->Margin(fk::Thickness(20)),
+                           (new fk::ui::TextBlock())
+                               ->Text("This is a simple example of F K UI framework.")
+                               ->FontSize(16)
+                               ->Foreground(fk::ui::Brushes::DarkGray())
+                               ->Margin(fk::Thickness(20)),
+                           (new fk::ui::Button())
+                               ->Background(fk::ui::Brushes::Blue())
+                               ->Content((new fk::ui::TextBlock())
+                                             ->Text("Click Me")
+                                             ->FontSize(20)
+                                             ->Foreground(fk::ui::Brushes::White()))}));
     app.Run(mainWindow);
     return 0;
 }
