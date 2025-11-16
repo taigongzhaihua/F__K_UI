@@ -188,60 +188,10 @@ public:
 
     // ========== 外观属性 ==========
     
-    // 前景
-    Brush* GetForeground() const {
-        auto value = this->template GetValue<Brush*>(ForegroundProperty());
-        return value;
-    }
-    void SetForeground(Brush* brush) {
-        this->SetValue(ForegroundProperty(), brush);
-        this->InvalidateVisual();
-    }
-    Derived* Foreground(Brush* brush) {
-        SetForeground(brush);
-        return static_cast<Derived*>(this);
-    }
-    Derived* Foreground(binding::Binding binding) {
-        this->SetBinding(ForegroundProperty(), std::move(binding));
-        return static_cast<Derived*>(this);
-    }
-    Brush* Foreground() const { return GetForeground(); }
-    
-    // 背景
-    Brush* GetBackground() const {
-        return this->template GetValue<Brush*>(BackgroundProperty());
-    }
-    void SetBackground(Brush* brush) {
-        this->SetValue(BackgroundProperty(), brush);
-        this->InvalidateVisual();
-    }
-    Derived* Background(Brush* brush) {
-        SetBackground(brush);
-        return static_cast<Derived*>(this);
-    }
-    Derived* Background(binding::Binding binding) {
-        this->SetBinding(BackgroundProperty(), std::move(binding));
-        return static_cast<Derived*>(this);
-    }
-    Brush* Background() const { return GetBackground(); }
-    
-    // 边框画刷
-    Brush* GetBorderBrush() const {
-        return this->template GetValue<Brush*>(BorderBrushProperty());
-    }
-    void SetBorderBrush(Brush* brush) {
-        this->SetValue(BorderBrushProperty(), brush);
-        this->InvalidateVisual();
-    }
-    Derived* BorderBrush(Brush* brush) {
-        SetBorderBrush(brush);
-        return static_cast<Derived*>(this);
-    }
-    Derived* BorderBrush(binding::Binding binding) {
-        this->SetBinding(BorderBrushProperty(), std::move(binding));
-        return static_cast<Derived*>(this);
-    }
-    Brush* BorderBrush() const { return GetBorderBrush(); }
+    // 使用 PropertyMacros 简化属性声明（从 45 行减少到 3 行）
+    FK_PROPERTY_VISUAL(Foreground, Brush*, Derived)
+    FK_PROPERTY_VISUAL(Background, Brush*, Derived)
+    FK_PROPERTY_VISUAL(BorderBrush, Brush*, Derived)
     
     // 边框厚度
     Thickness GetBorderThickness() const {

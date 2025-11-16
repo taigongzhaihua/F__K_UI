@@ -205,5 +205,3 @@ class TextBlock : public FrameworkElement<TextBlock> {
     FK_PROPERTY_VISUAL(FontSize, float, TextBlock)
 };
 */
-
-#endif // FK_UI_PROPERTY_MACROS_H

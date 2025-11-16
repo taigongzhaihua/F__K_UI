@@ -2,6 +2,7 @@
 
 #include "fk/ui/FrameworkElement.h"
 #include "fk/ui/TextEnums.h"
+#include "fk/ui/PropertyMacros.h"
 #include "fk/binding/DependencyProperty.h"
 #include <string>
 
@@ -57,46 +58,13 @@ public:
 
     // ========== 文本内容 ==========
     
-    std::string GetText() const { return GetValue<std::string>(TextProperty()); }
-    void SetText(const std::string& value) { SetValue(TextProperty(), value); }
-    
-    TextBlock* Text(const std::string& value) {
-        SetText(value);
-        return this;
-    }
-    TextBlock* Text(binding::Binding binding) {
-        SetBinding(TextProperty(), std::move(binding));
-        return this;
-    }
-    std::string Text() const { return GetText(); }
+    // 使用 PropertyMacros 简化属性声明（从 36 行减少到 3 行）
+    FK_PROPERTY_COMPLEX(Text, std::string, TextBlock, this->InvalidateVisual())
 
     // ========== 字体属性 ==========
     
-    std::string GetFontFamily() const { return GetValue<std::string>(FontFamilyProperty()); }
-    void SetFontFamily(const std::string& value) { SetValue(FontFamilyProperty(), value); }
-    
-    TextBlock* FontFamily(const std::string& value) {
-        SetFontFamily(value);
-        return this;
-    }
-    TextBlock* FontFamily(binding::Binding binding) {
-        SetBinding(FontFamilyProperty(), std::move(binding));
-        return this;
-    }
-    std::string FontFamily() const { return GetFontFamily(); }
-    
-    float GetFontSize() const { return GetValue<float>(FontSizeProperty()); }
-    void SetFontSize(float value) { SetValue(FontSizeProperty(), value); }
-    
-    TextBlock* FontSize(float size) {
-        SetFontSize(size);
-        return this;
-    }
-    TextBlock* FontSize(binding::Binding binding) {
-        SetBinding(FontSizeProperty(), std::move(binding));
-        return this;
-    }
-    float FontSize() const { return GetFontSize(); }
+    FK_PROPERTY_COMPLEX(FontFamily, std::string, TextBlock, this->InvalidateVisual())
+    FK_PROPERTY_VISUAL(FontSize, float, TextBlock)
     
     ui::FontWeight GetFontWeight() const { return GetValue<ui::FontWeight>(FontWeightProperty()); }
     void SetFontWeight(ui::FontWeight value) { SetValue(FontWeightProperty(), value); }
