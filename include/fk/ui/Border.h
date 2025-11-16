@@ -101,6 +101,20 @@ public:
         return this;
     }
     Thickness Padding() const { return GetPadding(); }
+    
+    /**
+     * @brief 获取逻辑子元素（覆写 UIElement）
+     * 
+     * Border 只有一个子元素
+     */
+    std::vector<UIElement*> GetLogicalChildren() const override {
+        std::vector<UIElement*> children;
+        UIElement* child = GetChild();
+        if (child) {
+            children.push_back(child);
+        }
+        return children;
+    }
 
 protected:
     Size MeasureOverride(const Size& availableSize) override;

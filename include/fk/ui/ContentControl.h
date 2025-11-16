@@ -161,6 +161,26 @@ protected:
     virtual void ApplyContentTemplate();
     
     /**
+     * @brief 获取逻辑子元素（覆写 UIElement）
+     * 
+     * ContentControl 的逻辑子元素是其内容元素或模板根
+     */
+    std::vector<UIElement*> GetLogicalChildren() const override {
+        std::vector<UIElement*> children;
+        
+        // 如果有模板根，返回模板根
+        if (this->GetTemplateRoot()) {
+            children.push_back(this->GetTemplateRoot());
+        }
+        // 否则返回直接内容元素
+        else if (contentElement_) {
+            children.push_back(contentElement_);
+        }
+        
+        return children;
+    }
+    
+    /**
      * @brief 测量内容元素
      */
     Size MeasureCore(const Size& availableSize) override {

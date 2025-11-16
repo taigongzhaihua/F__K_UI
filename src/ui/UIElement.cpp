@@ -1,4 +1,5 @@
 #include "fk/ui/UIElement.h"
+#include "fk/ui/NameScope.h"
 #include "fk/render/RenderContext.h"
 #include <algorithm>
 
@@ -68,6 +69,17 @@ UIElement::UIElement()
 }
 
 UIElement::~UIElement() = default;
+
+void UIElement::SetName(const std::string& name) {
+    std::string oldName = GetElementName();
+    SetElementName(name);
+    
+    // 查找最近的 NameScope 并更新名称索引
+    NameScope* scope = FindNearestNameScope();
+    if (scope) {
+        scope->UpdateName(oldName, name, this);
+    }
+}
 
 void UIElement::Measure(const Size& availableSize) {
     if (!measureDirty_ && desiredSize_.width > 0 && desiredSize_.height > 0) {
@@ -307,7 +319,7 @@ UIElement* UIElement::Clone() const {
     auto* clone = new UIElement();
     
     // 克隆基本属性
-    clone->SetName(name_);
+    clone->SetName(GetElementName());
     clone->SetVisibility(GetVisibility());
     clone->SetIsEnabled(GetIsEnabled());
     clone->SetOpacity(GetOpacity());
@@ -356,6 +368,103 @@ void UIElement::CollectDrawCommands(render::RenderContext& context) {
 
     // 弹出变换
     context.PopTransform();
+}
+
+UIElement* UIElement::FindName(const std::string& name) {
+    if (name.empty()) {
+        return nullptr;
+    }
+    
+    // 检查当前元素的名称（使用DependencyObject的elementName_）
+    if (GetElementName() == name) {
+        return this;
+    }
+    
+    // 递归搜索所有逻辑子元素
+    for (UIElement* child : GetLogicalChildren()) {
+        if (child) {
+            UIElement* found = child->FindName(name);
+            if (found) {
+                return found;
+            }
+        }
+    }
+    
+    return nullptr;
+}
+
+void UIElement::CreateNameScope() {
+    if (!nameScope_) {
+        nameScope_ = std::make_unique<NameScope>();
+        
+        // 注册当前元素的名称
+        const std::string& name = GetElementName();
+        if (!name.empty()) {
+            nameScope_->RegisterName(name, this);
+        }
+        
+        // 递归注册所有现有子元素的名称
+        RegisterNamesToScope(this, nameScope_.get());
+    }
+}
+
+NameScope* UIElement::GetNameScope() const {
+    return nameScope_.get();
+}
+
+NameScope* UIElement::FindNearestNameScope() const {
+    // 从当前元素开始向上查找
+    const UIElement* current = this;
+    while (current) {
+        if (current->nameScope_) {
+            return current->nameScope_.get();
+        }
+        
+        // 向上到逻辑父元素
+        auto* parent = current->GetLogicalParent();
+        current = dynamic_cast<const UIElement*>(parent);
+    }
+    
+    return nullptr;
+}
+
+UIElement* UIElement::FindNameFast(const std::string& name) {
+    if (name.empty()) {
+        return nullptr;
+    }
+    
+    // 策略1：尝试使用最近的 NameScope（O(1)）
+    NameScope* scope = FindNearestNameScope();
+    if (scope) {
+        auto* found = scope->FindName(name);
+        if (found) {
+            // 找到了，将 DependencyObject 转换为 UIElement
+            return dynamic_cast<UIElement*>(found);
+        }
+    }
+    
+    // 策略2：回退到递归查找（O(n)）
+    return FindName(name);
+}
+
+// 辅助方法：递归注册子元素名称到 NameScope
+void UIElement::RegisterNamesToScope(UIElement* element, NameScope* scope) {
+    if (!element || !scope) {
+        return;
+    }
+    
+    // 注册当前元素
+    const std::string& name = element->GetElementName();
+    if (!name.empty()) {
+        scope->RegisterName(name, element);
+    }
+    
+    // 递归注册子元素
+    for (auto* child : element->GetLogicalChildren()) {
+        if (auto* uiChild = dynamic_cast<UIElement*>(child)) {
+            RegisterNamesToScope(uiChild, scope);
+        }
+    }
 }
 
 } // namespace fk::ui

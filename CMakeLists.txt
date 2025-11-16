@@ -169,6 +169,7 @@ add_library(fk STATIC
     src/ui/Visual.cpp
     src/ui/VisualCollection.cpp
     src/ui/UIElement.cpp
+    src/ui/NameScope.cpp
     src/ui/FrameworkElement.cpp
     src/ui/Control.cpp
     src/ui/ContentControl.cpp
@@ -348,6 +349,30 @@ message(STATUS "  Example: cd samples/hello_fk_ui && mkdir build && cd build && 
 # Fluent API Demo
 add_executable(fluent_api_demo examples/fluent_api_demo.cpp)
 target_link_libraries(fluent_api_demo PRIVATE fk)
+
+# FindName Demo
+add_executable(findname_demo examples/findname_demo.cpp)
+target_link_libraries(findname_demo PRIVATE fk)
+
+# ElementName Binding Demo
+add_executable(elementname_binding_demo examples/elementname_binding_demo.cpp)
+target_link_libraries(elementname_binding_demo PRIVATE fk)
+
+# Duplicate Names Test
+add_executable(duplicate_names_test examples/duplicate_names_test.cpp)
+target_link_libraries(duplicate_names_test PRIVATE fk)
+
+# Name Scope Demo
+add_executable(name_scope_demo examples/name_scope_demo.cpp)
+target_link_libraries(name_scope_demo PRIVATE fk)
+
+# ElementName Scope Demo
+add_executable(elementname_scope_demo examples/elementname_scope_demo.cpp)
+target_link_libraries(elementname_scope_demo PRIVATE fk)
+
+# NameScope Performance Demo (混合优化方案)
+add_executable(namescope_performance_demo examples/namescope_performance_demo.cpp)
+target_link_libraries(namescope_performance_demo PRIVATE fk)
 
 # Template Binding Test
 add_executable(template_binding_test examples/template_binding_test.cpp)
