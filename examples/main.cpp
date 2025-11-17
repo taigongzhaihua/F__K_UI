@@ -25,6 +25,7 @@ int main(int argc, char **argv)
                                ->Foreground(fk::ui::Brushes::DarkGray())
                                ->Margin(fk::Thickness(20)),
                            (new fk::ui::Button())
+                               ->Name("myButton")
                                ->Background(fk::ui::Brushes::Blue())
                                ->Content((new fk::ui::TextBlock())
                                              ->Text("Click Me")
