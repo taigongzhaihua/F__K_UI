@@ -15,7 +15,7 @@ namespace fk::binding {
 
 class BindingExpression : public std::enable_shared_from_this<BindingExpression> {
 public:
-    BindingExpression(Binding definition, DependencyObject* target, const DependencyProperty& property);
+    BindingExpression(const Binding& definition, DependencyObject* target, const DependencyProperty& property);
 
     void Activate();
     void Detach();
@@ -61,6 +61,9 @@ private:
     DependencyObject* target_{nullptr};
     const DependencyProperty* property_{nullptr};
     bool isActive_{false};
+    // TemplateBinding 特殊支持（因为对象切片，需要在构造时保存）
+    bool isTemplateBinding_{false};
+    const DependencyProperty* templateBindingSourceProperty_{nullptr};
     bool isUpdatingTarget_{false};
     bool isUpdatingSource_{false};
     BindingMode effectiveMode_{BindingMode::OneWay};

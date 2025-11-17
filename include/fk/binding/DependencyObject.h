@@ -43,7 +43,7 @@ public:
     void ClearValue(const DependencyProperty& property);
     ValueSource GetValueSource(const DependencyProperty& property) const;
 
-    void SetBinding(const DependencyProperty& property, Binding binding);
+    void SetBinding(const DependencyProperty& property, const Binding& binding);
     void SetBinding(const DependencyProperty& property, class MultiBinding binding);
     void ClearBinding(const DependencyProperty& property);
     std::shared_ptr<BindingExpression> GetBinding(const DependencyProperty& property) const;

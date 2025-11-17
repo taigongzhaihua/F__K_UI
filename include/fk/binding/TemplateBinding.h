@@ -36,7 +36,8 @@ public:
      * @param sourceProperty 要绑定的 TemplatedParent 属性
      */
     explicit TemplateBinding(const DependencyProperty& sourceProperty)
-        : Binding() 
+        : Binding()
+        , sourceProperty_(&sourceProperty)
     {
         // 使用 Binding 的链式 API
         Path(sourceProperty.Name());
@@ -52,6 +53,21 @@ public:
      * @brief 标记这是一个 TemplateBinding
      */
     [[nodiscard]] bool IsTemplateBinding() const noexcept override { return true; }
+    
+    /**
+     * @brief 获取源属性（TemplatedParent 的属性）
+     */
+    [[nodiscard]] const DependencyProperty* GetTemplateBindingSourceProperty() const noexcept override { return sourceProperty_; }
+    
+    /**
+     * @brief 克隆 TemplateBinding 对象
+     */
+    [[nodiscard]] std::unique_ptr<Binding> Clone() const override { 
+        return std::make_unique<TemplateBinding>(*sourceProperty_); 
+    }
+
+private:
+    const DependencyProperty* sourceProperty_{nullptr};
 };
 
 } // namespace fk::binding
