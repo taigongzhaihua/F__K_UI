@@ -111,6 +111,25 @@ public:
     
     const std::any& DataContext() const { return DependencyObject::GetDataContext(); }
 
+    // ========== 元素标识 ==========
+    
+    /**
+     * @brief 流式API：设置元素名称并返回派生类指针
+     * 
+     * @param name 元素名称
+     * @return 派生类指针，用于链式调用
+     * 
+     * 示例：
+     * @code
+     * auto* button = new Button();
+     * button->Name("myButton")->Content("Click Me")->Width(100);
+     * @endcode
+     */
+    Derived* Name(const std::string& name) { 
+        UIElement::SetName(name); 
+        return static_cast<Derived*>(this); 
+    }
+
     // ========== 尺寸约束 ==========
     
     // 使用 PropertyMacros 简化属性声明（从 60 行减少到 6 行）

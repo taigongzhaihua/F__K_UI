@@ -147,23 +147,6 @@ public:
     void SetName(const std::string& name);
     
     /**
-     * @brief 流式API：设置元素名称并返回this指针
-     * 
-     * @param name 元素名称
-     * @return 当前元素指针，用于链式调用
-     * 
-     * 示例：
-     * @code
-     * auto* button = new Button();
-     * button->Name("myButton")->Content("Click Me");
-     * @endcode
-     */
-    UIElement* Name(const std::string& name) { 
-        SetName(name); 
-        return this; 
-    }
-    
-    /**
      * @brief 在当前元素的逻辑树中查找指定名称的元素
      * 
      * @param name 要查找的元素名称
