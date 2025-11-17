@@ -5,6 +5,7 @@
 #include "fk/ui/CornerRadius.h"
 #include "fk/ui/PropertyMacros.h"
 #include "fk/binding/DependencyProperty.h"
+#include "fk/core/Event.h"
 
 namespace fk::ui {
 
@@ -120,6 +121,18 @@ protected:
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
     void OnRender(render::RenderContext& context) override;
+    
+    void OnPropertyChanged(const binding::DependencyProperty& property,
+                          const std::any& oldValue,
+                          const std::any& newValue,
+                          binding::ValueSource oldSource,
+                          binding::ValueSource newSource) override;
+
+private:
+    void ObserveBrush(Brush* brush, core::Event<const binding::DependencyProperty&, const std::any&, const std::any&, binding::ValueSource, binding::ValueSource>::Connection& connection);
+    
+    core::Event<const binding::DependencyProperty&, const std::any&, const std::any&, binding::ValueSource, binding::ValueSource>::Connection backgroundConnection_;
+    core::Event<const binding::DependencyProperty&, const std::any&, const std::any&, binding::ValueSource, binding::ValueSource>::Connection borderBrushConnection_;
 };
 
 } // namespace fk::ui

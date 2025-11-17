@@ -1,6 +1,7 @@
 #include "fk/ui/Border.h"
 #include "fk/ui/Brush.h"
 #include "fk/render/RenderContext.h"
+#include <iostream>
 
 namespace fk::ui {
 
@@ -178,6 +179,44 @@ void Border::OnRender(render::RenderContext& context) {
     
     // 绘制矩形（带背景、边框和圆角）
     context.DrawRectangle(rect, fillColor, strokeColor, strokeWidth, radius);
+}
+
+void Border::OnPropertyChanged(const binding::DependencyProperty& property,
+                               const std::any& oldValue,
+                               const std::any& newValue,
+                               binding::ValueSource oldSource,
+                               binding::ValueSource newSource) {
+    FrameworkElement<Border>::OnPropertyChanged(property, oldValue, newValue, oldSource, newSource);
+    
+    // 当 Background 或 BorderBrush 改变时，监听新画刷的属性变化
+    if (&property == &BackgroundProperty()) {
+        Brush* newBrush = nullptr;
+        if (newValue.has_value() && newValue.type() == typeid(Brush*)) {
+            newBrush = std::any_cast<Brush*>(newValue);
+        }
+        ObserveBrush(newBrush, backgroundConnection_);
+    } else if (&property == &BorderBrushProperty()) {
+        Brush* newBrush = nullptr;
+        if (newValue.has_value() && newValue.type() == typeid(Brush*)) {
+            newBrush = std::any_cast<Brush*>(newValue);
+        }
+        ObserveBrush(newBrush, borderBrushConnection_);
+    }
+}
+
+void Border::ObserveBrush(Brush* brush, core::Event<const binding::DependencyProperty&, const std::any&, const std::any&, binding::ValueSource, binding::ValueSource>::Connection& connection) {
+    // 断开旧连接
+    if (connection.IsConnected()) {
+        connection.Disconnect();
+    }
+    
+    // 监听新画刷的属性变化
+    if (brush) {
+        connection = brush->PropertyChanged.Connect([this](const binding::DependencyProperty&, const std::any&, const std::any&, binding::ValueSource, binding::ValueSource) {
+            // 画刷属性变化时，触发重绘
+            this->InvalidateVisual();
+        });
+    }
 }
 
 } // namespace fk::ui

@@ -30,12 +30,31 @@ const binding::DependencyProperty& SolidColorBrush::ColorProperty() {
 // ========== SolidColorBrush 实现 ==========
 
 Color SolidColorBrush::GetColor() const {
+    // 优先从依赖属性读取（确保动画能正确更新颜色）
+    // 如果依赖属性未设置，则使用成员变量
+    try {
+        auto value = GetValue(ColorProperty());
+        if (value.has_value()) {
+            auto color = std::any_cast<Color>(value);
+            // 检查是否是默认值（黑色），如果是且成员变量不是黑色，则使用成员变量
+            if (color == Color::Black() && color_ != Color::Black()) {
+                return color_;
+            }
+            return color;
+        }
+    } catch (...) {
+        // Fallback to member variable
+    }
     return color_;
 }
 
 void SolidColorBrush::SetColor(Color value) {
+    auto oldColor = color_;
     color_ = value;
     SetValue(ColorProperty(), std::any(value));
+    
+    // 触发属性变化事件，让使用此画刷的UI元素知道需要重绘
+    // 注意：SetValue 内部会触发 PropertyChanged 事件
 }
 
 void SolidColorBrush::Apply(RenderContext* context) {

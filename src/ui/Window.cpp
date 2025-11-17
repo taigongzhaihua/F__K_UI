@@ -399,6 +399,7 @@ void Window::Show() {
     }
     
     isVisible_ = true;
+    SetRenderSize(Size(GetWidth(), GetHeight()));
     
 #ifdef FK_HAS_GLFW
     if (nativeHandle_) {
@@ -710,20 +711,25 @@ void Window::OnWidthChanged(
     const std::any& newValue
 ) {
     auto* window = dynamic_cast<Window*>(&d);
-    if (!window || !window->nativeHandle_) {
+    if (!window) {
         return;
     }
     
     try {
         float width = std::any_cast<float>(newValue);
         float height = window->GetHeight();
+        window->SetRenderSize(Size(width, height));
         
 #ifdef FK_HAS_GLFW
-        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
-        glfwSetWindowSize(glfwWindow, static_cast<int>(width), static_cast<int>(height));
+        if (window->nativeHandle_) {
+            GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
+            glfwSetWindowSize(glfwWindow, static_cast<int>(width), static_cast<int>(height));
+        }
 #else
-        SimulatedWindow* simWindow = static_cast<SimulatedWindow*>(window->nativeHandle_);
-        simWindow->width = static_cast<int>(width);
+        if (window->nativeHandle_) {
+            SimulatedWindow* simWindow = static_cast<SimulatedWindow*>(window->nativeHandle_);
+            simWindow->width = static_cast<int>(width);
+        }
 #endif
     } catch (const std::bad_any_cast&) {
         // 忽略类型转换错误
@@ -737,20 +743,25 @@ void Window::OnHeightChanged(
     const std::any& newValue
 ) {
     auto* window = dynamic_cast<Window*>(&d);
-    if (!window || !window->nativeHandle_) {
+    if (!window) {
         return;
     }
     
     try {
         float width = window->GetWidth();
         float height = std::any_cast<float>(newValue);
+        window->SetRenderSize(Size(width, height));
         
 #ifdef FK_HAS_GLFW
-        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
-        glfwSetWindowSize(glfwWindow, static_cast<int>(width), static_cast<int>(height));
+        if (window->nativeHandle_) {
+            GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
+            glfwSetWindowSize(glfwWindow, static_cast<int>(width), static_cast<int>(height));
+        }
 #else
-        SimulatedWindow* simWindow = static_cast<SimulatedWindow*>(window->nativeHandle_);
-        simWindow->height = static_cast<int>(height);
+        if (window->nativeHandle_) {
+            SimulatedWindow* simWindow = static_cast<SimulatedWindow*>(window->nativeHandle_);
+            simWindow->height = static_cast<int>(height);
+        }
 #endif
     } catch (const std::bad_any_cast&) {
         // 忽略类型转换错误

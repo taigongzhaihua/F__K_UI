@@ -31,9 +31,19 @@ set(GLFW_AVAILABLE FALSE)
 
 if(WIN32)
     # Windows 平台：使用第三方库（MinGW 预编译）
-    # 支持两种模式：DLL 或静态库
-    if(EXISTS "${THIRD_PARTY_DIR}/lib/glfw3dll.lib")
-        # 使用 DLL 版本
+    # 优先使用静态库，避免DLL依赖问题
+    if(EXISTS "${THIRD_PARTY_DIR}/lib/libglfw3.a")
+        # 使用静态库版本（MinGW）
+        add_library(glfw3 STATIC IMPORTED)
+        set_target_properties(glfw3 PROPERTIES
+            IMPORTED_LOCATION "${THIRD_PARTY_DIR}/lib/libglfw3.a"
+            INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
+        )
+        message(STATUS "Using Windows GLFW static library from third_party")
+        set(GLFW_AVAILABLE TRUE)
+        set(GLFW_IS_DLL FALSE)
+    elseif(EXISTS "${THIRD_PARTY_DIR}/lib/glfw3dll.lib")
+        # 备用：使用 DLL 版本
         add_library(glfw3 SHARED IMPORTED)
         set_target_properties(glfw3 PROPERTIES
             IMPORTED_IMPLIB "${THIRD_PARTY_DIR}/lib/glfw3dll.lib"
@@ -43,15 +53,6 @@ if(WIN32)
         message(STATUS "Using Windows GLFW DLL from third_party")
         set(GLFW_AVAILABLE TRUE)
         set(GLFW_IS_DLL TRUE)
-    elseif(EXISTS "${THIRD_PARTY_DIR}/lib/libglfw3.a")
-        # 使用静态库版本（MinGW）
-        add_library(glfw3 STATIC IMPORTED)
-        set_target_properties(glfw3 PROPERTIES
-            IMPORTED_LOCATION "${THIRD_PARTY_DIR}/lib/libglfw3.a"
-            INTERFACE_INCLUDE_DIRECTORIES "${THIRD_PARTY_DIR}/include"
-        )
-        message(STATUS "Using Windows GLFW static library from third_party")
-        set(GLFW_AVAILABLE TRUE)
     else()
         message(FATAL_ERROR "GLFW library not found in third_party/lib/")
     endif()
@@ -150,6 +151,7 @@ add_library(fk STATIC
     # animation 模块 (Phase 4)
     src/animation/Timeline.cpp
     src/animation/AnimationClock.cpp
+    src/animation/AnimationManager.cpp
     src/animation/DoubleAnimation.cpp
     src/animation/ColorAnimation.cpp
     src/animation/PointAnimation.cpp
@@ -417,6 +419,10 @@ target_link_libraries(test_main_example_issue PRIVATE fk)
 # Button Background Test
 add_executable(test_button_background test_button_background.cpp)
 target_link_libraries(test_button_background PRIVATE fk)
+
+# Button Click Event Test
+add_executable(test_button_click_event test_button_click_event.cpp)
+target_link_libraries(test_button_click_event PRIVATE fk)
 
 # Example Main Simulation Test
 add_executable(test_example_main_simulation test_example_main_simulation.cpp)

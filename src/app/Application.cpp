@@ -1,4 +1,5 @@
 #include "fk/app/Application.h"
+#include "fk/animation/AnimationManager.h"
 
 #ifdef FK_HAS_GLFW
 #include <GLFW/glfw3.h>
@@ -56,7 +57,20 @@ void Application::Run(ui::WindowPtr mainWindow) {
     // 消息循环
     std::cout << "Starting message loop..." << std::endl;
     
+    auto lastFrameTime = std::chrono::steady_clock::now();
+    
     while (isRunning_) {
+#ifdef FK_HAS_GLFW
+        glfwPollEvents();
+#endif
+        // 计算帧时间
+        auto currentTime = std::chrono::steady_clock::now();
+        auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFrameTime);
+        lastFrameTime = currentTime;
+        
+        // 更新所有活动动画
+        animation::AnimationManager::Instance().Update(deltaTime);
+        
         // 处理所有窗口的消息
         if (!mainWindow_->ProcessEvents()) {
             // 主窗口关闭，退出应用

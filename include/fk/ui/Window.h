@@ -246,10 +246,10 @@ protected:
     virtual void OnClosed() {}
 
 private:
-    void* nativeHandle_{nullptr};  // 平台原生窗口句柄
+    void* nativeHandle_{nullptr};  // 原生窗口句柄
     bool isModal_{false};           // 是否为模态窗口
-    bool isClosing_{false};         // 正在关闭标志
-    bool isVisible_{false};         // 窗口可见性标志
+    volatile bool isClosing_{false};         // 正在关闭标志(volatile防止优化)
+    volatile bool isVisible_{false};         // 窗口可见性标志(volatile防止优化)
     
     // 渲染系统
     std::unique_ptr<render::GlRenderer> renderer_;     // OpenGL 渲染器

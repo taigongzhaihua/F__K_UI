@@ -4,6 +4,7 @@
 #include "fk/ui/UIElement.h"
 #include <unordered_map>
 #include <memory>
+#include <functional>
 
 namespace fk::ui {
 
@@ -177,6 +178,15 @@ private:
      */
     void DispatchPointerEnter(UIElement* target, const PlatformPointerEvent& event);
     void DispatchPointerLeave(UIElement* target, const PlatformPointerEvent& event);
+
+    void BubblePointerEvent(
+        UIElement* target,
+        const PlatformPointerEvent& event,
+        const std::function<void(UIElement*, PointerEventArgs&)>& dispatcher);
+    PointerEventArgs CreatePointerArgs(UIElement* source, const PlatformPointerEvent& event) const;
+    ModifierKeys BuildModifiers(const PlatformPointerEvent& event) const;
+    MouseButton ConvertButton(int button) const;
+    UIElement* GetBubbleParent(UIElement* current) const;
     
     /**
      * @brief 分发键盘按下事件
@@ -194,6 +204,7 @@ private:
     std::unordered_map<int, UIElement*> pointerCaptures_;     // 指针捕获映射
     UIElement* mouseOverElement_{nullptr};                     // 当前鼠标悬停元素
     Point lastPointerPosition_;                                // 最后指针位置
+    std::unordered_map<int, UIElement*> pointerDownTargets_;   // 记录按下的元素
 };
 
 } // namespace fk::ui

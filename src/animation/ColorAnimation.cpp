@@ -1,5 +1,6 @@
 #include "fk/animation/ColorAnimation.h"
 #include <algorithm>
+#include <iostream>
 
 namespace fk::animation {
 
@@ -17,6 +18,21 @@ void ColorAnimation::SetTarget(binding::DependencyObject* target,
     target_ = target;
     targetProperty_ = property;
     hasInitialValue_ = false;
+    
+    // 立即读取初始值,确保捕获当前实际颜色
+    if (target_ && targetProperty_) {
+        try {
+            auto value = target_->GetValue(*targetProperty_);
+            if (value.has_value()) {
+                initialValue_ = std::any_cast<ui::Color>(value);
+                hasInitialValue_ = true;
+            }
+        } catch (...) {
+            // 读取失败,使用默认白色
+            initialValue_ = ui::Color(1.0f, 1.0f, 1.0f, 1.0f);
+            hasInitialValue_ = true;
+        }
+    }
 }
 
 ui::Color ColorAnimation::Interpolate(const ui::Color& from, const ui::Color& to, double progress) const {

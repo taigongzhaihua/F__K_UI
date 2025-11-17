@@ -81,12 +81,18 @@ public:
     /**
      * @brief 构造函数
      */
-    SolidColorBrush() : color_(Color::Black()) {}
+    SolidColorBrush() : color_(Color::Black()) {
+        SetValue(ColorProperty(), std::any(color_));
+    }
     
-    explicit SolidColorBrush(Color color) : color_(color) {}
+    explicit SolidColorBrush(Color color) : color_(color) {
+        SetValue(ColorProperty(), std::any(color_));
+    }
     
     SolidColorBrush(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255)
-        : color_(Color::FromRGB(r, g, b, a)) {}
+        : color_(Color::FromRGB(r, g, b, a)) {
+        SetValue(ColorProperty(), std::any(color_));
+    }
 
     
     

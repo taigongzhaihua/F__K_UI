@@ -130,14 +130,25 @@ void InputManager::ProcessPointerEvent(const PlatformPointerEvent& event) {
             
         case PlatformPointerEvent::Type::Down:
             if (target) {
+                pointerDownTargets_[event.pointerId] = target;
                 DispatchPointerDown(target, event);
+            } else {
+                pointerDownTargets_.erase(event.pointerId);
             }
             break;
             
         case PlatformPointerEvent::Type::Up:
-            if (target) {
-                DispatchPointerUp(target, event);
+        {
+            UIElement* releaseTarget = target;
+            auto it = pointerDownTargets_.find(event.pointerId);
+            if (!releaseTarget && it != pointerDownTargets_.end()) {
+                releaseTarget = it->second;
             }
+            if (releaseTarget) {
+                DispatchPointerUp(releaseTarget, event);
+            }
+            pointerDownTargets_.erase(event.pointerId);
+        }
             break;
             
         case PlatformPointerEvent::Type::Enter:
@@ -159,38 +170,95 @@ void InputManager::ProcessPointerEvent(const PlatformPointerEvent& event) {
 }
 
 void InputManager::DispatchPointerDown(UIElement* target, const PlatformPointerEvent& event) {
-    if (!target) return;
-    
-    PointerEventArgs args(target, event.position, event.pointerId);
-    target->OnPointerPressed(args);
+    BubblePointerEvent(target, event, [](UIElement* element, PointerEventArgs& args) {
+        element->OnPointerPressed(args);
+    });
 }
 
 void InputManager::DispatchPointerUp(UIElement* target, const PlatformPointerEvent& event) {
-    if (!target) return;
-    
-    PointerEventArgs args(target, event.position, event.pointerId);
-    target->OnPointerReleased(args);
+    BubblePointerEvent(target, event, [](UIElement* element, PointerEventArgs& args) {
+        element->OnPointerReleased(args);
+    });
 }
 
 void InputManager::DispatchPointerMove(UIElement* target, const PlatformPointerEvent& event) {
-    if (!target) return;
-    
-    PointerEventArgs args(target, event.position, event.pointerId);
-    target->OnPointerMoved(args);
+    BubblePointerEvent(target, event, [](UIElement* element, PointerEventArgs& args) {
+        element->OnPointerMoved(args);
+    });
 }
 
 void InputManager::DispatchPointerEnter(UIElement* target, const PlatformPointerEvent& event) {
-    if (!target) return;
-    
-    PointerEventArgs args(target, event.position, event.pointerId);
-    target->OnPointerEntered(args);
+    BubblePointerEvent(target, event, [](UIElement* element, PointerEventArgs& args) {
+        element->OnPointerEntered(args);
+    });
 }
 
 void InputManager::DispatchPointerLeave(UIElement* target, const PlatformPointerEvent& event) {
-    if (!target) return;
-    
-    PointerEventArgs args(target, event.position, event.pointerId);
-    target->OnPointerExited(args);
+    BubblePointerEvent(target, event, [](UIElement* element, PointerEventArgs& args) {
+        element->OnPointerExited(args);
+    });
+}
+
+void InputManager::BubblePointerEvent(
+    UIElement* target,
+    const PlatformPointerEvent& event,
+    const std::function<void(UIElement*, PointerEventArgs&)>& dispatcher) {
+    if (!target || !dispatcher) {
+        return;
+    }
+    auto args = CreatePointerArgs(target, event);
+    UIElement* current = target;
+    while (current) {
+        args.source = current;
+        dispatcher(current, args);
+        if (args.handled) {
+            break;
+        }
+        current = GetBubbleParent(current);
+    }
+}
+
+PointerEventArgs InputManager::CreatePointerArgs(UIElement* source, const PlatformPointerEvent& event) const {
+    PointerEventArgs args(source, event.position, event.pointerId);
+    args.button = ConvertButton(event.button);
+    args.modifiers = BuildModifiers(event);
+    return args;
+}
+
+ModifierKeys InputManager::BuildModifiers(const PlatformPointerEvent& event) const {
+    ModifierKeys modifiers = ModifierKeys::None;
+    if (event.ctrlKey) {
+        modifiers = modifiers | ModifierKeys::Ctrl;
+    }
+    if (event.shiftKey) {
+        modifiers = modifiers | ModifierKeys::Shift;
+    }
+    if (event.altKey) {
+        modifiers = modifiers | ModifierKeys::Alt;
+    }
+    return modifiers;
+}
+
+MouseButton InputManager::ConvertButton(int button) const {
+    switch (button) {
+        case 0: return MouseButton::Left;
+        case 1: return MouseButton::Middle;
+        case 2: return MouseButton::Right;
+        default: return MouseButton::None;
+    }
+}
+
+UIElement* InputManager::GetBubbleParent(UIElement* current) const {
+    if (!current) {
+        return nullptr;
+    }
+    auto* visualParent = current->GetVisualParent();
+    if (visualParent) {
+        if (auto* uiParent = dynamic_cast<UIElement*>(visualParent)) {
+            return uiParent;
+        }
+    }
+    return current->GetTemplatedParent();
 }
 
 // ========== 鼠标悬停追踪 ==========

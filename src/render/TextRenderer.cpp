@@ -2,8 +2,6 @@
 
 #include <glad/glad.h>
 #include <iostream>
-#include <codecvt>
-#include <locale>
 
 namespace fk::render {
 
@@ -232,13 +230,44 @@ unsigned int TextRenderer::RenderTextToTexture(
 }
 
 std::u32string TextRenderer::Utf8ToUtf32(const std::string& utf8) {
-    try {
-        std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> converter;
-        return converter.from_bytes(utf8);
-    } catch (const std::exception& e) {
-        std::cerr << "ERROR::UTF8: Conversion failed: " << e.what() << std::endl;
-        return U"";
+    std::u32string result;
+    result.reserve(utf8.size()); // 预分配空间
+    
+    size_t i = 0;
+    while (i < utf8.size()) {
+        char32_t codepoint = 0;
+        unsigned char c = static_cast<unsigned char>(utf8[i]);
+        
+        if (c <= 0x7F) {
+            // 1字节字符 (ASCII)
+            codepoint = c;
+            i += 1;
+        } else if ((c & 0xE0) == 0xC0) {
+            // 2字节字符
+            if (i + 1 >= utf8.size()) break;
+            codepoint = ((c & 0x1F) << 6) | (utf8[i + 1] & 0x3F);
+            i += 2;
+        } else if ((c & 0xF0) == 0xE0) {
+            // 3字节字符
+            if (i + 2 >= utf8.size()) break;
+            codepoint = ((c & 0x0F) << 12) | ((utf8[i + 1] & 0x3F) << 6) | (utf8[i + 2] & 0x3F);
+            i += 3;
+        } else if ((c & 0xF8) == 0xF0) {
+            // 4字节字符
+            if (i + 3 >= utf8.size()) break;
+            codepoint = ((c & 0x07) << 18) | ((utf8[i + 1] & 0x3F) << 12) | 
+                       ((utf8[i + 2] & 0x3F) << 6) | (utf8[i + 3] & 0x3F);
+            i += 4;
+        } else {
+            // 无效的UTF-8序列，跳过
+            i += 1;
+            continue;
+        }
+        
+        result.push_back(codepoint);
     }
+    
+    return result;
 }
 
 const Glyph* TextRenderer::GetGlyph(char32_t c, int fontId) {

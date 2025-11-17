@@ -28,7 +28,7 @@ public:
     /**
      * @brief 设置目标控件类型
      */
-    void SetTargetType(const std::type_info& type);
+    ControlTemplate* SetTargetType(const std::type_info& type);
     
     /**
      * @brief 获取目标控件类型
@@ -38,12 +38,12 @@ public:
     /**
      * @brief 设置视觉树工厂函数
      */
-    void SetFactory(FactoryFunc factory);
+    ControlTemplate* SetFactory(FactoryFunc factory);
     
     /**
      * @brief 设置视觉树根节点（直接指定）
      */
-    void SetVisualTree(UIElement* root);
+    ControlTemplate* SetVisualTree(UIElement* root);
     
     /**
      * @brief 获取视觉树根节点（模板定义，非实例）

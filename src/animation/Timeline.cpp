@@ -1,5 +1,7 @@
 #include "fk/animation/Timeline.h"
+#include "fk/animation/AnimationManager.h"
 #include <algorithm>
+#include <iostream>
 
 namespace fk::animation {
 
@@ -123,6 +125,9 @@ void Timeline::Begin() {
     currentTime_ = std::chrono::milliseconds(0);
     totalElapsedTime_ = std::chrono::milliseconds(0);
     currentIteration_ = 0;
+    
+    // 注册到全局动画管理器
+    AnimationManager::Instance().RegisterAnimation(this);
 }
 
 void Timeline::Stop() {
@@ -130,10 +135,15 @@ void Timeline::Stop() {
     isPaused_ = false;
     currentTime_ = std::chrono::milliseconds(0);
     
+    // 从动画管理器取消注册
+    AnimationManager::Instance().UnregisterAnimation(this);
+    
     // 根据 FillBehavior 决定是否重置值
     if (GetFillBehavior() == FillBehavior::Stop) {
         UpdateCurrentValue(0.0);
     }
+    
+    Completed(this);
 }
 
 void Timeline::Pause() {

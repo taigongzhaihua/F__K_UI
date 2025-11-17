@@ -33,19 +33,22 @@ namespace {
     }
 }
 
-void ControlTemplate::SetTargetType(const std::type_info& type) {
+ControlTemplate* ControlTemplate::SetTargetType(const std::type_info& type) {
     CheckSealed();
     targetType_ = &type;
+    return this;
 }
 
-void ControlTemplate::SetFactory(FactoryFunc factory) {
+ControlTemplate* ControlTemplate::SetFactory(FactoryFunc factory) {
     CheckSealed();
     factory_ = std::move(factory);
+    return this;
 }
 
-void ControlTemplate::SetVisualTree(UIElement* root) {
+ControlTemplate* ControlTemplate::SetVisualTree(UIElement* root) {
     CheckSealed();
     visualTree_ = root;
+    return this;
 }
 
 UIElement* ControlTemplate::Instantiate(UIElement* templatedParent) {
