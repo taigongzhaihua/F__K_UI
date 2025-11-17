@@ -77,27 +77,14 @@ void Button::OnTemplateApplied() {
     ContentControl<Button>::OnTemplateApplied();
     
     // 手动同步 Background 属性到模板中的 Border
-    // 这是因为 TemplateBinding 还没有完全实现
+    // 虽然模板中使用了 TemplateBinding，但当前实现还需要手动触发同步
     SyncBackgroundToBorder();
     
     // 初始化视觉状态管理（需要在模板应用后执行）
     InitializeVisualStates();
 }
 
-void Button::SyncBackgroundToBorder() {
-    // 获取模板根（应该是 Border）
-    if (GetVisualChildrenCount() > 0) {
-        auto* firstChild = GetVisualChild(0);
-        auto* border = dynamic_cast<Border*>(firstChild);
-        if (border) {
-            // 将 Button 的 Background 同步到 Border
-            auto* bg = GetBackground();
-            if (bg) {
-                border->Background(bg);
-            }
-        }
-    }
-}
+
 
 void Button::OnPropertyChanged(const binding::DependencyProperty& property, 
                                const std::any& oldValue, 
@@ -107,6 +94,7 @@ void Button::OnPropertyChanged(const binding::DependencyProperty& property,
     ContentControl<Button>::OnPropertyChanged(property, oldValue, newValue, oldSource, newSource);
     
     // 当 Background 属性改变时，同步到模板中的 Border
+    // 虽然使用了 TemplateBinding，但当前实现需要手动触发更新
     if (property.Name() == "Background") {
         SyncBackgroundToBorder();
     }
@@ -151,6 +139,21 @@ void Button::OnPointerExited(PointerEventArgs& e) {
         isPressed_ = false;
     }
     UpdateVisualState(true);  // 使用视觉状态管理
+}
+
+void Button::SyncBackgroundToBorder() {
+    // 获取模板根（应该是 Border）
+    if (GetVisualChildrenCount() > 0) {
+        auto* firstChild = GetVisualChild(0);
+        auto* border = dynamic_cast<Border*>(firstChild);
+        if (border) {
+            // 将 Button 的 Background 同步到 Border
+            auto* bg = GetBackground();
+            if (bg) {
+                border->Background(bg);
+            }
+        }
+    }
 }
 
 // ========== 视觉状态管理实现 ==========

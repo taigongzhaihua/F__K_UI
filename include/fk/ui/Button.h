@@ -43,7 +43,8 @@ protected:
 private:
     bool isPressed_{false};
     
-    // 辅助方法：手动同步 Background 到模板中的 Border
+    // 辅助方法：同步 Background 到模板中的 Border
+    // 注意：虽然模板使用了 TemplateBinding，但当前实现还需要手动触发同步
     void SyncBackgroundToBorder();
     
     // ========== 视觉状态管理 ==========
