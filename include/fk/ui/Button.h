@@ -1,6 +1,12 @@
 #pragma once
 
 #include "fk/ui/ContentControl.h"
+#include <memory>
+
+// 前向声明
+namespace fk::animation {
+    class VisualState;
+}
 
 namespace fk::ui {
 
@@ -39,6 +45,20 @@ private:
     
     // 辅助方法：手动同步 Background 到模板中的 Border
     void SyncBackgroundToBorder();
+    
+    // ========== 视觉状态管理 ==========
+    
+    // 更新视觉状态（根据当前状态切换到相应的视觉状态）
+    void UpdateVisualState(bool useTransitions);
+    
+    // 初始化视觉状态
+    void InitializeVisualStates();
+    
+    // 创建各个状态的辅助方法
+    std::shared_ptr<animation::VisualState> CreateNormalState();
+    std::shared_ptr<animation::VisualState> CreateMouseOverState();
+    std::shared_ptr<animation::VisualState> CreatePressedState();
+    std::shared_ptr<animation::VisualState> CreateDisabledState();
 };
 
 } // namespace fk::ui

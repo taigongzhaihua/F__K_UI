@@ -5,6 +5,12 @@
 #include "fk/ui/Brush.h"
 #include "fk/binding/TemplateBinding.h"
 #include "fk/ui/Control.h"
+#include "fk/animation/VisualStateManager.h"
+#include "fk/animation/VisualState.h"
+#include "fk/animation/VisualStateGroup.h"
+#include "fk/animation/Storyboard.h"
+#include "fk/animation/ColorAnimation.h"
+#include "fk/animation/DoubleAnimation.h"
 
 namespace fk::ui {
 
@@ -62,6 +68,9 @@ Button::Button() : isPressed_(false) {
     if (!GetTemplate()) {
         SetTemplate(CreateDefaultButtonTemplate());
     }
+    
+    // 注意：视觉状态初始化在 OnTemplateApplied() 中进行
+    // 因为需要等待模板应用后才能访问 Border 等子元素
 }
 
 void Button::OnTemplateApplied() {
@@ -70,6 +79,9 @@ void Button::OnTemplateApplied() {
     // 手动同步 Background 属性到模板中的 Border
     // 这是因为 TemplateBinding 还没有完全实现
     SyncBackgroundToBorder();
+    
+    // 初始化视觉状态管理（需要在模板应用后执行）
+    InitializeVisualStates();
 }
 
 void Button::SyncBackgroundToBorder() {
@@ -98,6 +110,10 @@ void Button::OnPropertyChanged(const binding::DependencyProperty& property,
     if (property.Name() == "Background") {
         SyncBackgroundToBorder();
     }
+    // 当 IsEnabled 属性改变时，更新视觉状态
+    else if (property.Name() == "IsEnabled") {
+        UpdateVisualState(true);
+    }
 }
 
 void Button::OnPointerPressed(PointerEventArgs& e) {
@@ -105,7 +121,7 @@ void Button::OnPointerPressed(PointerEventArgs& e) {
     
     if (this->GetIsEnabled()) {
         isPressed_ = true;
-        this->InvalidateVisual();
+        UpdateVisualState(true);  // 使用视觉状态管理
         e.handled = true;
     }
 }
@@ -115,7 +131,7 @@ void Button::OnPointerReleased(PointerEventArgs& e) {
     
     if (isPressed_ && this->GetIsEnabled()) {
         isPressed_ = false;
-        this->InvalidateVisual();
+        UpdateVisualState(true);  // 使用视觉状态管理
         
         // 触发 Click 事件
         Click();  // 使用 operator() 触发事件
@@ -125,7 +141,7 @@ void Button::OnPointerReleased(PointerEventArgs& e) {
 
 void Button::OnPointerEntered(PointerEventArgs& e) {
     ContentControl<Button>::OnPointerEntered(e);
-    this->InvalidateVisual();
+    UpdateVisualState(true);  // 使用视觉状态管理
 }
 
 void Button::OnPointerExited(PointerEventArgs& e) {
@@ -133,8 +149,169 @@ void Button::OnPointerExited(PointerEventArgs& e) {
     
     if (isPressed_) {
         isPressed_ = false;
-        this->InvalidateVisual();
     }
+    UpdateVisualState(true);  // 使用视觉状态管理
+}
+
+// ========== 视觉状态管理实现 ==========
+
+void Button::InitializeVisualStates() {
+    // 创建 VisualStateManager
+    auto manager = std::make_shared<animation::VisualStateManager>();
+    animation::VisualStateManager::SetVisualStateManager(this, manager);
+    
+    // 创建 CommonStates 状态组
+    auto commonStates = std::make_shared<animation::VisualStateGroup>("CommonStates");
+    
+    // 添加所有状态
+    commonStates->AddState(CreateNormalState());
+    commonStates->AddState(CreateMouseOverState());
+    commonStates->AddState(CreatePressedState());
+    commonStates->AddState(CreateDisabledState());
+    
+    // 添加状态组到管理器
+    manager->AddStateGroup(commonStates);
+    
+    // 设置初始状态
+    UpdateVisualState(false);
+}
+
+void Button::UpdateVisualState(bool useTransitions) {
+    // 根据当前状态决定应该进入哪个视觉状态
+    if (!GetIsEnabled()) {
+        animation::VisualStateManager::GoToState(this, "Disabled", useTransitions);
+    } else if (isPressed_) {
+        animation::VisualStateManager::GoToState(this, "Pressed", useTransitions);
+    } else if (IsMouseOver()) {
+        animation::VisualStateManager::GoToState(this, "MouseOver", useTransitions);
+    } else {
+        animation::VisualStateManager::GoToState(this, "Normal", useTransitions);
+    }
+}
+
+std::shared_ptr<animation::VisualState> Button::CreateNormalState() {
+    auto state = std::make_shared<animation::VisualState>("Normal");
+    auto storyboard = std::make_shared<animation::Storyboard>();
+    
+    // 获取Border（模板根元素）
+    if (GetVisualChildrenCount() > 0) {
+        auto* border = dynamic_cast<Border*>(GetVisualChild(0));
+        if (border) {
+            // 背景色动画：恢复到默认颜色（浅灰色）
+            auto currentBg = border->GetBackground();
+            if (currentBg) {
+                auto* solidBrush = dynamic_cast<SolidColorBrush*>(currentBg);
+                if (solidBrush) {
+                    auto bgAnim = std::make_shared<animation::ColorAnimation>(
+                        solidBrush->GetColor(),
+                        Color::FromRGB(240, 240, 240, 255),  // 浅灰色
+                        animation::Duration(std::chrono::milliseconds(200))
+                    );
+                    bgAnim->SetTarget(border, &Border::BackgroundProperty());
+                    storyboard->AddChild(bgAnim);
+                }
+            }
+        }
+    }
+    
+    state->SetStoryboard(storyboard);
+    return state;
+}
+
+std::shared_ptr<animation::VisualState> Button::CreateMouseOverState() {
+    auto state = std::make_shared<animation::VisualState>("MouseOver");
+    auto storyboard = std::make_shared<animation::Storyboard>();
+    
+    // 获取Border（模板根元素）
+    if (GetVisualChildrenCount() > 0) {
+        auto* border = dynamic_cast<Border*>(GetVisualChild(0));
+        if (border) {
+            // 背景色动画：鼠标悬停时变成浅蓝色
+            auto currentBg = border->GetBackground();
+            if (currentBg) {
+                auto* solidBrush = dynamic_cast<SolidColorBrush*>(currentBg);
+                if (solidBrush) {
+                    auto bgAnim = std::make_shared<animation::ColorAnimation>(
+                        solidBrush->GetColor(),
+                        Color::FromRGB(229, 241, 251, 255),  // 浅蓝色
+                        animation::Duration(std::chrono::milliseconds(150))
+                    );
+                    bgAnim->SetTarget(border, &Border::BackgroundProperty());
+                    storyboard->AddChild(bgAnim);
+                }
+            }
+        }
+    }
+    
+    state->SetStoryboard(storyboard);
+    return state;
+}
+
+std::shared_ptr<animation::VisualState> Button::CreatePressedState() {
+    auto state = std::make_shared<animation::VisualState>("Pressed");
+    auto storyboard = std::make_shared<animation::Storyboard>();
+    
+    // 获取Border（模板根元素）
+    if (GetVisualChildrenCount() > 0) {
+        auto* border = dynamic_cast<Border*>(GetVisualChild(0));
+        if (border) {
+            // 背景色动画：按下时变成深蓝色
+            auto currentBg = border->GetBackground();
+            if (currentBg) {
+                auto* solidBrush = dynamic_cast<SolidColorBrush*>(currentBg);
+                if (solidBrush) {
+                    auto bgAnim = std::make_shared<animation::ColorAnimation>(
+                        solidBrush->GetColor(),
+                        Color::FromRGB(204, 228, 247, 255),  // 深蓝色
+                        animation::Duration(std::chrono::milliseconds(100))
+                    );
+                    bgAnim->SetTarget(border, &Border::BackgroundProperty());
+                    storyboard->AddChild(bgAnim);
+                }
+            }
+        }
+    }
+    
+    state->SetStoryboard(storyboard);
+    return state;
+}
+
+std::shared_ptr<animation::VisualState> Button::CreateDisabledState() {
+    auto state = std::make_shared<animation::VisualState>("Disabled");
+    auto storyboard = std::make_shared<animation::Storyboard>();
+    
+    // 获取Border（模板根元素）
+    if (GetVisualChildrenCount() > 0) {
+        auto* border = dynamic_cast<Border*>(GetVisualChild(0));
+        if (border) {
+            // 背景色动画：禁用时变成灰色
+            auto currentBg = border->GetBackground();
+            if (currentBg) {
+                auto* solidBrush = dynamic_cast<SolidColorBrush*>(currentBg);
+                if (solidBrush) {
+                    auto bgAnim = std::make_shared<animation::ColorAnimation>(
+                        solidBrush->GetColor(),
+                        Color::FromRGB(200, 200, 200, 255),  // 灰色
+                        animation::Duration(std::chrono::milliseconds(200))
+                    );
+                    bgAnim->SetTarget(border, &Border::BackgroundProperty());
+                    storyboard->AddChild(bgAnim);
+                }
+            }
+        }
+    }
+    
+    // 透明度动画：禁用时半透明
+    auto opacityAnim = std::make_shared<animation::DoubleAnimation>(
+        static_cast<double>(GetOpacity()),
+        0.6,
+        animation::Duration(std::chrono::milliseconds(200))
+    );
+    opacityAnim->SetTarget(this, &Button::OpacityProperty());
+    storyboard->AddChild(opacityAnim);
+    
+    state->SetStoryboard(storyboard);
+    return state;
 }
 
 } // namespace fk::ui
