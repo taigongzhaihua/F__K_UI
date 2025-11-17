@@ -4,6 +4,9 @@
 #include "fk/ui/Brush.h"
 #include "fk/ui/StackPanel.h"
 #include "fk/ui/Button.h"
+#include "fk/core/Logger.h"
+
+
 
 int main(int argc, char **argv)
 {
@@ -12,6 +15,7 @@ int main(int argc, char **argv)
     mainWindow->Title("F K UI Example")
         ->Width(800)
         ->Height(600)
+        ->Background(fk::ui::Brushes::LightGray())
         ->Content((new fk::ui::StackPanel())
                       ->Children(
                           {(new fk::ui::TextBlock())
@@ -31,6 +35,10 @@ int main(int argc, char **argv)
                                              ->Text("Click Me")
                                              ->FontSize(20)
                                              ->Foreground(fk::ui::Brushes::White()))}));
+    static_cast<fk::ui::Button*>(mainWindow->FindName("myButton"))->Click+=[]() {
+        fk::core::ConsoleLogger Logger;
+        Logger.Log(fk::core::Logger::Level::Info, "Button was clicked!");
+    };
     app.Run(mainWindow);
     return 0;
 }
