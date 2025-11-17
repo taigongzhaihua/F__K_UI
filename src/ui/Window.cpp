@@ -171,8 +171,9 @@ Window::Window() {
     renderer_ = std::make_unique<render::GlRenderer>();
 #endif
     
-    // 初始化输入管理器
+    // 初始化输入管理器并设置根节点为窗口本身
     inputManager_ = std::make_unique<InputManager>();
+    inputManager_->SetRoot(this);
     
     // 自动创建 NameScope（窗口级别的命名作用域）
     // 提供 O(1) 的名称查找性能
@@ -340,10 +341,9 @@ void Window::Show() {
             self->inputManager_->ProcessPointerEvent(event);
         });
         
-        // 设置 InputManager 的根节点为窗口的内容
-        if (auto* content = GetContent()) {
-            inputManager_->SetRoot(dynamic_cast<Visual*>(content));
-        }
+        // 设置 InputManager 的根节点为窗口本身
+        // Window 继承自 Visual，所以可以作为根节点
+        inputManager_->SetRoot(this);
         
         std::cout << "GLFW window created: " << GetTitle() 
                   << " (" << width << "x" << height << ")" << std::endl;
