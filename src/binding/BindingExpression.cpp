@@ -78,7 +78,8 @@ void BindingExpression::UpdateTarget() {
     std::any resolvedValue;
     bool resolved = false;
 
-    std::any* sourceRef = currentSource_.has_value() ? &currentSource_ : nullptr;
+    // 对于 TemplateBinding，总是重新解析源，因为 TemplatedParent 可能在设置绑定后才被设置
+    std::any* sourceRef = currentSource_.has_value() && !definition_.IsTemplateBinding() ? &currentSource_ : nullptr;
     std::any temporary;
     if (sourceRef == nullptr) {
         temporary = ResolveSourceRoot();

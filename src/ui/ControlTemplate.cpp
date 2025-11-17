@@ -67,7 +67,8 @@ UIElement* ControlTemplate::Instantiate(UIElement* templatedParent) {
     // 设置 TemplatedParent 关联
     SetTemplatedParentRecursive(root, templatedParent);
     
-    // TODO: 处理模板绑定（TemplateBinding）
+    // TemplateBinding 会在下次 UpdateTarget 时自动解析到正确的 TemplatedParent
+    // 不需要手动重新激活，因为 BindingExpression 对 TemplateBinding 会每次重新解析源
     
     return root;
 }

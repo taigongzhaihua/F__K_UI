@@ -1,4 +1,7 @@
 #include "fk/ui/Window.h"
+#include "fk/ui/Brush.h"
+#include "fk/ui/DrawCommand.h"
+#include "fk/ui/InputManager.h"
 #include "fk/render/GlRenderer.h"
 #include "fk/render/RenderList.h"
 #include "fk/render/RenderContext.h"
@@ -168,6 +171,9 @@ Window::Window() {
     renderer_ = std::make_unique<render::GlRenderer>();
 #endif
     
+    // 初始化输入管理器
+    inputManager_ = std::make_unique<InputManager>();
+    
     // 自动创建 NameScope（窗口级别的命名作用域）
     // 提供 O(1) 的名称查找性能
     CreateNameScope();
@@ -278,6 +284,66 @@ void Window::Show() {
         
         // 应用 Topmost 属性
         ApplyTopmostToNativeWindow();
+        
+        // 设置用户指针，以便在回调中访问 Window 实例
+        glfwSetWindowUserPointer(window, this);
+        
+        // 设置鼠标按钮回调
+        glfwSetMouseButtonCallback(window, [](GLFWwindow* win, int button, int action, int mods) {
+            auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+            if (!self || !self->inputManager_) return;
+            
+            double xpos, ypos;
+            glfwGetCursorPos(win, &xpos, &ypos);
+            
+            PlatformPointerEvent event;
+            event.position = Point(static_cast<float>(xpos), static_cast<float>(ypos));
+            event.button = button;
+            event.ctrlKey = (mods & GLFW_MOD_CONTROL) != 0;
+            event.shiftKey = (mods & GLFW_MOD_SHIFT) != 0;
+            event.altKey = (mods & GLFW_MOD_ALT) != 0;
+            
+            if (action == GLFW_PRESS) {
+                event.type = PlatformPointerEvent::Type::Down;
+            } else if (action == GLFW_RELEASE) {
+                event.type = PlatformPointerEvent::Type::Up;
+            }
+            
+            self->inputManager_->ProcessPointerEvent(event);
+        });
+        
+        // 设置鼠标移动回调
+        glfwSetCursorPosCallback(window, [](GLFWwindow* win, double xpos, double ypos) {
+            auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+            if (!self || !self->inputManager_) return;
+            
+            PlatformPointerEvent event;
+            event.type = PlatformPointerEvent::Type::Move;
+            event.position = Point(static_cast<float>(xpos), static_cast<float>(ypos));
+            
+            self->inputManager_->ProcessPointerEvent(event);
+        });
+        
+        // 设置滚轮回调
+        glfwSetScrollCallback(window, [](GLFWwindow* win, double xoffset, double yoffset) {
+            auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+            if (!self || !self->inputManager_) return;
+            
+            double xpos, ypos;
+            glfwGetCursorPos(win, &xpos, &ypos);
+            
+            PlatformPointerEvent event;
+            event.type = PlatformPointerEvent::Type::Wheel;
+            event.position = Point(static_cast<float>(xpos), static_cast<float>(ypos));
+            event.wheelDelta = static_cast<int>(yoffset * 120); // 标准滚轮增量
+            
+            self->inputManager_->ProcessPointerEvent(event);
+        });
+        
+        // 设置 InputManager 的根节点为窗口的内容
+        if (auto* content = GetContent()) {
+            inputManager_->SetRoot(dynamic_cast<Visual*>(content));
+        }
         
         std::cout << "GLFW window created: " << GetTitle() 
                   << " (" << width << "x" << height << ")" << std::endl;
@@ -503,6 +569,22 @@ void Window::RenderFrame() {
         render::FrameContext frameCtx;
         frameCtx.elapsedSeconds = 0.0;
         frameCtx.deltaSeconds = 0.016;
+        
+        // 从 Window 的 Background 属性读取清除颜色
+        auto* background = GetBackground();
+        if (background) {
+            // 尝试转换为 SolidColorBrush
+            if (auto* solidBrush = dynamic_cast<SolidColorBrush*>(background)) {
+                Color color = solidBrush->GetColor();
+                frameCtx.clearColor = {color.r, color.g, color.b, color.a};
+            } else {
+                // 其他类型的画刷，使用默认浅灰色背景
+                frameCtx.clearColor = {0.94f, 0.94f, 0.94f, 1.0f};
+            }
+        } else {
+            // 没有设置背景，使用默认浅灰色背景
+            frameCtx.clearColor = {0.94f, 0.94f, 0.94f, 1.0f};
+        }
         
         renderer_->BeginFrame(frameCtx);
         renderer_->Draw(*renderList_);
