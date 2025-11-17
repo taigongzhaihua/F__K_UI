@@ -255,6 +255,10 @@ private:
     std::unique_ptr<render::GlRenderer> renderer_;     // OpenGL 渲染器
     std::unique_ptr<render::RenderList> renderList_;   // 渲染命令列表
     
+    // 输入管理系统
+    std::unique_ptr<class InputManager> inputManager_; // 输入管理器
+    std::unique_ptr<class FocusManager> focusManager_; // 焦点管理器
+    
     // 视口大小缓存（用于优化，避免每帧都调用 Resize）
     int lastViewportWidth_{0};
     int lastViewportHeight_{0};

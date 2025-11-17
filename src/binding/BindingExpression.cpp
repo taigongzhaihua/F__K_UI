@@ -35,11 +35,13 @@ private:
 
 } // namespace
 
-BindingExpression::BindingExpression(Binding definition, DependencyObject* target, const DependencyProperty& property)
-    : definition_(std::move(definition))
+BindingExpression::BindingExpression(const Binding& definition, DependencyObject* target, const DependencyProperty& property)
+    : definition_(definition)
     , path_(definition_.GetPath())
     , target_(target)
-    , property_(&property) {
+    , property_(&property)
+    , isTemplateBinding_(definition.IsTemplateBinding())
+    , templateBindingSourceProperty_(definition.GetTemplateBindingSourceProperty()) {
     if (target_ == nullptr) {
         throw std::invalid_argument("BindingExpression requires a non-null target");
     }
@@ -78,18 +80,36 @@ void BindingExpression::UpdateTarget() {
     std::any resolvedValue;
     bool resolved = false;
 
-    std::any* sourceRef = currentSource_.has_value() ? &currentSource_ : nullptr;
-    std::any temporary;
-    if (sourceRef == nullptr) {
-        temporary = ResolveSourceRoot();
-        sourceRef = &temporary;
-    }
-
-    if (path_.IsEmpty()) {
-        resolvedValue = *sourceRef;
-        resolved = sourceRef->has_value();
+    // 对于 TemplateBinding，特殊处理：直接从 TemplatedParent 获取 DependencyProperty 的值
+    if (isTemplateBinding_) {
+        if (templateBindingSourceProperty_) {
+            if (target_) {
+                if (auto* uiElement = dynamic_cast<ui::UIElement*>(target_)) {
+                    auto* templatedParent = uiElement->GetTemplatedParent();
+                    if (templatedParent) {
+                        if (auto* parentDepObj = dynamic_cast<DependencyObject*>(templatedParent)) {
+                            resolvedValue = parentDepObj->GetValue(*templateBindingSourceProperty_);
+                            resolved = resolvedValue.has_value();
+                        }
+                    }
+                }
+            }
+        }
     } else {
-        resolved = path_.Resolve(*sourceRef, resolvedValue);
+        // 常规绑定处理
+        std::any* sourceRef = currentSource_.has_value() ? &currentSource_ : nullptr;
+        std::any temporary;
+        if (sourceRef == nullptr) {
+            temporary = ResolveSourceRoot();
+            sourceRef = &temporary;
+        }
+
+        if (path_.IsEmpty()) {
+            resolvedValue = *sourceRef;
+            resolved = sourceRef->has_value();
+        } else {
+            resolved = path_.Resolve(*sourceRef, resolvedValue);
+        }
     }
 
     if (!resolved) {
@@ -302,7 +322,7 @@ void BindingExpression::Unsubscribe() {
 
 std::any BindingExpression::ResolveSourceRoot() const {
     // 检测是否为 TemplateBinding
-    if (definition_.IsTemplateBinding()) {
+    if (isTemplateBinding_) {
         // TemplateBinding 应该绑定到 TemplatedParent
         if (target_) {
             // 尝试将 target 转换为 UIElement 以获取 TemplatedParent

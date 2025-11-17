@@ -102,6 +102,18 @@ public:
      * @return 如果是 TemplateBinding 返回 true，否则返回 false
      */
     [[nodiscard]] virtual bool IsTemplateBinding() const noexcept { return false; }
+    
+    /**
+     * @brief 获取 TemplateBinding 的源属性（仅用于 TemplateBinding）
+     * @return DependencyProperty 指针，如果不是 TemplateBinding 返回 nullptr
+     */
+    [[nodiscard]] virtual const DependencyProperty* GetTemplateBindingSourceProperty() const noexcept { return nullptr; }
+    
+    /**
+     * @brief 克隆绑定对象（保留派生类类型）
+     * @return 克隆的绑定对象指针
+     */
+    [[nodiscard]] virtual std::unique_ptr<Binding> Clone() const { return std::make_unique<Binding>(*this); }
 
     std::shared_ptr<BindingExpression> CreateExpression(DependencyObject* target, const DependencyProperty& targetProperty) const;
 

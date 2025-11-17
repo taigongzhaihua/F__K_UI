@@ -9,6 +9,7 @@ namespace fk::ui {
 
 // 前向声明
 class Visual;
+class FocusManager;
 
 /**
  * @brief 平台指针事件
@@ -128,6 +129,12 @@ public:
     void ProcessKeyboardEvent(const PlatformKeyEvent& event);
     
     /**
+     * @brief 设置焦点管理器
+     * @param focusManager 焦点管理器指针
+     */
+    void SetFocusManager(FocusManager* focusManager);
+    
+    /**
      * @brief 获取当前焦点元素（与 FocusManager 交互）
      */
     UIElement* GetFocusedElement() const;
@@ -183,6 +190,7 @@ private:
 
 private:
     Visual* root_{nullptr};                                    // 根视觉节点
+    FocusManager* focusManager_{nullptr};                      // 焦点管理器
     std::unordered_map<int, UIElement*> pointerCaptures_;     // 指针捕获映射
     UIElement* mouseOverElement_{nullptr};                     // 当前鼠标悬停元素
     Point lastPointerPosition_;                                // 最后指针位置

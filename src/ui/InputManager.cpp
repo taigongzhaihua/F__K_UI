@@ -1,6 +1,7 @@
 #include "fk/ui/InputManager.h"
 #include "fk/ui/Visual.h"
 #include "fk/ui/Transform.h"
+#include "fk/ui/FocusManager.h"
 
 namespace fk::ui {
 
@@ -62,14 +63,19 @@ UIElement* InputManager::HitTestRecursive(Visual* visual, const Point& localPoin
         UIElement* childElement = dynamic_cast<UIElement*>(child);
         if (!childElement) continue;
         
-        // 转换坐标到子元素局部空间，考虑变换矩阵
-        Point childLocalPoint = localPoint;
+        // 获取子元素的布局矩形（在父元素坐标系中的位置）
+        Rect childLayoutRect = childElement->GetLayoutRect();
+        
+        // 转换坐标到子元素局部空间
+        // 首先减去子元素的偏移量
+        Point childLocalPoint(localPoint.x - childLayoutRect.x, 
+                             localPoint.y - childLayoutRect.y);
         
         // 如果子元素有 RenderTransform，应用逆变换
         Transform* transform = childElement->GetRenderTransform();
         if (transform) {
             Matrix3x2 inverseMatrix = transform->GetInverseMatrix();
-            childLocalPoint = inverseMatrix.TransformPoint(localPoint);
+            childLocalPoint = inverseMatrix.TransformPoint(childLocalPoint);
         }
         
         UIElement* hitChild = HitTestRecursive(child, childLocalPoint);
@@ -251,9 +257,14 @@ void InputManager::DispatchKeyUp(UIElement* target, const PlatformKeyEvent& even
     target->OnKeyUp(args);
 }
 
+void InputManager::SetFocusManager(FocusManager* focusManager) {
+    focusManager_ = focusManager;
+}
+
 UIElement* InputManager::GetFocusedElement() const {
-    // TODO: 与 FocusManager 集成
-    // 目前返回 nullptr
+    if (focusManager_) {
+        return focusManager_->GetFocusedElement();
+    }
     return nullptr;
 }
 

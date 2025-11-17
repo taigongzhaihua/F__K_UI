@@ -48,7 +48,7 @@ ValueSource DependencyObject::GetValueSource(const DependencyProperty& property)
     return propertyStore_.GetValueSource(property);
 }
 
-void DependencyObject::SetBinding(const DependencyProperty& property, Binding binding) {
+void DependencyObject::SetBinding(const DependencyProperty& property, const Binding& binding) {
     auto expression = binding.CreateExpression(this, property);
     auto current = propertyStore_.GetBinding(property);
 
