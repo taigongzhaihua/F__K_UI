@@ -49,6 +49,12 @@ public:
 
     // ========== 依赖属性 ==========
     
+    /// Width 属性：窗口宽度（重写FrameworkElement的Width以添加回调）
+    static const binding::DependencyProperty& WidthProperty();
+    
+    /// Height 属性：窗口高度（重写FrameworkElement的Height以添加回调）
+    static const binding::DependencyProperty& HeightProperty();
+    
     /// Title 属性：窗口标题
     static const binding::DependencyProperty& TitleProperty();
     
@@ -252,6 +258,52 @@ private:
     // 视口大小缓存（用于优化，避免每帧都调用 Resize）
     int lastViewportWidth_{0};
     int lastViewportHeight_{0};
+    
+    // 属性变更回调（用于同步到原生窗口）
+    static void OnTitleChanged(
+        binding::DependencyObject& d,
+        const binding::DependencyProperty& prop,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+    
+    static void OnWidthChanged(
+        binding::DependencyObject& d,
+        const binding::DependencyProperty& prop,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+    
+    static void OnHeightChanged(
+        binding::DependencyObject& d,
+        const binding::DependencyProperty& prop,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+    
+    static void OnLeftChanged(
+        binding::DependencyObject& d,
+        const binding::DependencyProperty& prop,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+    
+    static void OnTopChanged(
+        binding::DependencyObject& d,
+        const binding::DependencyProperty& prop,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+    
+    static void OnTopmostChanged(
+        binding::DependencyObject& d,
+        const binding::DependencyProperty& prop,
+        const std::any& oldValue,
+        const std::any& newValue
+    );
+    
+    // 辅助方法：应用Topmost属性到原生窗口
+    void ApplyTopmostToNativeWindow();
 };
 
 // 窗口智能指针类型（用于 Application 管理）

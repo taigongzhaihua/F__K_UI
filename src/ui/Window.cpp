@@ -57,12 +57,41 @@ static bool InitializeGLFW() {
 
 // ========== 依赖属性注册 ==========
 
+const binding::DependencyProperty& Window::WidthProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Width",
+        typeid(float),
+        typeid(Window),
+        binding::PropertyMetadata{
+            std::any(800.0f),  // Window默认宽度
+            &Window::OnWidthChanged
+        }
+    );
+    return property;
+}
+
+const binding::DependencyProperty& Window::HeightProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "Height",
+        typeid(float),
+        typeid(Window),
+        binding::PropertyMetadata{
+            std::any(600.0f),  // Window默认高度
+            &Window::OnHeightChanged
+        }
+    );
+    return property;
+}
+
 const binding::DependencyProperty& Window::TitleProperty() {
     static auto& property = binding::DependencyProperty::Register(
         "Title",
         typeid(std::string),
         typeid(Window),
-        {std::string("")}
+        binding::PropertyMetadata{
+            std::any(std::string("")),
+            &Window::OnTitleChanged
+        }
     );
     return property;
 }
@@ -82,7 +111,10 @@ const binding::DependencyProperty& Window::LeftProperty() {
         "Left",
         typeid(float),
         typeid(Window),
-        {0.0f}
+        binding::PropertyMetadata{
+            std::any(0.0f),
+            &Window::OnLeftChanged
+        }
     );
     return property;
 }
@@ -92,7 +124,10 @@ const binding::DependencyProperty& Window::TopProperty() {
         "Top",
         typeid(float),
         typeid(Window),
-        {0.0f}
+        binding::PropertyMetadata{
+            std::any(0.0f),
+            &Window::OnTopChanged
+        }
     );
     return property;
 }
@@ -112,7 +147,10 @@ const binding::DependencyProperty& Window::TopmostProperty() {
         "Topmost",
         typeid(bool),
         typeid(Window),
-        {false}
+        binding::PropertyMetadata{
+            std::any(false),
+            &Window::OnTopmostChanged
+        }
     );
     return property;
 }
@@ -237,6 +275,9 @@ void Window::Show() {
         if (left != 0.0f || top != 0.0f) {
             glfwSetWindowPos(window, static_cast<int>(left), static_cast<int>(top));
         }
+        
+        // 应用 Topmost 属性
+        ApplyTopmostToNativeWindow();
         
         std::cout << "GLFW window created: " << GetTitle() 
                   << " (" << width << "x" << height << ")" << std::endl;
@@ -512,6 +553,170 @@ UIElement* Window::FindName(const std::string& name) {
     }
     
     return nullptr;
+}
+
+// ========== 属性变更回调实现 ==========
+
+void Window::OnTitleChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* window = dynamic_cast<Window*>(&d);
+    if (!window || !window->nativeHandle_) {
+        return;
+    }
+    
+    try {
+        std::string title = std::any_cast<std::string>(newValue);
+        
+#ifdef FK_HAS_GLFW
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
+        glfwSetWindowTitle(glfwWindow, title.c_str());
+#else
+        SimulatedWindow* simWindow = static_cast<SimulatedWindow*>(window->nativeHandle_);
+        simWindow->title = title;
+#endif
+    } catch (const std::bad_any_cast&) {
+        // 忽略类型转换错误
+    }
+}
+
+void Window::OnWidthChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* window = dynamic_cast<Window*>(&d);
+    if (!window || !window->nativeHandle_) {
+        return;
+    }
+    
+    try {
+        float width = std::any_cast<float>(newValue);
+        float height = window->GetHeight();
+        
+#ifdef FK_HAS_GLFW
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
+        glfwSetWindowSize(glfwWindow, static_cast<int>(width), static_cast<int>(height));
+#else
+        SimulatedWindow* simWindow = static_cast<SimulatedWindow*>(window->nativeHandle_);
+        simWindow->width = static_cast<int>(width);
+#endif
+    } catch (const std::bad_any_cast&) {
+        // 忽略类型转换错误
+    }
+}
+
+void Window::OnHeightChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* window = dynamic_cast<Window*>(&d);
+    if (!window || !window->nativeHandle_) {
+        return;
+    }
+    
+    try {
+        float width = window->GetWidth();
+        float height = std::any_cast<float>(newValue);
+        
+#ifdef FK_HAS_GLFW
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
+        glfwSetWindowSize(glfwWindow, static_cast<int>(width), static_cast<int>(height));
+#else
+        SimulatedWindow* simWindow = static_cast<SimulatedWindow*>(window->nativeHandle_);
+        simWindow->height = static_cast<int>(height);
+#endif
+    } catch (const std::bad_any_cast&) {
+        // 忽略类型转换错误
+    }
+}
+
+void Window::OnLeftChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* window = dynamic_cast<Window*>(&d);
+    if (!window || !window->nativeHandle_) {
+        return;
+    }
+    
+    try {
+        float left = std::any_cast<float>(newValue);
+        float top = window->GetTop();
+        
+#ifdef FK_HAS_GLFW
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
+        glfwSetWindowPos(glfwWindow, static_cast<int>(left), static_cast<int>(top));
+#endif
+        // 模拟窗口不支持位置设置
+    } catch (const std::bad_any_cast&) {
+        // 忽略类型转换错误
+    }
+}
+
+void Window::OnTopChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* window = dynamic_cast<Window*>(&d);
+    if (!window || !window->nativeHandle_) {
+        return;
+    }
+    
+    try {
+        float left = window->GetLeft();
+        float top = std::any_cast<float>(newValue);
+        
+#ifdef FK_HAS_GLFW
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
+        glfwSetWindowPos(glfwWindow, static_cast<int>(left), static_cast<int>(top));
+#endif
+        // 模拟窗口不支持位置设置
+    } catch (const std::bad_any_cast&) {
+        // 忽略类型转换错误
+    }
+}
+
+void Window::OnTopmostChanged(
+    binding::DependencyObject& d,
+    const binding::DependencyProperty& prop,
+    const std::any& oldValue,
+    const std::any& newValue
+) {
+    auto* window = dynamic_cast<Window*>(&d);
+    if (!window || !window->nativeHandle_) {
+        return;
+    }
+    
+    window->ApplyTopmostToNativeWindow();
+}
+
+void Window::ApplyTopmostToNativeWindow() {
+#ifdef FK_HAS_GLFW
+    if (!nativeHandle_) {
+        return;
+    }
+    
+    GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(nativeHandle_);
+    bool topmost = GetTopmost();
+    
+    // GLFW 3.2+ 支持 glfwSetWindowAttrib
+    // 设置窗口为置顶或取消置顶
+    #ifdef GLFW_FLOATING
+    glfwSetWindowAttrib(glfwWindow, GLFW_FLOATING, topmost ? GLFW_TRUE : GLFW_FALSE);
+    #endif
+#endif
+    // 模拟窗口不支持置顶属性
 }
 
 } // namespace fk::ui
