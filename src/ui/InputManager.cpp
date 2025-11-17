@@ -1,6 +1,7 @@
 #include "fk/ui/InputManager.h"
 #include "fk/ui/Visual.h"
 #include "fk/ui/Transform.h"
+#include "fk/ui/FocusManager.h"
 
 namespace fk::ui {
 
@@ -256,9 +257,14 @@ void InputManager::DispatchKeyUp(UIElement* target, const PlatformKeyEvent& even
     target->OnKeyUp(args);
 }
 
+void InputManager::SetFocusManager(FocusManager* focusManager) {
+    focusManager_ = focusManager;
+}
+
 UIElement* InputManager::GetFocusedElement() const {
-    // TODO: 与 FocusManager 集成
-    // 目前返回 nullptr
+    if (focusManager_) {
+        return focusManager_->GetFocusedElement();
+    }
     return nullptr;
 }
 

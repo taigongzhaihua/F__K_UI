@@ -2,6 +2,7 @@
 #include "fk/ui/Brush.h"
 #include "fk/ui/DrawCommand.h"
 #include "fk/ui/InputManager.h"
+#include "fk/ui/FocusManager.h"
 #include "fk/render/GlRenderer.h"
 #include "fk/render/RenderList.h"
 #include "fk/render/RenderContext.h"
@@ -171,9 +172,14 @@ Window::Window() {
     renderer_ = std::make_unique<render::GlRenderer>();
 #endif
     
+    // 初始化焦点管理器并设置根节点为窗口本身
+    focusManager_ = std::make_unique<FocusManager>();
+    focusManager_->SetRoot(this);
+    
     // 初始化输入管理器并设置根节点为窗口本身
     inputManager_ = std::make_unique<InputManager>();
     inputManager_->SetRoot(this);
+    inputManager_->SetFocusManager(focusManager_.get());
     
     // 自动创建 NameScope（窗口级别的命名作用域）
     // 提供 O(1) 的名称查找性能
@@ -341,9 +347,41 @@ void Window::Show() {
             self->inputManager_->ProcessPointerEvent(event);
         });
         
-        // 设置 InputManager 的根节点为窗口本身
-        // Window 继承自 Visual，所以可以作为根节点
-        inputManager_->SetRoot(this);
+        // 设置键盘回调
+        glfwSetKeyCallback(window, [](GLFWwindow* win, int key, int scancode, int action, int mods) {
+            auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+            if (!self || !self->inputManager_) return;
+            
+            PlatformKeyEvent event;
+            event.key = key;
+            event.scanCode = scancode;
+            event.isRepeat = (action == GLFW_REPEAT);
+            event.ctrlKey = (mods & GLFW_MOD_CONTROL) != 0;
+            event.shiftKey = (mods & GLFW_MOD_SHIFT) != 0;
+            event.altKey = (mods & GLFW_MOD_ALT) != 0;
+            
+            if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+                event.type = PlatformKeyEvent::Type::Down;
+            } else if (action == GLFW_RELEASE) {
+                event.type = PlatformKeyEvent::Type::Up;
+            }
+            
+            self->inputManager_->ProcessKeyboardEvent(event);
+        });
+        
+        // 设置字符输入回调
+        glfwSetCharCallback(window, [](GLFWwindow* win, unsigned int codepoint) {
+            auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+            if (!self || !self->inputManager_) return;
+            
+            PlatformKeyEvent event;
+            event.type = PlatformKeyEvent::Type::Char;
+            event.character = static_cast<char32_t>(codepoint);
+            
+            self->inputManager_->ProcessKeyboardEvent(event);
+        });
+        
+        // 注意：InputManager 和 FocusManager 的根节点已在构造函数中设置
         
         std::cout << "GLFW window created: " << GetTitle() 
                   << " (" << width << "x" << height << ")" << std::endl;
