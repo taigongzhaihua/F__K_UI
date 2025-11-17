@@ -360,11 +360,41 @@ void UIElement::CollectDrawCommands(render::RenderContext& context) {
     // 推入布局偏移
     context.PushTransform(layoutRect_.x, layoutRect_.y);
 
+    // 应用不透明度（Opacity属性）
+    float opacity = GetOpacity();
+    bool hasOpacity = (opacity < 1.0f);
+    if (hasOpacity) {
+        context.PushLayer(opacity);
+    }
+
+    // 应用裁剪区域（Clip属性）
+    bool hasClip = HasClip();
+    if (hasClip) {
+        context.PushClip(GetClip());
+    }
+
+    // TODO: 应用渲染变换（RenderTransform属性）
+    // Transform* renderTransform = GetRenderTransform();
+    // if (renderTransform) {
+    //     // 需要RenderContext支持任意变换矩阵
+    //     // context.PushTransform(renderTransform->GetMatrix());
+    // }
+
     // 绘制自身内容
     OnRender(context);
 
     // 收集子元素绘制命令
     Visual::CollectDrawCommands(context);
+
+    // 弹出裁剪区域
+    if (hasClip) {
+        context.PopClip();
+    }
+
+    // 弹出不透明度层
+    if (hasOpacity) {
+        context.PopLayer();
+    }
 
     // 弹出变换
     context.PopTransform();
