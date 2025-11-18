@@ -40,6 +40,9 @@ public:
     /// 鼠标按下时的背景画刷依赖属性
     static const binding::DependencyProperty& PressedBackgroundProperty();
     
+    /// 是否只使用主鼠标按钮(Left)触发 Click 的依赖属性访问器声明
+    static const binding::DependencyProperty& PrimaryClickOnlyProperty();
+    
     // ========== 属性访问器（使用宏生成） ==========
     
     /// 鼠标悬停背景属性（Get/Set/链式调用/绑定）
@@ -63,7 +66,8 @@ public:
     /// 初始化视觉状态（public 以便属性变化回调访问）
     /// 如果模板中定义了视觉状态，将使用模板中的状态；否则使用默认状态
     void InitializeVisualStates();
-
+    // 是否只使用主鼠标按钮(Left)触发 Click。默认 true。
+    FK_PROPERTY_SIMPLE_NO_ACTION(PrimaryClickOnly, bool, Button)
 protected:
     void OnPointerPressed(PointerEventArgs& e) override;
     void OnPointerReleased(PointerEventArgs& e) override;
@@ -78,6 +82,7 @@ protected:
 
 private:
     bool isPressed_{false};
+    MouseButton pressedButton_{MouseButton::None};
     
     // 辅助方法：同步 Background 到模板中的 Border
     // 注意：虽然模板使用了 TemplateBinding，但当前实现还需要手动触发同步

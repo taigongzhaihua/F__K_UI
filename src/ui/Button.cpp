@@ -57,6 +57,18 @@ namespace fk::ui
         return prop;
     }
 
+    const binding::DependencyProperty &Button::PrimaryClickOnlyProperty()
+    {
+        static const auto &prop = binding::DependencyProperty::Register(
+            "PrimaryClickOnly",
+            typeid(bool),
+            typeid(Button),
+            binding::PropertyMetadata{
+                .defaultValue = std::any(true)
+            });
+        return prop;
+    }
+
     // 创建 Button 的默认 ControlTemplate（使用链式API定义视觉状态）
     // 设计说明：
     // - 模板中定义状态结构和动画参数（duration等）
@@ -162,12 +174,7 @@ namespace fk::ui
 
         // 当 Background 属性改变时，同步到模板中的 Border
         // 虽然使用了 TemplateBinding，但当前实现需要手动触发更新
-        if (property.Name() == "Background")
-        {
-            SyncBackgroundToBorder();
-        }
-        // 当 IsEnabled 属性改变时，更新视觉状态
-        else if (property.Name() == "IsEnabled")
+if (property.Name() == "IsEnabled")
         {
             UpdateVisualState(true);
         }
@@ -177,26 +184,46 @@ namespace fk::ui
     {
         ContentControl<Button>::OnPointerPressed(e);
 
-        if (this->GetIsEnabled())
-        {
-            isPressed_ = true;
-            UpdateVisualState(true); // 使用视觉状态管理
-            e.handled = true;
+        if (!this->GetIsEnabled()) {
+            return;
         }
+
+        // 根据配置，决定是否只响应主鼠标按钮（Left）作为点击起始
+        if (GetPrimaryClickOnly() && !e.IsLeftButton()) {
+            return;
+        }
+
+        isPressed_ = true;
+        pressedButton_ = e.button;
+        UpdateVisualState(true); // 使用视觉状态管理
+        e.handled = true;
     }
 
     void Button::OnPointerReleased(PointerEventArgs &e)
     {
         ContentControl<Button>::OnPointerReleased(e);
 
-        if (isPressed_ && this->GetIsEnabled())
-        {
+        if (!this->GetIsEnabled()) {
+            // ensure we clear pressed state
             isPressed_ = false;
+            pressedButton_ = MouseButton::None;
+            return;
+        }
+
+        // 只有当释放的是与按下时相同的按钮，且满足主按钮配置时触发 Click
+        bool isPrimaryRelease = e.IsLeftButton();
+        if (isPressed_ && pressedButton_ == e.button && (!GetPrimaryClickOnly() || isPrimaryRelease)) {
+            isPressed_ = false;
+            pressedButton_ = MouseButton::None;
             UpdateVisualState(true); // 使用视觉状态管理
 
             // 触发 Click 事件
             Click(); // 使用 operator() 触发事件
             e.handled = true;
+        } else {
+            // 清理按下状态
+            isPressed_ = false;
+            pressedButton_ = MouseButton::None;
         }
     }
 
@@ -213,6 +240,7 @@ namespace fk::ui
         if (isPressed_)
         {
             isPressed_ = false;
+            pressedButton_ = MouseButton::None;
         }
         UpdateVisualState(true); // 使用视觉状态管理
     }

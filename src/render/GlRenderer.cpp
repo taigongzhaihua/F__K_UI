@@ -329,13 +329,13 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     // 绑定 VAO
     glBindVertexArray(vao_);
 
-    // 设置颜色 uniform
+    // 设置填充颜色 uniform
     int colorLoc = glGetUniformLocation(shaderProgram_, "uColor");
     glUniform4f(colorLoc, 
-        payload.color[0], 
-        payload.color[1], 
-        payload.color[2], 
-        payload.color[3]);
+        payload.fillColor[0], 
+        payload.fillColor[1], 
+        payload.fillColor[2], 
+        payload.fillColor[3]);
 
     // 设置不透明度（考虑图层栈）
     float effectiveOpacity = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
@@ -373,8 +373,54 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
-    // 绘制
+    // 绘制填充矩形
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // 如果有描边，则绘制边框轮廓（简单实现：矩形轮廓，不支持圆角描边）
+    if (payload.strokeThickness > 0.0f && payload.strokeColor[3] > 0.001f) {
+        // 使用固定颜色着色器 uniform
+        glUniform4f(colorLoc,
+            payload.strokeColor[0],
+            payload.strokeColor[1],
+            payload.strokeColor[2],
+            payload.strokeColor[3]);
+
+        // 设置不透明度
+        int opacityLoc2 = glGetUniformLocation(shaderProgram_, "uOpacity");
+        float effectiveOpacity2 = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
+        glUniform1f(opacityLoc2, effectiveOpacity2);
+
+        // 绘制线环作为描边（忽略圆角）
+        glLineWidth(std::max(1.0f, payload.strokeThickness));
+        float x = payload.rect.x;
+        float y = payload.rect.y;
+        float w = payload.rect.width;
+        float h = payload.rect.height;
+
+        float borderVertices[] = {
+            x,     y,
+            x + w, y,
+            x + w, y + h,
+            x,     y + h
+        };
+
+        // 使用临时 VAO/VBO 绘制线环（简化实现）
+        GLuint tmpVBO = 0, tmpVAO = 0;
+        glGenVertexArrays(1, &tmpVAO);
+        glGenBuffers(1, &tmpVBO);
+        glBindVertexArray(tmpVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, tmpVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(borderVertices), borderVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+
+        glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+        // 清理
+        glBindVertexArray(0);
+        glDeleteBuffers(1, &tmpVBO);
+        glDeleteVertexArrays(1, &tmpVAO);
+    }
 
     // 解绑
     glBindVertexArray(0);

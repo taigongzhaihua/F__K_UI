@@ -145,12 +145,13 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
         float borderThickness = button->GetBorderThickness();
         
         // 如果有边框,先绘制边框(作为底层)
-        if (borderThickness > 0.0f) {
+            if (borderThickness > 0.0f) {
             RectanglePayload borderPayload;
             borderPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height);
-            borderPayload.color = ColorUtils::ParseColor(button->GetBorderBrush());
-            borderPayload.color[3] *= opacity;
+            borderPayload.fillColor = ColorUtils::ParseColor(button->GetBorderBrush());
+            borderPayload.fillColor[3] *= opacity;
             borderPayload.cornerRadius = button->GetCornerRadius();
+            borderPayload.strokeThickness = 0.0f;
             
             scene.CommandBuffer().AddCommand(
                 RenderCommand(CommandType::DrawRectangle, borderPayload)
@@ -167,9 +168,10 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
                 bounds.width - 2 * borderThickness,
                 bounds.height - 2 * borderThickness
             );
-            bgPayload.color = ColorUtils::ParseColor(button->GetActualBackground());
-            bgPayload.color[3] *= opacity;
+            bgPayload.fillColor = ColorUtils::ParseColor(button->GetActualBackground());
+            bgPayload.fillColor[3] *= opacity;
             bgPayload.cornerRadius = std::max(0.0f, button->GetCornerRadius() - borderThickness);
+            bgPayload.strokeThickness = 0.0f;
             
             scene.CommandBuffer().AddCommand(
                 RenderCommand(CommandType::DrawRectangle, bgPayload)
@@ -178,9 +180,10 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
             // 无边框:绘制完整背景
             RectanglePayload bgPayload;
             bgPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height);
-            bgPayload.color = ColorUtils::ParseColor(button->GetActualBackground());
-            bgPayload.color[3] *= opacity;
+            bgPayload.fillColor = ColorUtils::ParseColor(button->GetActualBackground());
+            bgPayload.fillColor[3] *= opacity;
             bgPayload.cornerRadius = button->GetCornerRadius();
+            bgPayload.strokeThickness = 0.0f;
             
             scene.CommandBuffer().AddCommand(
                 RenderCommand(CommandType::DrawRectangle, bgPayload)
@@ -199,9 +202,10 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
         if (borderThickness > 0.0f) {
             RectanglePayload borderPayload;
             borderPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height);
-            borderPayload.color = ColorUtils::ParseColor(textBox->GetBorderBrush());
-            borderPayload.color[3] *= opacity;
+            borderPayload.fillColor = ColorUtils::ParseColor(textBox->GetBorderBrush());
+            borderPayload.fillColor[3] *= opacity;
             borderPayload.cornerRadius = 2.0f;
+            borderPayload.strokeThickness = 0.0f;
             scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, borderPayload));
         }
 
@@ -215,9 +219,10 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
         } else {
             backgroundPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height);
         }
-        backgroundPayload.color = ColorUtils::ParseColor(textBox->GetBackground());
-        backgroundPayload.color[3] *= opacity;
+        backgroundPayload.fillColor = ColorUtils::ParseColor(textBox->GetBackground());
+        backgroundPayload.fillColor[3] *= opacity;
         backgroundPayload.cornerRadius = std::max(0.0f, 2.0f - borderThickness);
+        backgroundPayload.strokeThickness = 0.0f;
         scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, backgroundPayload));
 
         if (textBox->HasSelection()) {
@@ -226,9 +231,10 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
                 if (rect.width > 0.0f && rect.height > 0.0f) {
                     RectanglePayload selectionPayload;
                     selectionPayload.rect = rect;
-                    selectionPayload.color = ColorUtils::ParseColor("#3399FF55");
-                    selectionPayload.color[3] *= opacity;
+                    selectionPayload.fillColor = ColorUtils::ParseColor("#3399FF55");
+                    selectionPayload.fillColor[3] *= opacity;
                     selectionPayload.cornerRadius = 0.0f;
+                    selectionPayload.strokeThickness = 0.0f;
                     scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, selectionPayload));
                 }
             }
@@ -237,9 +243,10 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
         if (textBox->ShouldShowCaret()) {
             RectanglePayload caretPayload;
             caretPayload.rect = textBox->GetCaretRect();
-            caretPayload.color = ColorUtils::ParseColor(textBox->GetForeground());
-            caretPayload.color[3] *= opacity;
+            caretPayload.fillColor = ColorUtils::ParseColor(textBox->GetForeground());
+            caretPayload.fillColor[3] *= opacity;
             caretPayload.cornerRadius = 0.0f;
+            caretPayload.strokeThickness = 0.0f;
             scene.CommandBuffer().AddCommand(RenderCommand(CommandType::DrawRectangle, caretPayload));
         }
 
@@ -252,9 +259,10 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
         // 绘制 Track (轨道)
         RectanglePayload trackPayload;
         trackPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height);
-        trackPayload.color = ColorUtils::ParseColor(scrollBar->GetTrackBrush());
-        trackPayload.color[3] *= opacity;
+        trackPayload.fillColor = ColorUtils::ParseColor(scrollBar->GetTrackBrush());
+        trackPayload.fillColor[3] *= opacity;
         trackPayload.cornerRadius = 4.0f;  // 轻微圆角
+        trackPayload.strokeThickness = 0.0f;
         
         scene.CommandBuffer().AddCommand(
             RenderCommand(CommandType::DrawRectangle, trackPayload)
@@ -265,9 +273,10 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
         if (thumbBounds.width > 0 && thumbBounds.height > 0) {
             RectanglePayload thumbPayload;
             thumbPayload.rect = thumbBounds;  // 已经是相对于 ScrollBar 的坐标
-            thumbPayload.color = ColorUtils::ParseColor(scrollBar->GetThumbBrush());
-            thumbPayload.color[3] *= opacity;
+            thumbPayload.fillColor = ColorUtils::ParseColor(scrollBar->GetThumbBrush());
+            thumbPayload.fillColor[3] *= opacity;
             thumbPayload.cornerRadius = 4.0f;  // 圆角滑块
+            thumbPayload.strokeThickness = 0.0f;
             
             scene.CommandBuffer().AddCommand(
                 RenderCommand(CommandType::DrawRectangle, thumbPayload)
@@ -313,8 +322,9 @@ void RenderTreeBuilder::GenerateRenderContent(const ui::Visual& visual, RenderSc
     // 其他元素的默认渲染（占位实现）
     RectanglePayload rectPayload;
     rectPayload.rect = ui::Rect(0, 0, bounds.width, bounds.height); // 相对坐标
-    rectPayload.color = {0.8f, 0.8f, 0.8f, opacity}; // 灰色占位
+    rectPayload.fillColor = {0.8f, 0.8f, 0.8f, opacity}; // 灰色占位
     rectPayload.cornerRadius = 0.0f;
+    rectPayload.strokeThickness = 0.0f;
     
     scene.CommandBuffer().AddCommand(
         RenderCommand(CommandType::DrawRectangle, rectPayload)

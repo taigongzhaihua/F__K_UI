@@ -187,7 +187,9 @@ void RenderContext::DrawRectangle(
     // 生成绘制命令
     RectanglePayload payload;
     payload.rect = globalRect;
-    payload.color = finalFillColor;
+    payload.fillColor = finalFillColor;
+    payload.strokeColor = finalStrokeColor;
+    payload.strokeThickness = strokeWidth;
     payload.cornerRadius = cornerRadius;
     
     renderList_->AddCommand(RenderCommand(CommandType::DrawRectangle, payload));
