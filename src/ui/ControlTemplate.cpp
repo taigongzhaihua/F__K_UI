@@ -1,5 +1,6 @@
 #include "fk/ui/ControlTemplate.h"
 #include "fk/ui/UIElement.h"
+#include "fk/animation/VisualStateGroup.h"
 #include <stdexcept>
 
 namespace fk::ui {
@@ -103,6 +104,14 @@ UIElement* ControlTemplate::FindNameRecursive(const std::string& name, UIElement
     }
     
     return nullptr;
+}
+
+ControlTemplate* ControlTemplate::AddVisualStateGroup(std::shared_ptr<animation::VisualStateGroup> group) {
+    CheckSealed();
+    if (group) {
+        visualStateGroups_.push_back(group);
+    }
+    return this;
 }
 
 } // namespace fk::ui

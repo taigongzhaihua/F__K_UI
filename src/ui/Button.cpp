@@ -199,6 +199,14 @@ namespace fk::ui
 
     void Button::InitializeVisualStates()
     {
+        // 首先尝试从模板加载视觉状态
+        if (LoadVisualStatesFromTemplate()) {
+            // 如果模板中定义了视觉状态，使用模板中的定义
+            UpdateVisualState(false);
+            return;
+        }
+        
+        // 如果模板中没有定义视觉状态，使用默认状态
         // 创建 VisualStateManager
         auto manager = std::make_shared<animation::VisualStateManager>();
         animation::VisualStateManager::SetVisualStateManager(this, manager);
@@ -217,6 +225,33 @@ namespace fk::ui
 
         // 设置初始状态
         UpdateVisualState(false);
+    }
+    
+    bool Button::LoadVisualStatesFromTemplate()
+    {
+        // 获取当前模板
+        auto* tmpl = GetTemplate();
+        if (!tmpl) {
+            return false;
+        }
+        
+        // 检查模板是否定义了视觉状态
+        if (!tmpl->HasVisualStates()) {
+            return false;
+        }
+        
+        // 创建 VisualStateManager
+        auto manager = std::make_shared<animation::VisualStateManager>();
+        animation::VisualStateManager::SetVisualStateManager(this, manager);
+        
+        // 从模板复制所有视觉状态组
+        for (const auto& group : tmpl->GetVisualStateGroups()) {
+            if (group) {
+                manager->AddStateGroup(group);
+            }
+        }
+        
+        return true;
     }
 
     void Button::UpdateVisualState(bool useTransitions)
