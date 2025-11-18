@@ -38,7 +38,7 @@ void main() {
 }
 )";
 
-// 支持圆角的片段着色器
+// 支持圆角与描边的片段着色器（使用 SDF 以在单次绘制中支持平滑圆角与描边）
 const char* fragmentShaderSource = R"(
 #version 330 core
 in vec2 vTexCoord;
@@ -46,37 +46,64 @@ in vec2 vFragPos;
 
 out vec4 FragColor;
 
-uniform vec4 uColor;
+uniform vec4 uColor;       // 填充色
+uniform vec4 uStrokeColor; // 描边色
+uniform float uStrokeWidth; // 描边宽度（像素空间）
 uniform float uOpacity;
 uniform float uCornerRadius;
 uniform vec2 uRectSize;
 
-// 计算到圆角的距离
+// 计算到圆角的距离（signed distance to rounded box）
 float roundedBoxSDF(vec2 p, vec2 size, float radius) {
     vec2 d = abs(p) - size + radius;
     return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - radius;
 }
 
 void main() {
-    if (uCornerRadius > 0.0) {
-        // 计算片段在矩形中的位置（中心为原点）
-        vec2 center = uRectSize * 0.5;
-        vec2 localPos = vFragPos - center;
-        
-        // 计算到圆角边界的距离
-        float dist = roundedBoxSDF(localPos, uRectSize * 0.5, uCornerRadius);
-        
-        // 抗锯齿：使用平滑过渡
-        float alpha = 1.0 - smoothstep(-0.5, 0.5, dist);
-        
-        FragColor = vec4(uColor.rgb, uColor.a * uOpacity * alpha);
-        
-        // 如果完全透明则丢弃片段
-        if (FragColor.a < 0.01) discard;
-    } else {
-        FragColor = vec4(uColor.rgb, uColor.a * uOpacity);
-    }
+    // 计算片段在矩形中的局部坐标（中心为原点）
+    vec2 center = uRectSize * 0.5;
+    vec2 localPos = vFragPos - center;
+
+    // 计算 signed distance
+    float dist = roundedBoxSDF(localPos, uRectSize * 0.5, uCornerRadius);
+
+    // 抗锯齿半宽度
+    float aa = 0.5;
+
+    // 内部区域 alpha（填充）
+    float innerAlpha = 1.0 - smoothstep(-aa, aa, dist + uStrokeWidth);
+
+    // 外部 alpha（包含描边及填充）
+    float outerAlpha = 1.0 - smoothstep(-aa, aa, dist);
+
+    // 描边 mask = outerAlpha - innerAlpha
+    float strokeMask = max(0.0, outerAlpha - innerAlpha);
+    float fillMask = innerAlpha;
+
+    // 组合颜色：描边叠加在外层，填充在内层
+    vec3 color = uStrokeColor.rgb * strokeMask + uColor.rgb * fillMask;
+    float alpha = uStrokeColor.a * strokeMask + uColor.a * fillMask;
+
+    FragColor = vec4(color, alpha * uOpacity);
+
+    if (FragColor.a < 0.01) discard;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 )";
 
 // 文本渲染的顶点着色器
@@ -373,66 +400,21 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
-    // 如果有描边，则先绘制外部（描边）填充，再绘制内矩形填充（这样可以正确支持圆角描边）
-    if (payload.strokeThickness > 0.0f && payload.strokeColor[3] > 0.001f) {
-        // 绘制外矩形（描边色）
-        glUniform4f(colorLoc,
-            payload.strokeColor[0],
-            payload.strokeColor[1],
-            payload.strokeColor[2],
-            payload.strokeColor[3]);
-        // 不透明度
-        float effectiveOpacity2 = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
-        glUniform1f(opacityLoc, effectiveOpacity2);
-        // 圆角使用 payload.cornerRadius
-        glUniform1f(cornerRadiusLoc, payload.cornerRadius);
-        glUniform2f(rectSizeLoc, payload.rect.width, payload.rect.height);
-        // 绘制外部填充（作为描边）
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+    // 设置描边相关 uniform（片段着色器会根据 uStrokeWidth 计算描边与填充的混合）
+    int strokeColorLoc = glGetUniformLocation(shaderProgram_, "uStrokeColor");
+    glUniform4f(strokeColorLoc,
+        payload.strokeColor[0],
+        payload.strokeColor[1],
+        payload.strokeColor[2],
+        payload.strokeColor[3]);
 
-        // 计算内矩形（缩进 strokeThickness）
-        float inset = payload.strokeThickness;
-        float ix = payload.rect.x + inset;
-        float iy = payload.rect.y + inset;
-        float iw = std::max(0.0f, payload.rect.width - 2.0f * inset);
-        float ih = std::max(0.0f, payload.rect.height - 2.0f * inset);
+    int strokeWidthLoc = glGetUniformLocation(shaderProgram_, "uStrokeWidth");
+    glUniform1f(strokeWidthLoc, payload.strokeThickness);
 
-        // 内矩形顶点（用于绘制填充）
-        float innerVertices[] = {
-            // 第一个三角形
-            ix,      iy,       0.0f, 0.0f,
-            ix + iw, iy,       iw,   0.0f,
-            ix,      iy + ih,  0.0f, ih,
-            // 第二个三角形
-            ix + iw, iy,       iw,   0.0f,
-            ix + iw, iy + ih,  iw,   ih,
-            ix,      iy + ih,  0.0f, ih
-        };
+    // 保持其他 uniform（uColor, uOpacity, uCornerRadius, uRectSize）已经设置
 
-        // 更新顶点数据为内矩形
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(innerVertices), innerVertices);
-
-        // 设置填充色 uniform
-        glUniform4f(colorLoc,
-            payload.fillColor[0],
-            payload.fillColor[1],
-            payload.fillColor[2],
-            payload.fillColor[3]);
-
-        // 内圆角为外圆角减去描边宽度
-        float innerRadius = std::max(0.0f, payload.cornerRadius - payload.strokeThickness);
-        glUniform1f(cornerRadiusLoc, innerRadius);
-        glUniform2f(rectSizeLoc, iw, ih);
-
-        // 绘制内矩形填充（覆盖中间部分）
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        // 恢复顶点数据为原始 outer vertices，以免影响后续绘制
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-    } else {
-        // 无描边，直接绘制填充矩形
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-    }
+    // 单次绘制：片段着色器基于 SDF 计算填充与描边
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     // 解绑
     glBindVertexArray(0);
