@@ -45,7 +45,9 @@ struct TransformPayload {
  */
 struct RectanglePayload {
     ui::Rect rect;
-    std::array<float, 4> color; // RGBA
+    std::array<float, 4> fillColor; // RGBA 填充色
+    std::array<float, 4> strokeColor; // RGBA 描边色
+    float strokeThickness{0.0f};
     float cornerRadius{0.0f};
 };
 

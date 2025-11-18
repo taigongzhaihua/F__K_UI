@@ -176,12 +176,14 @@ bool RenderList::IsDuplicate(const RenderCommand& a, const RenderCommand& b) con
             auto* payloadA = std::get_if<RectanglePayload>(&a.payload);
             auto* payloadB = std::get_if<RectanglePayload>(&b.payload);
             if (payloadA && payloadB) {
-                // 矩形绘制命令：位置、大小、颜色都相同才算重复
+                // 矩形绘制命令：位置、大小、填充色、描边以及圆角相同才算重复
                 return payloadA->rect.x == payloadB->rect.x &&
                        payloadA->rect.y == payloadB->rect.y &&
                        payloadA->rect.width == payloadB->rect.width &&
                        payloadA->rect.height == payloadB->rect.height &&
-                       payloadA->color == payloadB->color &&
+                       payloadA->fillColor == payloadB->fillColor &&
+                       payloadA->strokeColor == payloadB->strokeColor &&
+                       payloadA->strokeThickness == payloadB->strokeThickness &&
                        payloadA->cornerRadius == payloadB->cornerRadius;
             }
             break;

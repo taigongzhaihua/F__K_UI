@@ -329,13 +329,13 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     // 绑定 VAO
     glBindVertexArray(vao_);
 
-    // 设置颜色 uniform
+    // 设置填充颜色 uniform
     int colorLoc = glGetUniformLocation(shaderProgram_, "uColor");
     glUniform4f(colorLoc, 
-        payload.color[0], 
-        payload.color[1], 
-        payload.color[2], 
-        payload.color[3]);
+        payload.fillColor[0], 
+        payload.fillColor[1], 
+        payload.fillColor[2], 
+        payload.fillColor[3]);
 
     // 设置不透明度（考虑图层栈）
     float effectiveOpacity = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
@@ -373,8 +373,66 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
-    // 绘制
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    // 如果有描边，则先绘制外部（描边）填充，再绘制内矩形填充（这样可以正确支持圆角描边）
+    if (payload.strokeThickness > 0.0f && payload.strokeColor[3] > 0.001f) {
+        // 绘制外矩形（描边色）
+        glUniform4f(colorLoc,
+            payload.strokeColor[0],
+            payload.strokeColor[1],
+            payload.strokeColor[2],
+            payload.strokeColor[3]);
+        // 不透明度
+        float effectiveOpacity2 = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
+        glUniform1f(opacityLoc, effectiveOpacity2);
+        // 圆角使用 payload.cornerRadius
+        glUniform1f(cornerRadiusLoc, payload.cornerRadius);
+        glUniform2f(rectSizeLoc, payload.rect.width, payload.rect.height);
+        // 绘制外部填充（作为描边）
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // 计算内矩形（缩进 strokeThickness）
+        float inset = payload.strokeThickness;
+        float ix = payload.rect.x + inset;
+        float iy = payload.rect.y + inset;
+        float iw = std::max(0.0f, payload.rect.width - 2.0f * inset);
+        float ih = std::max(0.0f, payload.rect.height - 2.0f * inset);
+
+        // 内矩形顶点（用于绘制填充）
+        float innerVertices[] = {
+            // 第一个三角形
+            ix,      iy,       0.0f, 0.0f,
+            ix + iw, iy,       iw,   0.0f,
+            ix,      iy + ih,  0.0f, ih,
+            // 第二个三角形
+            ix + iw, iy,       iw,   0.0f,
+            ix + iw, iy + ih,  iw,   ih,
+            ix,      iy + ih,  0.0f, ih
+        };
+
+        // 更新顶点数据为内矩形
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(innerVertices), innerVertices);
+
+        // 设置填充色 uniform
+        glUniform4f(colorLoc,
+            payload.fillColor[0],
+            payload.fillColor[1],
+            payload.fillColor[2],
+            payload.fillColor[3]);
+
+        // 内圆角为外圆角减去描边宽度
+        float innerRadius = std::max(0.0f, payload.cornerRadius - payload.strokeThickness);
+        glUniform1f(cornerRadiusLoc, innerRadius);
+        glUniform2f(rectSizeLoc, iw, ih);
+
+        // 绘制内矩形填充（覆盖中间部分）
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // 恢复顶点数据为原始 outer vertices，以免影响后续绘制
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+    } else {
+        // 无描边，直接绘制填充矩形
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
 
     // 解绑
     glBindVertexArray(0);
