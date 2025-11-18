@@ -58,7 +58,11 @@ namespace fk::ui
     }
 
     // 创建 Button 的默认 ControlTemplate（使用链式API定义视觉状态）
-    // 注意：模板中定义状态结构，具体颜色值在 ResolveVisualStateTargets() 中从属性获取
+    // 设计说明：
+    // - 模板中定义状态结构和动画参数（duration等）
+    // - To 值使用占位默认值，实际颜色在 ResolveVisualStateTargets() 中从 Button 属性动态获取
+    // - 这样既保持了模板的完整性，又实现了属性驱动的灵活性
+    // - 用户自定义模板时如果定义了不同的状态名称，ResolveVisualStateTargets 会跳过，不会干扰
     static ControlTemplate *CreateDefaultButtonTemplate()
     {
         auto *tmpl = new ControlTemplate();
@@ -81,25 +85,25 @@ namespace fk::ui
                 animation::VisualStateBuilder::CreateGroup("CommonStates")
                     ->State("Normal")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(240, 240, 240, 255))  // 默认值，会被属性覆盖
+                            ->To(Color::FromRGB(240, 240, 240, 255))  // 占位值，实际从 Background 属性获取
                             ->Duration(200)
                         ->EndAnimation()
                     ->EndState()
                     ->State("MouseOver")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(229, 241, 251, 255))  // 默认值，会被 MouseOverBackground 属性覆盖
+                            ->To(Color::FromRGB(229, 241, 251, 255))  // 占位值，实际从 MouseOverBackground 属性获取
                             ->Duration(150)
                         ->EndAnimation()
                     ->EndState()
                     ->State("Pressed")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(204, 228, 247, 255))  // 默认值，会被 PressedBackground 属性覆盖
+                            ->To(Color::FromRGB(204, 228, 247, 255))  // 占位值，实际从 PressedBackground 属性获取
                             ->Duration(100)
                         ->EndAnimation()
                     ->EndState()
                     ->State("Disabled")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(200, 200, 200, 255))
+                            ->To(Color::FromRGB(200, 200, 200, 255))  // 使用固定值
                             ->Duration(200)
                         ->EndAnimation()
                         ->DoubleAnimation("RootBorder", "Opacity")
@@ -417,8 +421,13 @@ namespace fk::ui
 
     void Button::ResolveVisualStateTargets()
     {
-        // 解析模板中定义的视觉状态的TargetName
-        // 同时从 Button 属性中获取自定义颜色值
+        // 解析模板中定义的视觉状态的TargetName，并将动画目标绑定到实际元素
+        // 
+        // 设计说明：
+        // 1. 模板中使用 TargetName（如"RootBorder"）引用元素，此方法将其解析为实际对象
+        // 2. 对于 MouseOver 和 Pressed 状态，用 Button 属性中的动态值替换模板中的占位值
+        // 3. 如果用户自定义模板使用不同的状态名称，这里的替换不会执行，保持模板定义的值
+        // 
         // 获取VisualStateManager
         auto* manager = animation::VisualStateManager::GetVisualStateManager(this);
         if (!manager) {
@@ -481,7 +490,8 @@ namespace fk::ui
                                 if (colorAnim) {
                                     colorAnim->SetTarget(brush, &SolidColorBrush::ColorProperty());
                                     
-                                    // 根据状态名称，从 Button 属性中获取颜色值
+                                    // 根据状态名称，从 Button 属性中动态获取颜色值
+                                    // 这样 To 值是动态的，而不是硬编码的
                                     if (stateName == "MouseOver") {
                                         auto* mouseOverBg = GetMouseOverBackground();
                                         auto* mouseOverBrush = dynamic_cast<SolidColorBrush*>(mouseOverBg);
@@ -495,7 +505,7 @@ namespace fk::ui
                                             colorAnim->SetTo(pressedBrush->GetColor());
                                         }
                                     }
-                                    // Normal 和 Disabled 状态使用模板中的默认值
+                                    // Normal 和 Disabled 状态保持模板中定义的值
                                 }
                             }
                         }
