@@ -61,7 +61,17 @@ public:
     VisualStateBuilder* EndState();
     
     /**
-     * @brief 为当前状态添加颜色动画
+     * @brief 为当前状态添加颜色动画（使用TargetName引用模板中的元素）
+     * 
+     * @param targetName 模板中元素的名称（通过x:Name或SetName设置）
+     * @param propertyPath 属性路径（如"Background.Color"）
+     * @return 动画构建器（支持配置动画参数）
+     */
+    VisualStateBuilder* ColorAnimation(const std::string& targetName, 
+                                       const std::string& propertyPath);
+    
+    /**
+     * @brief 为当前状态添加颜色动画（直接指定目标对象）
      * 
      * @param target 动画目标对象
      * @param property 目标属性
@@ -71,7 +81,17 @@ public:
                                        const binding::DependencyProperty* property);
     
     /**
-     * @brief 为当前状态添加双精度浮点数动画
+     * @brief 为当前状态添加双精度浮点数动画（使用TargetName）
+     * 
+     * @param targetName 模板中元素的名称
+     * @param propertyPath 属性路径（如"Opacity"）
+     * @return 动画构建器（支持配置动画参数）
+     */
+    VisualStateBuilder* DoubleAnimation(const std::string& targetName,
+                                        const std::string& propertyPath);
+    
+    /**
+     * @brief 为当前状态添加双精度浮点数动画（直接指定目标对象）
      * 
      * @param target 动画目标对象
      * @param property 目标属性
@@ -149,8 +169,11 @@ private:
     enum class AnimationType { None, Color, Double };
     AnimationType currentAnimationType_{AnimationType::None};
     
+    // 动画目标（两种方式：直接对象 或 TargetName）
     binding::DependencyObject* currentTarget_{nullptr};
     const binding::DependencyProperty* currentProperty_{nullptr};
+    std::string currentTargetName_;      // 使用TargetName方式时的目标名称
+    std::string currentPropertyPath_;    // 使用TargetName方式时的属性路径
     
     // 颜色动画参数
     std::optional<ui::Color> colorFrom_;

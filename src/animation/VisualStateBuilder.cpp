@@ -32,6 +32,29 @@ VisualStateBuilder* VisualStateBuilder::EndState() {
     return this;
 }
 
+VisualStateBuilder* VisualStateBuilder::ColorAnimation(const std::string& targetName,
+                                                       const std::string& propertyPath) {
+    // 如果有正在构建的动画，先完成它
+    FinalizeCurrentAnimation();
+    
+    if (!currentStoryboard_) {
+        throw std::runtime_error("必须先调用State()开始定义状态");
+    }
+    
+    currentAnimationType_ = AnimationType::Color;
+    currentTargetName_ = targetName;
+    currentPropertyPath_ = propertyPath;
+    currentTarget_ = nullptr;  // 使用TargetName方式
+    currentProperty_ = nullptr;
+    
+    // 重置动画参数
+    colorFrom_.reset();
+    colorTo_.reset();
+    durationMs_ = 200;
+    
+    return this;
+}
+
 VisualStateBuilder* VisualStateBuilder::ColorAnimation(binding::DependencyObject* target,
                                                        const binding::DependencyProperty* property) {
     // 如果有正在构建的动画，先完成它
@@ -44,10 +67,35 @@ VisualStateBuilder* VisualStateBuilder::ColorAnimation(binding::DependencyObject
     currentAnimationType_ = AnimationType::Color;
     currentTarget_ = target;
     currentProperty_ = property;
+    currentTargetName_.clear();  // 使用直接对象方式
+    currentPropertyPath_.clear();
     
     // 重置动画参数
     colorFrom_.reset();
     colorTo_.reset();
+    durationMs_ = 200;
+    
+    return this;
+}
+
+VisualStateBuilder* VisualStateBuilder::DoubleAnimation(const std::string& targetName,
+                                                        const std::string& propertyPath) {
+    // 如果有正在构建的动画，先完成它
+    FinalizeCurrentAnimation();
+    
+    if (!currentStoryboard_) {
+        throw std::runtime_error("必须先调用State()开始定义状态");
+    }
+    
+    currentAnimationType_ = AnimationType::Double;
+    currentTargetName_ = targetName;
+    currentPropertyPath_ = propertyPath;
+    currentTarget_ = nullptr;  // 使用TargetName方式
+    currentProperty_ = nullptr;
+    
+    // 重置动画参数
+    doubleFrom_.reset();
+    doubleTo_.reset();
     durationMs_ = 200;
     
     return this;
@@ -65,6 +113,8 @@ VisualStateBuilder* VisualStateBuilder::DoubleAnimation(binding::DependencyObjec
     currentAnimationType_ = AnimationType::Double;
     currentTarget_ = target;
     currentProperty_ = property;
+    currentTargetName_.clear();  // 使用直接对象方式
+    currentPropertyPath_.clear();
     
     // 重置动画参数
     doubleFrom_.reset();
