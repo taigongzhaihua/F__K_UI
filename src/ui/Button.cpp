@@ -84,7 +84,7 @@ namespace fk::ui
                                ->Name("RootBorder") // 链式设置名称
                                ->Background(binding::TemplateBinding(Control<Button>::BackgroundProperty()))
                                ->BorderBrush(new SolidColorBrush(Color::FromRGB(172, 172, 172, 255)))
-                               ->BorderThickness(1.2f)
+                               ->BorderThickness(0)
                                ->Padding(10.0f, 5.0f, 10.0f, 5.0f)
                                ->CornerRadius(6.0f)
                                ->Child(
