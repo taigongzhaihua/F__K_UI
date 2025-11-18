@@ -117,6 +117,24 @@ public:
     VisualStateBuilder* To(const ui::Color& color);
     
     /**
+     * @brief 设置当前动画的目标值（从属性绑定）
+     * 
+     * 类似 WPF 的 {TemplateBinding}，从 TemplatedParent 的属性动态获取颜色值
+     * 
+     * @param property TemplatedParent 的属性（如 Button::MouseOverBackgroundProperty()）
+     * @return this（支持链式调用）
+     * 
+     * 示例：
+     * ```cpp
+     * ->State("MouseOver")
+     *     ->ColorAnimation("RootBorder", "Background.Color")
+     *         ->ToBinding(Button::MouseOverBackgroundProperty())  // 从属性绑定
+     *         ->Duration(150)
+     * ```
+     */
+    VisualStateBuilder* ToBinding(const binding::DependencyProperty& property);
+    
+    /**
      * @brief 设置当前动画的起始值（双精度）
      * 
      * @param value 起始值
@@ -178,6 +196,7 @@ private:
     // 颜色动画参数
     std::optional<ui::Color> colorFrom_;
     std::optional<ui::Color> colorTo_;
+    const binding::DependencyProperty* colorToBinding_{nullptr};  // To 值绑定到属性
     
     // 双精度动画参数
     std::optional<double> doubleFrom_;

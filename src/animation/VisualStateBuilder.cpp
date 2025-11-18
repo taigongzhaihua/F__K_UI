@@ -50,6 +50,7 @@ VisualStateBuilder* VisualStateBuilder::ColorAnimation(const std::string& target
     // 重置动画参数
     colorFrom_.reset();
     colorTo_.reset();
+    colorToBinding_ = nullptr;
     durationMs_ = 200;
     
     return this;
@@ -73,6 +74,7 @@ VisualStateBuilder* VisualStateBuilder::ColorAnimation(binding::DependencyObject
     // 重置动画参数
     colorFrom_.reset();
     colorTo_.reset();
+    colorToBinding_ = nullptr;
     durationMs_ = 200;
     
     return this;
@@ -137,6 +139,16 @@ VisualStateBuilder* VisualStateBuilder::To(const ui::Color& color) {
         throw std::runtime_error("To(Color)只能用于ColorAnimation");
     }
     colorTo_ = color;
+    colorToBinding_ = nullptr;  // 清除绑定
+    return this;
+}
+
+VisualStateBuilder* VisualStateBuilder::ToBinding(const binding::DependencyProperty& property) {
+    if (currentAnimationType_ != AnimationType::Color) {
+        throw std::runtime_error("ToBinding()只能用于ColorAnimation");
+    }
+    colorToBinding_ = &property;
+    colorTo_.reset();  // 清除直接值
     return this;
 }
 
@@ -195,6 +207,11 @@ void VisualStateBuilder::FinalizeCurrentAnimation() {
         }
         if (colorTo_.has_value()) {
             anim->SetTo(colorTo_.value());
+        }
+        
+        // 设置 To 值绑定（如果使用了 ToBinding）
+        if (colorToBinding_) {
+            anim->SetToBinding(colorToBinding_);
         }
         
         anim->SetDuration(duration);

@@ -18,6 +18,11 @@ public:
     
     binding::DependencyObject* GetTarget() const { return target_; }
     const binding::DependencyProperty* GetTargetProperty() const { return targetProperty_; }
+    
+    // 设置 To 值绑定到属性（类似 TemplateBinding）
+    void SetToBinding(const DependencyProperty* sourceProperty) { toBindingProperty_ = sourceProperty; }
+    const DependencyProperty* GetToBinding() const { return toBindingProperty_; }
+    bool HasToBinding() const { return toBindingProperty_ != nullptr; }
 
 protected:
     // 实现插值
@@ -34,6 +39,9 @@ private:
     const binding::DependencyProperty* targetProperty_{nullptr};
     ui::Color initialValue_;
     bool hasInitialValue_{false};
+    
+    // To 值绑定（从 TemplatedParent 的属性获取）
+    const DependencyProperty* toBindingProperty_{nullptr};
 };
 
 } // namespace fk::animation

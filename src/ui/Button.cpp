@@ -60,9 +60,9 @@ namespace fk::ui
     // 创建 Button 的默认 ControlTemplate（使用链式API定义视觉状态）
     // 设计说明：
     // - 模板中定义状态结构和动画参数（duration等）
-    // - To 值使用占位默认值，实际颜色在 ResolveVisualStateTargets() 中从 Button 属性动态获取
-    // - 这样既保持了模板的完整性，又实现了属性驱动的灵活性
-    // - 用户自定义模板时如果定义了不同的状态名称，ResolveVisualStateTargets 会跳过，不会干扰
+    // - 使用 ToBinding() 将 To 值绑定到 Button 的属性（类似 WPF 的 TemplateBinding）
+    // - 运行时在 ResolveVisualStateTargets() 中自动从绑定的属性获取颜色值
+    // - 这是真正的属性绑定机制，不是事后替换
     static ControlTemplate *CreateDefaultButtonTemplate()
     {
         auto *tmpl = new ControlTemplate();
@@ -85,25 +85,25 @@ namespace fk::ui
                 animation::VisualStateBuilder::CreateGroup("CommonStates")
                     ->State("Normal")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(240, 240, 240, 255))  // 占位值，实际从 Background 属性获取
+                            ->To(Color::FromRGB(240, 240, 240, 255))  // 默认值
                             ->Duration(200)
                         ->EndAnimation()
                     ->EndState()
                     ->State("MouseOver")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(229, 241, 251, 255))  // 占位值，实际从 MouseOverBackground 属性获取
+                            ->ToBinding(Button::MouseOverBackgroundProperty())  // 绑定到属性！
                             ->Duration(150)
                         ->EndAnimation()
                     ->EndState()
                     ->State("Pressed")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(204, 228, 247, 255))  // 占位值，实际从 PressedBackground 属性获取
+                            ->ToBinding(Button::PressedBackgroundProperty())  // 绑定到属性！
                             ->Duration(100)
                         ->EndAnimation()
                     ->EndState()
                     ->State("Disabled")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(200, 200, 200, 255))  // 使用固定值
+                            ->To(Color::FromRGB(200, 200, 200, 255))  // 固定值
                             ->Duration(200)
                         ->EndAnimation()
                         ->DoubleAnimation("RootBorder", "Opacity")
@@ -421,12 +421,12 @@ namespace fk::ui
 
     void Button::ResolveVisualStateTargets()
     {
-        // 解析模板中定义的视觉状态的TargetName，并将动画目标绑定到实际元素
+        // 解析模板中定义的视觉状态的TargetName，并解析属性绑定
         // 
         // 设计说明：
-        // 1. 模板中使用 TargetName（如"RootBorder"）引用元素，此方法将其解析为实际对象
-        // 2. 对于 MouseOver 和 Pressed 状态，用 Button 属性中的动态值替换模板中的占位值
-        // 3. 如果用户自定义模板使用不同的状态名称，这里的替换不会执行，保持模板定义的值
+        // 1. 将 TargetName（如"RootBorder"）解析为实际元素
+        // 2. 解析 ToBinding 属性绑定，从 Button（TemplatedParent）属性获取动态值
+        // 3. 这是真正的属性绑定机制，类似 WPF 的 {TemplateBinding}
         // 
         // 获取VisualStateManager
         auto* manager = animation::VisualStateManager::GetVisualStateManager(this);
@@ -490,22 +490,20 @@ namespace fk::ui
                                 if (colorAnim) {
                                     colorAnim->SetTarget(brush, &SolidColorBrush::ColorProperty());
                                     
-                                    // 根据状态名称，从 Button 属性中动态获取颜色值
-                                    // 这样 To 值是动态的，而不是硬编码的
-                                    if (stateName == "MouseOver") {
-                                        auto* mouseOverBg = GetMouseOverBackground();
-                                        auto* mouseOverBrush = dynamic_cast<SolidColorBrush*>(mouseOverBg);
-                                        if (mouseOverBrush) {
-                                            colorAnim->SetTo(mouseOverBrush->GetColor());
-                                        }
-                                    } else if (stateName == "Pressed") {
-                                        auto* pressedBg = GetPressedBackground();
-                                        auto* pressedBrush = dynamic_cast<SolidColorBrush*>(pressedBg);
-                                        if (pressedBrush) {
-                                            colorAnim->SetTo(pressedBrush->GetColor());
+                                    // 如果动画使用了 ToBinding（属性绑定），解析绑定
+                                    if (colorAnim->HasToBinding()) {
+                                        auto* bindingProperty = colorAnim->GetToBinding();
+                                        // 从 Button（TemplatedParent）的绑定属性获取颜色值
+                                        auto value = GetValue(*bindingProperty);
+                                        if (value.has_value()) {
+                                            auto* brush = std::any_cast<Brush*>(value);
+                                            auto* solidBrush = dynamic_cast<SolidColorBrush*>(brush);
+                                            if (solidBrush) {
+                                                colorAnim->SetTo(solidBrush->GetColor());
+                                            }
                                         }
                                     }
-                                    // Normal 和 Disabled 状态保持模板中定义的值
+                                    // 如果没有绑定，保持模板中定义的固定值
                                 }
                             }
                         }
