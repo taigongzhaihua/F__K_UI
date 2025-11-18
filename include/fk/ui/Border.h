@@ -63,9 +63,7 @@ public:
     // 使用 PropertyMacros 简化属性声明（从 24 行减少到 2 行）
     FK_PROPERTY_VISUAL(Background, Brush*, Border)
     FK_PROPERTY_VISUAL(BorderBrush, Brush*, Border)
-    
-    Thickness GetBorderThickness() const { return GetValue<Thickness>(BorderThicknessProperty()); }
-    void SetBorderThickness(const Thickness& value) { SetValue(BorderThicknessProperty(), value); }
+    FK_PROPERTY_VISUAL(BorderThickness, Thickness, Border)
     
     Border* BorderThickness(float uniform) {
         SetBorderThickness(Thickness(uniform));
@@ -75,7 +73,6 @@ public:
         SetBorderThickness(Thickness(left, top, right, bottom));
         return this;
     }
-    Thickness BorderThickness() const { return GetBorderThickness(); }
     
     ui::CornerRadius GetCornerRadius() const { return GetValue<ui::CornerRadius>(CornerRadiusProperty()); }
     void SetCornerRadius(const ui::CornerRadius& value) { SetValue(CornerRadiusProperty(), value); }

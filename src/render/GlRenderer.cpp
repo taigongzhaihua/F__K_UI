@@ -70,18 +70,38 @@ void main() {
     float strokeInset = uStrokeAlignment.x;
     float strokeOutset = uStrokeAlignment.y;
 
-    float outerEdge = dist - strokeOutset;
-    float innerEdge = dist + strokeInset;
-
-    float outerMask = 1.0 - smoothstep(-aa, aa, outerEdge);
-    float innerMask = 1.0 - smoothstep(-aa, aa, innerEdge);
-
-    float strokeMask = max(outerMask - innerMask, 0.0);
-    float fillMask = innerMask;
-
-    vec4 fill = vec4(uColor.rgb, uColor.a) * fillMask;
-    vec4 stroke = vec4(uStrokeColor.rgb, uStrokeColor.a) * strokeMask;
-    vec4 color = (fill + stroke) * uOpacity;
+    // 判断是否有描边
+    bool hasStroke = (strokeInset + strokeOutset) > 0.0001;
+    
+    // 计算最终颜色（使用 alpha 混合而不是叠加）
+    vec4 color;
+    
+    if (hasStroke) {
+        // 有描边：精确计算边框区域
+        float fillEdge = dist + strokeInset;     // 填充边界（向内）
+        float strokeEdge = dist - strokeOutset;  // 描边外边界（向外）
+        
+        // 填充区域：只在 fillEdge 内侧，平滑过渡
+        float fillAlpha = smoothstep(aa, -aa, fillEdge);
+        
+        // 描边区域：在 [strokeEdge, fillEdge] 之间
+        float strokeOuterAlpha = smoothstep(aa, -aa, strokeEdge);
+        float strokeInnerAlpha = smoothstep(aa, -aa, fillEdge);
+        float strokeAlpha = strokeOuterAlpha - strokeInnerAlpha;
+        
+        // 使用 mix 在填充和描边之间插值，避免混色
+        // 当 fillAlpha 接近 1 时完全使用填充色，接近 0 时使用描边色
+        vec3 finalRGB = mix(uStrokeColor.rgb, uColor.rgb, fillAlpha);
+        float finalAlpha = max(uColor.a * fillAlpha, uStrokeColor.a * strokeAlpha);
+        
+        color = vec4(finalRGB, finalAlpha);
+    } else {
+        // 无描边：只渲染填充和其抗锯齿
+        float fillAlpha = smoothstep(aa, -aa, dist);
+        color = vec4(uColor.rgb, uColor.a * fillAlpha);
+    }
+    
+    color *= uOpacity;
 
     if (color.a < 0.001) discard;
     FragColor = color;
@@ -432,65 +452,10 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     // 单次绘制：片段着色器基于 SDF 计算填充与描边
     glDrawArrays(GL_TRIANGLES, 0, 6);
     // 如果有描边，则先绘制外部（描边）填充，再绘制内矩形填充（这样可以正确支持圆角描边）
-    if (payload.strokeThickness > 0.0f && payload.strokeColor[3] > 0.001f) {
-        // 绘制外矩形（描边色）
-        glUniform4f(colorLoc,
-            payload.strokeColor[0],
-            payload.strokeColor[1],
-            payload.strokeColor[2],
-            payload.strokeColor[3]);
-        // 不透明度
-        float effectiveOpacity2 = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
-        glUniform1f(opacityLoc, effectiveOpacity2);
-        // 圆角使用 payload.cornerRadius
-        glUniform1f(cornerRadiusLoc, payload.cornerRadius);
-        glUniform2f(rectSizeLoc, payload.rect.width, payload.rect.height);
-        // 绘制外部填充（作为描边）
-        glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // 计算内矩形（缩进 strokeThickness）
-        float inset = payload.strokeThickness;
-        float ix = payload.rect.x + inset;
-        float iy = payload.rect.y + inset;
-        float iw = std::max(0.0f, payload.rect.width - 2.0f * inset);
-        float ih = std::max(0.0f, payload.rect.height - 2.0f * inset);
-
-        // 内矩形顶点（用于绘制填充）
-        float innerVertices[] = {
-            // 第一个三角形
-            ix,      iy,       0.0f, 0.0f,
-            ix + iw, iy,       iw,   0.0f,
-            ix,      iy + ih,  0.0f, ih,
-            // 第二个三角形
-            ix + iw, iy,       iw,   0.0f,
-            ix + iw, iy + ih,  iw,   ih,
-            ix,      iy + ih,  0.0f, ih
-        };
-
-        // 更新顶点数据为内矩形
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(innerVertices), innerVertices);
-
-        // 设置填充色 uniform
-        glUniform4f(colorLoc,
-            payload.fillColor[0],
-            payload.fillColor[1],
-            payload.fillColor[2],
-            payload.fillColor[3]);
-
-        // 内圆角为外圆角减去描边宽度
-        float innerRadius = std::max(0.0f, payload.cornerRadius - payload.strokeThickness);
-        glUniform1f(cornerRadiusLoc, innerRadius);
-        glUniform2f(rectSizeLoc, iw, ih);
-
-        // 绘制内矩形填充（覆盖中间部分）
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        // 恢复顶点数据为原始 outer vertices，以免影响后续绘制
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-    } else {
         // 无描边，直接绘制填充矩形
         glDrawArrays(GL_TRIANGLES, 0, 6);
-    }
+    
 
     // 解绑
     glBindVertexArray(0);

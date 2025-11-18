@@ -83,10 +83,10 @@ namespace fk::ui
                          { return (new Border())
                                ->Name("RootBorder") // 链式设置名称
                                ->Background(binding::TemplateBinding(Control<Button>::BackgroundProperty()))
-                               ->BorderBrush(new SolidColorBrush(Color::FromRGB(172, 172, 172, 255)))
-                               ->BorderThickness(0)
+                               ->BorderBrush(binding::TemplateBinding(Control<Button>::BorderBrushProperty()))
+                               ->BorderThickness(binding::TemplateBinding(Control<Button>::BorderThicknessProperty()))
                                ->Padding(10.0f, 5.0f, 10.0f, 5.0f)
-                               ->CornerRadius(6.0f)
+                               ->CornerRadius(4.0f)
                                ->Child(
                                    (new ContentPresenter<>())
                                        ->SetHAlign(HorizontalAlignment::Center)
@@ -138,6 +138,13 @@ namespace fk::ui
         {
             SetBackground(new SolidColorBrush(Color::FromRGB(240, 240, 240, 255)));
         }
+
+        if (!GetBorderBrush())
+        {
+            SetBorderBrush(new SolidColorBrush(Color::FromRGB(175, 175, 175, 255)));
+        }
+        
+        
 
         // 设置默认模板
         if (!GetTemplate())

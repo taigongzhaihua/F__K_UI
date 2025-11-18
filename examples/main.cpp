@@ -29,16 +29,18 @@ int main(int argc, char **argv)
                                ->Margin(fk::Thickness(20)),
                            (new fk::ui::Button())
                                ->Name("myButton")
+                               ->MouseOverBackground(fk::ui::Color::FromRGB(255, 200, 200, 255)) // 悬停时浅红色
+                               ->PressedBackground(fk::ui::Color::FromRGB(255, 100, 100, 255))   // 按下时深红色
+                               ->Margin(fk::Thickness(20))
                                ->Content((new fk::ui::TextBlock())
                                              ->Text("Click Me")
                                              ->FontSize(20)
                                              ->Foreground(fk::ui::Brushes::Black()))}));
-    
+
     // 设置按钮交互颜色并绑定点击事件
-    auto* btn = static_cast<fk::ui::Button*>(mainWindow->FindName("myButton"));
-    btn->MouseOverBackground(fk::ui::Color::FromRGB(255, 200, 200, 255))  // 悬停时浅红色
-       ->PressedBackground(fk::ui::Color::FromRGB(255, 100, 100, 255));    // 按下时深红色
-    btn->Click+=[]() {
+    auto *btn = static_cast<fk::ui::Button *>(mainWindow->FindName("myButton"));
+    btn->Click += []()
+    {
         std::cout << "Button clicked!" << std::endl;
     };
     app.Run(mainWindow);
