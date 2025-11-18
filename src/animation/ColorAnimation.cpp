@@ -13,13 +13,9 @@ ColorAnimation::ColorAnimation(const ui::Color& fromColor, const ui::Color& toCo
     SetDuration(duration);
 }
 
-void ColorAnimation::SetTarget(binding::DependencyObject* target, 
-                                const binding::DependencyProperty* property) {
-    target_ = target;
-    targetProperty_ = property;
-    hasInitialValue_ = false;
-    
-    // 立即读取初始值,确保捕获当前实际颜色
+void ColorAnimation::Begin() {
+    // 在动画开始时捕获当前颜色作为初始值
+    // 这确保了从当前状态平滑过渡，而不是从固定的初始值跳跃
     if (target_ && targetProperty_) {
         try {
             auto value = target_->GetValue(*targetProperty_);
@@ -28,11 +24,22 @@ void ColorAnimation::SetTarget(binding::DependencyObject* target,
                 hasInitialValue_ = true;
             }
         } catch (...) {
-            // 读取失败,使用默认白色
+            // 读取失败，使用默认白色
             initialValue_ = ui::Color(1.0f, 1.0f, 1.0f, 1.0f);
             hasInitialValue_ = true;
         }
     }
+    
+    // 调用基类的 Begin() 方法
+    Animation<ui::Color>::Begin();
+}
+
+void ColorAnimation::SetTarget(binding::DependencyObject* target, 
+                                const binding::DependencyProperty* property) {
+    target_ = target;
+    targetProperty_ = property;
+    // 不在这里捕获初始值，而是在 Begin() 时捕获
+    hasInitialValue_ = false;
 }
 
 ui::Color ColorAnimation::Interpolate(const ui::Color& from, const ui::Color& to, double progress) const {
