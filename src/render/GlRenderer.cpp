@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 #include <cmath>
+#include <algorithm>
 #include <iostream>
 #include <iostream>
 #include <unordered_map>
@@ -38,7 +39,7 @@ void main() {
 }
 )";
 
-// 支持圆角与描边的片段着色器（使用 SDF 以在单次绘制中支持平滑圆角与描边）
+// 支持圆角与描边的片段着色器（使用 SDF 单次绘制）
 const char* fragmentShaderSource = R"(
 #version 330 core
 in vec2 vTexCoord;
@@ -46,64 +47,45 @@ in vec2 vFragPos;
 
 out vec4 FragColor;
 
-uniform vec4 uColor;       // 填充色
-uniform vec4 uStrokeColor; // 描边色
-uniform float uStrokeWidth; // 描边宽度（像素空间）
+uniform vec4 uColor;          // 填充色
+uniform vec4 uStrokeColor;    // 描边色
+uniform float uStrokeWidth;   // 描边宽度（像素）
+uniform vec2 uStrokeAlignment; // x = strokeInset, y = strokeOutset
+uniform float uAAWidth;       // 抗锯齿宽度
 uniform float uOpacity;
 uniform float uCornerRadius;
 uniform vec2 uRectSize;
 
-// 计算到圆角的距离（signed distance to rounded box）
 float roundedBoxSDF(vec2 p, vec2 size, float radius) {
     vec2 d = abs(p) - size + radius;
     return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - radius;
 }
 
 void main() {
-    // 计算片段在矩形中的局部坐标（中心为原点）
     vec2 center = uRectSize * 0.5;
     vec2 localPos = vFragPos - center;
-
-    // 计算 signed distance
     float dist = roundedBoxSDF(localPos, uRectSize * 0.5, uCornerRadius);
 
-    // 抗锯齿半宽度
-    float aa = 0.5;
+    float aa = max(uAAWidth, 0.0001);
+    float strokeInset = uStrokeAlignment.x;
+    float strokeOutset = uStrokeAlignment.y;
 
-    // 内部区域 alpha（填充）
-    float innerAlpha = 1.0 - smoothstep(-aa, aa, dist + uStrokeWidth);
+    float outerEdge = dist - strokeOutset;
+    float innerEdge = dist + strokeInset;
 
-    // 外部 alpha（包含描边及填充）
-    float outerAlpha = 1.0 - smoothstep(-aa, aa, dist);
+    float outerMask = 1.0 - smoothstep(-aa, aa, outerEdge);
+    float innerMask = 1.0 - smoothstep(-aa, aa, innerEdge);
 
-    // 描边 mask = outerAlpha - innerAlpha
-    float strokeMask = max(0.0, outerAlpha - innerAlpha);
-    float fillMask = innerAlpha;
+    float strokeMask = max(outerMask - innerMask, 0.0);
+    float fillMask = innerMask;
 
-    // 组合颜色：描边叠加在外层，填充在内层
-    vec3 color = uStrokeColor.rgb * strokeMask + uColor.rgb * fillMask;
-    float alpha = uStrokeColor.a * strokeMask + uColor.a * fillMask;
+    vec4 fill = vec4(uColor.rgb, uColor.a) * fillMask;
+    vec4 stroke = vec4(uStrokeColor.rgb, uStrokeColor.a) * strokeMask;
+    vec4 color = (fill + stroke) * uOpacity;
 
-    FragColor = vec4(color, alpha * uOpacity);
-
-    if (FragColor.a < 0.01) discard;
+    if (color.a < 0.001) discard;
+    FragColor = color;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 )";
 
 // 文本渲染的顶点着色器
@@ -356,6 +338,11 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     // 绑定 VAO
     glBindVertexArray(vao_);
 
+    const float width = payload.rect.width;
+    const float height = payload.rect.height;
+    const float minDimension = std::min(width, height);
+    const float halfMinDimension = std::max(0.0f, minDimension * 0.5f);
+
     // 设置填充颜色 uniform
     int colorLoc = glGetUniformLocation(shaderProgram_, "uColor");
     glUniform4f(colorLoc, 
@@ -369,19 +356,20 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     int opacityLoc = glGetUniformLocation(shaderProgram_, "uOpacity");
     glUniform1f(opacityLoc, effectiveOpacity);
 
-    // 设置圆角半径
+    // 设置圆角半径（限制不超过最小尺寸的一半）
+    float clampedCornerRadius = std::clamp(payload.cornerRadius, 0.0f, halfMinDimension);
     int cornerRadiusLoc = glGetUniformLocation(shaderProgram_, "uCornerRadius");
-    glUniform1f(cornerRadiusLoc, payload.cornerRadius);
+    glUniform1f(cornerRadiusLoc, clampedCornerRadius);
 
     // 设置矩形尺寸（用于圆角计算）
     int rectSizeLoc = glGetUniformLocation(shaderProgram_, "uRectSize");
-    glUniform2f(rectSizeLoc, payload.rect.width, payload.rect.height);
+    glUniform2f(rectSizeLoc, width, height);
 
     // 构建矩形顶点（两个三角形，每个顶点包含位置和纹理坐标）
     float x = payload.rect.x;
     float y = payload.rect.y;
-    float w = payload.rect.width;
-    float h = payload.rect.height;
+    float w = width;
+    float h = height;
 
     // 顶点格式：x, y, u, v (位置 + 纹理坐标)
     float vertices[] = {
@@ -400,7 +388,29 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
-    // 设置描边相关 uniform（片段着色器会根据 uStrokeWidth 计算描边与填充的混合）
+    // 计算描边对齐（inside/outside/center）
+    float insetFactor = 0.5f;
+    float outsetFactor = 0.5f;
+    switch (payload.strokeAlignment) {
+        case StrokeAlignment::Inside:
+            insetFactor = 1.0f;
+            outsetFactor = 0.0f;
+            break;
+        case StrokeAlignment::Outside:
+            insetFactor = 0.0f;
+            outsetFactor = 1.0f;
+            break;
+        case StrokeAlignment::Center:
+        default:
+            insetFactor = 0.5f;
+            outsetFactor = 0.5f;
+            break;
+    }
+
+    float strokeInset = std::min(payload.strokeThickness * insetFactor, halfMinDimension);
+    float strokeOutset = std::max(payload.strokeThickness * outsetFactor, 0.0f);
+
+    // 设置描边相关 uniform
     int strokeColorLoc = glGetUniformLocation(shaderProgram_, "uStrokeColor");
     glUniform4f(strokeColorLoc,
         payload.strokeColor[0],
@@ -411,7 +421,12 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     int strokeWidthLoc = glGetUniformLocation(shaderProgram_, "uStrokeWidth");
     glUniform1f(strokeWidthLoc, payload.strokeThickness);
 
-    // 保持其他 uniform（uColor, uOpacity, uCornerRadius, uRectSize）已经设置
+    int strokeAlignLoc = glGetUniformLocation(shaderProgram_, "uStrokeAlignment");
+    glUniform2f(strokeAlignLoc, strokeInset, strokeOutset);
+
+    int aaLoc = glGetUniformLocation(shaderProgram_, "uAAWidth");
+    float aaWidth = std::clamp(payload.aaWidth, 0.1f, 2.0f);
+    glUniform1f(aaLoc, aaWidth);
 
     // 单次绘制：片段着色器基于 SDF 计算填充与描边
     glDrawArrays(GL_TRIANGLES, 0, 6);
