@@ -15,6 +15,14 @@ else()
     message(STATUS "Platform: Unknown")
 endif()
 
+# ===== Git状态检查 =====
+# 检测未提交的更改 (Detect uncommitted changes)
+option(CHECK_GIT_STATUS "检查Git仓库中的未提交更改 (Check for uncommitted changes in Git repository)" ON)
+
+if(CHECK_GIT_STATUS)
+    include(cmake/CheckGitStatus.cmake)
+endif()
+
 set(THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/third_party")
 set(FREETYPE_SOURCE_DIR "${THIRD_PARTY_DIR}/src/freetype")
 set(FREETYPE_BINARY_DIR "${CMAKE_BINARY_DIR}/third_party/src/freetype")
