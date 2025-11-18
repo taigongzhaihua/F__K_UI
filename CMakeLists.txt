@@ -490,3 +490,8 @@ target_link_libraries(test_vsb_minimal PRIVATE fk)
 add_executable(test_button_state_transition test_button_state_transition.cpp)
 target_link_libraries(test_button_state_transition PRIVATE fk)
 
+
+# 边框零厚度测试
+add_executable(test_border_zero_thickness test_border_zero_thickness.cpp)
+target_link_libraries(test_border_zero_thickness PRIVATE fk glad freetype)
+target_compile_features(test_border_zero_thickness PRIVATE cxx_std_23)
