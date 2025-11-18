@@ -166,7 +166,9 @@ void RenderContext::DrawRectangle(
     const std::array<float, 4>& fillColor,
     const std::array<float, 4>& strokeColor,
     float strokeWidth,
-    float cornerRadius)
+    float cornerRadius,
+    StrokeAlignment strokeAlignment,
+    float aaWidth)
 {
     // 检查是否被裁剪
     if (IsClipped(rect)) {
@@ -191,6 +193,8 @@ void RenderContext::DrawRectangle(
     payload.strokeColor = finalStrokeColor;
     payload.strokeThickness = strokeWidth;
     payload.cornerRadius = cornerRadius;
+    payload.strokeAlignment = strokeAlignment;
+    payload.aaWidth = aaWidth;
     
     renderList_->AddCommand(RenderCommand(CommandType::DrawRectangle, payload));
 }

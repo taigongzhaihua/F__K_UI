@@ -24,6 +24,15 @@ enum class CommandType : std::uint8_t {
 };
 
 /**
+ * @brief 描边对齐方式
+ */
+enum class StrokeAlignment : std::uint8_t {
+    Center = 0,
+    Inside = 1,
+    Outside = 2,
+};
+
+/**
  * @brief 裁剪命令载荷
  */
 struct ClipPayload {
@@ -49,6 +58,8 @@ struct RectanglePayload {
     std::array<float, 4> strokeColor; // RGBA 描边色
     float strokeThickness{0.0f};
     float cornerRadius{0.0f};
+    StrokeAlignment strokeAlignment{StrokeAlignment::Center};
+    float aaWidth{0.75f};
 };
 
 /**

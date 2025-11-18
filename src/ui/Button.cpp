@@ -17,7 +17,7 @@
 namespace fk::ui
 {
 
-    // ========== 依赖属性注册 ==========
+    // ========== 依赖属性注册 ==========/*  */
 
     const binding::DependencyProperty &Button::MouseOverBackgroundProperty()
     {
@@ -80,51 +80,48 @@ namespace fk::ui
         auto *tmpl = new ControlTemplate();
         tmpl->SetTargetType(typeid(Button))
             ->SetFactory([]() -> UIElement *
-                         { 
-                             return (new Border())
-                                   ->Name("RootBorder")  // 链式设置名称
-                                   ->Background(binding::TemplateBinding(Control<Button>::BackgroundProperty()))
-                                   ->BorderBrush(new SolidColorBrush(Color::FromRGB(172, 172, 172, 255)))
-                                   ->BorderThickness(1.0f)
-                                   ->Padding(10.0f, 5.0f, 10.0f, 5.0f)
-                                   ->CornerRadius(4.0f)
-                                   ->Child(
-                                       (new ContentPresenter<>())
-                                           ->SetHAlign(HorizontalAlignment::Center)
-                                           ->SetVAlign(VerticalAlignment::Center));
-                         })
+                         { return (new Border())
+                               ->Name("RootBorder") // 链式设置名称
+                               ->Background(binding::TemplateBinding(Control<Button>::BackgroundProperty()))
+                               ->BorderBrush(new SolidColorBrush(Color::FromRGB(172, 172, 172, 255)))
+                               ->BorderThickness(1.2f)
+                               ->Padding(10.0f, 5.0f, 10.0f, 5.0f)
+                               ->CornerRadius(6.0f)
+                               ->Child(
+                                   (new ContentPresenter<>())
+                                       ->SetHAlign(HorizontalAlignment::Center)
+                                       ->SetVAlign(VerticalAlignment::Center)); })
             ->AddVisualStateGroup(
                 animation::VisualStateBuilder::CreateGroup("CommonStates")
                     ->State("Normal")
-                        ->ColorAnimation("RootBorder", "Background.Color")
-                            ->ToBinding(Control<Button>::BackgroundProperty())  // 绑定到 Background 属性！
-                            ->Duration(200)
-                        ->EndAnimation()
+                    ->ColorAnimation("RootBorder", "Background.Color")
+                    ->ToBinding(Control<Button>::BackgroundProperty()) // 绑定到 Background 属性！
+                    ->Duration(200)
+                    ->EndAnimation()
                     ->EndState()
                     ->State("MouseOver")
-                        ->ColorAnimation("RootBorder", "Background.Color")
-                            ->ToBinding(Button::MouseOverBackgroundProperty())  // 绑定到 MouseOverBackground 属性！
-                            ->Duration(150)
-                        ->EndAnimation()
+                    ->ColorAnimation("RootBorder", "Background.Color")
+                    ->ToBinding(Button::MouseOverBackgroundProperty()) // 绑定到 MouseOverBackground 属性！
+                    ->Duration(150)
+                    ->EndAnimation()
                     ->EndState()
                     ->State("Pressed")
-                        ->ColorAnimation("RootBorder", "Background.Color")
-                            ->ToBinding(Button::PressedBackgroundProperty())  // 绑定到 PressedBackground 属性！
-                            ->Duration(100)
-                        ->EndAnimation()
+                    ->ColorAnimation("RootBorder", "Background.Color")
+                    ->ToBinding(Button::PressedBackgroundProperty()) // 绑定到 PressedBackground 属性！
+                    ->Duration(100)
+                    ->EndAnimation()
                     ->EndState()
                     ->State("Disabled")
-                        ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(200, 200, 200, 255))  // Disabled 使用固定灰色
-                            ->Duration(200)
-                        ->EndAnimation()
-                        ->DoubleAnimation("RootBorder", "Opacity")
-                            ->To(0.6)
-                            ->Duration(200)
-                        ->EndAnimation()
+                    ->ColorAnimation("RootBorder", "Background.Color")
+                    ->To(Color::FromRGB(200, 200, 200, 255)) // Disabled 使用固定灰色
+                    ->Duration(200)
+                    ->EndAnimation()
+                    ->DoubleAnimation("RootBorder", "Opacity")
+                    ->To(0.6)
+                    ->Duration(200)
+                    ->EndAnimation()
                     ->EndState()
-                    ->Build()
-            );
+                    ->Build());
 
         return tmpl;
     }
@@ -215,6 +212,7 @@ if (property.Name() == "IsEnabled")
         if (isPressed_ && pressedButton_ == e.button && (!GetPrimaryClickOnly() || isPrimaryRelease)) {
             isPressed_ = false;
             pressedButton_ = MouseButton::None;
+            pressedButton_ = MouseButton::None;
             UpdateVisualState(true); // 使用视觉状态管理
 
             // 触发 Click 事件
@@ -240,6 +238,7 @@ if (property.Name() == "IsEnabled")
         if (isPressed_)
         {
             isPressed_ = false;
+            pressedButton_ = MouseButton::None;
             pressedButton_ = MouseButton::None;
         }
         UpdateVisualState(true); // 使用视觉状态管理
@@ -269,13 +268,14 @@ if (property.Name() == "IsEnabled")
     void Button::InitializeVisualStates()
     {
         // 首先尝试从模板加载视觉状态（用于自定义模板）
-        if (LoadVisualStatesFromTemplate()) {
+        if (LoadVisualStatesFromTemplate())
+        {
             // 如果模板中定义了视觉状态，解析TargetName并使用
             ResolveVisualStateTargets();
             UpdateVisualState(false);
             return;
         }
-        
+
         // 使用属性驱动的视觉状态（默认模板走这里）
         // 创建 VisualStateManager
         auto manager = std::make_shared<animation::VisualStateManager>();
@@ -296,31 +296,35 @@ if (property.Name() == "IsEnabled")
         // 设置初始状态
         UpdateVisualState(false);
     }
-    
+
     bool Button::LoadVisualStatesFromTemplate()
     {
         // 获取当前模板
-        auto* tmpl = GetTemplate();
-        if (!tmpl) {
+        auto *tmpl = GetTemplate();
+        if (!tmpl)
+        {
             return false;
         }
-        
+
         // 检查模板是否定义了视觉状态
-        if (!tmpl->HasVisualStates()) {
+        if (!tmpl->HasVisualStates())
+        {
             return false;
         }
-        
+
         // 创建 VisualStateManager
         auto manager = std::make_shared<animation::VisualStateManager>();
         animation::VisualStateManager::SetVisualStateManager(this, manager);
-        
+
         // 从模板复制所有视觉状态组
-        for (const auto& group : tmpl->GetVisualStateGroups()) {
-            if (group) {
+        for (const auto &group : tmpl->GetVisualStateGroups())
+        {
+            if (group)
+            {
                 manager->AddStateGroup(group);
             }
         }
-        
+
         return true;
     }
 
@@ -450,83 +454,101 @@ if (property.Name() == "IsEnabled")
     void Button::ResolveVisualStateTargets()
     {
         // 解析模板中定义的视觉状态的TargetName，并解析属性绑定
-        // 
+        //
         // 设计说明：
         // 1. 将 TargetName（如"RootBorder"）解析为实际元素
         // 2. 解析 ToBinding 属性绑定，从 Button（TemplatedParent）属性获取动态值
         // 3. 这是真正的属性绑定机制，类似 WPF 的 {TemplateBinding}
-        // 
+        //
         // 获取VisualStateManager
-        auto* manager = animation::VisualStateManager::GetVisualStateManager(this);
-        if (!manager) {
+        auto *manager = animation::VisualStateManager::GetVisualStateManager(this);
+        if (!manager)
+        {
             return;
         }
-        
+
         // 获取模板根元素
-        auto* root = GetTemplateRoot();
-        if (!root) {
+        auto *root = GetTemplateRoot();
+        if (!root)
+        {
             return;
         }
-        
+
         // 遍历所有状态组
-        for (auto& group : manager->GetStateGroups()) {
-            if (!group) continue;
-            
+        for (auto &group : manager->GetStateGroups())
+        {
+            if (!group)
+                continue;
+
             // 遍历组中的每个状态
-            for (auto& state : group->GetStates()) {
-                if (!state) continue;
-                
+            for (auto &state : group->GetStates())
+            {
+                if (!state)
+                    continue;
+
                 auto storyboard = state->GetStoryboard();
-                if (!storyboard) continue;
-                
+                if (!storyboard)
+                    continue;
+
                 // 设置模板根，用于后续查找
                 animation::Storyboard::SetTemplateRoot(storyboard.get(), root);
-                
+
                 // 获取状态名称，用于从属性获取对应的颜色
                 std::string stateName = state->GetName();
-                
+
                 // 遍历storyboard中的所有动画
-                for (auto& child : storyboard->GetChildren()) {
-                    if (!child) continue;
-                    
+                for (auto &child : storyboard->GetChildren())
+                {
+                    if (!child)
+                        continue;
+
                     // 获取TargetName
                     std::string targetName = animation::Storyboard::GetTargetName(child.get());
-                    if (targetName.empty()) {
-                        continue;  // 没有使用TargetName，跳过
+                    if (targetName.empty())
+                    {
+                        continue; // 没有使用TargetName，跳过
                     }
-                    
+
                     // 在模板中查找命名元素
-                    auto* target = ControlTemplate::FindName(targetName, root);
-                    if (!target) {
+                    auto *target = ControlTemplate::FindName(targetName, root);
+                    if (!target)
+                    {
                         std::cerr << "警告：在模板中找不到名为 '" << targetName << "' 的元素\n";
                         continue;
                     }
-                    
+
                     // 获取PropertyPath（如"Background.Color"）
                     std::string propertyPath = animation::Storyboard::GetTargetProperty(child.get());
-                    
+
                     // 简单实现：只支持"Background.Color"和"Opacity"
-                    if (propertyPath == "Background.Color") {
+                    if (propertyPath == "Background.Color")
+                    {
                         // 目标是Border的Background属性中的Color
-                        auto* border = dynamic_cast<Border*>(target);
-                        if (border) {
-                            auto* bg = border->GetBackground();
-                            auto* brush = dynamic_cast<SolidColorBrush*>(bg);
-                            if (brush) {
+                        auto *border = dynamic_cast<Border *>(target);
+                        if (border)
+                        {
+                            auto *bg = border->GetBackground();
+                            auto *brush = dynamic_cast<SolidColorBrush *>(bg);
+                            if (brush)
+                            {
                                 // 设置动画的实际目标
-                                auto* colorAnim = dynamic_cast<animation::ColorAnimation*>(child.get());
-                                if (colorAnim) {
+                                auto *colorAnim = dynamic_cast<animation::ColorAnimation *>(child.get());
+                                if (colorAnim)
+                                {
                                     colorAnim->SetTarget(brush, &SolidColorBrush::ColorProperty());
-                                    
+
                                     // 如果动画使用了 ToBinding（属性绑定），解析绑定
-                                    if (colorAnim->HasToBinding()) {
-                                        auto* bindingProperty = colorAnim->GetToBinding();
+                                    if (colorAnim->HasToBinding())
+                                    {
+                                        auto *bindingProperty = colorAnim->GetToBinding();
                                         // 从 Button（TemplatedParent）的绑定属性获取颜色值
                                         auto value = GetValue(*bindingProperty);
-                                        if (value.has_value()) {
-                                            auto* brush = std::any_cast<Brush*>(value);
-                                            auto* solidBrush = dynamic_cast<SolidColorBrush*>(brush);
-                                            if (solidBrush) {
+                                        if (value.has_value())
+                                        {
+                                            auto *brush = std::any_cast<Brush *>(value);
+                                            auto *solidBrush = dynamic_cast<SolidColorBrush *>(brush);
+                                            if (solidBrush)
+                                            {
                                                 colorAnim->SetTo(solidBrush->GetColor());
                                             }
                                         }
@@ -535,10 +557,13 @@ if (property.Name() == "IsEnabled")
                                 }
                             }
                         }
-                    } else if (propertyPath == "Opacity") {
+                    }
+                    else if (propertyPath == "Opacity")
+                    {
                         // 目标是元素的Opacity属性
-                        auto* doubleAnim = dynamic_cast<animation::DoubleAnimation*>(child.get());
-                        if (doubleAnim) {
+                        auto *doubleAnim = dynamic_cast<animation::DoubleAnimation *>(child.get());
+                        if (doubleAnim)
+                        {
                             doubleAnim->SetTarget(target, &UIElement::OpacityProperty());
                         }
                     }

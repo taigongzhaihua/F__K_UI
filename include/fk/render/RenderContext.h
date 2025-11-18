@@ -144,7 +144,9 @@ public:
         const std::array<float, 4>& fillColor,
         const std::array<float, 4>& strokeColor = {0, 0, 0, 0},
         float strokeWidth = 0.0f,
-        float cornerRadius = 0.0f
+        float cornerRadius = 0.0f,
+        StrokeAlignment strokeAlignment = StrokeAlignment::Center,
+        float aaWidth = 0.75f
     );
     
     /**

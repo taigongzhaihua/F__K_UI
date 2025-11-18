@@ -178,7 +178,7 @@ void Border::OnRender(render::RenderContext& context) {
                    cornerRadius.bottomRight + cornerRadius.bottomLeft) / 4.0f;
     
     // 绘制矩形（带背景、边框和圆角）
-    context.DrawRectangle(rect, fillColor, strokeColor, strokeWidth, radius);
+    context.DrawRectangle(rect, fillColor, strokeColor, strokeWidth, radius, render::StrokeAlignment::Inside);
 }
 
 void Border::OnPropertyChanged(const binding::DependencyProperty& property,

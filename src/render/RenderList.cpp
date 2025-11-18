@@ -184,7 +184,9 @@ bool RenderList::IsDuplicate(const RenderCommand& a, const RenderCommand& b) con
                        payloadA->fillColor == payloadB->fillColor &&
                        payloadA->strokeColor == payloadB->strokeColor &&
                        payloadA->strokeThickness == payloadB->strokeThickness &&
-                       payloadA->cornerRadius == payloadB->cornerRadius;
+                       payloadA->cornerRadius == payloadB->cornerRadius &&
+                       payloadA->strokeAlignment == payloadB->strokeAlignment &&
+                       payloadA->aaWidth == payloadB->aaWidth;
             }
             break;
         }
