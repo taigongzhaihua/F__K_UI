@@ -23,6 +23,9 @@ public:
     void SetToBinding(const DependencyProperty* sourceProperty) { toBindingProperty_ = sourceProperty; }
     const DependencyProperty* GetToBinding() const { return toBindingProperty_; }
     bool HasToBinding() const { return toBindingProperty_ != nullptr; }
+    
+    // 重写 Begin() 以在动画开始时捕获初始值
+    void Begin() override;
 
 protected:
     // 实现插值

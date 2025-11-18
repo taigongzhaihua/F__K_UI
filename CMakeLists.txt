@@ -486,3 +486,7 @@ target_link_libraries(property_macros_demo PRIVATE fk)
 add_executable(test_vsb_minimal test_vsb_minimal.cpp)
 target_link_libraries(test_vsb_minimal PRIVATE fk)
 
+# Button State Transition Test
+add_executable(test_button_state_transition test_button_state_transition.cpp)
+target_link_libraries(test_button_state_transition PRIVATE fk)
+
