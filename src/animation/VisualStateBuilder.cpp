@@ -198,7 +198,17 @@ void VisualStateBuilder::FinalizeCurrentAnimation() {
         }
         
         anim->SetDuration(duration);
-        anim->SetTarget(currentTarget_, currentProperty_);
+        
+        // 根据使用方式设置目标
+        if (!currentTargetName_.empty()) {
+            // 使用TargetName方式
+            animation::Storyboard::SetTargetName(anim.get(), currentTargetName_);
+            animation::Storyboard::SetTargetProperty(anim.get(), currentPropertyPath_);
+        } else {
+            // 使用直接对象方式
+            anim->SetTarget(currentTarget_, currentProperty_);
+        }
+        
         currentStoryboard_->AddChild(anim);
         
     } else if (currentAnimationType_ == AnimationType::Double) {
@@ -212,7 +222,17 @@ void VisualStateBuilder::FinalizeCurrentAnimation() {
         }
         
         anim->SetDuration(duration);
-        anim->SetTarget(currentTarget_, currentProperty_);
+        
+        // 根据使用方式设置目标
+        if (!currentTargetName_.empty()) {
+            // 使用TargetName方式
+            animation::Storyboard::SetTargetName(anim.get(), currentTargetName_);
+            animation::Storyboard::SetTargetProperty(anim.get(), currentPropertyPath_);
+        } else {
+            // 使用直接对象方式
+            anim->SetTarget(currentTarget_, currentProperty_);
+        }
+        
         currentStoryboard_->AddChild(anim);
     }
     
@@ -220,6 +240,8 @@ void VisualStateBuilder::FinalizeCurrentAnimation() {
     currentAnimationType_ = AnimationType::None;
     currentTarget_ = nullptr;
     currentProperty_ = nullptr;
+    currentTargetName_.clear();
+    currentPropertyPath_.clear();
     colorFrom_.reset();
     colorTo_.reset();
     doubleFrom_.reset();
