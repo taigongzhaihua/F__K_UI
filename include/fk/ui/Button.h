@@ -61,6 +61,7 @@ public:
     // ========== 视觉状态管理 ==========
     
     /// 初始化视觉状态（public 以便属性变化回调访问）
+    /// 如果模板中定义了视觉状态，将使用模板中的状态；否则使用默认状态
     void InitializeVisualStates();
 
 protected:
@@ -85,11 +86,17 @@ private:
     // 更新视觉状态（根据当前状态切换到相应的视觉状态）
     void UpdateVisualState(bool useTransitions);
     
-    // 创建各个状态的辅助方法
+    // 创建各个状态的辅助方法（用于默认状态）
     std::shared_ptr<animation::VisualState> CreateNormalState();
     std::shared_ptr<animation::VisualState> CreateMouseOverState();
     std::shared_ptr<animation::VisualState> CreatePressedState();
     std::shared_ptr<animation::VisualState> CreateDisabledState();
+    
+    // 从模板加载视觉状态（如果模板中定义了状态）
+    bool LoadVisualStatesFromTemplate();
+    
+    // 解析视觉状态中的TargetName并设置实际的动画目标
+    void ResolveVisualStateTargets();
 };
 
 } // namespace fk::ui

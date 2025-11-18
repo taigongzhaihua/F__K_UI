@@ -7,6 +7,8 @@ namespace fk::animation {
 // 静态成员初始化
 std::unordered_map<Timeline*, binding::DependencyObject*> Storyboard::targetMap_;
 std::unordered_map<Timeline*, std::string> Storyboard::targetPropertyMap_;
+std::unordered_map<Timeline*, std::string> Storyboard::targetNameMap_;
+std::unordered_map<Storyboard*, binding::DependencyObject*> Storyboard::templateRootMap_;
 
 Storyboard::Storyboard() {
 }
@@ -43,6 +45,22 @@ void Storyboard::ClearChildren() {
 
 void Storyboard::Begin() {
     Timeline::Begin();
+    
+    // 在启动子动画前，先解析所有使用TargetName的动画
+    auto templateRoot = GetTemplateRoot(this);
+    if (templateRoot) {
+        for (auto& child : children_) {
+            if (!child) continue;
+            
+            // 检查是否使用了TargetName
+            std::string targetName = GetTargetName(child.get());
+            if (!targetName.empty()) {
+                // TODO: 实现在模板树中查找命名元素的逻辑
+                // 这需要访问UIElement的FindName方法
+                // 暂时跳过，因为需要将DependencyObject转换为UIElement
+            }
+        }
+    }
     
     // 启动所有子动画
     for (auto& child : children_) {
@@ -145,6 +163,32 @@ std::string Storyboard::GetTargetProperty(Timeline* timeline) {
         return targetPropertyMap_[timeline];
     }
     return "";
+}
+
+void Storyboard::SetTargetName(Timeline* timeline, const std::string& targetName) {
+    if (timeline) {
+        targetNameMap_[timeline] = targetName;
+    }
+}
+
+std::string Storyboard::GetTargetName(Timeline* timeline) {
+    if (timeline && targetNameMap_.count(timeline)) {
+        return targetNameMap_[timeline];
+    }
+    return "";
+}
+
+void Storyboard::SetTemplateRoot(Storyboard* storyboard, binding::DependencyObject* root) {
+    if (storyboard) {
+        templateRootMap_[storyboard] = root;
+    }
+}
+
+binding::DependencyObject* Storyboard::GetTemplateRoot(Storyboard* storyboard) {
+    if (storyboard && templateRootMap_.count(storyboard)) {
+        return templateRootMap_[storyboard];
+    }
+    return nullptr;
 }
 
 } // namespace fk::animation

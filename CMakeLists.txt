@@ -158,6 +158,7 @@ add_library(fk STATIC
     src/animation/ThicknessAnimation.cpp
     src/animation/Storyboard.cpp
     src/animation/VisualStateManager.cpp
+    src/animation/VisualStateBuilder.cpp
     
     # resources 模块 (Phase 4.3)
     src/resources/ThemeManager.cpp
@@ -307,6 +308,12 @@ target_link_libraries(keyframe_animation_demo PRIVATE fk)
 
 add_executable(visual_state_demo examples/visual_state_demo.cpp)
 target_link_libraries(visual_state_demo PRIVATE fk)
+
+add_executable(button_custom_visual_states_demo examples/button_custom_visual_states_demo.cpp)
+target_link_libraries(button_custom_visual_states_demo PRIVATE fk)
+
+add_executable(button_visual_states_simple_test examples/button_visual_states_simple_test.cpp)
+target_link_libraries(button_visual_states_simple_test PRIVATE fk)
 
 add_executable(window_test examples/window_test.cpp)
 target_link_libraries(window_test PRIVATE fk)
@@ -475,3 +482,7 @@ target_link_libraries(fluent_binding_demo PRIVATE fk)
 # Property Macros Demo
 add_executable(property_macros_demo examples/property_macros_demo.cpp)
 target_link_libraries(property_macros_demo PRIVATE fk)
+
+add_executable(test_vsb_minimal test_vsb_minimal.cpp)
+target_link_libraries(test_vsb_minimal PRIVATE fk)
+

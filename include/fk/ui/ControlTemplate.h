@@ -3,6 +3,13 @@
 #include "fk/ui/FrameworkTemplate.h"
 #include <functional>
 #include <typeinfo>
+#include <vector>
+#include <memory>
+
+// 前向声明动画命名空间的类
+namespace fk::animation {
+    class VisualStateGroup;
+}
 
 namespace fk::ui {
 
@@ -71,6 +78,32 @@ public:
      * @return 找到的元素，未找到返回 nullptr
      */
     static UIElement* FindName(const std::string& name, UIElement* root);
+    
+    /**
+     * @brief 添加视觉状态组（用于在模板中定义视觉状态）
+     * 
+     * @param group 要添加的状态组
+     * @return this（支持链式调用）
+     */
+    ControlTemplate* AddVisualStateGroup(std::shared_ptr<animation::VisualStateGroup> group);
+    
+    /**
+     * @brief 获取模板中定义的所有视觉状态组
+     * 
+     * @return 视觉状态组的列表
+     */
+    const std::vector<std::shared_ptr<animation::VisualStateGroup>>& GetVisualStateGroups() const { 
+        return visualStateGroups_; 
+    }
+    
+    /**
+     * @brief 检查模板是否定义了视觉状态
+     * 
+     * @return 如果有定义视觉状态组则返回true
+     */
+    bool HasVisualStates() const { 
+        return !visualStateGroups_.empty(); 
+    }
 
 private:
     /**
@@ -81,6 +114,7 @@ private:
     const std::type_info* targetType_{nullptr};
     FactoryFunc factory_;
     UIElement* visualTree_{nullptr};  // 视觉树定义（可选，优先使用 factory）
+    std::vector<std::shared_ptr<animation::VisualStateGroup>> visualStateGroups_;  // 模板中定义的视觉状态组
 };
 
 } // namespace fk::ui
