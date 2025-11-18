@@ -85,25 +85,25 @@ namespace fk::ui
                 animation::VisualStateBuilder::CreateGroup("CommonStates")
                     ->State("Normal")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(240, 240, 240, 255))  // 默认值
+                            ->ToBinding(Control<Button>::BackgroundProperty())  // 绑定到 Background 属性！
                             ->Duration(200)
                         ->EndAnimation()
                     ->EndState()
                     ->State("MouseOver")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->ToBinding(Button::MouseOverBackgroundProperty())  // 绑定到属性！
+                            ->ToBinding(Button::MouseOverBackgroundProperty())  // 绑定到 MouseOverBackground 属性！
                             ->Duration(150)
                         ->EndAnimation()
                     ->EndState()
                     ->State("Pressed")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->ToBinding(Button::PressedBackgroundProperty())  // 绑定到属性！
+                            ->ToBinding(Button::PressedBackgroundProperty())  // 绑定到 PressedBackground 属性！
                             ->Duration(100)
                         ->EndAnimation()
                     ->EndState()
                     ->State("Disabled")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(200, 200, 200, 255))  // 固定值
+                            ->To(Color::FromRGB(200, 200, 200, 255))  // Disabled 使用固定灰色
                             ->Duration(200)
                         ->EndAnimation()
                         ->DoubleAnimation("RootBorder", "Opacity")
