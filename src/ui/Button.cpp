@@ -58,6 +58,7 @@ namespace fk::ui
     }
 
     // 创建 Button 的默认 ControlTemplate（使用链式API定义视觉状态）
+    // 注意：模板中定义状态结构，具体颜色值在 ResolveVisualStateTargets() 中从属性获取
     static ControlTemplate *CreateDefaultButtonTemplate()
     {
         auto *tmpl = new ControlTemplate();
@@ -80,19 +81,19 @@ namespace fk::ui
                 animation::VisualStateBuilder::CreateGroup("CommonStates")
                     ->State("Normal")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(240, 240, 240, 255))
+                            ->To(Color::FromRGB(240, 240, 240, 255))  // 默认值，会被属性覆盖
                             ->Duration(200)
                         ->EndAnimation()
                     ->EndState()
                     ->State("MouseOver")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(229, 241, 251, 255))
+                            ->To(Color::FromRGB(229, 241, 251, 255))  // 默认值，会被 MouseOverBackground 属性覆盖
                             ->Duration(150)
                         ->EndAnimation()
                     ->EndState()
                     ->State("Pressed")
                         ->ColorAnimation("RootBorder", "Background.Color")
-                            ->To(Color::FromRGB(204, 228, 247, 255))
+                            ->To(Color::FromRGB(204, 228, 247, 255))  // 默认值，会被 PressedBackground 属性覆盖
                             ->Duration(100)
                         ->EndAnimation()
                     ->EndState()
@@ -235,7 +236,7 @@ namespace fk::ui
 
     void Button::InitializeVisualStates()
     {
-        // 首先尝试从模板加载视觉状态
+        // 首先尝试从模板加载视觉状态（用于自定义模板）
         if (LoadVisualStatesFromTemplate()) {
             // 如果模板中定义了视觉状态，解析TargetName并使用
             ResolveVisualStateTargets();
@@ -243,7 +244,7 @@ namespace fk::ui
             return;
         }
         
-        // 如果模板中没有定义视觉状态，使用默认状态
+        // 使用属性驱动的视觉状态（默认模板走这里）
         // 创建 VisualStateManager
         auto manager = std::make_shared<animation::VisualStateManager>();
         animation::VisualStateManager::SetVisualStateManager(this, manager);
@@ -251,7 +252,7 @@ namespace fk::ui
         // 创建 CommonStates 状态组
         auto commonStates = std::make_shared<animation::VisualStateGroup>("CommonStates");
 
-        // 添加所有状态
+        // 添加所有状态（这些方法会读取 Button 的属性）
         commonStates->AddState(CreateNormalState());
         commonStates->AddState(CreateMouseOverState());
         commonStates->AddState(CreatePressedState());
@@ -417,6 +418,7 @@ namespace fk::ui
     void Button::ResolveVisualStateTargets()
     {
         // 解析模板中定义的视觉状态的TargetName
+        // 同时从 Button 属性中获取自定义颜色值
         // 获取VisualStateManager
         auto* manager = animation::VisualStateManager::GetVisualStateManager(this);
         if (!manager) {
@@ -443,7 +445,7 @@ namespace fk::ui
                 // 设置模板根，用于后续查找
                 animation::Storyboard::SetTemplateRoot(storyboard.get(), root);
                 
-                // 获取状态名称，用于应用自定义颜色
+                // 获取状态名称，用于从属性获取对应的颜色
                 std::string stateName = state->GetName();
                 
                 // 遍历storyboard中的所有动画
@@ -479,7 +481,7 @@ namespace fk::ui
                                 if (colorAnim) {
                                     colorAnim->SetTarget(brush, &SolidColorBrush::ColorProperty());
                                     
-                                    // 根据状态名称，使用用户设置的颜色覆盖模板中的硬编码颜色
+                                    // 根据状态名称，从 Button 属性中获取颜色值
                                     if (stateName == "MouseOver") {
                                         auto* mouseOverBg = GetMouseOverBackground();
                                         auto* mouseOverBrush = dynamic_cast<SolidColorBrush*>(mouseOverBg);
@@ -493,6 +495,7 @@ namespace fk::ui
                                             colorAnim->SetTo(pressedBrush->GetColor());
                                         }
                                     }
+                                    // Normal 和 Disabled 状态使用模板中的默认值
                                 }
                             }
                         }
