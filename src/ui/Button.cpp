@@ -443,6 +443,9 @@ namespace fk::ui
                 // 设置模板根，用于后续查找
                 animation::Storyboard::SetTemplateRoot(storyboard.get(), root);
                 
+                // 获取状态名称，用于应用自定义颜色
+                std::string stateName = state->GetName();
+                
                 // 遍历storyboard中的所有动画
                 for (auto& child : storyboard->GetChildren()) {
                     if (!child) continue;
@@ -475,6 +478,21 @@ namespace fk::ui
                                 auto* colorAnim = dynamic_cast<animation::ColorAnimation*>(child.get());
                                 if (colorAnim) {
                                     colorAnim->SetTarget(brush, &SolidColorBrush::ColorProperty());
+                                    
+                                    // 根据状态名称，使用用户设置的颜色覆盖模板中的硬编码颜色
+                                    if (stateName == "MouseOver") {
+                                        auto* mouseOverBg = GetMouseOverBackground();
+                                        auto* mouseOverBrush = dynamic_cast<SolidColorBrush*>(mouseOverBg);
+                                        if (mouseOverBrush) {
+                                            colorAnim->SetTo(mouseOverBrush->GetColor());
+                                        }
+                                    } else if (stateName == "Pressed") {
+                                        auto* pressedBg = GetPressedBackground();
+                                        auto* pressedBrush = dynamic_cast<SolidColorBrush*>(pressedBg);
+                                        if (pressedBrush) {
+                                            colorAnim->SetTo(pressedBrush->GetColor());
+                                        }
+                                    }
                                 }
                             }
                         }
