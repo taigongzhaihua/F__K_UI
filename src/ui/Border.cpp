@@ -173,6 +173,11 @@ void Border::OnRender(render::RenderContext& context) {
     float strokeWidth = (borderThickness.left + borderThickness.right + 
                         borderThickness.top + borderThickness.bottom) / 4.0f;
     
+    // 如果边框宽度为0或非常小，将边框颜色设置为透明，避免显示极细边框
+    if (strokeWidth <= 0.0f) {
+        strokeColor = {{0.0f, 0.0f, 0.0f, 0.0f}};
+    }
+    
     // 使用 CornerRadius 的平均值作为圆角半径
     float radius = (cornerRadius.topLeft + cornerRadius.topRight + 
                    cornerRadius.bottomRight + cornerRadius.bottomLeft) / 4.0f;
