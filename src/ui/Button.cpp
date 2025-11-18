@@ -8,6 +8,7 @@
 #include "fk/animation/VisualStateManager.h"
 #include "fk/animation/VisualState.h"
 #include "fk/animation/VisualStateGroup.h"
+#include "fk/animation/VisualStateBuilder.h"
 #include "fk/animation/Storyboard.h"
 #include "fk/animation/ColorAnimation.h"
 #include "fk/animation/DoubleAnimation.h"
@@ -56,22 +57,57 @@ namespace fk::ui
         return prop;
     }
 
-    // 创建 Button 的默认 ControlTemplate
+    // 创建 Button 的默认 ControlTemplate（使用链式API定义视觉状态）
     static ControlTemplate *CreateDefaultButtonTemplate()
     {
         auto *tmpl = new ControlTemplate();
         tmpl->SetTargetType(typeid(Button))
             ->SetFactory([]() -> UIElement *
-                         { return (new Border())
-                               ->Background(binding::TemplateBinding(Control<Button>::BackgroundProperty()))
-                               ->BorderBrush(new SolidColorBrush(Color::FromRGB(172, 172, 172, 255)))
-                               ->BorderThickness(1.0f)
-                               ->Padding(10.0f, 5.0f, 10.0f, 5.0f)
-                               ->CornerRadius(4.0f)
-                               ->Child(
-                                   (new ContentPresenter<>())
-                                       ->SetHAlign(HorizontalAlignment::Center)
-                                       ->SetVAlign(VerticalAlignment::Center)); });
+                         { 
+                             return (new Border())
+                                   ->Name("RootBorder")  // 链式设置名称
+                                   ->Background(binding::TemplateBinding(Control<Button>::BackgroundProperty()))
+                                   ->BorderBrush(new SolidColorBrush(Color::FromRGB(172, 172, 172, 255)))
+                                   ->BorderThickness(1.0f)
+                                   ->Padding(10.0f, 5.0f, 10.0f, 5.0f)
+                                   ->CornerRadius(4.0f)
+                                   ->Child(
+                                       (new ContentPresenter<>())
+                                           ->SetHAlign(HorizontalAlignment::Center)
+                                           ->SetVAlign(VerticalAlignment::Center));
+                         })
+            ->AddVisualStateGroup(
+                animation::VisualStateBuilder::CreateGroup("CommonStates")
+                    ->State("Normal")
+                        ->ColorAnimation("RootBorder", "Background.Color")
+                            ->To(Color::FromRGB(240, 240, 240, 255))
+                            ->Duration(200)
+                        ->EndAnimation()
+                    ->EndState()
+                    ->State("MouseOver")
+                        ->ColorAnimation("RootBorder", "Background.Color")
+                            ->To(Color::FromRGB(229, 241, 251, 255))
+                            ->Duration(150)
+                        ->EndAnimation()
+                    ->EndState()
+                    ->State("Pressed")
+                        ->ColorAnimation("RootBorder", "Background.Color")
+                            ->To(Color::FromRGB(204, 228, 247, 255))
+                            ->Duration(100)
+                        ->EndAnimation()
+                    ->EndState()
+                    ->State("Disabled")
+                        ->ColorAnimation("RootBorder", "Background.Color")
+                            ->To(Color::FromRGB(200, 200, 200, 255))
+                            ->Duration(200)
+                        ->EndAnimation()
+                        ->DoubleAnimation("RootBorder", "Opacity")
+                            ->To(0.6)
+                            ->Duration(200)
+                        ->EndAnimation()
+                    ->EndState()
+                    ->Build()
+            );
 
         return tmpl;
     }
@@ -201,7 +237,8 @@ namespace fk::ui
     {
         // 首先尝试从模板加载视觉状态
         if (LoadVisualStatesFromTemplate()) {
-            // 如果模板中定义了视觉状态，使用模板中的定义
+            // 如果模板中定义了视觉状态，解析TargetName并使用
+            ResolveVisualStateTargets();
             UpdateVisualState(false);
             return;
         }
@@ -375,6 +412,82 @@ namespace fk::ui
 
         state->SetStoryboard(storyboard);
         return state;
+    }
+
+    void Button::ResolveVisualStateTargets()
+    {
+        // 解析模板中定义的视觉状态的TargetName
+        // 获取VisualStateManager
+        auto* manager = animation::VisualStateManager::GetVisualStateManager(this);
+        if (!manager) {
+            return;
+        }
+        
+        // 获取模板根元素
+        auto* root = GetTemplateRoot();
+        if (!root) {
+            return;
+        }
+        
+        // 遍历所有状态组
+        for (auto& group : manager->GetStateGroups()) {
+            if (!group) continue;
+            
+            // 遍历组中的每个状态
+            for (auto& state : group->GetStates()) {
+                if (!state) continue;
+                
+                auto storyboard = state->GetStoryboard();
+                if (!storyboard) continue;
+                
+                // 设置模板根，用于后续查找
+                animation::Storyboard::SetTemplateRoot(storyboard.get(), root);
+                
+                // 遍历storyboard中的所有动画
+                for (auto& child : storyboard->GetChildren()) {
+                    if (!child) continue;
+                    
+                    // 获取TargetName
+                    std::string targetName = animation::Storyboard::GetTargetName(child.get());
+                    if (targetName.empty()) {
+                        continue;  // 没有使用TargetName，跳过
+                    }
+                    
+                    // 在模板中查找命名元素
+                    auto* target = ControlTemplate::FindName(targetName, root);
+                    if (!target) {
+                        std::cerr << "警告：在模板中找不到名为 '" << targetName << "' 的元素\n";
+                        continue;
+                    }
+                    
+                    // 获取PropertyPath（如"Background.Color"）
+                    std::string propertyPath = animation::Storyboard::GetTargetProperty(child.get());
+                    
+                    // 简单实现：只支持"Background.Color"和"Opacity"
+                    if (propertyPath == "Background.Color") {
+                        // 目标是Border的Background属性中的Color
+                        auto* border = dynamic_cast<Border*>(target);
+                        if (border) {
+                            auto* bg = border->GetBackground();
+                            auto* brush = dynamic_cast<SolidColorBrush*>(bg);
+                            if (brush) {
+                                // 设置动画的实际目标
+                                auto* colorAnim = dynamic_cast<animation::ColorAnimation*>(child.get());
+                                if (colorAnim) {
+                                    colorAnim->SetTarget(brush, &SolidColorBrush::ColorProperty());
+                                }
+                            }
+                        }
+                    } else if (propertyPath == "Opacity") {
+                        // 目标是元素的Opacity属性
+                        auto* doubleAnim = dynamic_cast<animation::DoubleAnimation*>(child.get());
+                        if (doubleAnim) {
+                            doubleAnim->SetTarget(target, &UIElement::OpacityProperty());
+                        }
+                    }
+                }
+            }
+        }
     }
 
 } // namespace fk::ui

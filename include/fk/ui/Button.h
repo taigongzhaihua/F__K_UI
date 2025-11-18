@@ -94,6 +94,9 @@ private:
     
     // 从模板加载视觉状态（如果模板中定义了状态）
     bool LoadVisualStatesFromTemplate();
+    
+    // 解析视觉状态中的TargetName并设置实际的动画目标
+    void ResolveVisualStateTargets();
 };
 
 } // namespace fk::ui
