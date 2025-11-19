@@ -128,18 +128,65 @@ Size Border::ArrangeOverride(const Size& finalSize) {
     auto child = GetChild();
     
     if (child && child->GetVisibility() != Visibility::Collapsed) {
-        // 计算子元素的布局矩形
-        float x = borderThickness.left + padding.left;
-        float y = borderThickness.top + padding.top;
-        float width = std::max(0.0f, finalSize.width - borderThickness.left - 
+        // 1. 计算内容区域（Border 内部可用空间）
+        float contentX = borderThickness.left + padding.left;
+        float contentY = borderThickness.top + padding.top;
+        float contentWidth = std::max(0.0f, finalSize.width - borderThickness.left - 
                                borderThickness.right - padding.left - padding.right);
-        float height = std::max(0.0f, finalSize.height - borderThickness.top - 
+        float contentHeight = std::max(0.0f, finalSize.height - borderThickness.top - 
                                 borderThickness.bottom - padding.top - padding.bottom);
         
-        child->Arrange(Rect(x, y, width, height));
+        // 2. 获取子元素期望尺寸
+        Size childDesired = child->GetDesiredSize();
+        
+        // 3. 根据对齐方式计算子元素实际位置和尺寸
+        auto hAlign = child->GetHorizontalAlignment();
+        auto vAlign = child->GetVerticalAlignment();
+        
+        float childX = contentX;
+        float childY = contentY;
+        float childW = contentWidth;
+        float childH = contentHeight;
+        
+        // 水平对齐处理
+        if (hAlign != HorizontalAlignment::Stretch) {
+            // 非拉伸时，使用期望宽度（但不超过内容宽度）
+            childW = std::min(childDesired.width, contentWidth);
+            
+            if (hAlign == HorizontalAlignment::Center) {
+                childX += (contentWidth - childW) / 2.0f;
+            } else if (hAlign == HorizontalAlignment::Right) {
+                childX += (contentWidth - childW);
+            }
+            // Left 默认为 0 偏移
+        }
+        
+        // 垂直对齐处理
+        if (vAlign != VerticalAlignment::Stretch) {
+            // 非拉伸时，使用期望高度（但不超过内容高度）
+            childH = std::min(childDesired.height, contentHeight);
+            
+            if (vAlign == VerticalAlignment::Center) {
+                childY += (contentHeight - childH) / 2.0f;
+            } else if (vAlign == VerticalAlignment::Bottom) {
+                childY += (contentHeight - childH);
+            }
+            // Top 默认为 0 偏移
+        }
+        
+        // 4. 安排子元素
+        child->Arrange(Rect(childX, childY, childW, childH));
     }
     
     return finalSize;
+}
+
+void Border::ArrangeCore(const Rect& finalRect) {
+    // 直接调用 ArrangeOverride，传入完整的尺寸（不减去 Padding）
+    // Border 的 Padding 是内部的，由 ArrangeOverride 处理
+    Size finalSize(finalRect.width, finalRect.height);
+    Size renderSize = ArrangeOverride(finalSize);
+    SetRenderSize(renderSize);
 }
 
 void Border::OnRender(render::RenderContext& context) {

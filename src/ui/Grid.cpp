@@ -3,6 +3,7 @@
 #include <limits>
 #include <sstream>
 #include <cctype>
+#include <iostream>
 
 namespace fk::ui {
 
@@ -227,6 +228,9 @@ Size Grid::MeasureOverride(const Size& availableSize) {
     // 第三遍：分配 Star 空间（带约束）
     float remainingHeight = std::max(0.0f, availableSize.height - usedHeight);
     float remainingWidth = std::max(0.0f, availableSize.width - usedWidth);
+    
+    // std::cout << "Grid::MeasureOverride remainingHeight=" << remainingHeight << " remainingWidth=" << remainingWidth << std::endl;
+
     DistributeStarRows(remainingHeight);
     DistributeStarCols(remainingWidth);
     
@@ -273,6 +277,8 @@ Size Grid::MeasureOverride(const Size& availableSize) {
                     cellHeight += rowDefinitions_[r].actualHeight;
                 }
                 
+                // std::cout << "Grid::MeasureOverride StarChild cell=" << cellWidth << "x" << cellHeight << std::endl;
+
                 Size childConstraint(cellWidth, cellHeight);
                 child->Measure(childConstraint);
             }
@@ -291,6 +297,15 @@ Size Grid::MeasureOverride(const Size& availableSize) {
     
     Size desiredSize(totalWidth, totalHeight);
     
+    // Grid 应该填满父容器(与StackPanel不同)
+    // 如果availableSize是有限的,返回它而非内容尺寸
+    if (std::isfinite(availableSize.width)) {
+        desiredSize.width = availableSize.width;
+    }
+    if (std::isfinite(availableSize.height)) {
+        desiredSize.height = availableSize.height;
+    }
+    
     // 缓存结果
     cachedAvailableSize_ = availableSize;
     cachedDesiredSize_ = desiredSize;
@@ -300,6 +315,71 @@ Size Grid::MeasureOverride(const Size& availableSize) {
 }
 
 Size Grid::ArrangeOverride(const Size& finalSize) {
+    // 重新分配Star行列以适应finalSize
+    // 计算已使用的固定空间(Auto和Pixel)
+    float usedHeight = 0;
+    float usedWidth = 0;
+    for (const auto& row : rowDefinitions_) {
+        if (row.type != RowDefinition::SizeType::Star) {
+            usedHeight += row.actualHeight;
+        }
+    }
+    for (const auto& col : columnDefinitions_) {
+        if (col.type != ColumnDefinition::SizeType::Star) {
+            usedWidth += col.actualWidth;
+        }
+    }
+    
+    // 重新分配Star空间
+    float remainingHeight = std::max(0.0f, finalSize.height - usedHeight);
+    float remainingWidth = std::max(0.0f, finalSize.width - usedWidth);
+    DistributeStarRows(remainingHeight);
+    DistributeStarCols(remainingWidth);
+    
+    // 重新测量Star行/列中的子元素,因为Star尺寸可能在Arrange阶段改变
+    for (auto* child : children_) {
+        if (child && child->GetVisibility() != Visibility::Collapsed) {
+            int row = GetRow(child);
+            int col = GetColumn(child);
+            int rowSpan = GetRowSpan(child);
+            int colSpan = GetColumnSpan(child);
+            
+            row = std::clamp(row, 0, static_cast<int>(rowDefinitions_.size()) - 1);
+            col = std::clamp(col, 0, static_cast<int>(columnDefinitions_.size()) - 1);
+            int rowEnd = std::min(row + rowSpan, static_cast<int>(rowDefinitions_.size()));
+            int colEnd = std::min(col + colSpan, static_cast<int>(columnDefinitions_.size()));
+            
+            // 检查是否在Star行或Star列中
+            bool inStarRow = false;
+            bool inStarCol = false;
+            for (int r = row; r < rowEnd; ++r) {
+                if (rowDefinitions_[r].type == RowDefinition::SizeType::Star) {
+                    inStarRow = true;
+                    break;
+                }
+            }
+            for (int c = col; c < colEnd; ++c) {
+                if (columnDefinitions_[c].type == ColumnDefinition::SizeType::Star) {
+                    inStarCol = true;
+                    break;
+                }
+            }
+            
+            // 如果在Star行或列中,用新的单元格尺寸重新测量
+            if (inStarRow || inStarCol) {
+                float cellWidth = 0;
+                float cellHeight = 0;
+                for (int c = col; c < colEnd; ++c) {
+                    cellWidth += columnDefinitions_[c].actualWidth;
+                }
+                for (int r = row; r < rowEnd; ++r) {
+                    cellHeight += rowDefinitions_[r].actualHeight;
+                }
+                child->Measure(Size(cellWidth, cellHeight));
+            }
+        }
+    }
+    
     // 计算每个单元格的偏移位置
     std::vector<float> rowOffsets(rowDefinitions_.size() + 1, 0);
     std::vector<float> colOffsets(columnDefinitions_.size() + 1, 0);
@@ -522,6 +602,8 @@ void Grid::DistributeStarRows(float availableHeight) {
                 remainingStars -= row.value;
                 it = starIndices.erase(it);
             } else {
+                // 即使没有触发约束，也暂时记录计算出的高度
+                // 但不从列表中移除，因为后续可能会因为其他行被固定而重新分配
                 row.actualHeight = idealHeight;
                 ++it;
             }

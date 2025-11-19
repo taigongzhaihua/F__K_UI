@@ -117,6 +117,10 @@ public:
 protected:
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
+    
+    // 重写 ArrangeCore 以避免 FrameworkElement 自动减去 Padding
+    void ArrangeCore(const Rect& finalRect) override;
+    
     void OnRender(render::RenderContext& context) override;
     
     void OnPropertyChanged(const binding::DependencyProperty& property,

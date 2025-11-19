@@ -511,4 +511,17 @@ target_link_libraries(test_type_constraint PRIVATE fk)
 add_executable(test_grid_star_button test_grid_star_button.cpp)
 target_link_libraries(test_grid_star_button PRIVATE fk)
 
+# Grid 完整功能测试
+add_executable(test_grid_complete test_grid_complete.cpp)
+target_link_libraries(test_grid_complete PRIVATE fk)
+
+# Grid 窗口拉伸测试
+add_executable(test_grid_resize test_grid_resize.cpp)
+target_link_libraries(test_grid_resize PRIVATE fk)
+
+# Border 对齐和布局演示
+add_executable(demo_border_alignment demo_border_alignment.cpp)
+target_link_libraries(demo_border_alignment PRIVATE fk glad freetype)
+target_compile_features(demo_border_alignment PRIVATE cxx_std_23)
+
 

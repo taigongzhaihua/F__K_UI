@@ -406,6 +406,89 @@ void Test9_ComplexLayout() {
     delete grid;
 }
 
+// 测试 10：Grid 填满父容器
+void Test10_FillParentContainer() {
+    PrintTestHeader("Test 10: Grid Fill Parent Container");
+    
+    auto grid = new Grid();
+    grid->Rows("Auto, *, 50");  // Auto行, Star行, 固定50px
+    grid->Columns("200, *, Auto");  // 固定200px, Star列, Auto列
+    
+    // 添加一些子元素
+    auto autoRowContent = new Button();
+    autoRowContent->Height(80);
+    Grid::SetRow(autoRowContent, 0);
+    Grid::SetColumn(autoRowContent, 0);
+    grid->AddChild(autoRowContent);
+    
+    auto starCellContent = new Button();
+    starCellContent->SetHorizontalAlignment(HorizontalAlignment::Stretch);
+    starCellContent->SetVerticalAlignment(VerticalAlignment::Stretch);
+    Grid::SetRow(starCellContent, 1);
+    Grid::SetColumn(starCellContent, 1);
+    grid->AddChild(starCellContent);
+    
+    // 测量：给定有限的父容器尺寸
+    Size parentSize(800, 600);
+    grid->Measure(parentSize);
+    Size desired = grid->GetDesiredSize();
+    
+    std::cout << "Parent Size: " << parentSize.width << " x " << parentSize.height << "\n";
+    std::cout << "Grid Desired: " << desired.width << " x " << desired.height << "\n";
+    
+    // 验证：Grid的DesiredSize应该等于父容器尺寸（填满行为）
+    bool measurePassed = (std::abs(desired.width - parentSize.width) < 0.1f) &&
+                         (std::abs(desired.height - parentSize.height) < 0.1f);
+    std::cout << "Measure: Grid DesiredSize " 
+              << (measurePassed ? "correctly" : "incorrectly") 
+              << " equals parent size\n";
+    
+    // 排列
+    grid->Arrange(Rect(0, 0, parentSize.width, parentSize.height));
+    
+    const auto& rows = grid->GetRowDefinitions();
+    const auto& cols = grid->GetColumnDefinitions();
+    
+    // 计算实际总尺寸
+    float totalHeight = 0, totalWidth = 0;
+    for (const auto& row : rows) {
+        totalHeight += row.actualHeight;
+    }
+    for (const auto& col : cols) {
+        totalWidth += col.actualWidth;
+    }
+    
+    std::cout << "After Arrange:\n";
+    std::cout << "  Row Heights: " << rows[0].actualHeight << ", " 
+              << rows[1].actualHeight << ", " << rows[2].actualHeight << "\n";
+    std::cout << "  Column Widths: " << cols[0].actualWidth << ", " 
+              << cols[1].actualWidth << ", " << cols[2].actualWidth << "\n";
+    std::cout << "  Total: " << totalWidth << " x " << totalHeight << "\n";
+    
+    // 验证：排列后总尺寸应该等于finalSize
+    bool arrangePassed = (std::abs(totalWidth - parentSize.width) < 0.1f) &&
+                         (std::abs(totalHeight - parentSize.height) < 0.1f);
+    std::cout << "Arrange: Grid total size " 
+              << (arrangePassed ? "correctly" : "incorrectly") 
+              << " fills parent\n";
+    
+    // 验证Star单元格的子元素是否拉伸
+    Rect starCellRect = starCellContent->GetLayoutRect();
+    float expectedStarWidth = cols[1].actualWidth;
+    float expectedStarHeight = rows[1].actualHeight;
+    
+    std::cout << "Star Cell Content: " << starCellRect.width << " x " << starCellRect.height 
+              << " (expected: " << expectedStarWidth << " x " << expectedStarHeight << ")\n";
+    
+    bool stretchPassed = (std::abs(starCellRect.width - expectedStarWidth) < 0.1f) &&
+                         (std::abs(starCellRect.height - expectedStarHeight) < 0.1f);
+    
+    bool passed = measurePassed && arrangePassed && stretchPassed;
+    PrintTestResult("Fill Parent Container", passed);
+    
+    delete grid;
+}
+
 int main() {
     std::cout << "\n";
     std::cout << "╔════════════════════════════════════════════════╗\n";
@@ -421,6 +504,7 @@ int main() {
     Test7_AutoSizingWithContent();
     Test8_PerformanceCache();
     Test9_ComplexLayout();
+    Test10_FillParentContainer();
     
     std::cout << "\n";
     std::cout << "╔════════════════════════════════════════════════╗\n";

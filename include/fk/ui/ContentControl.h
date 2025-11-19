@@ -280,14 +280,36 @@ protected:
             float right = padding.right + borderThickness.right;
             float bottom = padding.bottom + borderThickness.bottom;
             
-            Rect contentRect(
-                left,
-                top,
-                std::max(0.0f, finalRect.width - left - right),
-                std::max(0.0f, finalRect.height - top - bottom)
-            );
+            // 可用空间
+            float availableW = std::max(0.0f, finalRect.width - left - right);
+            float availableH = std::max(0.0f, finalRect.height - top - bottom);
             
-            contentElement_->Arrange(contentRect);
+            // 获取内容期望尺寸
+            Size contentDesired = contentElement_->GetDesiredSize();
+            
+            // 处理对齐
+            auto hAlign = contentElement_->GetHorizontalAlignment();
+            auto vAlign = contentElement_->GetVerticalAlignment();
+            
+            float contentW = availableW;
+            float contentH = availableH;
+            float contentX = left;
+            float contentY = top;
+            
+            if (hAlign != HorizontalAlignment::Stretch) {
+                contentW = std::min(contentDesired.width, availableW);
+                if (hAlign == HorizontalAlignment::Center) contentX += (availableW - contentW) / 2.0f;
+                else if (hAlign == HorizontalAlignment::Right) contentX += (availableW - contentW);
+            }
+            
+            if (vAlign != VerticalAlignment::Stretch) {
+                contentH = std::min(contentDesired.height, availableH);
+                if (vAlign == VerticalAlignment::Center) contentY += (availableH - contentH) / 2.0f;
+                else if (vAlign == VerticalAlignment::Bottom) contentY += (availableH - contentH);
+            }
+            
+            contentElement_->Arrange(Rect(contentX, contentY, contentW, contentH));
+            
             // 设置渲染尺寸
             this->SetRenderSize(Size(finalRect.width, finalRect.height));
         } else {
