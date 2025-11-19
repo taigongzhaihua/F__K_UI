@@ -538,3 +538,8 @@ target_compile_features(demo_border_alignment PRIVATE cxx_std_23)
 add_executable(test_panel_background_corners test_panel_background_corners.cpp)
 target_link_libraries(test_panel_background_corners PRIVATE fk glad freetype)
 target_compile_features(test_panel_background_corners PRIVATE cxx_std_23)
+
+# Panel 背景和圆角演示
+add_executable(demo_panel_backgrounds demo_panel_backgrounds.cpp)
+target_link_libraries(demo_panel_backgrounds PRIVATE fk glad freetype)
+target_compile_features(demo_panel_backgrounds PRIVATE cxx_std_23)
