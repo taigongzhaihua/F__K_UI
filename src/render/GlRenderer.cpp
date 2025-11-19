@@ -53,12 +53,28 @@ uniform float uStrokeWidth;   // 描边宽度（像素）
 uniform vec2 uStrokeAlignment; // x = strokeInset, y = strokeOutset
 uniform float uAAWidth;       // 抗锯齿宽度
 uniform float uOpacity;
-uniform float uCornerRadius;
+uniform vec4 uCornerRadius;   // 四个圆角：x=topLeft, y=topRight, z=bottomRight, w=bottomLeft
 uniform vec2 uRectSize;
 
-float roundedBoxSDF(vec2 p, vec2 size, float radius) {
-    vec2 d = abs(p) - size + radius;
-    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - radius;
+float roundedBoxSDF(vec2 p, vec2 size, vec4 radius) {
+    // 根据象限选择对应的圆角半径
+    float r;
+    if (p.x > 0.0) {
+        if (p.y > 0.0) {
+            r = radius.z; // 右下
+        } else {
+            r = radius.y; // 右上
+        }
+    } else {
+        if (p.y > 0.0) {
+            r = radius.w; // 左下
+        } else {
+            r = radius.x; // 左上
+        }
+    }
+    
+    vec2 d = abs(p) - size + r;
+    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - r;
 }
 
 void main() {
@@ -377,10 +393,13 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     int opacityLoc = glGetUniformLocation(shaderProgram_, "uOpacity");
     glUniform1f(opacityLoc, effectiveOpacity);
 
-    // 设置圆角半径（限制不超过最小尺寸的一半）
-    float clampedCornerRadius = std::clamp(payload.cornerRadius, 0.0f, halfMinDimension);
+    // 设置圆角半径（四个独立的圆角，每个限制不超过最小尺寸的一半）
+    float clampedTopLeft = std::clamp(payload.cornerRadiusTopLeft, 0.0f, halfMinDimension);
+    float clampedTopRight = std::clamp(payload.cornerRadiusTopRight, 0.0f, halfMinDimension);
+    float clampedBottomRight = std::clamp(payload.cornerRadiusBottomRight, 0.0f, halfMinDimension);
+    float clampedBottomLeft = std::clamp(payload.cornerRadiusBottomLeft, 0.0f, halfMinDimension);
     int cornerRadiusLoc = glGetUniformLocation(shaderProgram_, "uCornerRadius");
-    glUniform1f(cornerRadiusLoc, clampedCornerRadius);
+    glUniform4f(cornerRadiusLoc, clampedTopLeft, clampedTopRight, clampedBottomRight, clampedBottomLeft);
 
     // 设置矩形尺寸（用于圆角计算）
     int rectSizeLoc = glGetUniformLocation(shaderProgram_, "uRectSize");

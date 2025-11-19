@@ -137,14 +137,20 @@ public:
      * @param fillColor 填充颜色
      * @param strokeColor 描边颜色
      * @param strokeWidth 描边宽度
-     * @param cornerRadius 圆角半径
+     * @param cornerRadiusTopLeft 左上圆角半径
+     * @param cornerRadiusTopRight 右上圆角半径
+     * @param cornerRadiusBottomRight 右下圆角半径
+     * @param cornerRadiusBottomLeft 左下圆角半径
      */
     void DrawRectangle(
         const ui::Rect& rect,
         const std::array<float, 4>& fillColor,
         const std::array<float, 4>& strokeColor = {0, 0, 0, 0},
         float strokeWidth = 0.0f,
-        float cornerRadius = 0.0f,
+        float cornerRadiusTopLeft = 0.0f,
+        float cornerRadiusTopRight = 0.0f,
+        float cornerRadiusBottomRight = 0.0f,
+        float cornerRadiusBottomLeft = 0.0f,
         StrokeAlignment strokeAlignment = StrokeAlignment::Center,
         float aaWidth = 0.75f
     );

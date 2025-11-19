@@ -166,7 +166,10 @@ void RenderContext::DrawRectangle(
     const std::array<float, 4>& fillColor,
     const std::array<float, 4>& strokeColor,
     float strokeWidth,
-    float cornerRadius,
+    float cornerRadiusTopLeft,
+    float cornerRadiusTopRight,
+    float cornerRadiusBottomRight,
+    float cornerRadiusBottomLeft,
     StrokeAlignment strokeAlignment,
     float aaWidth)
 {
@@ -192,7 +195,10 @@ void RenderContext::DrawRectangle(
     payload.fillColor = finalFillColor;
     payload.strokeColor = finalStrokeColor;
     payload.strokeThickness = strokeWidth;
-    payload.cornerRadius = cornerRadius;
+    payload.cornerRadiusTopLeft = cornerRadiusTopLeft;
+    payload.cornerRadiusTopRight = cornerRadiusTopRight;
+    payload.cornerRadiusBottomRight = cornerRadiusBottomRight;
+    payload.cornerRadiusBottomLeft = cornerRadiusBottomLeft;
     payload.strokeAlignment = strokeAlignment;
     payload.aaWidth = aaWidth;
     

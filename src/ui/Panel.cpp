@@ -15,6 +15,17 @@ const binding::DependencyProperty& Panel<Derived>::BackgroundProperty() {
     return property;
 }
 
+template<typename Derived>
+const binding::DependencyProperty& Panel<Derived>::CornerRadiusProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "CornerRadius",
+        typeid(ui::CornerRadius),
+        typeid(Panel<Derived>),
+        {ui::CornerRadius(0)}
+    );
+    return property;
+}
+
 } // namespace fk::ui
 
 // 显式实例化 Panel 模板（必须在命名空间之外）
