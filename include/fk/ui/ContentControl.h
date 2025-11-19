@@ -184,15 +184,44 @@ protected:
      * @brief 测量内容元素
      */
     Size MeasureCore(const Size& availableSize) override {
+        // 应用尺寸约束（Width, Height, MinWidth, MaxWidth 等）
+        auto constrainedSize = this->ApplySizeConstraints(availableSize);
+        
+        // 如果显式设置了 Width 和 Height，直接返回
+        float explicitWidth = this->GetWidth();
+        float explicitHeight = this->GetHeight();
+        if (explicitWidth > 0 && explicitHeight > 0) {
+            // 仍然需要测量子元素以便它们有正确的 DesiredSize
+            if (this->GetTemplateRoot()) {
+                this->GetTemplateRoot()->Measure(constrainedSize);
+            } else if (contentElement_) {
+                auto padding = this->GetPadding();
+                auto borderThickness = this->GetBorderThickness();
+                float paddingWidth = padding.left + padding.right + borderThickness.left + borderThickness.right;
+                float paddingHeight = padding.top + padding.bottom + borderThickness.top + borderThickness.bottom;
+                Size contentAvailableSize(
+                    std::max(0.0f, constrainedSize.width - paddingWidth),
+                    std::max(0.0f, constrainedSize.height - paddingHeight)
+                );
+                contentElement_->Measure(contentAvailableSize);
+            }
+            return Size(explicitWidth, explicitHeight);
+        }
+        
         // 如果有模板根，测量模板根
         if (this->GetTemplateRoot()) {
-            this->GetTemplateRoot()->Measure(availableSize);
-            return this->GetTemplateRoot()->GetDesiredSize();
+            this->GetTemplateRoot()->Measure(constrainedSize);
+            auto desiredSize = this->GetTemplateRoot()->GetDesiredSize();
+            
+            // 应用显式尺寸（如果只设置了一个维度）
+            if (explicitWidth > 0) desiredSize.width = explicitWidth;
+            if (explicitHeight > 0) desiredSize.height = explicitHeight;
+            
+            return desiredSize;
         }
         
         // 回退机制：直接测量内容元素
         if (contentElement_) {
-            // 减去 Padding
             auto padding = this->GetPadding();
             auto borderThickness = this->GetBorderThickness();
             
@@ -200,20 +229,30 @@ protected:
             float paddingHeight = padding.top + padding.bottom + borderThickness.top + borderThickness.bottom;
             
             Size contentAvailableSize(
-                std::max(0.0f, availableSize.width - paddingWidth),
-                std::max(0.0f, availableSize.height - paddingHeight)
+                std::max(0.0f, constrainedSize.width - paddingWidth),
+                std::max(0.0f, constrainedSize.height - paddingHeight)
             );
             
             contentElement_->Measure(contentAvailableSize);
             Size desiredSize = contentElement_->GetDesiredSize();
             
-            return Size(
+            desiredSize = Size(
                 desiredSize.width + paddingWidth,
                 desiredSize.height + paddingHeight
             );
+            
+            // 应用显式尺寸（如果只设置了一个维度）
+            if (explicitWidth > 0) desiredSize.width = explicitWidth;
+            if (explicitHeight > 0) desiredSize.height = explicitHeight;
+            
+            return desiredSize;
         }
         
-        return Size(0, 0);
+        // 没有内容，返回显式尺寸或 0
+        return Size(
+            explicitWidth > 0 ? explicitWidth : 0,
+            explicitHeight > 0 ? explicitHeight : 0
+        );
     }
     
     /**

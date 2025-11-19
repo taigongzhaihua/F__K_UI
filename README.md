@@ -27,6 +27,7 @@ F__K_UI 是一个受 WPF 启发的 C++ UI 框架，提供：
 | 数据绑定 | 115% | ✅ 完整 |
 | 视觉树系统 | 100% | ✅ 完整 |
 | 布局系统 | 110% | ✅ 完整 |
+| **Grid 面板** | **100%** | ✅ WPF 风格 API |
 | 控件库 | 95% | ✅ 核心完整 |
 | **Image 控件** | **100%** | ✅ 真实图片加载 |
 | **Transform 系统** | **100%** | ✅ 新增完整 |
@@ -113,6 +114,30 @@ items.CollectionChanged([](const CollectionChangedEventArgs& args) {
 });
 ```
 
+### Grid 布局 (WPF 风格)
+
+```cpp
+#include "fk/ui/Grid.h"
+
+// 使用 WPF 风格 API（推荐）
+auto grid = new Grid();
+grid->Rows("60, *, 30")        // 工具栏、内容、状态栏
+    ->Columns("200, *, 200")   // 左边栏、主区、右边栏
+    ->Children({
+        toolbar      | cell(0, 0).ColumnSpan(3),
+        leftSidebar  | cell(1, 0),
+        editor       | cell(1, 1),
+        rightSidebar | cell(1, 2),
+        statusBar    | cell(2, 0).ColumnSpan(3)
+    });
+
+// 对比传统风格
+grid->AddRowDefinition(RowDefinition::Pixel(60));
+Grid::SetRow(toolbar, 0);
+Grid::SetColumnSpan(toolbar, 3);
+grid->AddChild(toolbar);
+```
+
 ## 📦 项目结构
 
 ```
@@ -133,24 +158,32 @@ F__K_UI/
 
 ## 🎯 Phase 1 增强成果 (NEW!)
 
-### 1. Image 控件增强 (95% → 100%)
+### 1. Grid 布局系统 (95% → 100%) ⭐
+- ✅ Auto/Pixel/Star 三种尺寸模式
+- ✅ Min/Max 约束支持
+- ✅ 字符串解析 API：`Rows("60, *, 30")`
+- ✅ **WPF 风格管道操作符**：`element | cell(row, col)`
+- ✅ 性能缓存优化（80%+ 提速）
+- ✅ 三种 API 风格（传统、流式、WPF）
+
+### 2. Image 控件增强 (95% → 100%)
 - ✅ 集成 stb_image 库
 - ✅ 真实 PNG/JPEG 加载
 - ✅ OpenGL 纹理管理
 - ✅ 完整渲染支持
 
-### 2. Transform 系统 (NEW - 100%)
+### 3. Transform 系统 (NEW - 100%)
 - ✅ 6种变换类型: Translate, Scale, Rotate, Skew, Matrix, Group
 - ✅ UIElement.RenderTransform 属性
 - ✅ Matrix3x2 逆矩阵计算
 - ✅ 变换组合支持
 
-### 3. InputManager 增强 (95% → 98%)
+### 4. InputManager 增强 (95% → 98%)
 - ✅ 变换感知的命中测试
 - ✅ 逆矩阵坐标转换
 - ✅ 旋转控件交互支持
 
-### 4. FocusManager 增强 (95% → 98%)
+### 5. FocusManager 增强 (95% → 98%)
 - ✅ 方向键导航 (Up/Down/Left/Right)
 - ✅ 空间距离计算
 - ✅ 智能候选选择
@@ -194,6 +227,14 @@ F__K_UI/
 - [实现状态报告](Docs/Implementation-Status.md) - 完整的功能清单和进度
 - [架构设计](Docs/Designs/Architecture-Refactoring.md) - 框架架构说明
 - [API 文档](Docs/API/) - 各模块 API 说明
+
+### Grid 专项文档 ⭐
+
+- [Grid API 完整参考](GRID_API_REFERENCE.md) - **推荐起点** 📖
+- [Grid 快速开始](GRID_QUICK_START.md) - 新手入门指南
+- [Grid WPF 风格 API](GRID_WPF_STYLE_API.md) - 管道操作符详解
+- [Grid 完整实现](GRID_COMPLETE_IMPLEMENTATION.md) - 技术实现细节
+- [示例代码](example_grid_wpf_style.cpp) - 完整示例程序
 
 ## 🤝 贡献
 

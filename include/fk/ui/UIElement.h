@@ -3,6 +3,7 @@
 #include "fk/ui/Visual.h"
 #include "fk/ui/Primitives.h"
 #include "fk/ui/Thickness.h"
+#include "fk/ui/Alignment.h"
 #include "fk/core/Event.h"
 #include "fk/binding/DependencyProperty.h"
 #include <functional>
@@ -118,6 +119,18 @@ public:
      */
     virtual Thickness GetMargin() const;
     
+    /**
+     * @brief 获取水平对齐方式（默认拉伸）
+     * @note 由 FrameworkElement 重写以提供实际值
+     */
+    virtual HorizontalAlignment GetHorizontalAlignment() const;
+    
+    /**
+     * @brief 获取垂直对齐方式（默认拉伸）
+     * @note 由 FrameworkElement 重写以提供实际值
+     */
+    virtual VerticalAlignment GetVerticalAlignment() const;
+    
     // ========== 模板支持 ==========
     
     /**
@@ -227,6 +240,36 @@ public:
      * 此方法是 FindName() 的优化版本，当存在 NameScope 时提供更好的性能
      */
     UIElement* FindNameFast(const std::string& name);
+
+    // ========== Grid 附加属性流式方法 ==========
+    
+    /**
+     * @brief 设置 Grid.Row 附加属性（流式调用）
+     * @param row 行索引
+     * @return 返回 this 以支持链式调用
+     */
+    UIElement* Row(int row);
+    
+    /**
+     * @brief 设置 Grid.Column 附加属性（流式调用）
+     * @param col 列索引
+     * @return 返回 this 以支持链式调用
+     */
+    UIElement* Column(int col);
+    
+    /**
+     * @brief 设置 Grid.RowSpan 附加属性（流式调用）
+     * @param span 行跨度
+     * @return 返回 this 以支持链式调用
+     */
+    UIElement* RowSpan(int span);
+    
+    /**
+     * @brief 设置 Grid.ColumnSpan 附加属性（流式调用）
+     * @param span 列跨度
+     * @return 返回 this 以支持链式调用
+     */
+    UIElement* ColumnSpan(int span);
 
     // ========== 事件处理 ==========
     

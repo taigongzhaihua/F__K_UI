@@ -194,6 +194,7 @@ add_library(fk STATIC
     src/ui/Button.cpp
     src/ui/StackPanel.cpp
     src/ui/Grid.cpp
+    src/ui/GridCellAttacher.cpp
     src/ui/Brush.cpp
     src/ui/ContentPresenter.cpp
     src/ui/Shape.cpp
@@ -254,6 +255,9 @@ endif()
 # ===== 示例可执行文件 (临时测试) =====
 add_executable(example_app examples/main.cpp)
 target_link_libraries(example_app PRIVATE fk)
+
+add_executable(test_text_measure examples/test_text_measure.cpp)
+target_link_libraries(test_text_measure PRIVATE fk)
 
 add_executable(style_api_test examples/style_api_test.cpp)
 target_link_libraries(style_api_test PRIVATE fk)
@@ -498,3 +502,13 @@ target_link_libraries(test_button_state_transition PRIVATE fk)
 add_executable(test_border_zero_thickness test_border_zero_thickness.cpp)
 target_link_libraries(test_border_zero_thickness PRIVATE fk glad freetype)
 target_compile_features(test_border_zero_thickness PRIVATE cxx_std_23)
+
+# 类型约束测试
+add_executable(test_type_constraint test_type_constraint.cpp)
+target_link_libraries(test_type_constraint PRIVATE fk)
+
+# Grid Star 行 Button 测试
+add_executable(test_grid_star_button test_grid_star_button.cpp)
+target_link_libraries(test_grid_star_button PRIVATE fk)
+
+

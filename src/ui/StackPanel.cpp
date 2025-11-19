@@ -41,40 +41,60 @@ Size StackPanel::MeasureOverride(const Size& availableSize) {
     float pendingMargin = 0;
     bool hasVisibleChild = false;
     
+    // 在堆叠方向给予无限空间，让子元素自由测量
+    // 在垂直方向给予容器的约束，避免子元素过度扩展
     Size childAvailable = availableSize;
     
     if (orientation == Orientation::Vertical) {
+        // 垂直堆叠：高度无限，宽度受限
         childAvailable.height = std::numeric_limits<float>::infinity();
     } else {
+        // 水平堆叠：宽度无限，高度受限
         childAvailable.width = std::numeric_limits<float>::infinity();
     }
     
     // 测量所有子元素
     for (auto* child : children_) {
+        // 跳过 Collapsed 的子元素（不参与布局）
         if (child && child->GetVisibility() != Visibility::Collapsed) {
             child->Measure(childAvailable);
             Size childDesired = child->GetDesiredSize();
             auto margin = child->GetMargin();
 
             if (orientation == Orientation::Vertical) {
+                // === 垂直堆叠：累加高度，记录最大宽度 ===
+                
                 if (!hasVisibleChild) {
+                    // 第一个元素：直接加上顶部 Margin
                     totalHeight += margin.top;
                 } else {
-                    totalHeight += std::max(pendingMargin, margin.top) + spacing;
+                    // 后续元素：Margin 折叠 + Spacing
+                    // Spacing 作为"最小间距保证"参与折叠（取三者最大值）
+                    // 设计理念：Spacing = N 表示"保证子元素间距至少 N 像素"
+                    totalHeight += std::max({pendingMargin, margin.top, spacing});
                 }
 
                 totalHeight += childDesired.height;
                 pendingMargin = margin.bottom;
+                
+                // 记录最大宽度（含左右 Margin）
                 maxWidth = std::max(maxWidth, childDesired.width + margin.left + margin.right);
             } else {
+                // === 水平堆叠：累加宽度，记录最大高度 ===
+                
                 if (!hasVisibleChild) {
+                    // 第一个元素：直接加上左侧 Margin
                     totalWidth += margin.left;
                 } else {
-                    totalWidth += std::max(pendingMargin, margin.left) + spacing;
+                    // 后续元素：Margin 折叠 + Spacing
+                    // Spacing 参与折叠（取三者最大值）
+                    totalWidth += std::max({pendingMargin, margin.left, spacing});
                 }
 
                 totalWidth += childDesired.width;
                 pendingMargin = margin.right;
+                
+                // 记录最大高度（含上下 Margin）
                 maxHeight = std::max(maxHeight, childDesired.height + margin.top + margin.bottom);
             }
 
@@ -82,6 +102,7 @@ Size StackPanel::MeasureOverride(const Size& availableSize) {
         }
     }
     
+    // 加上最后一个元素的尾部 Margin
     if (hasVisibleChild) {
         if (orientation == Orientation::Vertical) {
             totalHeight += pendingMargin;
@@ -105,51 +126,127 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
     bool hasArrangedChild = false;
     
     for (auto* child : children_) {
+        // 跳过 Collapsed 的子元素
         if (child && child->GetVisibility() != Visibility::Collapsed) {
             Size childDesired = child->GetDesiredSize();
             auto margin = child->GetMargin();
             
+            // 缓存 Alignment 查询结果（性能优化）
+            // UIElement 提供虚方法，FrameworkElement 重写以返回实际值
+            auto hAlign = child->GetHorizontalAlignment();
+            auto vAlign = child->GetVerticalAlignment();
+            
             if (orientation == Orientation::Vertical) {
+                // ========== 垂直堆叠布局 ==========
+                
+                // 1. 计算垂直偏移（考虑 Margin 折叠和 Spacing）
                 if (!hasArrangedChild) {
                     offset += margin.top;
                 } else {
-                    offset += std::max(pendingMargin, margin.top) + spacing;
+                    // Spacing 参与折叠（取三者最大值）
+                    offset += std::max({pendingMargin, margin.top, spacing});
                 }
 
-                // 根据子元素的 HorizontalAlignment 决定宽度
-                // 垂直 StackPanel：子元素的宽度由其 HorizontalAlignment 决定
-                // - Stretch: 拉伸到整个宽度
-                // - 其他: 使用子元素的期望宽度
+                // 2. 根据 HorizontalAlignment 决定宽度和水平位置
+                // WPF 规则：垂直 StackPanel 中，子元素的 HorizontalAlignment 有效
+                //          VerticalAlignment 无效（高度由内容决定）
                 float availableWidth = std::max(0.0f, finalSize.width - margin.left - margin.right);
-                float childWidth = childDesired.width;  // desiredSize 已经不含 Margin
-                childWidth = std::min(childWidth, availableWidth);  // 但不超过可用宽度
+                float childWidth;
+                float childX;
                 
+                switch (hAlign) {
+                    case HorizontalAlignment::Stretch:
+                        // 拉伸：填充整个可用宽度
+                        childWidth = availableWidth;
+                        childX = margin.left;
+                        break;
+                        
+                    case HorizontalAlignment::Left:
+                        // 左对齐：使用期望宽度（不超过可用宽度）
+                        childWidth = std::min(childDesired.width, availableWidth);
+                        childX = margin.left;
+                        break;
+                        
+                    case HorizontalAlignment::Center:
+                        // 居中：使用期望宽度，居中对齐
+                        childWidth = std::min(childDesired.width, availableWidth);
+                        childX = margin.left + (availableWidth - childWidth) / 2.0f;
+                        break;
+                        
+                    case HorizontalAlignment::Right:
+                        // 右对齐：使用期望宽度，靠右对齐
+                        childWidth = std::min(childDesired.width, availableWidth);
+                        childX = margin.left + availableWidth - childWidth;
+                        break;
+                        
+                    default:
+                        // 默认：Stretch
+                        childWidth = availableWidth;
+                        childX = margin.left;
+                        break;
+                }
+                
+                // 高度始终使用期望高度（垂直堆叠方向由内容决定）
                 float childHeight = std::max(0.0f, childDesired.height);
-                float childX = margin.left;
                 float childY = offset;
 
                 child->Arrange(Rect(childX, childY, childWidth, childHeight));
                 offset += childHeight;
                 pendingMargin = margin.bottom;
+                
             } else {
+                // ========== 水平堆叠布局 ==========
+                
+                // 1. 计算水平偏移（考虑 Margin 折叠和 Spacing）
                 if (!hasArrangedChild) {
                     offset += margin.left;
                 } else {
-                    offset += std::max(pendingMargin, margin.left) + spacing;
+                    // Spacing 参与折叠（取三者最大值）
+                    offset += std::max({pendingMargin, margin.left, spacing});
                 }
 
-                float childWidth = std::max(0.0f, childDesired.width);
-                
-                // 根据子元素的 VerticalAlignment 决定高度
-                // 水平 StackPanel：子元素的高度由其 VerticalAlignment 决定
-                // - Stretch: 拉伸到整个高度
-                // - 其他: 使用子元素的期望高度
+                // 2. 根据 VerticalAlignment 决定高度和垂直位置
+                // WPF 规则：水平 StackPanel 中，子元素的 VerticalAlignment 有效
+                //          HorizontalAlignment 无效（宽度由内容决定）
                 float availableHeight = std::max(0.0f, finalSize.height - margin.top - margin.bottom);
-                float childHeight = childDesired.height;  // desiredSize 已经不含 Margin
-                childHeight = std::min(childHeight, availableHeight);  // 但不超过可用高度
+                float childHeight;
+                float childY;
                 
+                switch (vAlign) {
+                    case VerticalAlignment::Stretch:
+                        // 拉伸：填充整个可用高度
+                        childHeight = availableHeight;
+                        childY = margin.top;
+                        break;
+                        
+                    case VerticalAlignment::Top:
+                        // 顶部对齐：使用期望高度（不超过可用高度）
+                        childHeight = std::min(childDesired.height, availableHeight);
+                        childY = margin.top;
+                        break;
+                        
+                    case VerticalAlignment::Center:
+                        // 居中：使用期望高度，垂直居中
+                        childHeight = std::min(childDesired.height, availableHeight);
+                        childY = margin.top + (availableHeight - childHeight) / 2.0f;
+                        break;
+                        
+                    case VerticalAlignment::Bottom:
+                        // 底部对齐：使用期望高度，靠底对齐
+                        childHeight = std::min(childDesired.height, availableHeight);
+                        childY = margin.top + availableHeight - childHeight;
+                        break;
+                        
+                    default:
+                        // 默认：Stretch
+                        childHeight = availableHeight;
+                        childY = margin.top;
+                        break;
+                }
+                
+                // 宽度始终使用期望宽度（水平堆叠方向由内容决定）
+                float childWidth = std::max(0.0f, childDesired.width);
                 float childX = offset;
-                float childY = margin.top;
 
                 child->Arrange(Rect(childX, childY, childWidth, childHeight));
                 offset += childWidth;

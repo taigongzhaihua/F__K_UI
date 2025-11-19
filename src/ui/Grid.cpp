@@ -1,91 +1,188 @@
 #include "fk/ui/Grid.h"
 #include <algorithm>
-#include <unordered_map>
+#include <limits>
+#include <sstream>
+#include <cctype>
 
 namespace fk::ui {
 
-// 附加属性存储（简化实现，使用全局映射）
-static std::unordered_map<UIElement*, int> g_rowMap;
-static std::unordered_map<UIElement*, int> g_columnMap;
-static std::unordered_map<UIElement*, int> g_rowSpanMap;
-static std::unordered_map<UIElement*, int> g_columnSpanMap;
+// ========== 模板显式实例化 ==========
+template class FrameworkElement<Grid>;
+template class Panel<Grid>;
+
+// ========== DependencyProperty 注册 ==========
+
+const binding::DependencyProperty& Grid::RowProperty() {
+    static auto& property = binding::DependencyProperty::RegisterAttached(
+        "Row",
+        typeid(int),
+        typeid(Grid),
+        {0}
+    );
+    return property;
+}
+
+const binding::DependencyProperty& Grid::ColumnProperty() {
+    static auto& property = binding::DependencyProperty::RegisterAttached(
+        "Column",
+        typeid(int),
+        typeid(Grid),
+        {0}
+    );
+    return property;
+}
+
+const binding::DependencyProperty& Grid::RowSpanProperty() {
+    static auto& property = binding::DependencyProperty::RegisterAttached(
+        "RowSpan",
+        typeid(int),
+        typeid(Grid),
+        {1}
+    );
+    return property;
+}
+
+const binding::DependencyProperty& Grid::ColumnSpanProperty() {
+    static auto& property = binding::DependencyProperty::RegisterAttached(
+        "ColumnSpan",
+        typeid(int),
+        typeid(Grid),
+        {1}
+    );
+    return property;
+}
+
+// ========== 行列定义管理 ==========
 
 Grid* Grid::AddRowDefinition(const RowDefinition& row) {
     rowDefinitions_.push_back(row);
+    measureCacheValid_ = false;
     InvalidateMeasure();
     return this;
 }
 
 Grid* Grid::AddColumnDefinition(const ColumnDefinition& col) {
     columnDefinitions_.push_back(col);
+    measureCacheValid_ = false;
     InvalidateMeasure();
     return this;
 }
 
 Grid* Grid::RowDefinitions(std::initializer_list<RowDefinition> rows) {
     for (const auto& row : rows) {
-        AddRowDefinition(row);
+        rowDefinitions_.push_back(row);
     }
+    measureCacheValid_ = false;
+    InvalidateMeasure();
     return this;
 }
 
 Grid* Grid::ColumnDefinitions(std::initializer_list<ColumnDefinition> cols) {
     for (const auto& col : cols) {
-        AddColumnDefinition(col);
+        columnDefinitions_.push_back(col);
     }
+    measureCacheValid_ = false;
+    InvalidateMeasure();
     return this;
 }
 
+Grid* Grid::Rows(const std::string& spec) {
+    auto rows = ParseRowSpec(spec);
+    for (const auto& row : rows) {
+        rowDefinitions_.push_back(row);
+    }
+    measureCacheValid_ = false;
+    InvalidateMeasure();
+    return this;
+}
+
+Grid* Grid::Columns(const std::string& spec) {
+    auto cols = ParseColumnSpec(spec);
+    for (const auto& col : cols) {
+        columnDefinitions_.push_back(col);
+    }
+    measureCacheValid_ = false;
+    InvalidateMeasure();
+    return this;
+}
+
+// ========== 附加属性访问器 ==========
+
 void Grid::SetRow(UIElement* element, int row) {
-    if (element) g_rowMap[element] = row;
+    if (element) {
+        element->SetValue(RowProperty(), row);
+    }
 }
 
 int Grid::GetRow(UIElement* element) {
-    if (element && g_rowMap.count(element)) {
-        return g_rowMap[element];
+    if (element) {
+        auto value = element->GetValue(RowProperty());
+        if (value.has_value()) {
+            return std::any_cast<int>(value);
+        }
     }
     return 0;
 }
 
 void Grid::SetColumn(UIElement* element, int col) {
-    if (element) g_columnMap[element] = col;
+    if (element) {
+        element->SetValue(ColumnProperty(), col);
+    }
 }
 
 int Grid::GetColumn(UIElement* element) {
-    if (element && g_columnMap.count(element)) {
-        return g_columnMap[element];
+    if (element) {
+        auto value = element->GetValue(ColumnProperty());
+        if (value.has_value()) {
+            return std::any_cast<int>(value);
+        }
     }
     return 0;
 }
 
 void Grid::SetRowSpan(UIElement* element, int span) {
-    if (element) g_rowSpanMap[element] = span;
+    if (element) {
+        element->SetValue(RowSpanProperty(), std::max(1, span));
+    }
 }
 
 int Grid::GetRowSpan(UIElement* element) {
-    if (element && g_rowSpanMap.count(element)) {
-        return g_rowSpanMap[element];
+    if (element) {
+        auto value = element->GetValue(RowSpanProperty());
+        if (value.has_value()) {
+            return std::max(1, std::any_cast<int>(value));
+        }
     }
     return 1;
 }
 
 void Grid::SetColumnSpan(UIElement* element, int span) {
-    if (element) g_columnSpanMap[element] = span;
+    if (element) {
+        element->SetValue(ColumnSpanProperty(), std::max(1, span));
+    }
 }
 
 int Grid::GetColumnSpan(UIElement* element) {
-    if (element && g_columnSpanMap.count(element)) {
-        return g_columnSpanMap[element];
+    if (element) {
+        auto value = element->GetValue(ColumnSpanProperty());
+        if (value.has_value()) {
+            return std::max(1, std::any_cast<int>(value));
+        }
     }
     return 1;
 }
 
+// ========== 布局算法 ==========
+
 Size Grid::MeasureOverride(const Size& availableSize) {
-    // 简化实现：三遍测量
-    // 1. 测量所有 Auto 和 Pixel 尺寸的行列
-    // 2. 分配剩余空间给 Star 行列
-    // 3. 测量所有子元素
+    // 性能优化：检查缓存
+    if (measureCacheValid_ && 
+        cachedAvailableSize_.width == availableSize.width &&
+        cachedAvailableSize_.height == availableSize.height) {
+        return cachedDesiredSize_;
+    }
     
+    // 自动创建默认 1* 行列
     if (rowDefinitions_.empty()) {
         rowDefinitions_.push_back(RowDefinition::Star());
     }
@@ -93,27 +190,94 @@ Size Grid::MeasureOverride(const Size& availableSize) {
         columnDefinitions_.push_back(ColumnDefinition::Star());
     }
     
-    // 第一遍：处理 Pixel 和 Auto
+    // 第一遍：处理 Pixel 尺寸
+    for (auto& row : rowDefinitions_) {
+        if (row.type == RowDefinition::SizeType::Pixel) {
+            row.actualHeight = ApplyConstraints(row.value, row.minHeight, row.maxHeight);
+        } else {
+            row.actualHeight = 0;
+        }
+    }
+    for (auto& col : columnDefinitions_) {
+        if (col.type == ColumnDefinition::SizeType::Pixel) {
+            col.actualWidth = ApplyConstraints(col.value, col.minWidth, col.maxWidth);
+        } else {
+            col.actualWidth = 0;
+        }
+    }
+    
+    // 第二遍：测量 Auto 尺寸（基于子元素内容）
     MeasureAutoRows(availableSize);
     MeasureAutoCols(availableSize);
     
-    // 计算剩余空间
+    // 计算已使用的空间
     float usedHeight = 0;
     float usedWidth = 0;
-    for (auto& row : rowDefinitions_) {
+    for (const auto& row : rowDefinitions_) {
         if (row.type != RowDefinition::SizeType::Star) {
             usedHeight += row.actualHeight;
         }
     }
-    for (auto& col : columnDefinitions_) {
+    for (const auto& col : columnDefinitions_) {
         if (col.type != ColumnDefinition::SizeType::Star) {
             usedWidth += col.actualWidth;
         }
     }
     
-    // 第二遍：分配 Star 空间
-    DistributeStarRows(availableSize.height - usedHeight);
-    DistributeStarCols(availableSize.width - usedWidth);
+    // 第三遍：分配 Star 空间（带约束）
+    float remainingHeight = std::max(0.0f, availableSize.height - usedHeight);
+    float remainingWidth = std::max(0.0f, availableSize.width - usedWidth);
+    DistributeStarRows(remainingHeight);
+    DistributeStarCols(remainingWidth);
+    
+    // 第四遍：测量 Star 行/列中的子元素
+    // 关键修复：必须测量 Star 单元格中的子元素，否则它们的 DesiredSize 为 0
+    for (auto* child : children_) {
+        if (child && child->GetVisibility() != Visibility::Collapsed) {
+            int row = GetRow(child);
+            int col = GetColumn(child);
+            int rowSpan = GetRowSpan(child);
+            int colSpan = GetColumnSpan(child);
+            
+            // 索引边界检查
+            row = std::clamp(row, 0, static_cast<int>(rowDefinitions_.size()) - 1);
+            col = std::clamp(col, 0, static_cast<int>(columnDefinitions_.size()) - 1);
+            int rowEnd = std::min(row + rowSpan, static_cast<int>(rowDefinitions_.size()));
+            int colEnd = std::min(col + colSpan, static_cast<int>(columnDefinitions_.size()));
+            
+            // 检查是否在 Star 行或 Star 列中
+            bool inStarRow = false;
+            bool inStarCol = false;
+            for (int r = row; r < rowEnd; ++r) {
+                if (rowDefinitions_[r].type == RowDefinition::SizeType::Star) {
+                    inStarRow = true;
+                    break;
+                }
+            }
+            for (int c = col; c < colEnd; ++c) {
+                if (columnDefinitions_[c].type == ColumnDefinition::SizeType::Star) {
+                    inStarCol = true;
+                    break;
+                }
+            }
+            
+            // 如果在 Star 行或列中，现在才测量
+            if (inStarRow || inStarCol) {
+                // 计算可用空间（Star 空间已分配）
+                float cellWidth = 0;
+                float cellHeight = 0;
+                for (int c = col; c < colEnd; ++c) {
+                    cellWidth += columnDefinitions_[c].actualWidth;
+                }
+                for (int r = row; r < rowEnd; ++r) {
+                    cellHeight += rowDefinitions_[r].actualHeight;
+                }
+                
+                Size childConstraint(cellWidth, cellHeight);
+                child->Measure(childConstraint);
+            }
+        }
+    }
     
     // 计算总尺寸
     float totalHeight = 0;
@@ -125,11 +289,18 @@ Size Grid::MeasureOverride(const Size& availableSize) {
         totalWidth += col.actualWidth;
     }
     
-    return Size(totalWidth, totalHeight);
+    Size desiredSize(totalWidth, totalHeight);
+    
+    // 缓存结果
+    cachedAvailableSize_ = availableSize;
+    cachedDesiredSize_ = desiredSize;
+    measureCacheValid_ = true;
+    
+    return desiredSize;
 }
 
 Size Grid::ArrangeOverride(const Size& finalSize) {
-    // 计算每个单元格的位置
+    // 计算每个单元格的偏移位置
     std::vector<float> rowOffsets(rowDefinitions_.size() + 1, 0);
     std::vector<float> colOffsets(columnDefinitions_.size() + 1, 0);
     
@@ -140,24 +311,88 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
         colOffsets[i + 1] = colOffsets[i] + columnDefinitions_[i].actualWidth;
     }
     
-    // 排列子元素
+    // 排列子元素（支持对齐和边距）
     for (auto* child : children_) {
         if (child && child->GetVisibility() != Visibility::Collapsed) {
+            // 获取 Grid 附加属性
             int row = GetRow(child);
             int col = GetColumn(child);
             int rowSpan = GetRowSpan(child);
             int colSpan = GetColumnSpan(child);
             
-            // 确保索引有效
-            row = std::max(0, std::min(row, static_cast<int>(rowDefinitions_.size()) - 1));
-            col = std::max(0, std::min(col, static_cast<int>(columnDefinitions_.size()) - 1));
+            // 索引边界检查
+            row = std::clamp(row, 0, static_cast<int>(rowDefinitions_.size()) - 1);
+            col = std::clamp(col, 0, static_cast<int>(columnDefinitions_.size()) - 1);
+            int rowEnd = std::min(row + rowSpan, static_cast<int>(rowDefinitions_.size()));
+            int colEnd = std::min(col + colSpan, static_cast<int>(columnDefinitions_.size()));
             
-            float x = colOffsets[col];
-            float y = rowOffsets[row];
-            float width = colOffsets[std::min(col + colSpan, static_cast<int>(columnDefinitions_.size()))] - x;
-            float height = rowOffsets[std::min(row + rowSpan, static_cast<int>(rowDefinitions_.size()))] - y;
+            // 计算单元格范围
+            float cellX = colOffsets[col];
+            float cellY = rowOffsets[row];
+            float cellWidth = colOffsets[colEnd] - cellX;
+            float cellHeight = rowOffsets[rowEnd] - cellY;
             
-            child->Arrange(Rect(x, y, width, height));
+            // 获取子元素的 Margin 和 Alignment
+            auto margin = child->GetMargin();
+            auto hAlign = child->GetHorizontalAlignment();
+            auto vAlign = child->GetVerticalAlignment();
+            Size childDesired = child->GetDesiredSize();
+            
+            // 减去 Margin
+            float availableWidth = std::max(0.0f, cellWidth - margin.left - margin.right);
+            float availableHeight = std::max(0.0f, cellHeight - margin.top - margin.bottom);
+            
+            // 根据 HorizontalAlignment 计算宽度和 X 位置
+            float childWidth, childX;
+            switch (hAlign) {
+                case HorizontalAlignment::Stretch:
+                    childWidth = availableWidth;
+                    childX = cellX + margin.left;
+                    break;
+                case HorizontalAlignment::Left:
+                    childWidth = std::min(childDesired.width, availableWidth);
+                    childX = cellX + margin.left;
+                    break;
+                case HorizontalAlignment::Center:
+                    childWidth = std::min(childDesired.width, availableWidth);
+                    childX = cellX + margin.left + (availableWidth - childWidth) / 2.0f;
+                    break;
+                case HorizontalAlignment::Right:
+                    childWidth = std::min(childDesired.width, availableWidth);
+                    childX = cellX + margin.left + availableWidth - childWidth;
+                    break;
+                default:
+                    childWidth = availableWidth;
+                    childX = cellX + margin.left;
+                    break;
+            }
+            
+            // 根据 VerticalAlignment 计算高度和 Y 位置
+            float childHeight, childY;
+            switch (vAlign) {
+                case VerticalAlignment::Stretch:
+                    childHeight = availableHeight;
+                    childY = cellY + margin.top;
+                    break;
+                case VerticalAlignment::Top:
+                    childHeight = std::min(childDesired.height, availableHeight);
+                    childY = cellY + margin.top;
+                    break;
+                case VerticalAlignment::Center:
+                    childHeight = std::min(childDesired.height, availableHeight);
+                    childY = cellY + margin.top + (availableHeight - childHeight) / 2.0f;
+                    break;
+                case VerticalAlignment::Bottom:
+                    childHeight = std::min(childDesired.height, availableHeight);
+                    childY = cellY + margin.top + availableHeight - childHeight;
+                    break;
+                default:
+                    childHeight = availableHeight;
+                    childY = cellY + margin.top;
+                    break;
+            }
+            
+            child->Arrange(Rect(childX, childY, childWidth, childHeight));
         }
     }
     
@@ -165,59 +400,285 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
 }
 
 void Grid::MeasureAutoRows(const Size& availableSize) {
+    // 测量所有子元素以确定 Auto 行的高度
+    for (auto* child : children_) {
+        if (child && child->GetVisibility() != Visibility::Collapsed) {
+            int row = GetRow(child);
+            int rowSpan = GetRowSpan(child);
+            
+            // 索引边界检查
+            row = std::clamp(row, 0, static_cast<int>(rowDefinitions_.size()) - 1);
+            int rowEnd = std::min(row + rowSpan, static_cast<int>(rowDefinitions_.size()));
+            
+            // 仅处理单行的 Auto 元素（多行跨度更复杂，简化处理）
+            if (rowSpan == 1 && rowDefinitions_[row].type == RowDefinition::SizeType::Auto) {
+                // 给子元素无限高度空间进行测量
+                Size childConstraint(availableSize.width, std::numeric_limits<float>::infinity());
+                child->Measure(childConstraint);
+                
+                Size childDesired = child->GetDesiredSize();
+                auto margin = child->GetMargin();
+                float requiredHeight = childDesired.height + margin.top + margin.bottom;
+                
+                // 应用约束
+                requiredHeight = ApplyConstraints(requiredHeight, 
+                                                 rowDefinitions_[row].minHeight, 
+                                                 rowDefinitions_[row].maxHeight);
+                
+                // 更新行高（取最大值）
+                rowDefinitions_[row].actualHeight = std::max(
+                    rowDefinitions_[row].actualHeight, 
+                    requiredHeight
+                );
+            }
+        }
+    }
+    
+    // 确保 Auto 行符合约束
     for (auto& row : rowDefinitions_) {
-        if (row.type == RowDefinition::SizeType::Pixel) {
-            row.actualHeight = row.value;
-        } else if (row.type == RowDefinition::SizeType::Auto) {
-            row.actualHeight = 0; // 后续根据内容计算
+        if (row.type == RowDefinition::SizeType::Auto) {
+            row.actualHeight = ApplyConstraints(row.actualHeight, row.minHeight, row.maxHeight);
         }
     }
 }
 
 void Grid::MeasureAutoCols(const Size& availableSize) {
+    // 测量所有子元素以确定 Auto 列的宽度
+    for (auto* child : children_) {
+        if (child && child->GetVisibility() != Visibility::Collapsed) {
+            int col = GetColumn(child);
+            int colSpan = GetColumnSpan(child);
+            
+            // 索引边界检查
+            col = std::clamp(col, 0, static_cast<int>(columnDefinitions_.size()) - 1);
+            int colEnd = std::min(col + colSpan, static_cast<int>(columnDefinitions_.size()));
+            
+            // 仅处理单列的 Auto 元素
+            if (colSpan == 1 && columnDefinitions_[col].type == ColumnDefinition::SizeType::Auto) {
+                // 给子元素无限宽度空间进行测量
+                Size childConstraint(std::numeric_limits<float>::infinity(), availableSize.height);
+                child->Measure(childConstraint);
+                
+                Size childDesired = child->GetDesiredSize();
+                auto margin = child->GetMargin();
+                float requiredWidth = childDesired.width + margin.left + margin.right;
+                
+                // 应用约束
+                requiredWidth = ApplyConstraints(requiredWidth, 
+                                                columnDefinitions_[col].minWidth, 
+                                                columnDefinitions_[col].maxWidth);
+                
+                // 更新列宽（取最大值）
+                columnDefinitions_[col].actualWidth = std::max(
+                    columnDefinitions_[col].actualWidth, 
+                    requiredWidth
+                );
+            }
+        }
+    }
+    
+    // 确保 Auto 列符合约束
     for (auto& col : columnDefinitions_) {
-        if (col.type == ColumnDefinition::SizeType::Pixel) {
-            col.actualWidth = col.value;
-        } else if (col.type == ColumnDefinition::SizeType::Auto) {
-            col.actualWidth = 0; // 后续根据内容计算
+        if (col.type == ColumnDefinition::SizeType::Auto) {
+            col.actualWidth = ApplyConstraints(col.actualWidth, col.minWidth, col.maxWidth);
         }
     }
 }
 
 void Grid::DistributeStarRows(float availableHeight) {
+    // 计算总 Star 权重
     float totalStars = 0;
-    for (const auto& row : rowDefinitions_) {
-        if (row.type == RowDefinition::SizeType::Star) {
-            totalStars += row.value;
+    std::vector<size_t> starIndices;
+    for (size_t i = 0; i < rowDefinitions_.size(); ++i) {
+        if (rowDefinitions_[i].type == RowDefinition::SizeType::Star) {
+            totalStars += rowDefinitions_[i].value;
+            starIndices.push_back(i);
         }
     }
     
-    if (totalStars > 0 && availableHeight > 0) {
-        float heightPerStar = availableHeight / totalStars;
-        for (auto& row : rowDefinitions_) {
-            if (row.type == RowDefinition::SizeType::Star) {
-                row.actualHeight = row.value * heightPerStar;
+    if (totalStars <= 0 || availableHeight <= 0 || starIndices.empty()) {
+        return;
+    }
+    
+    // 按比例分配空间（带约束支持）
+    float remainingHeight = availableHeight;
+    float remainingStars = totalStars;
+    
+    // 多遍分配，处理约束
+    for (int pass = 0; pass < 2 && !starIndices.empty(); ++pass) {
+        float heightPerStar = remainingHeight / remainingStars;
+        
+        auto it = starIndices.begin();
+        while (it != starIndices.end()) {
+            size_t i = *it;
+            auto& row = rowDefinitions_[i];
+            float idealHeight = row.value * heightPerStar;
+            float constrainedHeight = ApplyConstraints(idealHeight, row.minHeight, row.maxHeight);
+            
+            // 如果受约束限制，固定该行并重新分配
+            if (std::abs(constrainedHeight - idealHeight) > 0.01f) {
+                row.actualHeight = constrainedHeight;
+                remainingHeight -= constrainedHeight;
+                remainingStars -= row.value;
+                it = starIndices.erase(it);
+            } else {
+                row.actualHeight = idealHeight;
+                ++it;
             }
         }
     }
 }
 
 void Grid::DistributeStarCols(float availableWidth) {
+    // 计算总 Star 权重
     float totalStars = 0;
-    for (const auto& col : columnDefinitions_) {
-        if (col.type == ColumnDefinition::SizeType::Star) {
-            totalStars += col.value;
+    std::vector<size_t> starIndices;
+    for (size_t i = 0; i < columnDefinitions_.size(); ++i) {
+        if (columnDefinitions_[i].type == ColumnDefinition::SizeType::Star) {
+            totalStars += columnDefinitions_[i].value;
+            starIndices.push_back(i);
         }
     }
     
-    if (totalStars > 0 && availableWidth > 0) {
-        float widthPerStar = availableWidth / totalStars;
-        for (auto& col : columnDefinitions_) {
-            if (col.type == ColumnDefinition::SizeType::Star) {
-                col.actualWidth = col.value * widthPerStar;
+    if (totalStars <= 0 || availableWidth <= 0 || starIndices.empty()) {
+        return;
+    }
+    
+    // 按比例分配空间（带约束支持）
+    float remainingWidth = availableWidth;
+    float remainingStars = totalStars;
+    
+    // 多遍分配，处理约束
+    for (int pass = 0; pass < 2 && !starIndices.empty(); ++pass) {
+        float widthPerStar = remainingWidth / remainingStars;
+        
+        auto it = starIndices.begin();
+        while (it != starIndices.end()) {
+            size_t i = *it;
+            auto& col = columnDefinitions_[i];
+            float idealWidth = col.value * widthPerStar;
+            float constrainedWidth = ApplyConstraints(idealWidth, col.minWidth, col.maxWidth);
+            
+            // 如果受约束限制，固定该列并重新分配
+            if (std::abs(constrainedWidth - idealWidth) > 0.01f) {
+                col.actualWidth = constrainedWidth;
+                remainingWidth -= constrainedWidth;
+                remainingStars -= col.value;
+                it = starIndices.erase(it);
+            } else {
+                col.actualWidth = idealWidth;
+                ++it;
             }
         }
     }
+}
+
+// ========== 辅助方法 ==========
+
+float Grid::ApplyConstraints(float value, float minValue, float maxValue) {
+    return std::clamp(value, minValue, maxValue);
+}
+
+std::vector<RowDefinition> Grid::ParseRowSpec(const std::string& spec) {
+    std::vector<RowDefinition> rows;
+    std::istringstream stream(spec);
+    std::string token;
+    
+    while (std::getline(stream, token, ',')) {
+        // 移除首尾空格
+        size_t start = token.find_first_not_of(" \t");
+        size_t end = token.find_last_not_of(" \t");
+        if (start == std::string::npos) continue;
+        token = token.substr(start, end - start + 1);
+        
+        if (token.empty()) continue;
+        
+        // 解析不同类型
+        if (token == "Auto" || token == "auto") {
+            rows.push_back(RowDefinition::Auto());
+        } else if (token == "*") {
+            rows.push_back(RowDefinition::Star(1.0f));
+        } else if (token.back() == '*') {
+            // 解析 "2*" 格式
+            std::string numStr = token.substr(0, token.length() - 1);
+            try {
+                float stars = numStr.empty() ? 1.0f : std::stof(numStr);
+                rows.push_back(RowDefinition::Star(stars));
+            } catch (...) {
+                rows.push_back(RowDefinition::Star(1.0f));
+            }
+        } else {
+            // 解析数字（像素）
+            try {
+                float pixels = std::stof(token);
+                rows.push_back(RowDefinition::Pixel(pixels));
+            } catch (...) {
+                rows.push_back(RowDefinition::Auto());
+            }
+        }
+    }
+    
+    return rows;
+}
+
+std::vector<ColumnDefinition> Grid::ParseColumnSpec(const std::string& spec) {
+    std::vector<ColumnDefinition> cols;
+    std::istringstream stream(spec);
+    std::string token;
+    
+    while (std::getline(stream, token, ',')) {
+        // 移除首尾空格
+        size_t start = token.find_first_not_of(" \t");
+        size_t end = token.find_last_not_of(" \t");
+        if (start == std::string::npos) continue;
+        token = token.substr(start, end - start + 1);
+        
+        if (token.empty()) continue;
+        
+        // 解析不同类型
+        if (token == "Auto" || token == "auto") {
+            cols.push_back(ColumnDefinition::Auto());
+        } else if (token == "*") {
+            cols.push_back(ColumnDefinition::Star(1.0f));
+        } else if (token.back() == '*') {
+            // 解析 "2*" 格式
+            std::string numStr = token.substr(0, token.length() - 1);
+            try {
+                float stars = numStr.empty() ? 1.0f : std::stof(numStr);
+                cols.push_back(ColumnDefinition::Star(stars));
+            } catch (...) {
+                cols.push_back(ColumnDefinition::Star(1.0f));
+            }
+        } else {
+            // 解析数字（像素）
+            try {
+                float pixels = std::stof(token);
+                cols.push_back(ColumnDefinition::Pixel(pixels));
+            } catch (...) {
+                cols.push_back(ColumnDefinition::Auto());
+            }
+        }
+    }
+    
+    return cols;
+}
+
+// ========== 全局辅助函数（供 UIElement 流式方法调用）==========
+
+void SetGridRow(UIElement* element, int row) {
+    Grid::SetRow(element, row);
+}
+
+void SetGridColumn(UIElement* element, int col) {
+    Grid::SetColumn(element, col);
+}
+
+void SetGridRowSpan(UIElement* element, int span) {
+    Grid::SetRowSpan(element, span);
+}
+
+void SetGridColumnSpan(UIElement* element, int span) {
+    Grid::SetColumnSpan(element, span);
 }
 
 } // namespace fk::ui

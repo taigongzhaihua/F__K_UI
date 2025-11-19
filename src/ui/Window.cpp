@@ -3,6 +3,7 @@
 #include "fk/ui/DrawCommand.h"
 #include "fk/ui/InputManager.h"
 #include "fk/ui/FocusManager.h"
+#include "fk/ui/TextBlock.h"
 #include "fk/render/GlRenderer.h"
 #include "fk/render/RenderList.h"
 #include "fk/render/RenderContext.h"
@@ -558,6 +559,9 @@ void Window::RenderFrame() {
             params.initialSize.width = static_cast<std::uint32_t>(width);
             params.initialSize.height = static_cast<std::uint32_t>(height);
             renderer_->Initialize(params);
+            
+            // 设置全局 TextRenderer，供 TextBlock 在 Measure 阶段使用
+            TextBlock::SetGlobalTextRenderer(renderer_->GetTextRenderer());
             
             // 记录初始视口大小
             lastViewportWidth_ = width;

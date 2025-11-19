@@ -166,7 +166,7 @@ public:
         SetValue(HorizontalAlignmentProperty(), value); 
         InvalidateArrange(); 
     }
-    HorizontalAlignment GetHorizontalAlignment() const { 
+    HorizontalAlignment GetHorizontalAlignment() const override { 
         return GetValue<ui::HorizontalAlignment>(HorizontalAlignmentProperty()); 
     }
     // 流式 API：使用 SetHorizontalAlignment 避免与枚举类型名称冲突
@@ -179,7 +179,7 @@ public:
         SetValue(VerticalAlignmentProperty(), value); 
         InvalidateArrange(); 
     }
-    VerticalAlignment GetVerticalAlignment() const { 
+    VerticalAlignment GetVerticalAlignment() const override { 
         return GetValue<ui::VerticalAlignment>(VerticalAlignmentProperty()); 
     }
     // 流式 API：使用 SetVAlign 避免与枚举类型名称冲突

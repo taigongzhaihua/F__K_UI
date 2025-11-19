@@ -197,6 +197,14 @@ Thickness UIElement::GetMargin() const {
     return Thickness(0);
 }
 
+HorizontalAlignment UIElement::GetHorizontalAlignment() const {
+    return HorizontalAlignment::Stretch;  // 默认拉伸
+}
+
+VerticalAlignment UIElement::GetVerticalAlignment() const {
+    return VerticalAlignment::Stretch;  // 默认拉伸
+}
+
 void UIElement::SetRenderTransform(Transform* value) {
     SetValue(RenderTransformProperty(), value);
     InvalidateVisual();
@@ -495,6 +503,34 @@ void UIElement::RegisterNamesToScope(UIElement* element, NameScope* scope) {
             RegisterNamesToScope(uiChild, scope);
         }
     }
+}
+
+// ========== Grid 附加属性流式方法实现 ==========
+
+UIElement* UIElement::Row(int row) {
+    // 前向声明，实际调用 Grid::SetRow
+    // 为避免循环依赖，在头文件中包含 Grid.h
+    extern void SetGridRow(UIElement* element, int row);
+    SetGridRow(this, row);
+    return this;
+}
+
+UIElement* UIElement::Column(int col) {
+    extern void SetGridColumn(UIElement* element, int col);
+    SetGridColumn(this, col);
+    return this;
+}
+
+UIElement* UIElement::RowSpan(int span) {
+    extern void SetGridRowSpan(UIElement* element, int span);
+    SetGridRowSpan(this, span);
+    return this;
+}
+
+UIElement* UIElement::ColumnSpan(int span) {
+    extern void SetGridColumnSpan(UIElement* element, int span);
+    SetGridColumnSpan(this, span);
+    return this;
 }
 
 } // namespace fk::ui

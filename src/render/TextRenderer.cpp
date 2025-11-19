@@ -180,7 +180,6 @@ void TextRenderer::MeasureText(
     auto utf32Text = Utf8ToUtf32(text);
 
     int x = 0;
-    int maxHeight = 0;
 
     for (char32_t c : utf32Text) {
         // 确保字符已加载
@@ -195,11 +194,12 @@ void TextRenderer::MeasureText(
 
         const Glyph& glyph = it->second;
         x += glyph.advance;
-        maxHeight = std::max(maxHeight, glyph.height);
     }
 
     outWidth = x;
-    outHeight = maxHeight > 0 ? maxHeight : GetLineHeight(fontId);
+    // 使用字体的标准行高，而不是单个字形的高度
+    // 这样可以保证文本的垂直对齐一致性
+    outHeight = GetLineHeight(fontId);
 }
 
 int TextRenderer::GetLineHeight(int fontId) const {

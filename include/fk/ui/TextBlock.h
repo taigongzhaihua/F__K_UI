@@ -7,7 +7,10 @@
 #include <string>
 
 namespace fk {
-namespace render { class RenderContext; }
+namespace render { 
+    class RenderContext; 
+    class TextRenderer;
+}
 }
 
 namespace fk::ui {
@@ -51,6 +54,20 @@ public:
     
     /// TextWrapping 属性：文本换行方式
     static const binding::DependencyProperty& TextWrappingProperty();
+    
+    // ========== 静态方法 ==========
+    
+    /**
+     * @brief 设置全局 TextRenderer（由 Window 调用）
+     * @param renderer TextRenderer 实例指针
+     */
+    static void SetGlobalTextRenderer(render::TextRenderer* renderer);
+    
+    /**
+     * @brief 获取全局 TextRenderer
+     * @return TextRenderer 实例指针，可能为 nullptr
+     */
+    static render::TextRenderer* GetGlobalTextRenderer();
 
 public:
     TextBlock();
