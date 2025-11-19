@@ -306,6 +306,9 @@ target_link_libraries(animation_demo PRIVATE fk)
 add_executable(keyframe_animation_demo examples/keyframe_animation_demo.cpp)
 target_link_libraries(keyframe_animation_demo PRIVATE fk)
 
+add_executable(keyframe_animation_builder_demo keyframe_animation_builder_demo.cpp)
+target_link_libraries(keyframe_animation_builder_demo PRIVATE fk)
+
 add_executable(visual_state_demo examples/visual_state_demo.cpp)
 target_link_libraries(visual_state_demo PRIVATE fk)
 

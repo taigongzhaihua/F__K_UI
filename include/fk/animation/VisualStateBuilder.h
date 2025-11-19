@@ -5,6 +5,13 @@
 #include "fk/animation/Storyboard.h"
 #include "fk/animation/ColorAnimation.h"
 #include "fk/animation/DoubleAnimation.h"
+#include "fk/animation/PointAnimation.h"
+#include "fk/animation/ThicknessAnimation.h"
+#include "fk/animation/ColorAnimationUsingKeyFrames.h"
+#include "fk/animation/DoubleAnimationUsingKeyFrames.h"
+#include "fk/animation/PointAnimationUsingKeyFrames.h"
+#include "fk/animation/ThicknessAnimationUsingKeyFrames.h"
+#include "fk/animation/KeyFrame.h"
 #include "fk/binding/DependencyProperty.h"
 #include <memory>
 #include <functional>
@@ -151,12 +158,196 @@ public:
     VisualStateBuilder* To(double value);
     
     /**
+     * @brief 为当前状态添加点位置动画（使用TargetName）
+     * 
+     * @param targetName 模板中元素的名称
+     * @param propertyPath 属性路径
+     * @return 动画构建器
+     */
+    VisualStateBuilder* PointAnimation(const std::string& targetName,
+                                       const std::string& propertyPath);
+    
+    /**
+     * @brief 为当前状态添加点位置动画（直接指定目标对象）
+     * 
+     * @param target 动画目标对象
+     * @param property 目标属性
+     * @return 动画构建器
+     */
+    VisualStateBuilder* PointAnimation(binding::DependencyObject* target,
+                                       const binding::DependencyProperty* property);
+    
+    /**
+     * @brief 为当前状态添加厚度动画（使用TargetName）
+     * 
+     * @param targetName 模板中元素的名称
+     * @param propertyPath 属性路径（如"Margin", "Padding"）
+     * @return 动画构建器
+     */
+    VisualStateBuilder* ThicknessAnimation(const std::string& targetName,
+                                           const std::string& propertyPath);
+    
+    /**
+     * @brief 为当前状态添加厚度动画（直接指定目标对象）
+     * 
+     * @param target 动画目标对象
+     * @param property 目标属性
+     * @return 动画构建器
+     */
+    VisualStateBuilder* ThicknessAnimation(binding::DependencyObject* target,
+                                           const binding::DependencyProperty* property);
+    
+    /**
+     * @brief 设置当前动画的起始值（点）
+     * 
+     * @param point 起始点
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* From(const ui::Point& point);
+    
+    /**
+     * @brief 设置当前动画的目标值（点）
+     * 
+     * @param point 目标点
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* To(const ui::Point& point);
+    
+    /**
+     * @brief 设置当前动画的起始值（厚度）
+     * 
+     * @param thickness 起始厚度
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* From(const Thickness& thickness);
+    
+    /**
+     * @brief 设置当前动画的目标值（厚度）
+     * 
+     * @param thickness 目标厚度
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* To(const Thickness& thickness);
+    
+    /**
      * @brief 设置当前动画的持续时间（毫秒）
      * 
      * @param milliseconds 持续时间
      * @return this（支持链式调用）
      */
     VisualStateBuilder* Duration(int milliseconds);
+    
+    /**
+     * @brief 为当前状态添加颜色关键帧动画
+     * 
+     * @param targetName 模板中元素的名称
+     * @param propertyPath 属性路径
+     * @return 动画构建器
+     */
+    VisualStateBuilder* ColorKeyFrameAnimation(const std::string& targetName,
+                                               const std::string& propertyPath);
+    
+    /**
+     * @brief 为当前状态添加双精度关键帧动画
+     * 
+     * @param targetName 模板中元素的名称
+     * @param propertyPath 属性路径
+     * @return 动画构建器
+     */
+    VisualStateBuilder* DoubleKeyFrameAnimation(const std::string& targetName,
+                                                const std::string& propertyPath);
+    
+    /**
+     * @brief 为当前状态添加点位置关键帧动画
+     * 
+     * @param targetName 模板中元素的名称
+     * @param propertyPath 属性路径
+     * @return 动画构建器
+     */
+    VisualStateBuilder* PointKeyFrameAnimation(const std::string& targetName,
+                                               const std::string& propertyPath);
+    
+    /**
+     * @brief 为当前状态添加厚度关键帧动画
+     * 
+     * @param targetName 模板中元素的名称
+     * @param propertyPath 属性路径
+     * @return 动画构建器
+     */
+    VisualStateBuilder* ThicknessKeyFrameAnimation(const std::string& targetName,
+                                                   const std::string& propertyPath);
+    
+    /**
+     * @brief 添加线性关键帧（颜色）
+     * 
+     * @param keyTime 关键帧时间（毫秒）
+     * @param value 关键帧值
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* LinearKeyFrame(int keyTimeMs, const ui::Color& value);
+    
+    /**
+     * @brief 添加线性关键帧（双精度）
+     * 
+     * @param keyTime 关键帧时间（毫秒）
+     * @param value 关键帧值
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* LinearKeyFrame(int keyTimeMs, double value);
+    
+    /**
+     * @brief 添加线性关键帧（点）
+     * 
+     * @param keyTime 关键帧时间（毫秒）
+     * @param value 关键帧值
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* LinearKeyFrame(int keyTimeMs, const ui::Point& value);
+    
+    /**
+     * @brief 添加线性关键帧（厚度）
+     * 
+     * @param keyTime 关键帧时间（毫秒）
+     * @param value 关键帧值
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* LinearKeyFrame(int keyTimeMs, const Thickness& value);
+    
+    /**
+     * @brief 添加离散关键帧（颜色）- 瞬间跳变
+     * 
+     * @param keyTime 关键帧时间（毫秒）
+     * @param value 关键帧值
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* DiscreteKeyFrame(int keyTimeMs, const ui::Color& value);
+    
+    /**
+     * @brief 添加离散关键帧（双精度）
+     * 
+     * @param keyTime 关键帧时间（毫秒）
+     * @param value 关键帧值
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* DiscreteKeyFrame(int keyTimeMs, double value);
+    
+    /**
+     * @brief 添加离散关键帧（点）
+     * 
+     * @param keyTime 关键帧时间（毫秒）
+     * @param value 关键帧值
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* DiscreteKeyFrame(int keyTimeMs, const ui::Point& value);
+    
+    /**
+     * @brief 添加离散关键帧（厚度）
+     * 
+     * @param keyTime 关键帧时间（毫秒）
+     * @param value 关键帧值
+     * @return this（支持链式调用）
+     */
+    VisualStateBuilder* DiscreteKeyFrame(int keyTimeMs, const Thickness& value);
     
     /**
      * @brief 结束当前动画的定义
@@ -184,7 +375,11 @@ private:
     std::shared_ptr<Storyboard> currentStoryboard_;
     
     // 当前正在构建的动画
-    enum class AnimationType { None, Color, Double };
+    enum class AnimationType { 
+        None, 
+        Color, Double, Point, Thickness,
+        ColorKeyFrame, DoubleKeyFrame, PointKeyFrame, ThicknessKeyFrame
+    };
     AnimationType currentAnimationType_{AnimationType::None};
     
     // 动画目标（两种方式：直接对象 或 TargetName）
@@ -202,8 +397,34 @@ private:
     std::optional<double> doubleFrom_;
     std::optional<double> doubleTo_;
     
+    // 点动画参数
+    std::optional<ui::Point> pointFrom_;
+    std::optional<ui::Point> pointTo_;
+    
+    // 厚度动画参数
+    std::optional<Thickness> thicknessFrom_;
+    std::optional<Thickness> thicknessTo_;
+    
     // 动画持续时间
     int durationMs_{200};  // 默认200ms
+    
+    // KeyFrame动画的关键帧集合
+    std::vector<std::shared_ptr<KeyFrame<ui::Color>>> colorKeyFrames_;
+    std::vector<std::shared_ptr<KeyFrame<double>>> doubleKeyFrames_;
+    std::vector<std::shared_ptr<KeyFrame<ui::Point>>> pointKeyFrames_;
+    std::vector<std::shared_ptr<KeyFrame<Thickness>>> thicknessKeyFrames_;
+    
+    // 内部辅助函数
+    void InitAnimation(AnimationType type, const std::string& targetName, const std::string& propertyPath);
+    void InitAnimation(AnimationType type, binding::DependencyObject* target, const binding::DependencyProperty* property);
+    void InitKeyFrameAnimation(AnimationType type, const std::string& targetName, const std::string& propertyPath);
+    void ResetAnimationParams();
+    void CheckAnimationType(AnimationType expected, const char* methodName) const;
+    
+    template<typename T, typename KeyFrameType>
+    void AddKeyFrameImpl(AnimationType expectedType, const char* typeName, 
+                        std::vector<std::shared_ptr<KeyFrame<T>>>& keyFrames,
+                        int keyTimeMs, const T& value);
     
     void FinalizeCurrentAnimation();
     void FinalizeCurrentState();
