@@ -200,7 +200,7 @@ void RenderContext::DrawRectangle(
 }
 
 void RenderContext::DrawText(
-    const ui::Point& position,
+    const ui::Rect& bounds,
     const std::string& text,
     const std::array<float, 4>& color,
     float fontSize,
@@ -212,20 +212,25 @@ void RenderContext::DrawText(
         return;
     }
     
+    // 检查是否被裁剪
+    if (IsClipped(bounds)) {
+        return;
+    }
+    
     // 变换到全局坐标
-    ui::Point globalPos = TransformPoint(position);
+    ui::Rect globalBounds = TransformRect(bounds);
     
     // 应用透明度
     auto finalColor = ApplyOpacity(color);
     
-    // Phase 5.0.5: 生成完整的文本绘制命令
+    // Phase 5.0.5: 生成完整的文本绘制命令,包含边界用于裁剪
     TextPayload payload;
-    payload.bounds = ui::Rect{globalPos.x, globalPos.y, 0, 0}; // 宽高由渲染器计算
+    payload.bounds = globalBounds; // 使用完整边界
     payload.color = finalColor;
     payload.text = text;
     payload.fontSize = fontSize;
     payload.fontFamily = fontFamily;
-    payload.maxWidth = maxWidth;
+    payload.maxWidth = maxWidth > 0 ? maxWidth : globalBounds.width; // 如果没指定maxWidth则使用bounds宽度
     payload.textWrapping = textWrapping;
     
     renderList_->AddCommand(RenderCommand(CommandType::DrawText, payload));

@@ -641,8 +641,13 @@ void GlRenderer::DrawText(const TextPayload& payload) {
     // 渲染每一行
     float lineHeight = payload.fontSize * 1.2f;
     float y = payload.bounds.y;  // 修复：使用payload中的全局Y坐标
+    float boundsBottom = payload.bounds.y + payload.bounds.height;
     
     for (const auto& line : lines) {
+        // 如果当前行完全超出 bounds 底部，停止渲染后续行
+        if (y >= boundsBottom) {
+            break;
+        }
         // 将 UTF-8 文本转换为 UTF-32
         std::u32string utf32Text = textRenderer_->Utf8ToUtf32(line);
         
@@ -678,15 +683,79 @@ void GlRenderer::DrawText(const TextPayload& payload) {
             float w = glyph->width;
             float h = glyph->height;
             
-            // 更新 VBO (翻转纹理 V 坐标以匹配 FreeType 的上下翻转)
+            // 裁剪检查：跳过完全在 bounds 外的字符
+            float charRight = xpos + w;
+            float charBottom = ypos + h;
+            float boundsRight = payload.bounds.x + payload.bounds.width;
+            float boundsBottom = payload.bounds.y + payload.bounds.height;
+            
+            // 如果字符完全在右侧或底部之外，跳过
+            if (xpos >= boundsRight || ypos >= boundsBottom) {
+                x += glyph->advance;
+                continue;
+            }
+            
+            // 如果字符完全在左侧或顶部之外，跳过
+            if (charRight <= payload.bounds.x || charBottom <= payload.bounds.y) {
+                x += glyph->advance;
+                continue;
+            }
+            
+            // 计算裁剪后的字符区域和纹理坐标
+            float renderXPos = xpos;
+            float renderYPos = ypos;
+            float renderW = w;
+            float renderH = h;
+            float texLeft = 0.0f;
+            float texTop = 0.0f;
+            float texRight = 1.0f;
+            float texBottom = 1.0f;
+            
+            // 左边裁剪
+            if (renderXPos < payload.bounds.x) {
+                float clipAmount = payload.bounds.x - renderXPos;
+                texLeft = clipAmount / w;
+                renderXPos = payload.bounds.x;
+                renderW -= clipAmount;
+            }
+            
+            // 右边裁剪
+            if (renderXPos + renderW > boundsRight) {
+                float clipAmount = (renderXPos + renderW) - boundsRight;
+                texRight = 1.0f - (clipAmount / w);
+                renderW -= clipAmount;
+            }
+            
+            // 顶部裁剪
+            if (renderYPos < payload.bounds.y) {
+                float clipAmount = payload.bounds.y - renderYPos;
+                texTop = clipAmount / h;
+                renderYPos = payload.bounds.y;
+                renderH -= clipAmount;
+            }
+            
+            // 底部裁剪
+            if (renderYPos + renderH > boundsBottom) {
+                float clipAmount = (renderYPos + renderH) - boundsBottom;
+                texBottom = 1.0f - (clipAmount / h);
+                renderH -= clipAmount;
+            }
+            
+            // 如果裁剪后没有可见区域，跳过
+            if (renderW <= 0 || renderH <= 0) {
+                x += glyph->advance;
+                continue;
+            }
+            
+            // 更新 VBO (翻转纹理 V 坐标以匹配 FreeType 的上下翻转，并应用裁剪)
             float vertices[6][4] = {
-                { xpos,     ypos + h,   0.0f, 1.0f },
-                { xpos,     ypos,       0.0f, 0.0f },
-                { xpos + w, ypos,       1.0f, 0.0f },
+                { renderXPos,           renderYPos + renderH,   texLeft,  texBottom },
+                { renderXPos,           renderYPos,             texLeft,  texTop },
+                { renderXPos + renderW, renderYPos,             texRight, texTop },
                 
-                { xpos,     ypos + h,   0.0f, 1.0f },
-                { xpos + w, ypos,       1.0f, 0.0f },
-                { xpos + w, ypos + h,   1.0f, 1.0f }
+                { renderXPos,           renderYPos + renderH,   texLeft,  texBottom },
+                { renderXPos + renderW, renderYPos,             texRight, texTop },
+                { renderXPos + renderW, renderYPos + renderH,   texRight, texBottom }
             };
             
             // 绑定字形纹理

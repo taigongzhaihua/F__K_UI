@@ -151,7 +151,7 @@ public:
     
     /**
      * @brief 绘制文本
-     * @param position 文本位置（局部坐标）
+     * @param bounds 文本边界矩形（局部坐标），用于裁剪
      * @param text 文本内容
      * @param color 文本颜色
      * @param fontSize 字体大小
@@ -160,7 +160,7 @@ public:
      * @param textWrapping 是否自动换行
      */
     void DrawText(
-        const ui::Point& position,
+        const ui::Rect& bounds,
         const std::string& text,
         const std::array<float, 4>& color,
         float fontSize,

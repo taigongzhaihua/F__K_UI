@@ -264,12 +264,14 @@ void TextBlock::OnRender(render::RenderContext& context) {
     }
 
     auto renderSize = GetRenderSize();
-    ui::Point position(0.0f, 0.0f);
-    float maxWidth = (textWrapping == TextWrapping::Wrap) ? renderSize.width : 0.0f;
+    
+    // 使用renderSize作为绘制边界,防止文本超出范围
+    ui::Rect bounds(0.0f, 0.0f, renderSize.width, renderSize.height);
+    float maxWidth = (textWrapping == TextWrapping::Wrap) ? renderSize.width : renderSize.width;
     (void)textAlignment; // 对齐支持将在 RenderContext 中实现
     
     context.DrawText(
-        position,
+        bounds,
         text,
         textColor,
         fontSize,

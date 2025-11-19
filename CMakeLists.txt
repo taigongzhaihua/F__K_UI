@@ -519,6 +519,14 @@ target_link_libraries(test_grid_complete PRIVATE fk)
 add_executable(test_grid_resize test_grid_resize.cpp)
 target_link_libraries(test_grid_resize PRIVATE fk)
 
+# TextBlock 裁剪测试
+add_executable(test_textblock_clipping test_textblock_clipping.cpp)
+target_link_libraries(test_textblock_clipping PRIVATE fk)
+
+# Border 裁剪测试
+add_executable(test_border_clipping test_border_clipping.cpp)
+target_link_libraries(test_border_clipping PRIVATE fk)
+
 # Border 对齐和布局演示
 add_executable(demo_border_alignment demo_border_alignment.cpp)
 target_link_libraries(demo_border_alignment PRIVATE fk glad freetype)

@@ -337,6 +337,7 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
     DistributeStarCols(remainingWidth);
     
     // 重新测量Star行/列中的子元素,因为Star尺寸可能在Arrange阶段改变
+    // 注意:只有在子元素的HorizontalAlignment==Stretch或VerticalAlignment==Stretch时才需要重新测量
     for (auto* child : children_) {
         if (child && child->GetVisibility() != Visibility::Collapsed) {
             int row = GetRow(child);
@@ -365,16 +366,28 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
                 }
             }
             
-            // 如果在Star行或列中,用新的单元格尺寸重新测量
-            if (inStarRow || inStarCol) {
-                float cellWidth = 0;
-                float cellHeight = 0;
+            // 如果在Star行或列中,并且子元素是Stretch对齐,才用新的单元格尺寸重新测量
+            bool needRemeasure = false;
+            float cellWidth = std::numeric_limits<float>::infinity();
+            float cellHeight = std::numeric_limits<float>::infinity();
+            
+            if (inStarCol && child->GetHorizontalAlignment() == HorizontalAlignment::Stretch) {
+                cellWidth = 0;
                 for (int c = col; c < colEnd; ++c) {
                     cellWidth += columnDefinitions_[c].actualWidth;
                 }
+                needRemeasure = true;
+            }
+            
+            if (inStarRow && child->GetVerticalAlignment() == VerticalAlignment::Stretch) {
+                cellHeight = 0;
                 for (int r = row; r < rowEnd; ++r) {
                     cellHeight += rowDefinitions_[r].actualHeight;
                 }
+                needRemeasure = true;
+            }
+            
+            if (needRemeasure) {
                 child->Measure(Size(cellWidth, cellHeight));
             }
         }

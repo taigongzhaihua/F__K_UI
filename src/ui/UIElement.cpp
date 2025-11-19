@@ -2,6 +2,7 @@
 #include "fk/ui/NameScope.h"
 #include "fk/render/RenderContext.h"
 #include <algorithm>
+#include <iostream>
 
 namespace fk::ui {
 

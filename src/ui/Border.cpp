@@ -127,6 +127,8 @@ Size Border::ArrangeOverride(const Size& finalSize) {
     auto padding = GetPadding();
     auto child = GetChild();
     
+
+    
     if (child && child->GetVisibility() != Visibility::Collapsed) {
         // 1. 计算内容区域（Border 内部可用空间）
         float contentX = borderThickness.left + padding.left;
