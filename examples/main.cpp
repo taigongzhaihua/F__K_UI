@@ -395,7 +395,7 @@ int main(int argc, char **argv)
                                              ->Foreground(fk::ui::Brushes::White())
                                              ->Margin(fk::ui::Thickness(0, 0, 15, 0)) |
                                          fk::ui::cell(0, 2)}) |
-                            fk::ui::cell(2, 0, 1, 2)}));
+                            fk::ui::cell(2, 0, 1, 2)});
 
     // Bind click events for all buttons
     auto btnHome = static_cast<fk::ui::Button *>(mainWindow->FindName("btnHome"));

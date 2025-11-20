@@ -92,9 +92,10 @@ namespace fk::ui
                     ->Height(12.0f)
                     ->Background(binding::TemplateBinding(CheckBox::CheckMarkColorProperty()))
                     ->CornerRadius(2.0f)
-                    ->Opacity(0.0) // 初始不可见
                     ->SetVAlign(VerticalAlignment::Center)
                     ->SetHAlign(HorizontalAlignment::Center);
+                
+                checkMark->SetOpacity(0.0); // 初始不可见
                 
                 checkBoxBorder->Child(checkMark);
                 
@@ -103,13 +104,9 @@ namespace fk::ui
                     ->SetVAlign(VerticalAlignment::Center)
                     ->SetHAlign(HorizontalAlignment::Left);
                 
-                // 将复选框和内容添加到 Grid
-                rootGrid->AddChild(checkBoxBorder);
-                rootGrid->AddChild(contentPresenter);
-                
-                // 设置 Grid 列位置
-                GridCellAttacher::SetColumn(checkBoxBorder, 0);
-                GridCellAttacher::SetColumn(contentPresenter, 1);
+                // 将复选框和内容添加到 Grid，并使用管道操作符设置列位置
+                rootGrid->AddChild(checkBoxBorder | cell(0, 0));
+                rootGrid->AddChild(contentPresenter | cell(0, 1));
                 
                 return rootGrid; })
             // CommonStates 状态组（鼠标交互效果）
