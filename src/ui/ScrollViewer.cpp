@@ -5,8 +5,7 @@
 
 #include "fk/ui/ScrollViewer.h"
 #include "fk/ui/DrawCommand.h"
-#include "fk/ui/RenderBackend.h"
-#include "fk/ui/Renderer.h"
+#include "fk/render/RenderContext.h"
 #include <algorithm>
 
 namespace fk::ui {
@@ -286,14 +285,12 @@ Size ScrollViewer::ArrangeOverride(Size finalSize) {
 
 // ========== 渲染 ==========
 
-void ScrollViewer::OnRender(RenderContext& context) {
-    auto* renderer = context.GetRenderer();
-    if (!renderer) return;
-    
+void ScrollViewer::OnRender(render::RenderContext& context) {
     // 绘制背景
     Size size = GetRenderSize();
     Rect rect(0, 0, size.width, size.height);
-    renderer->DrawRectangle(rect, Color::White());
+    auto white = Color::White();
+    context.DrawRectangle(rect, {white.r, white.g, white.b, white.a});
     
     // 设置裁剪区域
     Rect viewportRect = CalculateViewportRect();

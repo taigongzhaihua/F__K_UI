@@ -1,7 +1,6 @@
 #include "fk/ui/Image.h"
 #include "fk/ui/Primitives.h"
 #include "fk/ui/DrawCommand.h"
-#include "fk/ui/Renderer.h"
 #include "fk/render/RenderContext.h"
 #include "fk/binding/DependencyProperty.h"
 

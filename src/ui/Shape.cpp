@@ -5,7 +5,6 @@
 
 #include "fk/ui/Shape.h"
 #include "fk/ui/Brush.h"
-#include "fk/ui/Renderer.h"
 #include "fk/ui/Primitives.h"
 #include "fk/render/RenderContext.h"
 #include <algorithm>

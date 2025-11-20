@@ -204,13 +204,9 @@ add_library(fk STATIC
     src/ui/Popup.cpp
     src/ui/ComboBox.cpp
     src/ui/DrawCommand.cpp
-    src/ui/Renderer.cpp
-    src/ui/RenderBackend.cpp
+    # 旧的 ui::Renderer 和 RenderBackend 已移除，使用 fk::render 模块
     
-    # render 模块（旧框架，暂时注释，新设计中 DrawCommand 在 ui 模块）
-    # src/render/RenderHost.cpp
-    # src/render/RenderScene.cpp
-    # src/render/RenderTreeBuilder.cpp
+    # render 模块（完整的生产级渲染系统）
     src/render/GlRenderer.cpp
     src/render/ColorUtils.cpp
     src/render/TextRenderer.cpp

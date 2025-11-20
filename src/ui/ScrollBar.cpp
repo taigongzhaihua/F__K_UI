@@ -5,8 +5,7 @@
 
 #include "fk/ui/ScrollBar.h"
 #include "fk/ui/DrawCommand.h"
-#include "fk/ui/RenderBackend.h"
-#include "fk/ui/Renderer.h"
+#include "fk/render/RenderContext.h"
 #include <algorithm>
 
 namespace fk::ui {
@@ -139,21 +138,18 @@ Size ScrollBar::ArrangeOverride(Size finalSize) {
 
 // ========== 渲染 ==========
 
-void ScrollBar::OnRender(RenderContext& context) {
-    auto* renderer = context.GetRenderer();
-    if (!renderer) return;
-    
+void ScrollBar::OnRender(render::RenderContext& context) {
     Size size = GetRenderSize();
     
     // 绘制背景
     Rect bgRect(0, 0, size.width, size.height);
-    renderer->DrawRectangle(bgRect, Color(0.9f, 0.9f, 0.9f, 1.0f));
+    context.DrawRectangle(bgRect, {0.9f, 0.9f, 0.9f, 1.0f});
     
     // 计算滑块矩形
     Rect thumbRect = CalculateThumbRect(size);
     
     // 绘制滑块
-    renderer->DrawRectangle(thumbRect, Color(0.6f, 0.6f, 0.6f, 1.0f));
+    context.DrawRectangle(thumbRect, {0.6f, 0.6f, 0.6f, 1.0f});
 }
 
 // ========== 事件处理 ==========

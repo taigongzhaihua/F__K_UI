@@ -1,3 +1,41 @@
+# 构建目录
 build/
+build-*/
+cmake-build-*/
+
+# IDE 配置
 .vscode/
-build-mingw
+.vs/
+.idea/
+
+# 编译输出
+*.exe
+*.out
+*.app
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+
+# CMake 缓存
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+Makefile
+*.cmake
+
+# 第三方库编译产物
+third_party/src/freetype/out/
+third_party/*/build/
+
+# 临时文件
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
