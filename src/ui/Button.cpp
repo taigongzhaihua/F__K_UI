@@ -26,7 +26,7 @@ namespace fk::ui
             typeid(Brush *),
             typeid(Button),
             binding::PropertyMetadata{
-                .defaultValue = static_cast<Brush *>(new SolidColorBrush(Color::FromRGB(229, 241, 251, 255))), // 默认浅蓝色
+                .defaultValue = static_cast<Brush *>(new SolidColorBrush(Color::FromRGB(16, 110, 190, 255))), // WinUI3 Fluent Accent Hover #106EBE
                 .propertyChangedCallback = [](DependencyObject &d, const DependencyProperty &, const std::any &, const std::any &)
                 {
                     auto *button = static_cast<Button *>(&d);
@@ -45,7 +45,7 @@ namespace fk::ui
             typeid(Brush *),
             typeid(Button),
             binding::PropertyMetadata{
-                .defaultValue = static_cast<Brush *>(new SolidColorBrush(Color::FromRGB(204, 228, 247, 255))), // 默认深蓝色
+                .defaultValue = static_cast<Brush *>(new SolidColorBrush(Color::FromRGB(0, 90, 158, 255))), // WinUI3 Fluent Accent Pressed #005A9E
                 .propertyChangedCallback = [](DependencyObject &d, const DependencyProperty &, const std::any &, const std::any &)
                 {
                     auto *button = static_cast<Button *>(&d);
@@ -132,16 +132,16 @@ namespace fk::ui
         SetHorizontalAlignment(HorizontalAlignment::Left);
         SetVerticalAlignment(VerticalAlignment::Top);
 
-        // 设置默认背景色（浅灰色）
+        // 设置默认背景色（WinUI3 Fluent Accent Blue）
         // 用户可以通过 Background() 方法覆盖此默认值
         if (!GetBackground())
         {
-            SetBackground(new SolidColorBrush(Color::FromRGB(240, 240, 240, 255)));
+            SetBackground(new SolidColorBrush(Color::FromRGB(0, 120, 212, 255))); // WinUI3 Accent Blue #0078D4
         }
 
         if (!GetBorderBrush())
         {
-            SetBorderBrush(new SolidColorBrush(Color::FromRGB(175, 175, 175, 255)));
+            SetBorderBrush(new SolidColorBrush(Color::FromRGB(0, 120, 212, 255))); // 与背景相同
         }
         
         
