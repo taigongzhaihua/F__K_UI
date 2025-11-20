@@ -543,3 +543,7 @@ target_compile_features(test_panel_background_corners PRIVATE cxx_std_23)
 add_executable(demo_panel_backgrounds demo_panel_backgrounds.cpp)
 target_link_libraries(demo_panel_backgrounds PRIVATE fk glad freetype)
 target_compile_features(demo_panel_backgrounds PRIVATE cxx_std_23)
+
+# 圆角半径限制测试
+add_executable(test_corner_radius_limits test_corner_radius_limits.cpp)
+target_compile_features(test_corner_radius_limits PRIVATE cxx_std_23)

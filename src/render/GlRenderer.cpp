@@ -393,11 +393,45 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     int opacityLoc = glGetUniformLocation(shaderProgram_, "uOpacity");
     glUniform1f(opacityLoc, effectiveOpacity);
 
-    // 设置圆角半径（四个独立的圆角，每个限制不超过最小尺寸的一半）
-    float clampedTopLeft = std::clamp(payload.cornerRadiusTopLeft, 0.0f, halfMinDimension);
-    float clampedTopRight = std::clamp(payload.cornerRadiusTopRight, 0.0f, halfMinDimension);
-    float clampedBottomRight = std::clamp(payload.cornerRadiusBottomRight, 0.0f, halfMinDimension);
-    float clampedBottomLeft = std::clamp(payload.cornerRadiusBottomLeft, 0.0f, halfMinDimension);
+    // 设置圆角半径（需要检查相邻圆角之和不超过对应边长）
+    // 参考 CSS 规范：https://www.w3.org/TR/css-backgrounds-3/#corner-overlap
+    float topLeft = std::max(0.0f, payload.cornerRadiusTopLeft);
+    float topRight = std::max(0.0f, payload.cornerRadiusTopRight);
+    float bottomRight = std::max(0.0f, payload.cornerRadiusBottomRight);
+    float bottomLeft = std::max(0.0f, payload.cornerRadiusBottomLeft);
+    
+    // 计算每条边上相邻圆角的和
+    float topSum = topLeft + topRight;      // 上边
+    float rightSum = topRight + bottomRight; // 右边
+    float bottomSum = bottomRight + bottomLeft; // 下边
+    float leftSum = bottomLeft + topLeft;    // 左边
+    
+    // 计算缩放因子：如果相邻圆角之和超过边长，需要按比例缩小
+    float scaleX = 1.0f;
+    float scaleY = 1.0f;
+    
+    if (topSum > width && topSum > 0.0f) {
+        scaleX = std::min(scaleX, width / topSum);
+    }
+    if (bottomSum > width && bottomSum > 0.0f) {
+        scaleX = std::min(scaleX, width / bottomSum);
+    }
+    if (leftSum > height && leftSum > 0.0f) {
+        scaleY = std::min(scaleY, height / leftSum);
+    }
+    if (rightSum > height && rightSum > 0.0f) {
+        scaleY = std::min(scaleY, height / rightSum);
+    }
+    
+    // 使用最严格的缩放因子（水平和垂直方向取最小值）
+    float scale = std::min(scaleX, scaleY);
+    
+    // 应用缩放并限制在合理范围内
+    float clampedTopLeft = std::clamp(topLeft * scale, 0.0f, halfMinDimension);
+    float clampedTopRight = std::clamp(topRight * scale, 0.0f, halfMinDimension);
+    float clampedBottomRight = std::clamp(bottomRight * scale, 0.0f, halfMinDimension);
+    float clampedBottomLeft = std::clamp(bottomLeft * scale, 0.0f, halfMinDimension);
+    
     int cornerRadiusLoc = glGetUniformLocation(shaderProgram_, "uCornerRadius");
     glUniform4f(cornerRadiusLoc, clampedTopLeft, clampedTopRight, clampedBottomRight, clampedBottomLeft);
 
