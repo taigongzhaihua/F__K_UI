@@ -24,6 +24,9 @@
 
 namespace fk::ui {
 
+// 前向声明
+class RenderContext;
+
 // Color 现在在 render 模块中定义
 using Color = fk::render::Color;
 

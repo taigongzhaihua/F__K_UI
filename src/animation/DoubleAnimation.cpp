@@ -37,7 +37,17 @@ void DoubleAnimation::UpdateCurrentValue(double progress) {
         try {
             auto value = target_->GetValue(*targetProperty_);
             if (value.has_value()) {
-                initialValue_ = std::any_cast<double>(value);
+                // 尝试获取 double 类型值
+                try {
+                    initialValue_ = std::any_cast<double>(value);
+                } catch (...) {
+                    // 如果失败，尝试 float 类型（Opacity属性是float）
+                    try {
+                        initialValue_ = static_cast<double>(std::any_cast<float>(value));
+                    } catch (...) {
+                        initialValue_ = 0.0;
+                    }
+                }
             }
         } catch (...) {
             initialValue_ = 0.0;
@@ -49,7 +59,12 @@ void DoubleAnimation::UpdateCurrentValue(double progress) {
     double currentValue = GetCurrentValue(initialValue_, GetTo(), progress);
     
     // 应用到目标属性
-    target_->SetValue(*targetProperty_, currentValue);
+    // 检查目标属性类型，如果是float则转换
+    if (targetProperty_->PropertyType() == typeid(float)) {
+        target_->SetValue(*targetProperty_, static_cast<float>(currentValue));
+    } else {
+        target_->SetValue(*targetProperty_, currentValue);
+    }
 }
 
 } // namespace fk::animation

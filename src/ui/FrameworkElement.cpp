@@ -134,6 +134,7 @@ const binding::DependencyProperty& FrameworkElement<Derived>::VerticalAlignmentP
 #include "fk/ui/ListBox.h"
 #include "fk/ui/Popup.h"
 #include "fk/ui/ComboBox.h"
+#include "fk/ui/ToggleButton.h"
 
 // 显式实例化 FrameworkElement 模板（必须在命名空间之外）
 // 注意：Rectangle、Ellipse、Line 等继承自 Shape，不直接继承 FrameworkElement
@@ -151,3 +152,4 @@ template class fk::ui::FrameworkElement<fk::ui::ScrollViewer>;
 template class fk::ui::FrameworkElement<fk::ui::ListBox<>>;
 template class fk::ui::FrameworkElement<fk::ui::Popup<>>;
 template class fk::ui::FrameworkElement<fk::ui::ComboBox<>>;
+template class fk::ui::FrameworkElement<fk::ui::ToggleButton>;

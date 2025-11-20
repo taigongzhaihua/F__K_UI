@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <iostream>
 
 namespace fk::animation {
 

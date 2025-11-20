@@ -7,11 +7,18 @@
 #include <any>
 #include <algorithm>
 #include <cmath>
+#include <type_traits>
 
 // stb_image 用于图像加载（头文件已在Image.cpp中实现）
 #include "stb_image.h"
 
 namespace fk::ui {
+
+// 静态断言：确保派生类不是抽象类（帮助 IntelliSense 正确识别）
+static_assert(!std::is_abstract_v<SolidColorBrush>, "SolidColorBrush should not be abstract");
+static_assert(!std::is_abstract_v<LinearGradientBrush>, "LinearGradientBrush should not be abstract");
+static_assert(!std::is_abstract_v<RadialGradientBrush>, "RadialGradientBrush should not be abstract");
+static_assert(!std::is_abstract_v<ImageBrush>, "ImageBrush should not be abstract");
 
 // ========== SolidColorBrush 依赖属性 ==========
 

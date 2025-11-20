@@ -4,6 +4,7 @@
 #include "fk/ui/Brush.h"
 #include "fk/ui/StackPanel.h"
 #include "fk/ui/Button.h"
+#include "fk/ui/ToggleButton.h"
 #include "fk/ui/Border.h"
 #include "fk/ui/Grid.h"
 #include "fk/ui/GridCellAttacher.h"
@@ -162,7 +163,7 @@ int main(int argc, char **argv)
                                                       fk::ui::cell(1, 0)}) |
                                          fk::ui::cell(0, 0),
 
-                                     // Card 2 - Statistics
+                                     // Card 2 - ToggleButton Demo
                                      (new fk::ui::Grid())
                                              ->Background(new fk::ui::SolidColorBrush(255, 250, 240))
                                              ->CornerRadius(8)
@@ -170,7 +171,7 @@ int main(int argc, char **argv)
                                              ->Margin(fk::ui::Thickness(10, 0, 0, 10))
                                              ->Children(
                                                  {(new fk::ui::TextBlock())
-                                                          ->Text("Project Stats")
+                                                          ->Text("ToggleButton Demo")
                                                           ->FontSize(20)
                                                           ->Foreground(new fk::ui::SolidColorBrush(255, 140, 0))
                                                           ->Margin(fk::ui::Thickness(15)) |
@@ -179,16 +180,36 @@ int main(int argc, char **argv)
                                                           ->Margin(fk::ui::Thickness(15, 0, 15, 15))
                                                           ->Children(
                                                               {(new fk::ui::TextBlock())
-                                                                   ->Text("Total Projects: 42")
+                                                                   ->Text("Click to toggle state:")
                                                                    ->FontSize(14)
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 10)),
+                                                               (new fk::ui::ToggleButton())
+                                                                   ->Name("toggleWifi")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("WiFi")
+                                                                           ->FontSize(14))
+                                                                   ->Background(new fk::ui::SolidColorBrush(120, 120, 120))
+                                                                   ->CheckedBackground(new fk::ui::SolidColorBrush(50, 200, 50))
                                                                    ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
-                                                               (new fk::ui::TextBlock())
-                                                                   ->Text("In Progress: 15")
-                                                                   ->FontSize(14)
+                                                               (new fk::ui::ToggleButton())
+                                                                   ->Name("toggleBluetooth")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("Bluetooth")
+                                                                           ->FontSize(14))
+                                                                   ->Background(new fk::ui::SolidColorBrush(120, 120, 120))
+                                                                   ->CheckedBackground(new fk::ui::SolidColorBrush(0, 120, 215))
+                                                                   ->IsChecked(true)
                                                                    ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
-                                                               (new fk::ui::TextBlock())
-                                                                   ->Text("Completed: 27")
-                                                                   ->FontSize(14)
+                                                               (new fk::ui::ToggleButton())
+                                                                   ->Name("toggleAirplane")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("Airplane Mode")
+                                                                           ->FontSize(14))
+                                                                   ->Background(new fk::ui::SolidColorBrush(120, 120, 120))
+                                                                   ->CheckedBackground(new fk::ui::SolidColorBrush(255, 140, 0))
                                                                    ->Margin(fk::ui::Thickness(0, 5, 0, 5))}) |
                                                       fk::ui::cell(1, 0)}) |
                                          fk::ui::cell(0, 1),
@@ -362,6 +383,25 @@ int main(int argc, char **argv)
     auto btnNewTask = static_cast<fk::ui::Button *>(mainWindow->FindName("btnNewTask"));
     btnNewTask->Click += []()
     { std::cout << "Action: New Task" << std::endl; };
+
+    // Bind ToggleButton events
+    auto toggleWifi = static_cast<fk::ui::ToggleButton *>(mainWindow->FindName("toggleWifi"));
+    toggleWifi->Checked += [](std::optional<bool> state)
+    { std::cout << "WiFi: ON" << std::endl; };
+    toggleWifi->Unchecked += [](std::optional<bool> state)
+    { std::cout << "WiFi: OFF" << std::endl; };
+
+    auto toggleBluetooth = static_cast<fk::ui::ToggleButton *>(mainWindow->FindName("toggleBluetooth"));
+    toggleBluetooth->Checked += [](std::optional<bool> state)
+    { std::cout << "Bluetooth: ON" << std::endl; };
+    toggleBluetooth->Unchecked += [](std::optional<bool> state)
+    { std::cout << "Bluetooth: OFF" << std::endl; };
+
+    auto toggleAirplane = static_cast<fk::ui::ToggleButton *>(mainWindow->FindName("toggleAirplane"));
+    toggleAirplane->Checked += [](std::optional<bool> state)
+    { std::cout << "Airplane Mode: ON" << std::endl; };
+    toggleAirplane->Unchecked += [](std::optional<bool> state)
+    { std::cout << "Airplane Mode: OFF" << std::endl; };
 
     auto btnImport = static_cast<fk::ui::Button *>(mainWindow->FindName("btnImport"));
     btnImport->Click += []()
