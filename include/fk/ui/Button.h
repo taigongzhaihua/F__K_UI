@@ -84,18 +84,8 @@ private:
     bool isPressed_{false};
     MouseButton pressedButton_{MouseButton::None};
     
-    // 辅助方法：同步 Background 到模板中的 Border
-    // 注意：虽然模板使用了 TemplateBinding，但当前实现还需要手动触发同步
-    void SyncBackgroundToBorder();
-    
     // 更新视觉状态（根据当前状态切换到相应的视觉状态）
     void UpdateVisualState(bool useTransitions);
-    
-    // 创建各个状态的辅助方法（用于默认状态）
-    std::shared_ptr<animation::VisualState> CreateNormalState();
-    std::shared_ptr<animation::VisualState> CreateMouseOverState();
-    std::shared_ptr<animation::VisualState> CreatePressedState();
-    std::shared_ptr<animation::VisualState> CreateDisabledState();
     
     // 从模板加载视觉状态（如果模板中定义了状态）
     bool LoadVisualStatesFromTemplate();

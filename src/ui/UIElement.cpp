@@ -534,4 +534,19 @@ UIElement* UIElement::ColumnSpan(int span) {
     return this;
 }
 
+void UIElement::SetTemplatedParent(UIElement* parent) {
+    auto oldParent = templatedParent_;
+    templatedParent_ = parent;
+    
+    // 当设置 TemplatedParent 后，需要刷新所有 TemplateBinding
+    // 触发 DataContext Changed 事件会让所有绑定重新订阅源
+    if (oldParent != parent && parent != nullptr) {
+        // 触发一个假的 DataContextChanged 来让绑定重新订阅
+        // 这会导致 BindingExpression::RefreshSourceSubscription() 被调用
+        auto dummyOld = std::any{};
+        auto dummyNew = std::any{};
+        DataContextChanged(dummyOld, dummyNew);
+    }
+}
+
 } // namespace fk::ui

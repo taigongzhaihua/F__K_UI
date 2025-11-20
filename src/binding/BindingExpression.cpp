@@ -315,6 +315,7 @@ void BindingExpression::Unsubscribe() {
     dataContextConnection_.Disconnect();
     targetPropertyConnection_.Disconnect();
     sourcePropertyConnection_.Disconnect();
+    sourceDependencyObjectConnection_.Disconnect();
     sharedNotifierHolder_.reset();
     rawNotifier_ = nullptr;
     currentSource_.reset();
@@ -398,6 +399,7 @@ bool BindingExpression::ShouldSubscribeToTargetChanges() const {
 
 void BindingExpression::RefreshSourceSubscription() {
     sourcePropertyConnection_.Disconnect();
+    sourceDependencyObjectConnection_.Disconnect();
     sharedNotifierHolder_.reset();
     rawNotifier_ = nullptr;
     currentSource_.reset();
@@ -407,6 +409,61 @@ void BindingExpression::RefreshSourceSubscription() {
     }
 
     currentSource_ = ResolveSourceRoot();
+    
+    // 首先尝试作为 DependencyObject（用于 TemplateBinding）
+    if (currentSource_.has_value()) {
+        DependencyObject* depObj = nullptr;
+        
+        // 尝试不同的类型转换
+        if (auto* ptr = std::any_cast<DependencyObject>(&currentSource_)) {
+            depObj = ptr;
+        } else if (auto* ptr = std::any_cast<DependencyObject*>(&currentSource_)) {
+            depObj = *ptr;
+        } else if (auto* ptr = std::any_cast<ui::UIElement*>(&currentSource_)) {
+            // UIElement 继承自 DependencyObject
+            depObj = dynamic_cast<DependencyObject*>(*ptr);
+        }
+        
+        if (depObj) {
+            // 订阅 DependencyObject 的 PropertyChanged 事件
+            auto weakSelf = weak_from_this();
+            sourceDependencyObjectConnection_ = depObj->PropertyChanged.Connect(
+                [weakSelf, this](const DependencyProperty& prop, const std::any&, const std::any&, ValueSource, ValueSource) {
+                    if (auto self = weakSelf.lock()) {
+                        if (!self->isActive_ || self->isUpdatingTarget_) {
+                            return;
+                        }
+                        // 对于 TemplateBinding，只有当变化的属性是我们绑定的属性时才更新
+                        if (self->isTemplateBinding_ && self->templateBindingSourceProperty_) {
+                            if (&prop != self->templateBindingSourceProperty_) {
+                                return;
+                            }
+                        }
+                        if (self->definition_.GetIsAsync()) {
+                            self->UpdateTargetAsync();
+                        } else {
+                            self->UpdateTarget();
+                        }
+                    }
+                });
+            
+            // 订阅成功后立即更新一次目标（因为可能之前 TemplatedParent 是 null）
+            if (isTemplateBinding_) {
+                auto weakSelf2 = weak_from_this();
+                if (auto self = weakSelf2.lock()) {
+                    if (self->definition_.GetIsAsync()) {
+                        self->UpdateTargetAsync();
+                    } else {
+                        self->UpdateTarget();
+                    }
+                }
+            }
+            
+            return;
+        }
+    }
+    
+    // 如果不是 DependencyObject，尝试作为 INotifyPropertyChanged
     auto notifier = TryGetNotifier(currentSource_);
     
     if (notifier == nullptr) {

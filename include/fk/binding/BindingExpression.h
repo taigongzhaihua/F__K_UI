@@ -71,6 +71,7 @@ private:
     BindingContext::DataContextChangedEvent::Connection dataContextConnection_{};
     DependencyObject::PropertyChangedEvent::Connection targetPropertyConnection_{};
     INotifyPropertyChanged::PropertyChangedEvent::Connection sourcePropertyConnection_{};
+    DependencyObject::PropertyChangedEvent::Connection sourceDependencyObjectConnection_{};
     std::any currentSource_;
     std::shared_ptr<INotifyPropertyChanged> sharedNotifierHolder_{};
     INotifyPropertyChanged* rawNotifier_{nullptr};

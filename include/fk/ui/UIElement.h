@@ -142,7 +142,7 @@ public:
     /**
      * @brief 设置模板化父元素（内部使用）
      */
-    void SetTemplatedParent(UIElement* parent) { templatedParent_ = parent; }
+    void SetTemplatedParent(UIElement* parent);
     
     /**
      * @brief 获取元素名称

@@ -2,6 +2,7 @@
 #include "fk/ui/UIElement.h"
 #include "fk/animation/VisualStateGroup.h"
 #include <stdexcept>
+#include <iostream>
 
 namespace fk::ui {
 

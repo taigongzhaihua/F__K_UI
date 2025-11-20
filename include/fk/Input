@@ -1,0 +1,11 @@
+#pragma once
+
+/**
+ * @file Input
+ * @brief F__K UI Framework - 输入管理模块
+ * 
+ * 包含输入和焦点管理
+ */
+
+#include "fk/ui/InputManager.h"
+#include "fk/ui/FocusManager.h"

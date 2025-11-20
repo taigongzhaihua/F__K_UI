@@ -43,8 +43,8 @@
         Set##PropertyName(value); \
         return static_cast<Derived*>(this); \
     } \
-    Derived* PropertyName(binding::Binding binding) { \
-        this->SetBinding(PropertyName##Property(), std::move(binding)); \
+    Derived* PropertyName(const binding::Binding& binding) { \
+        this->SetBinding(PropertyName##Property(), binding); \
         return static_cast<Derived*>(this); \
     } \
     Type PropertyName() const { return Get##PropertyName(); }
@@ -69,8 +69,8 @@
         Set##PropertyName(value); \
         return static_cast<Derived*>(this); \
     } \
-    Derived* PropertyName(binding::Binding binding) { \
-        this->SetBinding(PropertyName##Property(), std::move(binding)); \
+    Derived* PropertyName(const binding::Binding& binding) { \
+        this->SetBinding(PropertyName##Property(), binding); \
         return static_cast<Derived*>(this); \
     } \
     Type PropertyName() const { return Get##PropertyName(); }
@@ -95,8 +95,8 @@
         Set##PropertyName(value); \
         return static_cast<Derived*>(this); \
     } \
-    Derived* PropertyName(binding::Binding binding) { \
-        this->SetBinding(PropertyName##Property(), std::move(binding)); \
+    Derived* PropertyName(const binding::Binding& binding) { \
+        this->SetBinding(PropertyName##Property(), binding); \
         return static_cast<Derived*>(this); \
     } \
     Type PropertyName() const { return Get##PropertyName(); }

@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <functional>
-#include "fk/core/Point.h"
+#include "fk/ui/Primitives.h"
 
 namespace fk::ui {
 

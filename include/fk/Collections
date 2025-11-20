@@ -1,0 +1,12 @@
+#pragma once
+
+/**
+ * @file Collections
+ * @brief F__K UI Framework - 集合模块
+ * 
+ * 包含各种集合类型
+ */
+
+#include "fk/ui/VisualCollection.h"
+#include "fk/ui/ObservableCollection.h"
+#include "fk/ui/PointCollection.h"

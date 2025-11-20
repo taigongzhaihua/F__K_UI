@@ -1,0 +1,11 @@
+#pragma once
+
+/**
+ * @file Application
+ * @brief F__K UI Framework - 应用程序模块
+ * 
+ * 包含应用程序入口和窗口管理
+ */
+
+#include "fk/app/Application.h"
+#include "fk/ui/Window.h"

@@ -4,6 +4,10 @@ project(FK_UI_Minimal VERSION 0.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 包含 GNUInstallDirs 以便早期定义安装目录
+include(GNUInstallDirs)
+set(FK_UI_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
+
 # ===== 平台检测 =====
 if(WIN32)
     message(STATUS "Platform: Windows")
@@ -21,10 +25,7 @@ set(FREETYPE_BINARY_DIR "${CMAKE_BINARY_DIR}/third_party/src/freetype")
 
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
-add_library(glad STATIC
-    ${THIRD_PARTY_DIR}/src/glad/glad.c
-)
-target_include_directories(glad PUBLIC ${THIRD_PARTY_DIR}/include)
+# glad 将直接编译到 fk 库中
 
 # ===== GLFW 跨平台配置 =====
 set(GLFW_AVAILABLE FALSE)
@@ -127,6 +128,9 @@ else()
 endif()
 
 add_library(fk STATIC
+    # 第三方依赖（直接编译到库中以简化安装）
+    ${THIRD_PARTY_DIR}/src/glad/glad.c
+    
     # app 模块
     src/app/Application.cpp
     
@@ -213,19 +217,19 @@ target_include_directories(fk PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 
+# 使用生成器表达式支持构建树和安装树
 target_include_directories(fk PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
-    ${THIRD_PARTY_DIR}/include
-    ${FREETYPE_SOURCE_DIR}/include
-    ${FREETYPE_BINARY_DIR}/include
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${THIRD_PARTY_DIR}/include>
+    $<BUILD_INTERFACE:${FREETYPE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${FREETYPE_BINARY_DIR}/include>
+    $<INSTALL_INTERFACE:${FK_UI_INSTALL_INCLUDEDIR}>
 )
 
-target_link_libraries(fk PUBLIC
-    glad
-    glfw3
-    freetype
-    ${OPENGL_LIBS}     # OpenGL 库（如果可用）
-    ${PLATFORM_LIBS}   # 平台特定的库
+# freetype 作为 PRIVATE 依赖，用户不需要直接链接
+target_link_libraries(fk 
+    PRIVATE freetype
+    PUBLIC glfw3 ${OPENGL_LIBS} ${PLATFORM_LIBS}
 )
 
 # 添加 GLFW 和 OpenGL 可用性编译定义
@@ -259,9 +263,88 @@ target_link_libraries(example_app PRIVATE fk)
 #
 # 详见: samples/README.md
 
+# ===== 库安装配置 =====
+# 设置安装目录
+set(FK_UI_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
+set(FK_UI_INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR})
+set(FK_UI_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/FK_UI)
+
+# 安装库文件（包括 freetype 作为依赖）
+install(TARGETS fk freetype
+    EXPORT FK_UI_Targets
+    LIBRARY DESTINATION ${FK_UI_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${FK_UI_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${FK_UI_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${FK_UI_INSTALL_INCLUDEDIR}
+)
+
+# 安装头文件（包括模块头文件，不带扩展名）
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/fk
+    DESTINATION ${FK_UI_INSTALL_INCLUDEDIR}
+    FILES_MATCHING 
+        PATTERN "*.h"
+        PATTERN "Core"
+        PATTERN "Application"
+        PATTERN "Controls"
+        PATTERN "Layouts"
+        PATTERN "Graphics"
+        PATTERN "Styling"
+        PATTERN "DataBinding"
+        PATTERN "Animation"
+        PATTERN "Collections"
+        PATTERN "Input"
+        PATTERN "Rendering"
+)
+
+# 安装第三方依赖的头文件（如果需要暴露给用户）
+install(DIRECTORY ${THIRD_PARTY_DIR}/include/
+    DESTINATION ${FK_UI_INSTALL_INCLUDEDIR}
+    FILES_MATCHING 
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+    PATTERN "glm/detail" EXCLUDE
+)
+
+# 生成并安装 CMake 配置文件
+install(EXPORT FK_UI_Targets
+    FILE FK_UITargets.cmake
+    NAMESPACE FK_UI::
+    DESTINATION ${FK_UI_INSTALL_CMAKEDIR}
+)
+
+# 创建版本配置文件
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/FK_UIConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+# 创建配置文件
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FK_UIConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/FK_UIConfig.cmake"
+    INSTALL_DESTINATION ${FK_UI_INSTALL_CMAKEDIR}
+)
+
+# 安装配置文件
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/FK_UIConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/FK_UIConfigVersion.cmake"
+    DESTINATION ${FK_UI_INSTALL_CMAKEDIR}
+)
+
+# 导出构建树（可选，用于直接从构建目录使用）
+export(EXPORT FK_UI_Targets
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/FK_UITargets.cmake"
+    NAMESPACE FK_UI::
+)
+
 message(STATUS "F__K_UI library build configured successfully!")
 message(STATUS "  - Library: libfk.a")
 message(STATUS "  - Include: ${CMAKE_SOURCE_DIR}/include")
 message(STATUS "  - Third-party: ${THIRD_PARTY_DIR}")
 message(STATUS "  - Example target: example_app (examples/main.cpp)")
+message(STATUS "  - Install prefix: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "  - Install command: cmake --install . [--prefix <path>]")
 

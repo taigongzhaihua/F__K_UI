@@ -1,0 +1,21 @@
+@PACKAGE_INIT@
+
+# FK_UI CMake 配置文件
+# 此文件由 CMake 自动生成
+
+include(CMakeFindDependencyMacro)
+
+# 查找必需的依赖
+find_dependency(OpenGL)
+
+# 包含 FK_UI 导出的目标
+include("${CMAKE_CURRENT_LIST_DIR}/FK_UITargets.cmake")
+
+# 设置包含目录和库
+set(FK_UI_INCLUDE_DIRS "@PACKAGE_FK_UI_INSTALL_INCLUDEDIR@")
+set(FK_UI_LIBRARIES FK_UI::fk)
+
+# 检查所有必需的组件是否已找到
+check_required_components(FK_UI)
+
+message(STATUS "Found FK_UI ${FK_UI_VERSION}")

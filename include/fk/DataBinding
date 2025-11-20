@@ -1,0 +1,24 @@
+#pragma once
+
+/**
+ * @file DataBinding
+ * @brief F__K UI Framework - 数据绑定模块
+ * 
+ * 包含数据绑定和属性系统
+ */
+
+#include "fk/binding/Binding.h"
+#include "fk/binding/BindingExpression.h"
+#include "fk/binding/BindingContext.h"
+#include "fk/binding/BindingPath.h"
+#include "fk/binding/MultiBinding.h"
+#include "fk/binding/MultiBindingExpression.h"
+#include "fk/binding/TemplateBinding.h"
+#include "fk/binding/DependencyObject.h"
+#include "fk/binding/DependencyProperty.h"
+#include "fk/binding/PropertyStore.h"
+#include "fk/binding/INotifyPropertyChanged.h"
+#include "fk/binding/INotifyDataErrorInfo.h"
+#include "fk/binding/ObservableObject.h"
+#include "fk/binding/ValueConverters.h"
+#include "fk/binding/ValidationRule.h"

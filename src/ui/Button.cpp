@@ -45,7 +45,7 @@ namespace fk::ui
             typeid(Brush *),
             typeid(Button),
             binding::PropertyMetadata{
-                .defaultValue = static_cast<Brush *>(new SolidColorBrush(Color::FromRGB(0, 90, 158, 255))), // WinUI3 Fluent Accent Pressed #005A9E
+                .defaultValue = static_cast<Brush *>(new SolidColorBrush(0, 90, 158, 255)), // WinUI3 Fluent Accent Pressed #005A9E
                 .propertyChangedCallback = [](DependencyObject &d, const DependencyProperty &, const std::any &, const std::any &)
                 {
                     auto *button = static_cast<Button *>(&d);
@@ -143,8 +143,6 @@ namespace fk::ui
         {
             SetBorderBrush(new SolidColorBrush(Color::FromRGB(0, 120, 212, 255))); // 与背景相同
         }
-        
-        
 
         // 设置默认模板
         if (!GetTemplate())
@@ -160,10 +158,6 @@ namespace fk::ui
     {
         ContentControl<Button>::OnTemplateApplied();
 
-        // 手动同步 Background 属性到模板中的 Border
-        // 虽然模板中使用了 TemplateBinding，但当前实现还需要手动触发同步
-        SyncBackgroundToBorder();
-
         // 初始化视觉状态管理（需要在模板应用后执行）
         InitializeVisualStates();
     }
@@ -176,9 +170,8 @@ namespace fk::ui
     {
         ContentControl<Button>::OnPropertyChanged(property, oldValue, newValue, oldSource, newSource);
 
-        // 当 Background 属性改变时，同步到模板中的 Border
-        // 虽然使用了 TemplateBinding，但当前实现需要手动触发更新
-if (property.Name() == "IsEnabled")
+        // 当 IsEnabled 属性改变时，更新视觉状态
+        if (property.Name() == "IsEnabled")
         {
             UpdateVisualState(true);
         }
@@ -219,7 +212,6 @@ if (property.Name() == "IsEnabled")
         if (isPressed_ && pressedButton_ == e.button && (!GetPrimaryClickOnly() || isPrimaryRelease)) {
             isPressed_ = false;
             pressedButton_ = MouseButton::None;
-            pressedButton_ = MouseButton::None;
             UpdateVisualState(true); // 使用视觉状态管理
 
             // 触发 Click 事件
@@ -246,62 +238,24 @@ if (property.Name() == "IsEnabled")
         {
             isPressed_ = false;
             pressedButton_ = MouseButton::None;
-            pressedButton_ = MouseButton::None;
         }
         UpdateVisualState(true); // 使用视觉状态管理
-    }
-
-    void Button::SyncBackgroundToBorder()
-    {
-        // 获取模板根（应该是 Border）
-        if (GetVisualChildrenCount() > 0)
-        {
-            auto *firstChild = GetVisualChild(0);
-            auto *border = dynamic_cast<Border *>(firstChild);
-            if (border)
-            {
-                // 将 Button 的 Background 同步到 Border
-                auto *bg = GetBackground();
-                if (bg)
-                {
-                    border->Background(bg);
-                }
-            }
-        }
     }
 
     // ========== 视觉状态管理实现 ==========
 
     void Button::InitializeVisualStates()
     {
-        // 首先尝试从模板加载视觉状态（用于自定义模板）
+        // 从模板加载视觉状态
+        // 默认模板（CreateDefaultButtonTemplate）已经通过链式 API 定义了完整的视觉状态
+        // 自定义模板也应该在模板中定义视觉状态
         if (LoadVisualStatesFromTemplate())
         {
-            // 如果模板中定义了视觉状态，解析TargetName并使用
+            // 解析TargetName并设置动画目标
             ResolveVisualStateTargets();
+            // 设置初始视觉状态
             UpdateVisualState(false);
-            return;
         }
-
-        // 使用属性驱动的视觉状态（默认模板走这里）
-        // 创建 VisualStateManager
-        auto manager = std::make_shared<animation::VisualStateManager>();
-        animation::VisualStateManager::SetVisualStateManager(this, manager);
-
-        // 创建 CommonStates 状态组
-        auto commonStates = std::make_shared<animation::VisualStateGroup>("CommonStates");
-
-        // 添加所有状态（这些方法会读取 Button 的属性）
-        commonStates->AddState(CreateNormalState());
-        commonStates->AddState(CreateMouseOverState());
-        commonStates->AddState(CreatePressedState());
-        commonStates->AddState(CreateDisabledState());
-
-        // 添加状态组到管理器
-        manager->AddStateGroup(commonStates);
-
-        // 设置初始状态
-        UpdateVisualState(false);
     }
 
     bool Button::LoadVisualStatesFromTemplate()
@@ -354,108 +308,6 @@ if (property.Name() == "IsEnabled")
         {
             animation::VisualStateManager::GoToState(this, "Normal", useTransitions);
         }
-    }
-
-    std::shared_ptr<animation::VisualState> Button::CreateNormalState()
-    {
-        auto state = std::make_shared<animation::VisualState>("Normal");
-        auto storyboard = std::make_shared<animation::Storyboard>();
-
-        // 直接操作 Button 的 Background
-        auto currentBg = GetBackground();
-        if (currentBg)
-        {
-            auto *solidBrush = dynamic_cast<SolidColorBrush *>(currentBg);
-            if (solidBrush)
-            {
-                // 不指定起始色,让动画自动从当前颜色开始
-                auto bgAnim = std::make_shared<animation::ColorAnimation>();
-                bgAnim->SetTo(Color::FromRGB(240, 240, 240, 255)); // 浅灰色
-                bgAnim->SetDuration(animation::Duration(std::chrono::milliseconds(200)));
-                bgAnim->SetTarget(solidBrush, &SolidColorBrush::ColorProperty());
-                storyboard->AddChild(bgAnim);
-            }
-        }
-
-        state->SetStoryboard(storyboard);
-        return state;
-    }
-
-    std::shared_ptr<animation::VisualState> Button::CreateMouseOverState()
-    {
-        auto state = std::make_shared<animation::VisualState>("MouseOver");
-        auto storyboard = std::make_shared<animation::Storyboard>();
-
-        // 直接操作 Button 的 Background（通过 TemplateBinding 会反映到 Border）
-        auto currentBg = GetBackground();
-        auto *currentSolidBrush = dynamic_cast<SolidColorBrush *>(currentBg);
-
-        auto targetBg = GetMouseOverBackground();
-        auto *targetSolidBrush = dynamic_cast<SolidColorBrush *>(targetBg);
-
-        if (currentSolidBrush && targetSolidBrush)
-        {
-            // 不指定起始色,让动画自动从当前颜色开始
-            auto bgAnim = std::make_shared<animation::ColorAnimation>();
-            bgAnim->SetTo(targetSolidBrush->GetColor());
-            bgAnim->SetDuration(animation::Duration(std::chrono::milliseconds(150)));
-            bgAnim->SetTarget(currentSolidBrush, &SolidColorBrush::ColorProperty());
-            storyboard->AddChild(bgAnim);
-        }
-
-        state->SetStoryboard(storyboard);
-        return state;
-    }
-
-    std::shared_ptr<animation::VisualState> Button::CreatePressedState()
-    {
-        auto state = std::make_shared<animation::VisualState>("Pressed");
-        auto storyboard = std::make_shared<animation::Storyboard>();
-
-        // 直接操作 Button 的 Background
-        auto currentBg = GetBackground();
-        auto *currentSolidBrush = dynamic_cast<SolidColorBrush *>(currentBg);
-
-        auto targetBg = GetPressedBackground();
-        auto *targetSolidBrush = dynamic_cast<SolidColorBrush *>(targetBg);
-
-        if (currentSolidBrush && targetSolidBrush)
-        {
-            // 不指定起始色,让动画自动从当前颜色开始
-            auto bgAnim = std::make_shared<animation::ColorAnimation>();
-            bgAnim->SetTo(targetSolidBrush->GetColor());
-            bgAnim->SetDuration(animation::Duration(std::chrono::milliseconds(100))); // 按下动画更快
-            bgAnim->SetTarget(currentSolidBrush, &SolidColorBrush::ColorProperty());
-            storyboard->AddChild(bgAnim);
-        }
-
-        state->SetStoryboard(storyboard);
-        return state;
-    }
-
-    std::shared_ptr<animation::VisualState> Button::CreateDisabledState()
-    {
-        auto state = std::make_shared<animation::VisualState>("Disabled");
-        auto storyboard = std::make_shared<animation::Storyboard>();
-
-        // 直接操作 Button 的 Background
-        auto currentBg = GetBackground();
-        if (currentBg)
-        {
-            auto *solidBrush = dynamic_cast<SolidColorBrush *>(currentBg);
-            if (solidBrush)
-            {
-                // 不指定起始色,让动画自动从当前颜色开始
-                auto bgAnim = std::make_shared<animation::ColorAnimation>();
-                bgAnim->SetTo(Color::FromRGB(200, 200, 200, 255)); // 灰色
-                bgAnim->SetDuration(animation::Duration(std::chrono::milliseconds(200)));
-                bgAnim->SetTarget(solidBrush, &SolidColorBrush::ColorProperty());
-                storyboard->AddChild(bgAnim);
-            }
-        }
-
-        state->SetStoryboard(storyboard);
-        return state;
     }
 
     void Button::ResolveVisualStateTargets()
