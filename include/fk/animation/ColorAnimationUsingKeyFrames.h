@@ -1,23 +1,25 @@
 #pragma once
 
 #include "fk/animation/KeyFrameAnimation.h"
-#include "fk/ui/DrawCommand.h"
+#include "fk/render/DrawCommand.h"
 
 namespace fk::animation {
 
+using Color = fk::render::Color;
+
 // Color 类型的关键帧动画
-class ColorAnimationUsingKeyFrames : public KeyFrameAnimation<ui::Color> {
+class ColorAnimationUsingKeyFrames : public KeyFrameAnimation<Color> {
 public:
     ColorAnimationUsingKeyFrames() = default;
     ~ColorAnimationUsingKeyFrames() override = default;
 
 protected:
-    ui::Color GetDefaultValue() const override {
-        return ui::Color{0, 0, 0, 0};
+    Color GetDefaultValue() const override {
+        return Color{0, 0, 0, 0};
     }
     
-    ui::Color InterpolateValue(const ui::Color& from, const ui::Color& to, double progress) const override {
-        return ui::Color{
+    Color InterpolateValue(const Color& from, const Color& to, double progress) const override {
+        return Color{
             from.r + (to.r - from.r) * static_cast<float>(progress),
             from.g + (to.g - from.g) * static_cast<float>(progress),
             from.b + (to.b - from.b) * static_cast<float>(progress),
@@ -28,8 +30,8 @@ protected:
 
 // Color 线性关键帧特化
 template<>
-inline ui::Color LinearKeyFrame<ui::Color>::InterpolateValueCore(const ui::Color& from, const ui::Color& to, double progress) {
-    return ui::Color{
+inline Color LinearKeyFrame<Color>::InterpolateValueCore(const Color& from, const Color& to, double progress) {
+    return Color{
         from.r + (to.r - from.r) * static_cast<float>(progress),
         from.g + (to.g - from.g) * static_cast<float>(progress),
         from.b + (to.b - from.b) * static_cast<float>(progress),
@@ -39,8 +41,8 @@ inline ui::Color LinearKeyFrame<ui::Color>::InterpolateValueCore(const ui::Color
 
 // Color 缓动关键帧特化
 template<>
-inline ui::Color EasingKeyFrame<ui::Color>::InterpolateValueCore(const ui::Color& from, const ui::Color& to, double progress) {
-    return ui::Color{
+inline Color EasingKeyFrame<Color>::InterpolateValueCore(const Color& from, const Color& to, double progress) {
+    return Color{
         from.r + (to.r - from.r) * static_cast<float>(progress),
         from.g + (to.g - from.g) * static_cast<float>(progress),
         from.b + (to.b - from.b) * static_cast<float>(progress),
@@ -50,9 +52,9 @@ inline ui::Color EasingKeyFrame<ui::Color>::InterpolateValueCore(const ui::Color
 
 // Color Spline 关键帧特化
 template<>
-inline ui::Color SplineKeyFrame<ui::Color>::InterpolateValueCore(const ui::Color& from, const ui::Color& to, double progress) {
+inline Color SplineKeyFrame<Color>::InterpolateValueCore(const Color& from, const Color& to, double progress) {
     // 使用贝塞尔曲线进行颜色插值
-    return ui::Color{
+    return Color{
         from.r + (to.r - from.r) * static_cast<float>(progress),
         from.g + (to.g - from.g) * static_cast<float>(progress),
         from.b + (to.b - from.b) * static_cast<float>(progress),

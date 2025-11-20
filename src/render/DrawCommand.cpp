@@ -1,6 +1,6 @@
-#include "fk/ui/DrawCommand.h"
+#include "fk/render/DrawCommand.h"
 
-namespace fk::ui {
+namespace fk::render {
 
 DrawCommand DrawCommand::Rectangle(const Rect& rect, const Color& fill, const Color& stroke, float strokeWidth) {
     DrawCommand cmd(DrawCommandType::Rectangle);

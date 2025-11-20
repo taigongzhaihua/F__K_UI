@@ -1,10 +1,11 @@
 #include "fk/resources/ThemeManager.h"
-#include "fk/ui/DrawCommand.h"
+#include "fk/render/DrawCommand.h"
 #include <iostream>
 
 namespace fk::resources {
 
 using namespace fk::ui;
+using Color = fk::render::Color;
 
 void ThemeManager::CreateDefaultLightTheme() {
     auto theme = std::make_shared<Theme>("Light");

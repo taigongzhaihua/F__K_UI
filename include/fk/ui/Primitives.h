@@ -147,24 +147,4 @@ struct HitTestResult {
         : visualHit(visual), pointHit(point) {}
 };
 
-// 前向声明
-class Renderer;
-
-/**
- * @brief 渲染上下文
- * 
- * 职责：
- * - 封装渲染器引用
- * - 提供绘制辅助方法
- */
-class RenderContext {
-public:
-    explicit RenderContext(Renderer* renderer) : renderer_(renderer) {}
-    
-    Renderer* GetRenderer() const { return renderer_; }
-
-private:
-    Renderer* renderer_{nullptr};
-};
-
 } // namespace fk::ui

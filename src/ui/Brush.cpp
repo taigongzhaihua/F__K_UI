@@ -17,11 +17,11 @@ namespace fk::ui {
 
 const binding::DependencyProperty& SolidColorBrush::ColorProperty() {
     static auto& property = 
-        binding::DependencyProperty::Register(
+        DependencyProperty::Register(
             "Color",
-            typeid(fk::ui::Color),
+            typeid(Color),
             typeid(SolidColorBrush),
-            binding::PropertyMetadata{std::any(fk::ui::Color::Black())}
+            binding::PropertyMetadata{std::any(Color::Black())}
         );
     return property;
 }

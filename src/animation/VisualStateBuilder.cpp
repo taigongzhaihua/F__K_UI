@@ -1,9 +1,12 @@
 #include "fk/animation/VisualStateBuilder.h"
-#include "fk/ui/DrawCommand.h"
+#include "fk/render/DrawCommand.h"
 #include <stdexcept>
 #include <chrono>
 
 namespace fk::animation {
+
+// 使用 render 模块的 Color
+using Color = fk::render::Color;
 
 VisualStateBuilder::VisualStateBuilder(const std::string& groupName) 
     : groupName_(groupName)
@@ -104,13 +107,13 @@ inline void VisualStateBuilder::CheckAnimationType(AnimationType expected, const
     }
 }
 
-VisualStateBuilder* VisualStateBuilder::From(const ui::Color& color) {
+VisualStateBuilder* VisualStateBuilder::From(const Color& color) {
     CheckAnimationType(AnimationType::Color, "From(Color)");
     colorFrom_ = color;
     return this;
 }
 
-VisualStateBuilder* VisualStateBuilder::To(const ui::Color& color) {
+VisualStateBuilder* VisualStateBuilder::To(const Color& color) {
     CheckAnimationType(AnimationType::Color, "To(Color)");
     colorTo_ = color;
     colorToBinding_ = nullptr;
@@ -246,8 +249,8 @@ void VisualStateBuilder::AddKeyFrameImpl(AnimationType expectedType, const char*
 }
 
 // 线性关键帧
-VisualStateBuilder* VisualStateBuilder::LinearKeyFrame(int keyTimeMs, const ui::Color& value) {
-    AddKeyFrameImpl<ui::Color, animation::LinearKeyFrame<ui::Color>>(
+VisualStateBuilder* VisualStateBuilder::LinearKeyFrame(int keyTimeMs, const Color& value) {
+    AddKeyFrameImpl<Color, animation::LinearKeyFrame<Color>>(
         AnimationType::ColorKeyFrame, "ColorKeyFrameAnimation", colorKeyFrames_, keyTimeMs, value);
     return this;
 }
@@ -271,8 +274,8 @@ VisualStateBuilder* VisualStateBuilder::LinearKeyFrame(int keyTimeMs, const Thic
 }
 
 // 离散关键帧
-VisualStateBuilder* VisualStateBuilder::DiscreteKeyFrame(int keyTimeMs, const ui::Color& value) {
-    AddKeyFrameImpl<ui::Color, animation::DiscreteKeyFrame<ui::Color>>(
+VisualStateBuilder* VisualStateBuilder::DiscreteKeyFrame(int keyTimeMs, const Color& value) {
+    AddKeyFrameImpl<Color, animation::DiscreteKeyFrame<Color>>(
         AnimationType::ColorKeyFrame, "ColorKeyFrameAnimation", colorKeyFrames_, keyTimeMs, value);
     return this;
 }

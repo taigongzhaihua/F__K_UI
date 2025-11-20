@@ -6,7 +6,13 @@
 #include <functional>
 #include <cstdint>
 
-namespace fk::ui {
+namespace fk::render {
+
+// 使用 ui 命名空间中的几何类型
+using ui::Rect;
+using ui::Point;
+using ui::Size;
+using ui::Matrix3x2;
 
 // 前向声明
 class Brush;

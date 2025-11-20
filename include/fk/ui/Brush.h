@@ -16,7 +16,7 @@
 
 #include "fk/binding/DependencyObject.h"
 #include "fk/binding/DependencyProperty.h"
-#include "fk/ui/DrawCommand.h"  // 使用 DrawCommand.h 中的 Color 定义
+#include "fk/render/DrawCommand.h"  // 使用 DrawCommand.h 中的 Color 定义
 #include "fk/ui/Primitives.h"   // Point
 #include <cstdint>
 #include <vector>
@@ -24,7 +24,8 @@
 
 namespace fk::ui {
 
-// Color 在 DrawCommand.h 中已定义，这里不需要重复定义
+// Color 现在在 render 模块中定义
+using Color = fk::render::Color;
 
 /**
  * @brief 渐变停止点

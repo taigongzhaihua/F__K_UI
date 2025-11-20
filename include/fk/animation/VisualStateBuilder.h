@@ -18,6 +18,8 @@
 
 namespace fk::animation {
 
+using Color = fk::render::Color;
+
 /**
  * @brief 视觉状态构建器 - 提供声明式API来创建视觉状态
  * 
@@ -113,7 +115,7 @@ public:
      * @param color 起始颜色
      * @return this（支持链式调用）
      */
-    VisualStateBuilder* From(const ui::Color& color);
+    VisualStateBuilder* From(const Color& color);
     
     /**
      * @brief 设置当前动画的目标值（颜色）
@@ -121,7 +123,7 @@ public:
      * @param color 目标颜色
      * @return this（支持链式调用）
      */
-    VisualStateBuilder* To(const ui::Color& color);
+    VisualStateBuilder* To(const Color& color);
     
     /**
      * @brief 设置当前动画的目标值（从属性绑定）
@@ -280,11 +282,11 @@ public:
     /**
      * @brief 添加线性关键帧（颜色）
      * 
-     * @param keyTime 关键帧时间（毫秒）
+     * @param keyTimeMs 关键帧时间（毫秒）
      * @param value 关键帧值
      * @return this（支持链式调用）
      */
-    VisualStateBuilder* LinearKeyFrame(int keyTimeMs, const ui::Color& value);
+    VisualStateBuilder* LinearKeyFrame(int keyTimeMs, const Color& value);
     
     /**
      * @brief 添加线性关键帧（双精度）
@@ -320,7 +322,7 @@ public:
      * @param value 关键帧值
      * @return this（支持链式调用）
      */
-    VisualStateBuilder* DiscreteKeyFrame(int keyTimeMs, const ui::Color& value);
+    VisualStateBuilder* DiscreteKeyFrame(int keyTimeMs, const Color& value);
     
     /**
      * @brief 添加离散关键帧（双精度）
@@ -389,8 +391,8 @@ private:
     std::string currentPropertyPath_;    // 使用TargetName方式时的属性路径
     
     // 颜色动画参数
-    std::optional<ui::Color> colorFrom_;
-    std::optional<ui::Color> colorTo_;
+    std::optional<Color> colorFrom_;
+    std::optional<Color> colorTo_;
     const binding::DependencyProperty* colorToBinding_{nullptr};  // To 值绑定到属性
     
     // 双精度动画参数
@@ -409,7 +411,7 @@ private:
     int durationMs_{200};  // 默认200ms
     
     // KeyFrame动画的关键帧集合
-    std::vector<std::shared_ptr<KeyFrame<ui::Color>>> colorKeyFrames_;
+    std::vector<std::shared_ptr<KeyFrame<Color>>> colorKeyFrames_;
     std::vector<std::shared_ptr<KeyFrame<double>>> doubleKeyFrames_;
     std::vector<std::shared_ptr<KeyFrame<ui::Point>>> pointKeyFrames_;
     std::vector<std::shared_ptr<KeyFrame<Thickness>>> thicknessKeyFrames_;

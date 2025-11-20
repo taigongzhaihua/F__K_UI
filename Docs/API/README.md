@@ -46,14 +46,9 @@ F__K_UI 框架所有类的完整 API 参考。
 - [Logger](Core/Logger.md) - 日志基础设施
 
 ### [Render 模块](Render/) - 渲染系统
-- [Renderer](Render/Renderer.md) - 主渲染器
 - [IRenderer](Render/IRenderer.md) - 渲染器接口
 - [GlRenderer](Render/GlRenderer.md) - OpenGL 渲染器实现
-- [RenderBackend](Render/RenderBackend.md) - 平台抽象
 - [RenderContext](Render/RenderContext.md) - 渲染上下文
-- [RenderHost](Render/RenderHost.md) - 渲染宿主管理
-- [RenderScene](Render/RenderScene.md) - 场景管理
-- [RenderTreeBuilder](Render/RenderTreeBuilder.md) - 渲染树构建
 - [RenderCommandBuffer](Render/RenderCommandBuffer.md) - 命令缓冲
 - [RenderList](Render/RenderList.md) - 渲染列表管理
 - [TextRenderer](Render/TextRenderer.md) - 文本渲染（FreeType）

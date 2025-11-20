@@ -1,16 +1,19 @@
 #pragma once
 
 #include "fk/animation/Animation.h"
-#include "fk/ui/DrawCommand.h"
+#include "fk/render/DrawCommand.h"
 #include "fk/binding/DependencyObject.h"
 
 namespace fk::animation {
 
+// 使用 render 模块的 Color
+using Color = fk::render::Color;
+
 // 颜色动画
-class ColorAnimation : public Animation<ui::Color> {
+class ColorAnimation : public Animation<Color> {
 public:
     ColorAnimation();
-    ColorAnimation(const ui::Color& fromColor, const ui::Color& toColor, Duration duration);
+    ColorAnimation(const Color& fromColor, const Color& toColor, Duration duration);
     ~ColorAnimation() override = default;
 
     // 设置目标对象和属性
@@ -29,10 +32,10 @@ public:
 
 protected:
     // 实现插值
-    ui::Color Interpolate(const ui::Color& from, const ui::Color& to, double progress) const override;
+    Color Interpolate(const Color& from, const Color& to, double progress) const override;
     
     // 实现加法
-    ui::Color Add(const ui::Color& value1, const ui::Color& value2) const override;
+    Color Add(const Color& value1, const Color& value2) const override;
     
     // 更新当前值
     void UpdateCurrentValue(double progress) override;
@@ -40,7 +43,7 @@ protected:
 private:
     binding::DependencyObject* target_{nullptr};
     const binding::DependencyProperty* targetProperty_{nullptr};
-    ui::Color initialValue_;
+    Color initialValue_;
     bool hasInitialValue_{false};
     
     // To 值绑定（从 TemplatedParent 的属性获取）

@@ -163,11 +163,6 @@ add_library(fk STATIC
     # resources 模块 (Phase 4.3)
     src/resources/ThemeManager.cpp
     
-    # performance 模块 (Phase 4.4)
-    src/performance/GeometryCache.cpp
-    src/performance/MaterialPool.cpp
-    src/performance/RenderBatcher.cpp
-    
     # ui 模块（新架构）
     src/ui/Visual.cpp
     src/ui/VisualCollection.cpp
@@ -203,10 +198,10 @@ add_library(fk STATIC
     src/ui/ListBox.cpp
     src/ui/Popup.cpp
     src/ui/ComboBox.cpp
-    src/ui/DrawCommand.cpp
     # 旧的 ui::Renderer 和 RenderBackend 已移除，使用 fk::render 模块
     
     # render 模块（完整的生产级渲染系统）
+    src/render/DrawCommand.cpp
     src/render/GlRenderer.cpp
     src/render/ColorUtils.cpp
     src/render/TextRenderer.cpp

@@ -47,11 +47,8 @@ F__K_UI/
 │   │   ├── Logger.h
 │   │   └── Timer.h
 │   │
-│   ├── performance/         # 性能优化模块头文件
-│   │   ├── GeometryCache.h
-│   │   ├── MaterialPool.h
-│   │   ├── ObjectPool.h
-│   │   └── RenderBatcher.h
+│   ├── performance/         # 性能优化头文件
+│   │   └── ObjectPool.h
 │   │
 │   ├── render/              # 渲染系统头文件
 │   │   ├── ColorUtils.h
@@ -60,10 +57,7 @@ F__K_UI/
 │   │   ├── RenderCommand.h
 │   │   ├── RenderCommandBuffer.h
 │   │   ├── RenderContext.h
-│   │   ├── RenderHost.h
 │   │   ├── RenderList.h
-│   │   ├── RenderScene.h
-│   │   ├── RenderTreeBuilder.h
 │   │   └── TextRenderer.h
 │   │
 │   ├── resources/           # 资源管理头文件
@@ -208,21 +202,14 @@ F__K_UI/
   - `Logger`: 日志系统
 
 ### 4. Render（渲染系统）
-- **功能**: 处理图形渲染、场景管理和渲染优化
+- **功能**: 处理图形渲染和渲染优化
 - **核心类**:
-  - `GlRenderer`: OpenGL 渲染器
-  - `RenderContext`: 渲染上下文
-  - `RenderScene`: 渲染场景
+  - `GlRenderer`: OpenGL 渲染器实现
+  - `RenderContext`: 渲染上下文，封装绘制命令收集
+  - `RenderList`: 渲染命令列表
   - `TextRenderer`: 文本渲染器
 
-### 5. Performance（性能优化）
-- **功能**: 提供缓存、对象池等性能优化机制
-- **核心类**:
-  - `GeometryCache`: 几何体缓存
-  - `MaterialPool`: 材质池
-  - `RenderBatcher`: 渲染批处理器
-
-### 6. Resources（资源管理）
+### 5. Resources（资源管理）
 - **功能**: 管理主题、样式和动态资源
 - **核心类**:
   - `ThemeManager`: 主题管理器
