@@ -5,6 +5,7 @@
 #include "fk/ui/ContentPresenter.h"
 #include "fk/ui/StackPanel.h"
 #include "fk/ui/Grid.h"
+#include "fk/ui/GridCellAttacher.h"
 #include "fk/ui/Brush.h"
 #include "fk/ui/Shape.h"
 #include "fk/binding/TemplateBinding.h"
@@ -173,11 +174,11 @@ namespace fk::ui
                     ->Duration(150)
                     ->EndAnimation()
                     ->ColorAnimation("CheckBoxBorder", "Background.Color")
-                    ->ToBinding(CheckBox::CheckedBackgroundProperty()) // 使用选中背景色
+                    ->ToBinding(ToggleButton::CheckedBackgroundProperty()) // 使用选中背景色
                     ->Duration(150)
                     ->EndAnimation()
                     ->ColorAnimation("CheckBoxBorder", "BorderBrush.Color")
-                    ->ToBinding(CheckBox::CheckedBackgroundProperty()) // 边框也使用选中色
+                    ->ToBinding(ToggleButton::CheckedBackgroundProperty()) // 边框也使用选中色
                     ->Duration(150)
                     ->EndAnimation()
                     ->EndState()
