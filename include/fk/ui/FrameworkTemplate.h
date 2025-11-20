@@ -1,12 +1,14 @@
 #pragma once
 
-#include "fk/ui/ResourceDictionary.h"
+#include "fk/resources/ResourceDictionary.h"
 #include <memory>
 #include <functional>
 #include <unordered_map>
 #include <string>
 
 namespace fk::ui {
+
+using ResourceDictionary = fk::resources::ResourceDictionary;
 
 // 前向声明
 class UIElement;

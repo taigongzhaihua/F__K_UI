@@ -3,7 +3,7 @@
 #include "fk/ui/UIElement.h"
 #include "fk/ui/Thickness.h"
 #include "fk/ui/Alignment.h"
-#include "fk/ui/ResourceDictionary.h"
+#include "fk/resources/ResourceDictionary.h"
 #include "fk/ui/PropertyMacros.h"
 #include "fk/core/Event.h"
 #include "fk/binding/DependencyProperty.h"
@@ -16,6 +16,8 @@ namespace fk::ui {
 
 // 前向声明
 class Style;
+
+using ResourceDictionary = fk::resources::ResourceDictionary;
 
 /**
  * @brief 框架元素基类（CRTP 模式）

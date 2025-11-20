@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fk/ui/ResourceDictionary.h"
+#include "fk/resources/ResourceDictionary.h"
 #include <string>
 #include <memory>
 
@@ -20,7 +20,7 @@ namespace fk::resources {
 class Theme {
 public:
     Theme(const std::string& name) : name_(name) {
-        resources_ = std::make_shared<ui::ResourceDictionary>();
+        resources_ = std::make_shared<ResourceDictionary>();
     }
     
     virtual ~Theme() = default;
@@ -55,7 +55,7 @@ public:
     /**
      * @brief 获取主题的资源字典
      */
-    std::shared_ptr<ui::ResourceDictionary> GetResources() const {
+    std::shared_ptr<ResourceDictionary> GetResources() const {
         return resources_;
     }
     
@@ -99,7 +99,7 @@ protected:
     std::string author_;
     std::string version_{"1.0.0"};
     ThemeType themeType_{ThemeType::Light};
-    std::shared_ptr<ui::ResourceDictionary> resources_;
+    std::shared_ptr<ResourceDictionary> resources_;
 };
 
 } // namespace fk::resources

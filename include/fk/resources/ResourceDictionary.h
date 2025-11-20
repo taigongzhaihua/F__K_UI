@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-namespace fk::ui {
+namespace fk::resources {
 
 /**
  * @brief 资源字典
@@ -108,4 +108,4 @@ private:
     std::vector<std::shared_ptr<ResourceDictionary>> mergedDictionaries_;
 };
 
-} // namespace fk::ui
+} // namespace fk::resources
