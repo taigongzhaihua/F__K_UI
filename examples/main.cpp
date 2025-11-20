@@ -5,6 +5,7 @@
 #include "fk/ui/StackPanel.h"
 #include "fk/ui/Button.h"
 #include "fk/ui/ToggleButton.h"
+#include "fk/ui/CheckBox.h"
 #include "fk/ui/Border.h"
 #include "fk/ui/Grid.h"
 #include "fk/ui/GridCellAttacher.h"
@@ -139,7 +140,7 @@ int main(int argc, char **argv)
 
                         // Main content area - contains multiple cards
                         (new fk::ui::Grid())
-                                ->Rows("*, *")
+                                ->Rows("*, *, Auto")
                                 ->Columns("*, *")
                                 ->Margin(fk::ui::Thickness(20))
                                 ->Children( // Card 1 - Welcome
@@ -279,44 +280,93 @@ int main(int argc, char **argv)
                                                       fk::ui::cell(1, 0)}) |
                                          fk::ui::cell(1, 0),
 
-                                     // Card 4 - Recent Activity
+                                     // Card 4 - CheckBox Demo
                                      (new fk::ui::Grid())
-                                             ->Background(new fk::ui::SolidColorBrush(240, 248, 255))
+                                             ->Background(new fk::ui::SolidColorBrush(255, 245, 250))
                                              ->CornerRadius(8)
                                              ->Rows("Auto, *")
                                              ->Margin(fk::ui::Thickness(10, 10, 0, 0))
                                              ->Children(
                                                  {(new fk::ui::TextBlock())
-                                                          ->Text("Recent Activity")
+                                                          ->Text("CheckBox Demo")
                                                           ->FontSize(20)
-                                                          ->Foreground(new fk::ui::SolidColorBrush(70, 130, 180))
+                                                          ->Foreground(new fk::ui::SolidColorBrush(199, 21, 133))
                                                           ->Margin(fk::ui::Thickness(15)) |
                                                       fk::ui::cell(0, 0),
                                                   (new fk::ui::StackPanel())
                                                           ->Margin(fk::ui::Thickness(15, 0, 15, 15))
                                                           ->Children(
                                                               {(new fk::ui::TextBlock())
-                                                                   ->Text("- Updated UI framework docs")
-                                                                   ->FontSize(12)
-                                                                   ->Foreground(fk::ui::Brushes::DarkGray())
-                                                                   ->Margin(fk::ui::Thickness(0, 3, 0, 3)),
-                                                               (new fk::ui::TextBlock())
-                                                                   ->Text("- Optimized layout system")
-                                                                   ->FontSize(12)
-                                                                   ->Foreground(fk::ui::Brushes::DarkGray())
-                                                                   ->Margin(fk::ui::Thickness(0, 3, 0, 3)),
-                                                               (new fk::ui::TextBlock())
-                                                                   ->Text("- Added button visual states")
-                                                                   ->FontSize(12)
-                                                                   ->Foreground(fk::ui::Brushes::DarkGray())
-                                                                   ->Margin(fk::ui::Thickness(0, 3, 0, 3)),
-                                                               (new fk::ui::TextBlock())
-                                                                   ->Text("- Fixed Grid layout issues")
-                                                                   ->FontSize(12)
-                                                                   ->Foreground(fk::ui::Brushes::DarkGray())
-                                                                   ->Margin(fk::ui::Thickness(0, 3, 0, 3))}) |
+                                                                   ->Text("Select your preferences:")
+                                                                   ->FontSize(14)
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 10)),
+                                                               (new fk::ui::CheckBox())
+                                                                   ->Name("chkNotifications")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("Enable Notifications")
+                                                                           ->FontSize(14))
+                                                                   ->IsChecked(true)
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
+                                                               (new fk::ui::CheckBox())
+                                                                   ->Name("chkAutoUpdate")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("Auto Update")
+                                                                           ->FontSize(14))
+                                                                   ->IsChecked(false)
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
+                                                               (new fk::ui::CheckBox())
+                                                                   ->Name("chkDarkMode")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("Dark Mode")
+                                                                           ->FontSize(14))
+                                                                   ->IsChecked(true)
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
+                                                               (new fk::ui::CheckBox())
+                                                                   ->Name("chkAnalytics")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("Send Analytics (Indeterminate)")
+                                                                           ->FontSize(14))
+                                                                   ->IsThreeState(true)
+                                                                   ->IsChecked(std::nullopt)
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5))}) |
                                                       fk::ui::cell(1, 0)}) |
-                                         fk::ui::cell(1, 1)}) |
+                                         fk::ui::cell(1, 1),
+
+                                     // Card 5 - Recent Activity (moved to bottom, spans 2 columns)
+                                     (new fk::ui::Grid())
+                                             ->Background(new fk::ui::SolidColorBrush(240, 248, 255))
+                                             ->CornerRadius(8)
+                                             ->Rows("Auto, Auto")
+                                             ->Margin(fk::ui::Thickness(0, 10, 10, 0))
+                                             ->Children(
+                                                 {(new fk::ui::TextBlock())
+                                                          ->Text("Recent Activity")
+                                                          ->FontSize(18)
+                                                          ->Foreground(new fk::ui::SolidColorBrush(70, 130, 180))
+                                                          ->Margin(fk::ui::Thickness(15, 10, 15, 5)) |
+                                                      fk::ui::cell(0, 0),
+                                                  (new fk::ui::StackPanel())
+                                                          ->Orientation(fk::ui::Orientation::Horizontal)
+                                                          ->Margin(fk::ui::Thickness(15, 5, 15, 10))
+                                                          ->Children(
+                                                              {(new fk::ui::TextBlock())
+                                                                   ->Text("✓ Updated UI framework • ")
+                                                                   ->FontSize(12)
+                                                                   ->Foreground(fk::ui::Brushes::DarkGray()),
+                                                               (new fk::ui::TextBlock())
+                                                                   ->Text("✓ Optimized layout • ")
+                                                                   ->FontSize(12)
+                                                                   ->Foreground(fk::ui::Brushes::DarkGray()),
+                                                               (new fk::ui::TextBlock())
+                                                                   ->Text("✓ Added CheckBox control")
+                                                                   ->FontSize(12)
+                                                                   ->Foreground(fk::ui::Brushes::DarkGray())}) |
+                                                      fk::ui::cell(1, 0)}) |
+                                         fk::ui::cell(2, 0, 1, 2)}) |
                             fk::ui::cell(1, 1),
 
                         // Bottom status bar - spans 2 columns
@@ -411,12 +461,40 @@ int main(int argc, char **argv)
     btnExport->Click += []()
     { std::cout << "Action: Export" << std::endl; };
 
+    // Bind CheckBox events
+    auto chkNotifications = static_cast<fk::ui::CheckBox *>(mainWindow->FindName("chkNotifications"));
+    chkNotifications->Checked += [](std::optional<bool> state)
+    { std::cout << "Notifications: ENABLED" << std::endl; };
+    chkNotifications->Unchecked += [](std::optional<bool> state)
+    { std::cout << "Notifications: DISABLED" << std::endl; };
+
+    auto chkAutoUpdate = static_cast<fk::ui::CheckBox *>(mainWindow->FindName("chkAutoUpdate"));
+    chkAutoUpdate->Checked += [](std::optional<bool> state)
+    { std::cout << "Auto Update: ENABLED" << std::endl; };
+    chkAutoUpdate->Unchecked += [](std::optional<bool> state)
+    { std::cout << "Auto Update: DISABLED" << std::endl; };
+
+    auto chkDarkMode = static_cast<fk::ui::CheckBox *>(mainWindow->FindName("chkDarkMode"));
+    chkDarkMode->Checked += [](std::optional<bool> state)
+    { std::cout << "Dark Mode: ON" << std::endl; };
+    chkDarkMode->Unchecked += [](std::optional<bool> state)
+    { std::cout << "Dark Mode: OFF" << std::endl; };
+
+    auto chkAnalytics = static_cast<fk::ui::CheckBox *>(mainWindow->FindName("chkAnalytics"));
+    chkAnalytics->Checked += [](std::optional<bool> state)
+    { std::cout << "Analytics: ENABLED" << std::endl; };
+    chkAnalytics->Unchecked += [](std::optional<bool> state)
+    { std::cout << "Analytics: DISABLED" << std::endl; };
+    chkAnalytics->Indeterminate += [](std::optional<bool> state)
+    { std::cout << "Analytics: ASK ME LATER" << std::endl; };
+
     std::cout << "\n=== F__K UI Complex Layout Example ===" << std::endl;
     std::cout << "Features:" << std::endl;
     std::cout << "- Top navigation bar (3 buttons)" << std::endl;
     std::cout << "- Left sidebar (4 navigation buttons)" << std::endl;
-    std::cout << "- Main content area (4 cards with buttons)" << std::endl;
+    std::cout << "- Main content area (5 cards: Welcome, ToggleButton, Quick Actions, CheckBox, Recent Activity)" << std::endl;
     std::cout << "- Bottom status bar" << std::endl;
+    std::cout << "- New: CheckBox control with Checked/Unchecked/Indeterminate states" << std::endl;
     std::cout << "======================================\n"
               << std::endl;
 

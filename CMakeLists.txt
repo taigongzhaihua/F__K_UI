@@ -192,6 +192,7 @@ add_library(fk STATIC
     src/ui/ItemContainerGenerator.cpp
     src/ui/Button.cpp
     src/ui/ToggleButton.cpp
+    src/ui/CheckBox.cpp
     src/ui/StackPanel.cpp
     src/ui/Grid.cpp
     src/ui/GridCellAttacher.cpp
