@@ -17,6 +17,7 @@
 #include "fk/ui/TextBlock.h"
 #include "fk/ui/Brush.h"
 #include <iostream>
+#include <memory>
 
 using namespace fk;
 using namespace fk::ui;
@@ -30,11 +31,12 @@ int main() {
             return 1;
         }
         
-        // 创建主窗口
-        auto window = app->CreateWindow();
+        // 创建主窗口（使用 shared_ptr 以便传入 Run）
+        auto window = std::make_shared<Window>();
         window->SetTitle("Panel背景和圆角演示");
         window->SetWidth(900);
         window->SetHeight(700);
+        app->AddWindow(window, "PanelBackgroundDemo");
         
         // 创建主网格布局（3行2列）
         auto mainGrid = new Grid();
