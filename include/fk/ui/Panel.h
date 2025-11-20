@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fk/ui/FrameworkElement.h"
+#include "fk/ui/CornerRadius.h"
 #include "fk/binding/DependencyProperty.h"
 #include <vector>
 #include <memory>
@@ -27,6 +28,9 @@ public:
     
     /// Background 属性：背景画刷
     static const binding::DependencyProperty& BackgroundProperty();
+    
+    /// CornerRadius 属性：圆角半径
+    static const binding::DependencyProperty& CornerRadiusProperty();
 
 public:
     Panel() = default;
@@ -42,6 +46,21 @@ public:
         return static_cast<Derived*>(this);
     }
     Brush* Background() const { return GetBackground(); }
+    
+    // ========== 圆角 ==========
+    
+    ui::CornerRadius GetCornerRadius() const { return this->template GetValue<ui::CornerRadius>(CornerRadiusProperty()); }
+    void SetCornerRadius(const ui::CornerRadius& value) { this->SetValue(CornerRadiusProperty(), value); }
+    
+    Derived* CornerRadius(float uniform) {
+        SetCornerRadius(ui::CornerRadius(uniform));
+        return static_cast<Derived*>(this);
+    }
+    Derived* CornerRadius(float topLeft, float topRight, float bottomRight, float bottomLeft) {
+        SetCornerRadius(ui::CornerRadius(topLeft, topRight, bottomRight, bottomLeft));
+        return static_cast<Derived*>(this);
+    }
+    ui::CornerRadius CornerRadius() const { return GetCornerRadius(); }
 
     // ========== 子元素集合 ==========
     

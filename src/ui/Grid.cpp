@@ -1,4 +1,6 @@
 #include "fk/ui/Grid.h"
+#include "fk/ui/Brush.h"
+#include "fk/render/RenderContext.h"
 #include <algorithm>
 #include <limits>
 #include <sstream>
@@ -774,6 +776,40 @@ void SetGridRowSpan(UIElement* element, int span) {
 
 void SetGridColumnSpan(UIElement* element, int span) {
     Grid::SetColumnSpan(element, span);
+}
+
+void Grid::OnRender(render::RenderContext& context) {
+    // 辅助函数：将 Brush 转换为 RenderContext 颜色格式
+    auto brushToColor = [](Brush* brush) -> std::array<float, 4> {
+        if (!brush) return {{0.0f, 0.0f, 0.0f, 0.0f}};  // 透明
+        if (auto solidBrush = dynamic_cast<SolidColorBrush*>(brush)) {
+            auto color = solidBrush->GetColor();
+            return {{color.r, color.g, color.b, color.a}};
+        }
+        return {{0.0f, 0.0f, 0.0f, 0.0f}};
+    };
+    
+    // 获取背景画刷
+    auto background = GetBackground();
+    if (!background) {
+        return; // 没有背景，不需要绘制
+    }
+    
+    // 获取渲染大小
+    auto renderSize = GetRenderSize();
+    Rect rect(0, 0, renderSize.width, renderSize.height);
+    
+    // 获取圆角
+    auto cornerRadius = GetCornerRadius();
+    
+    // 转换为颜色
+    std::array<float, 4> fillColor = brushToColor(background);
+    std::array<float, 4> strokeColor = {{0.0f, 0.0f, 0.0f, 0.0f}}; // 无边框
+    
+    // 绘制背景矩形
+    context.DrawRectangle(rect, fillColor, strokeColor, 0.0f,
+                         cornerRadius.topLeft, cornerRadius.topRight,
+                         cornerRadius.bottomRight, cornerRadius.bottomLeft);
 }
 
 } // namespace fk::ui

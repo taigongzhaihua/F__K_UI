@@ -227,12 +227,12 @@ void Border::OnRender(render::RenderContext& context) {
         strokeColor = {{0.0f, 0.0f, 0.0f, 0.0f}};
     }
     
-    // 使用 CornerRadius 的平均值作为圆角半径
-    float radius = (cornerRadius.topLeft + cornerRadius.topRight + 
-                   cornerRadius.bottomRight + cornerRadius.bottomLeft) / 4.0f;
-    
+    // 使用 CornerRadius 的四个独立圆角值
     // 绘制矩形（带背景、边框和圆角）
-    context.DrawRectangle(rect, fillColor, strokeColor, strokeWidth, radius, render::StrokeAlignment::Inside);
+    context.DrawRectangle(rect, fillColor, strokeColor, strokeWidth, 
+                         cornerRadius.topLeft, cornerRadius.topRight,
+                         cornerRadius.bottomRight, cornerRadius.bottomLeft,
+                         render::StrokeAlignment::Inside);
 }
 
 void Border::OnPropertyChanged(const binding::DependencyProperty& property,

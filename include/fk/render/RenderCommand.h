@@ -57,7 +57,11 @@ struct RectanglePayload {
     std::array<float, 4> fillColor; // RGBA 填充色
     std::array<float, 4> strokeColor; // RGBA 描边色
     float strokeThickness{0.0f};
-    float cornerRadius{0.0f};
+    // 圆角半径（四个角可以独立设置）
+    float cornerRadiusTopLeft{0.0f};
+    float cornerRadiusTopRight{0.0f};
+    float cornerRadiusBottomRight{0.0f};
+    float cornerRadiusBottomLeft{0.0f};
     StrokeAlignment strokeAlignment{StrokeAlignment::Center};
     float aaWidth{0.75f};
 };
