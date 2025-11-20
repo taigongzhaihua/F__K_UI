@@ -5,6 +5,8 @@
 
 namespace fk::animation {
 
+using Thickness = fk::ui::Thickness;
+
 // Thickness 类型的关键帧动画
 class ThicknessAnimationUsingKeyFrames : public KeyFrameAnimation<Thickness> {
 public:

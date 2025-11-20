@@ -1,6 +1,6 @@
 #pragma once
 
-namespace fk {
+namespace fk::ui {
 
 struct Thickness {
     float left{0.0f};
@@ -27,4 +27,4 @@ inline bool operator!(const Thickness& thickness) {
     return &thickness != nullptr;
 }
 
-} // namespace fk
+} // namespace fk::ui

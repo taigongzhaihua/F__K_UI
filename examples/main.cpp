@@ -34,7 +34,7 @@ int main(int argc, char **argv)
                                                   ->Text("F__K UI Dashboard")
                                                   ->FontSize(24)->SetVAlign(fk::ui::VerticalAlignment::Center)
                                                   ->Foreground(fk::ui::Brushes::White())
-                                                  ->Margin(fk::Thickness(20, 0, 0, 0)) |
+                                                  ->Margin(fk::ui::Thickness(20, 0, 0, 0)) |
                                               fk::ui::cell(0, 0),
                                           (new fk::ui::Button())
                                                   ->Name("btnHome")
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
                                                   ->Background(new fk::ui::SolidColorBrush(0, 0, 0, 0))
                                                   ->MouseOverBackground(fk::ui::Color::FromRGB(120, 130, 255, 100))
                                                   ->PressedBackground(fk::ui::Color::FromRGB(120, 130, 255, 150))
-                                                  ->Margin(fk::Thickness(10)) |
+                                                  ->Margin(fk::ui::Thickness(10)) |
                                               fk::ui::cell(0, 1),
                                           (new fk::ui::Button())
                                                   ->Name("btnSettings")
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
                                                   ->Background(new fk::ui::SolidColorBrush(0, 0, 0, 0))
                                                   ->MouseOverBackground(fk::ui::Color::FromRGB(120, 130, 255, 100))
                                                   ->PressedBackground(fk::ui::Color::FromRGB(120, 130, 255, 150))
-                                                  ->Margin(fk::Thickness(10)) |
+                                                  ->Margin(fk::ui::Thickness(10)) |
                                               fk::ui::cell(0, 2),
                                           (new fk::ui::Button())
                                                   ->Name("btnAbout")
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
                                                   ->Background(new fk::ui::SolidColorBrush(0, 0, 0, 0))
                                                   ->MouseOverBackground(fk::ui::Color::FromRGB(120, 130, 255, 100))
                                                   ->PressedBackground(fk::ui::Color::FromRGB(120, 130, 255, 150))
-                                                  ->Margin(fk::Thickness(10, 10, 20, 10)) |
+                                                  ->Margin(fk::ui::Thickness(10, 10, 20, 10)) |
                                               fk::ui::cell(0, 3)})) |
                          fk::ui::cell(0, 0, 1, 2),
 
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
                                               ->Text("Navigation")
                                               ->FontSize(18)
                                               ->Foreground(new fk::ui::SolidColorBrush(60, 80, 120))
-                                              ->Margin(fk::Thickness(15, 20, 15, 15)),
+                                              ->Margin(fk::ui::Thickness(15, 20, 15, 15)),
                                           (new fk::ui::Button())
                                               ->Name("navDashboard")
                                               ->Content(
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
                                               ->Background(new fk::ui::SolidColorBrush(100, 150, 255))
                                               ->MouseOverBackground(fk::ui::Color::FromRGB(130, 180, 255))
                                               ->PressedBackground(fk::ui::Color::FromRGB(80, 130, 230))
-                                              ->Margin(fk::Thickness(10, 5, 10, 5)),
+                                              ->Margin(fk::ui::Thickness(10, 5, 10, 5)),
                                           (new fk::ui::Button())
                                               ->Name("navProjects")
                                               ->Content(
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
                                               ->Background(fk::ui::Brushes::White())
                                               ->MouseOverBackground(fk::ui::Color::FromRGB(230, 240, 255))
                                               ->PressedBackground(fk::ui::Color::FromRGB(200, 220, 255))
-                                              ->Margin(fk::Thickness(10, 5, 10, 5)),
+                                              ->Margin(fk::ui::Thickness(10, 5, 10, 5)),
                                           (new fk::ui::Button())
                                               ->Name("navTasks")
                                               ->Content(
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
                                               ->Background(fk::ui::Brushes::White())
                                               ->MouseOverBackground(fk::ui::Color::FromRGB(230, 240, 255))
                                               ->PressedBackground(fk::ui::Color::FromRGB(200, 220, 255))
-                                              ->Margin(fk::Thickness(10, 5, 10, 5)),
+                                              ->Margin(fk::ui::Thickness(10, 5, 10, 5)),
                                           (new fk::ui::Button())
                                               ->Name("navAnalytics")
                                               ->Content(
@@ -127,31 +127,31 @@ int main(int argc, char **argv)
                                               ->Background(fk::ui::Brushes::White())
                                               ->MouseOverBackground(fk::ui::Color::FromRGB(230, 240, 255))
                                               ->PressedBackground(fk::ui::Color::FromRGB(200, 220, 255))
-                                              ->Margin(fk::Thickness(10, 5, 10, 5))})) |
+                                              ->Margin(fk::ui::Thickness(10, 5, 10, 5))})) |
                          fk::ui::cell(1, 0),
 
                      // Main content area - contains multiple cards
                      (new fk::ui::Grid())
                              ->Rows("*, *")
                              ->Columns("*, *")
-                             ->Margin(fk::Thickness(20))
+                             ->Margin(fk::ui::Thickness(20))
                              ->Children( // Card 1 - Welcome
                                  {(new fk::ui::Grid())
                                           ->Background(fk::ui::Brushes::White())
                                           ->Rows("Auto, *")
-                                          ->Margin(fk::Thickness(0, 0, 10, 10))
+                                          ->Margin(fk::ui::Thickness(0, 0, 10, 10))
                                           ->Children(
                                               {(new fk::ui::TextBlock())
                                                        ->Text("Welcome Back!")
                                                        ->FontSize(20)
                                                        ->Foreground(new fk::ui::SolidColorBrush(60, 80, 120))
-                                                       ->Margin(fk::Thickness(15)) |
+                                                       ->Margin(fk::ui::Thickness(15)) |
                                                    fk::ui::cell(0, 0),
                                                (new fk::ui::TextBlock())
                                                        ->Text("This is a complex layout example\nwith nested Grids and controls")
                                                        ->FontSize(14)
                                                        ->Foreground(fk::ui::Brushes::DarkGray())
-                                                       ->Margin(fk::Thickness(15, 0, 15, 15)) |
+                                                       ->Margin(fk::ui::Thickness(15, 0, 15, 15)) |
                                                    fk::ui::cell(1, 0)}) |
                                       fk::ui::cell(0, 0),
 
@@ -159,29 +159,29 @@ int main(int argc, char **argv)
                                   (new fk::ui::Grid())
                                           ->Background(new fk::ui::SolidColorBrush(255, 250, 240))
                                           ->Rows("Auto, *")
-                                          ->Margin(fk::Thickness(10, 0, 0, 10))
+                                          ->Margin(fk::ui::Thickness(10, 0, 0, 10))
                                           ->Children(
                                               {(new fk::ui::TextBlock())
                                                        ->Text("Project Stats")
                                                        ->FontSize(20)
                                                        ->Foreground(new fk::ui::SolidColorBrush(255, 140, 0))
-                                                       ->Margin(fk::Thickness(15)) |
+                                                       ->Margin(fk::ui::Thickness(15)) |
                                                    fk::ui::cell(0, 0),
                                                (new fk::ui::StackPanel())
-                                                       ->Margin(fk::Thickness(15, 0, 15, 15))
+                                                       ->Margin(fk::ui::Thickness(15, 0, 15, 15))
                                                        ->Children(
                                                            {(new fk::ui::TextBlock())
                                                                 ->Text("Total Projects: 42")
                                                                 ->FontSize(14)
-                                                                ->Margin(fk::Thickness(0, 5, 0, 5)),
+                                                                ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
                                                             (new fk::ui::TextBlock())
                                                                 ->Text("In Progress: 15")
                                                                 ->FontSize(14)
-                                                                ->Margin(fk::Thickness(0, 5, 0, 5)),
+                                                                ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
                                                             (new fk::ui::TextBlock())
                                                                 ->Text("Completed: 27")
                                                                 ->FontSize(14)
-                                                                ->Margin(fk::Thickness(0, 5, 0, 5))}) |
+                                                                ->Margin(fk::ui::Thickness(0, 5, 0, 5))}) |
                                                    fk::ui::cell(1, 0)}) |
                                       fk::ui::cell(0, 1),
 
@@ -189,18 +189,18 @@ int main(int argc, char **argv)
                                   (new fk::ui::Grid())
                                           ->Background(new fk::ui::SolidColorBrush(240, 255, 240))
                                           ->Rows("Auto, *")
-                                          ->Margin(fk::Thickness(0, 10, 10, 0))
+                                          ->Margin(fk::ui::Thickness(0, 10, 10, 0))
                                           ->Children(
                                               {(new fk::ui::TextBlock())
                                                        ->Text("Quick Actions")
                                                        ->FontSize(20)
                                                        ->Foreground(new fk::ui::SolidColorBrush(34, 139, 34))
-                                                       ->Margin(fk::Thickness(15)) |
+                                                       ->Margin(fk::ui::Thickness(15)) |
                                                    fk::ui::cell(0, 0),
                                                (new fk::ui::Grid())
                                                        ->Rows("Auto, Auto")
                                                        ->Columns("*, *")
-                                                       ->Margin(fk::Thickness(15, 0, 15, 15))
+                                                       ->Margin(fk::ui::Thickness(15, 0, 15, 15))
                                                        ->Children(
                                                            {(new fk::ui::Button())
                                                                     ->Name("btnNewProject")
@@ -211,7 +211,7 @@ int main(int argc, char **argv)
                                                                     ->Background(new fk::ui::SolidColorBrush(50, 200, 50))
                                                                     ->MouseOverBackground(fk::ui::Color::FromRGB(70, 220, 70))
                                                                     ->PressedBackground(fk::ui::Color::FromRGB(30, 180, 30))
-                                                                    ->Margin(fk::Thickness(5)) |
+                                                                    ->Margin(fk::ui::Thickness(5)) |
                                                                 fk::ui::cell(0, 0),
                                                             (new fk::ui::Button())
                                                                     ->Name("btnNewTask")
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
                                                                     ->Background(new fk::ui::SolidColorBrush(100, 180, 255))
                                                                     ->MouseOverBackground(fk::ui::Color::FromRGB(120, 200, 255))
                                                                     ->PressedBackground(fk::ui::Color::FromRGB(80, 160, 230))
-                                                                    ->Margin(fk::Thickness(5)) |
+                                                                    ->Margin(fk::ui::Thickness(5)) |
                                                                 fk::ui::cell(0, 1),
                                                             (new fk::ui::Button())
                                                                     ->Name("btnImport")
@@ -233,7 +233,7 @@ int main(int argc, char **argv)
                                                                     ->Background(new fk::ui::SolidColorBrush(255, 200, 100))
                                                                     ->MouseOverBackground(fk::ui::Color::FromRGB(255, 220, 120))
                                                                     ->PressedBackground(fk::ui::Color::FromRGB(230, 180, 80))
-                                                                    ->Margin(fk::Thickness(5)) |
+                                                                    ->Margin(fk::ui::Thickness(5)) |
                                                                 fk::ui::cell(1, 0),
                                                             (new fk::ui::Button())
                                                                     ->Name("btnExport")
@@ -244,7 +244,7 @@ int main(int argc, char **argv)
                                                                     ->Background(new fk::ui::SolidColorBrush(255, 150, 200))
                                                                     ->MouseOverBackground(fk::ui::Color::FromRGB(255, 170, 220))
                                                                     ->PressedBackground(fk::ui::Color::FromRGB(230, 130, 180))
-                                                                    ->Margin(fk::Thickness(5)) |
+                                                                    ->Margin(fk::ui::Thickness(5)) |
                                                                 fk::ui::cell(1, 1)}) |
                                                    fk::ui::cell(1, 0)}) |
                                       fk::ui::cell(1, 0),
@@ -253,37 +253,37 @@ int main(int argc, char **argv)
                                   (new fk::ui::Grid())
                                           ->Background(new fk::ui::SolidColorBrush(240, 248, 255))
                                           ->Rows("Auto, *")
-                                          ->Margin(fk::Thickness(10, 10, 0, 0))
+                                          ->Margin(fk::ui::Thickness(10, 10, 0, 0))
                                           ->Children(
                                               {(new fk::ui::TextBlock())
                                                        ->Text("Recent Activity")
                                                        ->FontSize(20)
                                                        ->Foreground(new fk::ui::SolidColorBrush(70, 130, 180))
-                                                       ->Margin(fk::Thickness(15)) |
+                                                       ->Margin(fk::ui::Thickness(15)) |
                                                    fk::ui::cell(0, 0),
                                                (new fk::ui::StackPanel())
-                                                       ->Margin(fk::Thickness(15, 0, 15, 15))
+                                                       ->Margin(fk::ui::Thickness(15, 0, 15, 15))
                                                        ->Children(
                                                            {(new fk::ui::TextBlock())
                                                                 ->Text("- Updated UI framework docs")
                                                                 ->FontSize(12)
                                                                 ->Foreground(fk::ui::Brushes::DarkGray())
-                                                                ->Margin(fk::Thickness(0, 3, 0, 3)),
+                                                                ->Margin(fk::ui::Thickness(0, 3, 0, 3)),
                                                             (new fk::ui::TextBlock())
                                                                 ->Text("- Optimized layout system")
                                                                 ->FontSize(12)
                                                                 ->Foreground(fk::ui::Brushes::DarkGray())
-                                                                ->Margin(fk::Thickness(0, 3, 0, 3)),
+                                                                ->Margin(fk::ui::Thickness(0, 3, 0, 3)),
                                                             (new fk::ui::TextBlock())
                                                                 ->Text("- Added button visual states")
                                                                 ->FontSize(12)
                                                                 ->Foreground(fk::ui::Brushes::DarkGray())
-                                                                ->Margin(fk::Thickness(0, 3, 0, 3)),
+                                                                ->Margin(fk::ui::Thickness(0, 3, 0, 3)),
                                                             (new fk::ui::TextBlock())
                                                                 ->Text("- Fixed Grid layout issues")
                                                                 ->FontSize(12)
                                                                 ->Foreground(fk::ui::Brushes::DarkGray())
-                                                                ->Margin(fk::Thickness(0, 3, 0, 3))}) |
+                                                                ->Margin(fk::ui::Thickness(0, 3, 0, 3))}) |
                                                    fk::ui::cell(1, 0)}) |
                                       fk::ui::cell(1, 1)}) |
                          fk::ui::cell(1, 1),
@@ -297,19 +297,19 @@ int main(int argc, char **argv)
                                           ->Text("Ready")
                                           ->FontSize(12)
                                           ->Foreground(fk::ui::Brushes::White())
-                                          ->Margin(fk::Thickness(15, 0, 0, 0)) |
+                                          ->Margin(fk::ui::Thickness(15, 0, 0, 0)) |
                                       fk::ui::cell(0, 0),
                                   (new fk::ui::TextBlock())
                                           ->Text("F__K UI v1.0 - Complex Layout Demo")
                                           ->FontSize(12)
                                           ->Foreground(new fk::ui::SolidColorBrush(255, 255, 255, 200))
-                                          ->Margin(fk::Thickness(0)) |
+                                          ->Margin(fk::ui::Thickness(0)) |
                                       fk::ui::cell(0, 1),
                                   (new fk::ui::TextBlock())
                                           ->Text("Nov 19, 2025")
                                           ->FontSize(12)
                                           ->Foreground(fk::ui::Brushes::White())
-                                          ->Margin(fk::Thickness(0, 0, 15, 0)) |
+                                          ->Margin(fk::ui::Thickness(0, 0, 15, 0)) |
                                       fk::ui::cell(0, 2)}) |
                          fk::ui::cell(2, 0, 1, 2)}));
 

@@ -6,6 +6,8 @@
 
 namespace fk::animation {
 
+using Thickness = fk::ui::Thickness;
+
 // Thickness 动画（用于 Margin、Padding 等）
 class ThicknessAnimation : public Animation<Thickness> {
 public:
