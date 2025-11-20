@@ -17,6 +17,10 @@
 #include "fk/ui/ScrollBar.h"
 #include "fk/ui/Enums.h"
 
+namespace fk::render {
+    class RenderContext;
+}
+
 namespace fk::ui {
 
 /**
@@ -145,7 +149,7 @@ protected:
     
     Size MeasureOverride(Size availableSize);
     Size ArrangeOverride(Size finalSize);
-    void OnRender(class RenderContext& context);
+    void OnRender(render::RenderContext& context);
     
     // ========== 事件处理 ==========
     
