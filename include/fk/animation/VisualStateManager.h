@@ -96,6 +96,24 @@ protected:
         state->GetStoryboard()->Begin();
     }
     
+    // 重新应用所有活动状态（用于处理跨状态组冲突）
+    // 按状态组定义顺序重新应用，后定义的状态组会覆盖前面的
+    void ReapplyAllActiveStates() {
+        // 停止所有当前动画
+        for (const auto& group : stateGroups_) {
+            if (group) {
+                StopCurrentStoryboards(group.get());
+            }
+        }
+        
+        // 按顺序重新启动所有活动状态的动画
+        for (const auto& group : stateGroups_) {
+            if (group && group->GetCurrentState()) {
+                StartStateStoryboard(group->GetCurrentState(), false);
+            }
+        }
+    }
+    
     // 应用状态转换
     void ApplyTransition(binding::DependencyObject* obj,
                         VisualStateGroup* group,

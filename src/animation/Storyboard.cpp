@@ -1,6 +1,13 @@
 #include "fk/animation/Storyboard.h"
+#include "fk/animation/ColorAnimation.h"
+#include "fk/animation/DoubleAnimation.h"
+#include "fk/ui/UIElement.h"
+#include "fk/ui/Control.h"
+#include "fk/ui/ControlTemplate.h"
+#include "fk/ui/Brush.h"
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 
 namespace fk::animation {
 
@@ -54,10 +61,19 @@ void Storyboard::Begin() {
             
             // 检查是否使用了TargetName
             std::string targetName = GetTargetName(child.get());
-            if (!targetName.empty()) {
-                // TODO: 实现在模板树中查找命名元素的逻辑
-                // 这需要访问UIElement的FindName方法
-                // 暂时跳过，因为需要将DependencyObject转换为UIElement
+            std::string propertyPath = GetTargetProperty(child.get());
+            
+            if (!targetName.empty() && !propertyPath.empty()) {
+                // 尝试将 templateRoot 转换为 UIElement
+                ui::UIElement* rootElement = dynamic_cast<ui::UIElement*>(templateRoot);
+                if (rootElement) {
+                    // 在模板树中查找命名元素
+                    ui::UIElement* targetElement = rootElement->FindName(targetName);
+                    if (targetElement) {
+                        // 解析属性路径（例如 "BorderBrush.Color"）
+                        ResolvePropertyPath(child.get(), targetElement, propertyPath);
+                    }
+                }
             }
         }
     }
@@ -145,6 +161,23 @@ void Storyboard::SetTarget(Timeline* timeline, binding::DependencyObject* target
     }
 }
 
+void Storyboard::SetTarget(Timeline* timeline, binding::DependencyObject* target, const binding::DependencyProperty* property) {
+    if (!timeline || !target || !property) {
+        return;
+    }
+    
+    // 设置目标对象
+    targetMap_[timeline] = target;
+    
+    // 尝试将 timeline 转换为具体的动画类型并设置目标
+    if (auto* colorAnim = dynamic_cast<ColorAnimation*>(timeline)) {
+        colorAnim->SetTarget(target, property);
+    } else if (auto* doubleAnim = dynamic_cast<DoubleAnimation*>(timeline)) {
+        doubleAnim->SetTarget(target, property);
+    }
+    // 可以继续添加其他动画类型
+}
+
 binding::DependencyObject* Storyboard::GetTarget(Timeline* timeline) {
     if (timeline && targetMap_.count(timeline)) {
         return targetMap_[timeline];
@@ -189,6 +222,59 @@ binding::DependencyObject* Storyboard::GetTemplateRoot(Storyboard* storyboard) {
         return templateRootMap_[storyboard];
     }
     return nullptr;
+}
+
+
+
+void Storyboard::ResolvePropertyPath(Timeline* timeline, ui::UIElement* targetElement, const std::string& propertyPath) {
+    if (!timeline || !targetElement || propertyPath.empty()) {
+        return;
+    }
+    
+    // 检查是否是嵌套属性路径（例如 "BorderBrush.Color"）
+    size_t dotPos = propertyPath.find('.');
+    if (dotPos == std::string::npos) {
+        // 简单属性路径，直接在目标元素上查找
+        auto prop = targetElement->FindProperty(propertyPath);
+        if (prop) {
+            SetTarget(timeline, targetElement, prop);
+        }
+        return;
+    }
+    
+    // 嵌套属性路径：分割为对象名和属性名
+    std::string objectPropertyName = propertyPath.substr(0, dotPos);
+    std::string subPropertyName = propertyPath.substr(dotPos + 1);
+    
+    // 获取中间对象的 DependencyProperty
+    auto objectProperty = targetElement->FindProperty(objectPropertyName);
+    if (!objectProperty) {
+        return;
+    }
+    
+    try {
+        // 获取属性值（例如获取 BorderBrush）
+        auto objectValue = targetElement->GetValue(*objectProperty);
+        if (!objectValue.has_value()) {
+            return;
+        }
+        
+        // 尝试获取 DependencyObject 指针（Brush 继承自 DependencyObject）
+        binding::DependencyObject* subObject = nullptr;
+        if (objectValue.type() == typeid(ui::Brush*)) {
+            subObject = std::any_cast<ui::Brush*>(objectValue);
+        }
+        
+        if (subObject) {
+            // 在子对象上查找子属性（例如 "Color"）
+            auto subProperty = subObject->FindProperty(subPropertyName);
+            if (subProperty) {
+                SetTarget(timeline, subObject, subProperty);
+            }
+        }
+    } catch (...) {
+        // 属性访问失败
+    }
 }
 
 } // namespace fk::animation
