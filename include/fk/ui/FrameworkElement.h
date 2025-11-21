@@ -325,10 +325,12 @@ protected:
         SetRenderSize(actualSize);
     }
 
+protected:
+    bool templateApplied_{false};
+
 private:
     std::unique_ptr<ResourceDictionary> resources_{std::make_unique<ResourceDictionary>()};
     fk::ui::Style* style_{nullptr};
-    bool templateApplied_{false};
 };
 
 // 模板实现需要在头文件中
