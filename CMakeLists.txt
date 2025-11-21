@@ -253,7 +253,11 @@ endif()
 add_executable(example_app examples/main.cpp)
 target_link_libraries(example_app PRIVATE fk)
 
-# 其余示例程序已移除，仅保留主示例。
+add_executable(shape_demo examples/shape_demo.cpp)
+target_link_libraries(shape_demo PRIVATE fk)
+
+add_executable(shape_test examples/shape_test.cpp)
+target_link_libraries(shape_test PRIVATE fk)
 
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库

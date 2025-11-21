@@ -217,7 +217,7 @@ void Border::OnRender(render::RenderContext& context) {
     std::array<float, 4> strokeColor = brushToColor(borderBrush);
     
     // 计算边框宽度（使用平均值或最大值）
-    // 注意：RenderContext::DrawRectangle 只接受单一的 strokeWidth
+    // 注意：RenderContext::DrawBorder 只接受单一的 strokeWidth
     // 这里使用平均值作为近似
     float strokeWidth = (borderThickness.left + borderThickness.right + 
                         borderThickness.top + borderThickness.bottom) / 4.0f;
@@ -228,11 +228,11 @@ void Border::OnRender(render::RenderContext& context) {
     }
     
     // 使用 CornerRadius 的四个独立圆角值
-    // 绘制矩形（带背景、边框和圆角）
-    context.DrawRectangle(rect, fillColor, strokeColor, strokeWidth, 
-                         cornerRadius.topLeft, cornerRadius.topRight,
-                         cornerRadius.bottomRight, cornerRadius.bottomLeft,
-                         render::StrokeAlignment::Inside);
+    // 绘制边框（带背景、边框和圆角）
+    context.DrawBorder(rect, fillColor, strokeColor, strokeWidth, 
+                      cornerRadius.topLeft, cornerRadius.topRight,
+                      cornerRadius.bottomRight, cornerRadius.bottomLeft,
+                      render::StrokeAlignment::Inside);
 }
 
 void Border::OnPropertyChanged(const binding::DependencyProperty& property,

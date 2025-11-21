@@ -39,8 +39,8 @@ void main() {
 }
 )";
 
-// 支持圆角与描边的片段着色器（使用 SDF 单次绘制）
-const char* fragmentShaderSource = R"(
+// Border 的片段着色器（圆形圆角，四个独立半径）
+const char* borderFragmentShaderSource = R"(
 #version 330 core
 in vec2 vTexCoord;
 in vec2 vFragPos;
@@ -56,6 +56,7 @@ uniform float uOpacity;
 uniform vec4 uCornerRadius;   // 四个圆角：x=topLeft, y=topRight, z=bottomRight, w=bottomLeft
 uniform vec2 uRectSize;
 
+// 圆形圆角的 SDF
 float roundedBoxSDF(vec2 p, vec2 size, vec4 radius) {
     // 根据象限选择对应的圆角半径
     float r;
@@ -121,6 +122,153 @@ void main() {
 
     if (color.a < 0.001) discard;
     FragColor = color;
+}
+)";
+
+// Rectangle 的片段着色器(椭圆圆角,radiusX 和 radiusY)
+const char* rectangleFragmentShaderSource = R"(
+#version 330 core
+// 片段着色器：椭圆圆角矩形（描边仅向内），改进的抗锯齿处理
+// 使用说明（单位需统一，例如像素）：
+// - vFragPos: 片段在与 uRectSize 同一坐标空间的本地位置（例如像素坐标）
+// - uRectSize: 矩形完整尺寸（宽，高）
+// - uCornerRadiusXY: 椭圆圆角半轴 (a,b)（半轴）
+// - uStrokeWidth: 描边宽度（像素），全部放到内侧
+// - uAAWidth: 抗锯齿最小宽度（像素），建议 0.5~1.0
+// - 推荐在渲染端使用预乘 alpha 与 glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
+
+in vec2 vTexCoord;
+in vec2 vFragPos;
+
+out vec4 FragColor;
+
+uniform vec4 uColor;           // 填充色（非预乘）
+uniform vec4 uStrokeColor;     // 描边色（非预乘）
+uniform float uStrokeWidth;    // 描边宽度（像素），向内
+uniform float uAAWidth;        // 抗锯齿最小宽度（像素）
+uniform float uOpacity;        // 全局不透明度乘子
+uniform vec2 uCornerRadiusXY;  // 椭圆半轴 (a,b)
+uniform vec2 uRectSize;        // 矩形完整尺寸 (w,h)
+
+const int NEWTON_ITERS = 12;
+const float EPS = 1e-6;
+
+// 计算点 p（以矩形中心为原点）到带椭圆圆角矩形边界的有符号距离
+// 正值 = 在外部；负值 = 在内部
+float sdRoundedRectEllipse(vec2 p, vec2 halfSize, vec2 radius) {
+    vec2 r = min(radius, halfSize);
+    vec2 q = abs(p);
+    vec2 box = halfSize - r;
+
+    if (q.x > halfSize.x || q.y > halfSize.y) {
+        vec2 outside = max(q - halfSize, vec2(0.0));
+        return length(outside);
+    }
+
+    vec2 d = q - box;
+
+    if (d.x <= 0.0 && d.y <= 0.0) {
+        float dx = halfSize.x - q.x;
+        float dy = halfSize.y - q.y;
+        return -min(dx, dy);
+    }
+
+    if (d.x <= 0.0) {
+        return -(halfSize.y - q.y);
+    }
+    if (d.y <= 0.0) {
+        return -(halfSize.x - q.x);
+    }
+
+    vec2 u = d;
+    if (r.x < EPS || r.y < EPS) {
+        return length(u) - min(r.x, r.y);
+    }
+
+    float a = r.x;
+    float b = r.y;
+    // 初始角度猜测：把点映射到单位椭圆后取极角
+    float theta = atan(u.y / b, u.x / a);
+    theta = clamp(theta, 1e-6, 1.57079632679 - 1e-6);
+
+    for (int i = 0; i < NEWTON_ITERS; ++i) {
+        float cs = cos(theta);
+        float sn = sin(theta);
+        float ex = a * cs;
+        float ey = b * sn;
+        float H = a * sn * (ex - u.x) - b * cs * (ey - u.y);
+        float cs2 = cs * cs;
+        float sn2 = sn * sn;
+        float Hprime = (a * a - b * b) * (cs2 - sn2) - a * u.x * cs - b * u.y * sn;
+        if (abs(Hprime) < 1e-8) break;
+        theta -= H / Hprime;
+        theta = clamp(theta, 1e-8, 1.57079632679 - 1e-8);
+    }
+
+    vec2 ellipsePt = vec2(a * cos(theta), b * sin(theta));
+    float dist = length(u - ellipsePt);
+    float norm = (u.x * u.x) / (a * a) + (u.y * u.y) / (b * b);
+    return (norm <= 1.0) ? -dist : dist;
+}
+
+void main() {
+    // 半尺寸坐标系（以矩形中心为原点）
+    vec2 half = uRectSize * 0.5;
+    vec2 p = vFragPos - half;
+
+    // 计算有符号距离（正外，负内）
+    float dist = sdRoundedRectEllipse(p, half, uCornerRadiusXY);
+
+    // 基于像素导数自适应 AA：fwidth(dist) 表示每像素的变化量
+    float pixelF = fwidth(dist);
+
+    // 计算 halfAA：smoothstep 的半宽（使总过渡宽度 = 2*halfAA）
+    // 但我们在后面保证过渡宽度不会把描边整体“扩张”超过期望
+    float halfAA = max(0.5 * uAAWidth, 0.5 * pixelF); // 最小值受 uAAWidth 控制
+    halfAA = max(halfAA, 0.25); // 保证至少有少量 AA 避免完全锯齿（可调整）
+
+    // 描边仅向内：描边范围 dist ∈ [inner, outer]，outer = 0，inner = -strokeW
+    float strokeW = max(uStrokeWidth, 0.0);
+    float inner = -strokeW;
+    float outer = 0.0;
+
+    // 为避免 AA 导致描边“膨胀”，为内外边界分别限制半宽：
+    // - outerHalfAA 用于外边界（0），允许轻微的外部采样 AA（但不放大描边）
+    // - innerHalfAA 用于内边界（-strokeW），不得过大（以免把内边缘向外模糊过多）
+    float outerHalfAA = halfAA;
+    // 限制 innerHalfAA 不超过 strokeW 的一半（避免内边界平滑把描边宽度缩小/变形）
+    float innerHalfAA = min(halfAA, max(0.5 * strokeW, 0.5 * halfAA));
+
+    // 当没有描边时 innerHalfAA 无效，避免 NaN：确保 innerHalfAA >= 0
+    innerHalfAA = max(innerHalfAA, 0.0);
+
+    // outerMask: dist <= outer -> 1（内侧）；使用窄过渡 outerHalfAA
+    float outerMask = 1.0 - smoothstep(outer - outerHalfAA, outer + outerHalfAA, dist);
+    // innerMask: dist <= inner -> 1（填充区域）；使用窄过渡 innerHalfAA
+    float innerMask = 1.0 - smoothstep(inner - innerHalfAA, inner + innerHalfAA, dist);
+
+    // 描边掩码 = outerMask - innerMask（限制到 [0,1]）
+    float strokeMask = clamp(outerMask - innerMask, 0.0, 1.0);
+    float fillMask = clamp(innerMask, 0.0, 1.0);
+
+    // 使用预乘 alpha 风格的组合能减少边缘暗边（渲染端应启用相应混合）
+    // 但 uColor/uStrokeColor 是非预乘，因此先将 rgb * alpha 做为预乘结果
+    vec3 strokePremulRGB = uStrokeColor.rgb * uStrokeColor.a;
+    vec3 fillPremulRGB   = uColor.rgb * uColor.a;
+
+    // 最终预乘颜色
+    vec3 outPremulRGB = strokePremulRGB * strokeMask + fillPremulRGB * fillMask;
+    float outA = uStrokeColor.a * strokeMask + uColor.a * fillMask;
+
+    // 若你不想使用预乘，可以把下面结果除以 alpha（当 outA > 0）
+    vec3 outRGB = (outA > 0.0) ? (outPremulRGB / outA) : vec3(0.0);
+
+    // 最终颜色与全局不透明度相乘
+    vec4 outColor = vec4(outRGB, outA) * uOpacity;
+
+    // 小透明度阈值剪枝
+    if (outColor.a <= 1e-5) discard;
+    FragColor = outColor;
 }
 )";
 
@@ -198,21 +346,8 @@ void GlRenderer::Initialize(const RendererInitParams& params) {
         std::cerr << "WARNING: Failed to initialize TextRenderer" << std::endl;
     }
 
-    // 设置初始 uniform 值
-    glUseProgram(shaderProgram_);
-    
-    // 初始化投影矩阵
-    int projLoc = glGetUniformLocation(shaderProgram_, "uProjection");
-    float projection[16] = {
-        2.0f / viewportSize_.width, 0.0f, 0.0f, 0.0f,
-        0.0f, -2.0f / viewportSize_.height, 0.0f, 0.0f,
-        0.0f, 0.0f, -1.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f, 1.0f
-    };
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, projection);
-    
-    // uOffset 已经从着色器中移除（坐标已经是全局的）
-    // 不再需要初始化 uOffset
+    // 注意：不再需要初始化 uniform 值
+    // 每个 Draw 调用会在使用着色器前设置所需的 uniform
 
     initialized_ = true;
 }
@@ -246,17 +381,8 @@ void GlRenderer::BeginFrame(const FrameContext& ctx) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // 绑定着色器程序
-    glUseProgram(shaderProgram_);
-
-    // 设置视口 uniform
-    int viewportLoc = glGetUniformLocation(shaderProgram_, "uViewport");
-    glUniform2f(viewportLoc, 
-        static_cast<float>(viewportSize_.width), 
-        static_cast<float>(viewportSize_.height));
-    
-    // uOffset 已经从着色器中移除（坐标已经是全局的）
-    // 不再需要设置 uOffset
+    // 注意：不再在 BeginFrame 设置着色器程序
+    // 每个 Draw 调用会根据需要切换着色器（Border 或 Rectangle）
 }
 
 void GlRenderer::Draw(const RenderList& list) {
@@ -379,9 +505,19 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     const float minDimension = std::min(width, height);
     const float halfMinDimension = std::max(0.0f, minDimension * 0.5f);
 
+    // 根据是否有椭圆圆角选择着色器
+    bool hasEllipseCorners = (payload.radiusX > 0.0001f || payload.radiusY > 0.0001f);
+    unsigned int shaderProgram = hasEllipseCorners ? rectangleShaderProgram_ : borderShaderProgram_;
+    glUseProgram(shaderProgram);
+
+    // 设置视口 uniform
+    int viewportLoc = glGetUniformLocation(shaderProgram, "uViewport");
+    glUniform2f(viewportLoc, 
+        static_cast<float>(viewportSize_.width), 
+        static_cast<float>(viewportSize_.height));
+
     // 设置填充颜色 uniform
-    // 设置填充颜色 uniform
-    int colorLoc = glGetUniformLocation(shaderProgram_, "uColor");
+    int colorLoc = glGetUniformLocation(shaderProgram, "uColor");
     glUniform4f(colorLoc, 
         payload.fillColor[0], 
         payload.fillColor[1], 
@@ -390,54 +526,61 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
 
     // 设置不透明度（考虑图层栈）
     float effectiveOpacity = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
-    int opacityLoc = glGetUniformLocation(shaderProgram_, "uOpacity");
+    int opacityLoc = glGetUniformLocation(shaderProgram, "uOpacity");
     glUniform1f(opacityLoc, effectiveOpacity);
 
-    // 设置圆角半径（需要检查相邻圆角之和不超过对应边长）
-    // 参考 CSS 规范：https://www.w3.org/TR/css-backgrounds-3/#corner-overlap
-    float topLeft = std::max(0.0f, payload.cornerRadiusTopLeft);
-    float topRight = std::max(0.0f, payload.cornerRadiusTopRight);
-    float bottomRight = std::max(0.0f, payload.cornerRadiusBottomRight);
-    float bottomLeft = std::max(0.0f, payload.cornerRadiusBottomLeft);
-    
-    // 计算每条边上相邻圆角的和
-    float topSum = topLeft + topRight;      // 上边
-    float rightSum = topRight + bottomRight; // 右边
-    float bottomSum = bottomRight + bottomLeft; // 下边
-    float leftSum = bottomLeft + topLeft;    // 左边
-    
-    // 计算缩放因子：如果相邻圆角之和超过边长，需要按比例缩小
-    float scaleX = 1.0f;
-    float scaleY = 1.0f;
-    
-    if (topSum > width && topSum > 0.0f) {
-        scaleX = std::min(scaleX, width / topSum);
-    }
-    if (bottomSum > width && bottomSum > 0.0f) {
-        scaleX = std::min(scaleX, width / bottomSum);
-    }
-    if (leftSum > height && leftSum > 0.0f) {
-        scaleY = std::min(scaleY, height / leftSum);
-    }
-    if (rightSum > height && rightSum > 0.0f) {
-        scaleY = std::min(scaleY, height / rightSum);
-    }
-    
-    // 使用最严格的缩放因子（水平和垂直方向取最小值）
-    float scale = std::min(scaleX, scaleY);
-    
-    // 应用缩放并限制在合理范围内
-    float clampedTopLeft = std::clamp(topLeft * scale, 0.0f, halfMinDimension);
-    float clampedTopRight = std::clamp(topRight * scale, 0.0f, halfMinDimension);
-    float clampedBottomRight = std::clamp(bottomRight * scale, 0.0f, halfMinDimension);
-    float clampedBottomLeft = std::clamp(bottomLeft * scale, 0.0f, halfMinDimension);
-    
-    int cornerRadiusLoc = glGetUniformLocation(shaderProgram_, "uCornerRadius");
-    glUniform4f(cornerRadiusLoc, clampedTopLeft, clampedTopRight, clampedBottomRight, clampedBottomLeft);
-
     // 设置矩形尺寸（用于圆角计算）
-    int rectSizeLoc = glGetUniformLocation(shaderProgram_, "uRectSize");
+    int rectSizeLoc = glGetUniformLocation(shaderProgram, "uRectSize");
     glUniform2f(rectSizeLoc, width, height);
+
+    if (hasEllipseCorners) {
+        // Rectangle 着色器：只设置椭圆圆角半径
+        int cornerRadiusXYLoc = glGetUniformLocation(shaderProgram, "uCornerRadiusXY");
+        glUniform2f(cornerRadiusXYLoc, payload.radiusX, payload.radiusY);
+    } else {
+        // Border 着色器：设置四个独立圆角半径
+        // 设置圆角半径（需要检查相邻圆角之和不超过对应边长）
+        // 参考 CSS 规范：https://www.w3.org/TR/css-backgrounds-3/#corner-overlap
+        float topLeft = std::max(0.0f, payload.cornerRadiusTopLeft);
+        float topRight = std::max(0.0f, payload.cornerRadiusTopRight);
+        float bottomRight = std::max(0.0f, payload.cornerRadiusBottomRight);
+        float bottomLeft = std::max(0.0f, payload.cornerRadiusBottomLeft);
+        
+        // 计算每条边上相邻圆角的和
+        float topSum = topLeft + topRight;      // 上边
+        float rightSum = topRight + bottomRight; // 右边
+        float bottomSum = bottomRight + bottomLeft; // 下边
+        float leftSum = bottomLeft + topLeft;    // 左边
+        
+        // 计算缩放因子：如果相邻圆角之和超过边长，需要按比例缩小
+        float scaleX = 1.0f;
+        float scaleY = 1.0f;
+        
+        if (topSum > width && topSum > 0.0f) {
+            scaleX = std::min(scaleX, width / topSum);
+        }
+        if (bottomSum > width && bottomSum > 0.0f) {
+            scaleX = std::min(scaleX, width / bottomSum);
+        }
+        if (leftSum > height && leftSum > 0.0f) {
+            scaleY = std::min(scaleY, height / leftSum);
+        }
+        if (rightSum > height && rightSum > 0.0f) {
+            scaleY = std::min(scaleY, height / rightSum);
+        }
+        
+        // 使用最严格的缩放因子（水平和垂直方向取最小值）
+        float scale = std::min(scaleX, scaleY);
+        
+        // 应用缩放并限制在合理范围内
+        float clampedTopLeft = std::clamp(topLeft * scale, 0.0f, halfMinDimension);
+        float clampedTopRight = std::clamp(topRight * scale, 0.0f, halfMinDimension);
+        float clampedBottomRight = std::clamp(bottomRight * scale, 0.0f, halfMinDimension);
+        float clampedBottomLeft = std::clamp(bottomLeft * scale, 0.0f, halfMinDimension);
+        
+        int cornerRadiusLoc = glGetUniformLocation(shaderProgram, "uCornerRadius");
+        glUniform4f(cornerRadiusLoc, clampedTopLeft, clampedTopRight, clampedBottomRight, clampedBottomLeft);
+    }
 
     // 构建矩形顶点（两个三角形，每个顶点包含位置和纹理坐标）
     float x = payload.rect.x;
@@ -485,20 +628,20 @@ void GlRenderer::DrawRectangle(const RectanglePayload& payload) {
     float strokeOutset = std::max(payload.strokeThickness * outsetFactor, 0.0f);
 
     // 设置描边相关 uniform
-    int strokeColorLoc = glGetUniformLocation(shaderProgram_, "uStrokeColor");
+    int strokeColorLoc = glGetUniformLocation(shaderProgram, "uStrokeColor");
     glUniform4f(strokeColorLoc,
         payload.strokeColor[0],
         payload.strokeColor[1],
         payload.strokeColor[2],
         payload.strokeColor[3]);
 
-    int strokeWidthLoc = glGetUniformLocation(shaderProgram_, "uStrokeWidth");
+    int strokeWidthLoc = glGetUniformLocation(shaderProgram, "uStrokeWidth");
     glUniform1f(strokeWidthLoc, payload.strokeThickness);
 
-    int strokeAlignLoc = glGetUniformLocation(shaderProgram_, "uStrokeAlignment");
+    int strokeAlignLoc = glGetUniformLocation(shaderProgram, "uStrokeAlignment");
     glUniform2f(strokeAlignLoc, strokeInset, strokeOutset);
 
-    int aaLoc = glGetUniformLocation(shaderProgram_, "uAAWidth");
+    int aaLoc = glGetUniformLocation(shaderProgram, "uAAWidth");
     float aaWidth = std::clamp(payload.aaWidth, 0.1f, 2.0f);
     glUniform1f(aaLoc, aaWidth);
 
@@ -870,7 +1013,7 @@ void GlRenderer::PopLayer() {
 }
 
 void GlRenderer::InitializeShaders() {
-    // 编译顶点着色器
+    // 编译顶点着色器（Border 和 Rectangle 共享）
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
     glCompileShader(vertexShader);
@@ -884,32 +1027,56 @@ void GlRenderer::InitializeShaders() {
         throw std::runtime_error(std::string("Vertex shader compilation failed: ") + infoLog);
     }
 
-    // 编译片段着色器
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-    glCompileShader(fragmentShader);
+    // === 编译 Border 片段着色器（圆形圆角）===
+    unsigned int borderFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(borderFragmentShader, 1, &borderFragmentShaderSource, nullptr);
+    glCompileShader(borderFragmentShader);
 
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    glGetShaderiv(borderFragmentShader, GL_COMPILE_STATUS, &success);
     if (!success) {
-        glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
-        throw std::runtime_error(std::string("Fragment shader compilation failed: ") + infoLog);
+        glGetShaderInfoLog(borderFragmentShader, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("Border fragment shader compilation failed: ") + infoLog);
     }
 
-    // 链接着色器程序
-    shaderProgram_ = glCreateProgram();
-    glAttachShader(shaderProgram_, vertexShader);
-    glAttachShader(shaderProgram_, fragmentShader);
-    glLinkProgram(shaderProgram_);
+    // 链接 Border 着色器程序
+    borderShaderProgram_ = glCreateProgram();
+    glAttachShader(borderShaderProgram_, vertexShader);
+    glAttachShader(borderShaderProgram_, borderFragmentShader);
+    glLinkProgram(borderShaderProgram_);
 
-    glGetProgramiv(shaderProgram_, GL_LINK_STATUS, &success);
+    glGetProgramiv(borderShaderProgram_, GL_LINK_STATUS, &success);
     if (!success) {
-        glGetProgramInfoLog(shaderProgram_, 512, nullptr, infoLog);
-        throw std::runtime_error(std::string("Shader program linking failed: ") + infoLog);
+        glGetProgramInfoLog(borderShaderProgram_, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("Border shader program linking failed: ") + infoLog);
     }
 
-    // 删除着色器（已经链接到程序中）
+    glDeleteShader(borderFragmentShader);
+
+    // === 编译 Rectangle 片段着色器（椭圆圆角）===
+    unsigned int rectangleFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(rectangleFragmentShader, 1, &rectangleFragmentShaderSource, nullptr);
+    glCompileShader(rectangleFragmentShader);
+
+    glGetShaderiv(rectangleFragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(rectangleFragmentShader, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("Rectangle fragment shader compilation failed: ") + infoLog);
+    }
+
+    // 链接 Rectangle 着色器程序
+    rectangleShaderProgram_ = glCreateProgram();
+    glAttachShader(rectangleShaderProgram_, vertexShader);
+    glAttachShader(rectangleShaderProgram_, rectangleFragmentShader);
+    glLinkProgram(rectangleShaderProgram_);
+
+    glGetProgramiv(rectangleShaderProgram_, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(rectangleShaderProgram_, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("Rectangle shader program linking failed: ") + infoLog);
+    }
+
+    glDeleteShader(rectangleFragmentShader);
     glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
 
     // === 初始化文本着色器 ===
     
@@ -1017,9 +1184,14 @@ void GlRenderer::CleanupResources() {
         textShaderProgram_ = 0;
     }
 
-    if (shaderProgram_ != 0) {
-        glDeleteProgram(shaderProgram_);
-        shaderProgram_ = 0;
+    if (rectangleShaderProgram_ != 0) {
+        glDeleteProgram(rectangleShaderProgram_);
+        rectangleShaderProgram_ = 0;
+    }
+
+    if (borderShaderProgram_ != 0) {
+        glDeleteProgram(borderShaderProgram_);
+        borderShaderProgram_ = 0;
     }
 }
 

@@ -143,13 +143,13 @@ void ScrollBar::OnRender(render::RenderContext& context) {
     
     // 绘制背景
     Rect bgRect(0, 0, size.width, size.height);
-    context.DrawRectangle(bgRect, {0.9f, 0.9f, 0.9f, 1.0f});
+    context.DrawBorder(bgRect, {0.9f, 0.9f, 0.9f, 1.0f});
     
     // 计算滑块矩形
     Rect thumbRect = CalculateThumbRect(size);
     
     // 绘制滑块
-    context.DrawRectangle(thumbRect, {0.6f, 0.6f, 0.6f, 1.0f});
+    context.DrawBorder(thumbRect, {0.6f, 0.6f, 0.6f, 1.0f});
 }
 
 // ========== 事件处理 ==========

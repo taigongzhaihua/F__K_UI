@@ -161,7 +161,7 @@ float RenderContext::GetCurrentOpacity() const {
 
 // ========== 绘制 API ==========
 
-void RenderContext::DrawRectangle(
+void RenderContext::DrawBorder(
     const ui::Rect& rect,
     const std::array<float, 4>& fillColor,
     const std::array<float, 4>& strokeColor,
@@ -199,6 +199,50 @@ void RenderContext::DrawRectangle(
     payload.cornerRadiusTopRight = cornerRadiusTopRight;
     payload.cornerRadiusBottomRight = cornerRadiusBottomRight;
     payload.cornerRadiusBottomLeft = cornerRadiusBottomLeft;
+    payload.strokeAlignment = strokeAlignment;
+    payload.aaWidth = aaWidth;
+    
+    renderList_->AddCommand(RenderCommand(CommandType::DrawRectangle, payload));
+}
+
+void RenderContext::DrawRectangle(
+    const ui::Rect& rect,
+    const std::array<float, 4>& fillColor,
+    const std::array<float, 4>& strokeColor,
+    float strokeWidth,
+    float radiusX,
+    float radiusY,
+    StrokeAlignment strokeAlignment,
+    float aaWidth)
+{
+    // 检查是否被裁剪
+    if (IsClipped(rect)) {
+        return;
+    }
+    
+    if (!renderList_) {
+        return;
+    }
+    
+    // 变换到全局坐标
+    ui::Rect globalRect = TransformRect(rect);
+    
+    // 应用透明度
+    auto finalFillColor = ApplyOpacity(fillColor);
+    auto finalStrokeColor = ApplyOpacity(strokeColor);
+    
+    // 生成绘制命令 - 使用椭圆圆角
+    RectanglePayload payload;
+    payload.rect = globalRect;
+    payload.fillColor = finalFillColor;
+    payload.strokeColor = finalStrokeColor;
+    payload.strokeThickness = strokeWidth;
+    payload.cornerRadiusTopLeft = 0.0f;   // 不使用独立圆角
+    payload.cornerRadiusTopRight = 0.0f;
+    payload.cornerRadiusBottomRight = 0.0f;
+    payload.cornerRadiusBottomLeft = 0.0f;
+    payload.radiusX = radiusX;            // 使用椭圆圆角
+    payload.radiusY = radiusY;
     payload.strokeAlignment = strokeAlignment;
     payload.aaWidth = aaWidth;
     
@@ -257,38 +301,16 @@ void RenderContext::DrawEllipse(
         return;
     }
     
-    // 变换到全局坐标
-    ui::Rect globalBounds = TransformRect(bounds);
-    
-    // 应用透明度
-    auto finalFillColor = ApplyOpacity(fillColor);
-    auto finalStrokeColor = ApplyOpacity(strokeColor);
-    
-    // 使用多边形近似椭圆（简化实现）
-    std::vector<ui::Point> points;
-    int segments = 32;
-    float centerX = globalBounds.x + globalBounds.width / 2;
-    float centerY = globalBounds.y + globalBounds.height / 2;
-    float radiusX = globalBounds.width / 2;
-    float radiusY = globalBounds.height / 2;
-    
-    for (int i = 0; i < segments; ++i) {
-        float angle = 2.0f * 3.14159265f * i / segments;
-        points.push_back(ui::Point{
-            centerX + radiusX * std::cos(angle),
-            centerY + radiusY * std::sin(angle)
-        });
-    }
-    
-    // 生成多边形命令
-    PolygonPayload payload;
-    payload.points = points;
-    payload.fillColor = finalFillColor;
-    payload.strokeColor = finalStrokeColor;
-    payload.strokeThickness = strokeWidth;
-    payload.filled = true;
-    
-    renderList_->AddCommand(RenderCommand(CommandType::DrawPolygon, payload));
+    // 椭圆就是圆角矩形，其中 radiusX 和 radiusY 等于矩形宽高的一半
+    // 这样可以使用高质量的 SDF 着色器绘制，而不是多边形近似
+    DrawRectangle(
+        bounds,
+        fillColor,
+        strokeColor,
+        strokeWidth,
+        bounds.width / 2.0f,  // radiusX = 宽度的一半
+        bounds.height / 2.0f  // radiusY = 高度的一半
+    );
 }
 
 void RenderContext::DrawLine(

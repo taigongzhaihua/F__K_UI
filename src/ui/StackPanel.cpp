@@ -291,9 +291,9 @@ void StackPanel::OnRender(render::RenderContext& context) {
     std::array<float, 4> strokeColor = {{0.0f, 0.0f, 0.0f, 0.0f}}; // 无边框
     
     // 绘制背景矩形
-    context.DrawRectangle(rect, fillColor, strokeColor, 0.0f,
-                         cornerRadius.topLeft, cornerRadius.topRight,
-                         cornerRadius.bottomRight, cornerRadius.bottomLeft);
+    context.DrawBorder(rect, fillColor, strokeColor, 0.0f,
+                      cornerRadius.topLeft, cornerRadius.topRight,
+                      cornerRadius.bottomRight, cornerRadius.bottomLeft);
 }
 
 } // namespace fk::ui

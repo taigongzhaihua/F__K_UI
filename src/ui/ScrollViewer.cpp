@@ -292,7 +292,7 @@ void ScrollViewer::OnRender(render::RenderContext& context) {
     Size size = GetRenderSize();
     Rect rect(0, 0, size.width, size.height);
     auto white = Color::White();
-    context.DrawRectangle(rect, {white.r, white.g, white.b, white.a});
+    context.DrawBorder(rect, {white.r, white.g, white.b, white.a});
     
     // 设置裁剪区域
     Rect viewportRect = CalculateViewportRect();

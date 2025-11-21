@@ -93,8 +93,9 @@ private:
     void CleanupResources();
 
     // OpenGL 资源
-    unsigned int shaderProgram_{0};
-    unsigned int textShaderProgram_{0};  // 文本渲染着色器
+    unsigned int borderShaderProgram_{0};     // Border 着色器（圆形圆角）
+    unsigned int rectangleShaderProgram_{0};  // Rectangle 着色器（椭圆圆角）
+    unsigned int textShaderProgram_{0};       // 文本渲染着色器
     unsigned int vao_{0};
     unsigned int vbo_{0};
     unsigned int textVAO_{0};  // 文本渲染 VAO

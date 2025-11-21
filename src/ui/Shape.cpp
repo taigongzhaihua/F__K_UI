@@ -102,12 +102,21 @@ float Shape::StrokeThickness() const {
 // ========== Shape 布局 ==========
 
 Size Shape::MeasureOverride(const Size& availableSize) {
-    Rect bounds = GetDefiningGeometry();
+    // Shape 使用显式设置的 Width/Height，如果没有设置则使用几何边界
+    float width = GetWidth();
+    float height = GetHeight();
     float strokeThickness = GetStrokeThickness();
     
+    // 如果没有显式设置 Width/Height，使用几何边界
+    if (std::isnan(width) || std::isnan(height)) {
+        Rect bounds = GetDefiningGeometry();
+        if (std::isnan(width)) width = bounds.width;
+        if (std::isnan(height)) height = bounds.height;
+    }
+    
     return Size(
-        bounds.width + strokeThickness,
-        bounds.height + strokeThickness
+        width + strokeThickness,
+        height + strokeThickness
     );
 }
 
@@ -196,9 +205,9 @@ void Rectangle::OnRender(render::RenderContext& context) {
     std::array<float, 4> strokeColor = brushToColor(GetStroke());
     float strokeThickness = GetStrokeThickness();
     
-    // 使用 RenderContext 绘制矩形
-    float radius = std::max(radiusX, radiusY);
-    context.DrawRectangle(bounds, fillColor, strokeColor, strokeThickness, radius);
+    // 使用新的 DrawRectangle API，支持 radiusX 和 radiusY
+    // 符合 WPF Rectangle 的语义：四个角使用相同的椭圆半径
+    context.DrawRectangle(bounds, fillColor, strokeColor, strokeThickness, radiusX, radiusY);
 }
 
 // ========== Ellipse 几何与渲染 ==========

@@ -132,7 +132,7 @@ public:
     // ========== 绘制 API ==========
     
     /**
-     * @brief 绘制矩形
+     * @brief 绘制边框（Border 控件专用）
      * @param rect 矩形区域（局部坐标）
      * @param fillColor 填充颜色
      * @param strokeColor 描边颜色
@@ -141,8 +141,9 @@ public:
      * @param cornerRadiusTopRight 右上圆角半径
      * @param cornerRadiusBottomRight 右下圆角半径
      * @param cornerRadiusBottomLeft 左下圆角半径
+     * @note 四个角可以有不同的圆角半径
      */
-    void DrawRectangle(
+    void DrawBorder(
         const ui::Rect& rect,
         const std::array<float, 4>& fillColor,
         const std::array<float, 4>& strokeColor = {0, 0, 0, 0},
@@ -151,6 +152,27 @@ public:
         float cornerRadiusTopRight = 0.0f,
         float cornerRadiusBottomRight = 0.0f,
         float cornerRadiusBottomLeft = 0.0f,
+        StrokeAlignment strokeAlignment = StrokeAlignment::Center,
+        float aaWidth = 0.75f
+    );
+    
+    /**
+     * @brief 绘制矩形（Rectangle Shape 专用）
+     * @param rect 矩形区域（局部坐标）
+     * @param fillColor 填充颜色
+     * @param strokeColor 描边颜色
+     * @param strokeWidth 描边宽度
+     * @param radiusX 圆角水平半径（应用到所有四个角）
+     * @param radiusY 圆角垂直半径（应用到所有四个角）
+     * @note radiusX 和 radiusY 用于创建椭圆形圆角，四个角共享相同的半径值
+     */
+    void DrawRectangle(
+        const ui::Rect& rect,
+        const std::array<float, 4>& fillColor,
+        const std::array<float, 4>& strokeColor = {0, 0, 0, 0},
+        float strokeWidth = 0.0f,
+        float radiusX = 0.0f,
+        float radiusY = 0.0f,
         StrokeAlignment strokeAlignment = StrokeAlignment::Center,
         float aaWidth = 0.75f
     );
