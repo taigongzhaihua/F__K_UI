@@ -532,6 +532,9 @@ void Control<Derived>::OnTemplateChanged(
     try {
         auto* newTemplate = std::any_cast<ControlTemplate*>(newValue);
         if (newTemplate != nullptr) {
+            // 重置 templateApplied_ 标志以允许重新应用模板
+            // 这修复了继承层次中派生类无法覆盖基类模板的问题
+            control->templateApplied_ = false;
             control->ApplyTemplate();
         }
     } catch (const std::bad_any_cast&) {
