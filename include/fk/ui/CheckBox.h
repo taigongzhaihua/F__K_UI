@@ -27,6 +27,27 @@ public:
     
     /// 复选框边框颜色依赖属性
     static const binding::DependencyProperty& CheckBoxBorderColorProperty();
+
+protected:
+    /**
+     * @brief 模板应用后的钩子
+     */
+    void OnTemplateApplied() override;
+
+    /**
+     * @brief 鼠标按下事件（调试用）
+     */
+    void OnPointerPressed(PointerEventArgs &e) override;
+
+    /**
+     * @brief 鼠标释放事件（调试用）
+     */
+    void OnPointerReleased(PointerEventArgs &e) override;
+
+    /**
+     * @brief 点击事件（调试用）
+     */
+    void OnClick() override;
     
     // ========== 属性访问器（使用宏生成） ==========
     

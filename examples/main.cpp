@@ -5,6 +5,7 @@
 #include "fk/ui/StackPanel.h"
 #include "fk/ui/Button.h"
 #include "fk/ui/ToggleButton.h"
+#include "fk/ui/CheckBox.h"
 #include "fk/ui/Border.h"
 #include "fk/ui/Grid.h"
 #include "fk/ui/GridCellAttacher.h"
@@ -210,7 +211,16 @@ int main(int argc, char **argv)
                                                                            ->FontSize(14))
                                                                    ->Background(new fk::ui::SolidColorBrush(120, 120, 120))
                                                                    ->CheckedBackground(new fk::ui::SolidColorBrush(255, 140, 0))
-                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5))}) |
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
+                                                                (new fk::ui::CheckBox())
+                                                                ->Name("checkUpdates")
+                                                                ->Content(
+                                                                    (new fk::ui::TextBlock())
+                                                                        ->Text("Enable Automatic Updates")
+                                                                        ->FontSize(14))
+                                                                ->Background(new fk::ui::SolidColorBrush(0, 0, 0, 0))
+                                                                ->BorderBrush(new fk::ui::SolidColorBrush(0, 0, 0, 0))
+                                                            }) |
                                                       fk::ui::cell(1, 0)}) |
                                          fk::ui::cell(0, 1),
 

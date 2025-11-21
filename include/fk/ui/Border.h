@@ -100,6 +100,13 @@ public:
     }
     Thickness Padding() const { return GetPadding(); }
     
+    // ========== 透明度 ==========
+    
+    Border* Opacity(float value) {
+        SetOpacity(value);
+        return this;
+    }
+    
     /**
      * @brief 获取逻辑子元素（覆写 UIElement）
      * 

@@ -68,48 +68,44 @@ namespace fk::ui
         tmpl->SetTargetType(typeid(CheckBox))
             ->SetFactory([]() -> UIElement *
                          {
-                // 使用 Grid 来组织复选框和内容
-                auto *rootGrid = (new Grid())
-                    ->Columns("Auto, *"); // 第一列自动大小（复选框），第二列填充剩余空间（内容）
+                // StackPanel (水平布局)
+                //   ├─ CheckBoxBorder (20x20 方框，灰色边框，白色背景)
+                //   │    └─ CheckMark (12x12 外层容器，初始隐藏)
+                //   │         └─ CheckMarkContent (16x16 蓝色方块，实际内容)
+                //   └─ ContentPresenter (显示文本标签)
                 
-                // 复选框本身 - 一个带边框的方框
-                auto *checkBoxBorder = (new Border())
-                    ->Name("CheckBoxBorder")
-                    ->Width(20.0f)
-                    ->Height(20.0f)
-                    ->BorderThickness(2.0f)
-                    ->CornerRadius(3.0f)
-                    ->BorderBrush(binding::TemplateBinding(CheckBox::CheckBoxBorderColorProperty()))
-                    ->Background(new SolidColorBrush(Color::FromRGB(255, 255, 255, 255))) // 白色背景
+                return (new StackPanel())
+                    ->SetOrient(Orientation::Horizontal)
                     ->SetVAlign(VerticalAlignment::Center)
-                    ->SetHAlign(HorizontalAlignment::Center)
-                    ->Margin(0.0f, 0.0f, 8.0f, 0.0f); // 右边距与内容分隔
-                
-                // 勾选标记 - 使用 Border 模拟勾选标记（简化版本）
-                // 实际应用中可以使用 Path 或自定义形状来绘制更精确的勾选标记
-                auto *checkMark = (new Border())
-                    ->Name("CheckMark")
-                    ->Width(12.0f)
-                    ->Height(12.0f)
-                    ->Background(binding::TemplateBinding(CheckBox::CheckMarkColorProperty()))
-                    ->CornerRadius(2.0f)
-                    ->SetVAlign(VerticalAlignment::Center)
-                    ->SetHAlign(HorizontalAlignment::Center);
-                
-                checkMark->SetOpacity(0.0); // 初始不可见
-                
-                checkBoxBorder->Child(checkMark);
-                
-                // 内容呈现器
-                auto *contentPresenter = (new ContentPresenter<>())
-                    ->SetVAlign(VerticalAlignment::Center)
-                    ->SetHAlign(HorizontalAlignment::Left);
-                
-                // 将复选框和内容添加到 Grid，并使用管道操作符设置列位置
-                rootGrid->AddChild(checkBoxBorder | cell(0, 0));
-                rootGrid->AddChild(contentPresenter | cell(0, 1));
-                
-                return rootGrid; })
+                    ->Children({
+                        (new Border())
+                            ->Name("CheckBoxBorder")
+                            ->Width(20.0f)
+                            ->Height(20.0f)
+                            ->BorderThickness(2.0f)
+                            ->CornerRadius(3.0f)
+                            ->BorderBrush(new SolidColorBrush(Color::FromRGB(120, 120, 120, 255)))
+                            ->Background(new SolidColorBrush(Color::FromRGB(255, 255, 255, 255)))
+                            ->Margin(0.0f, 0.0f, 8.0f, 0.0f)
+                            ->Child(
+                                (new Border())
+                                    ->Name("CheckMark")
+                                    ->Width(12.0f)
+                                    ->Height(12.0f)
+                                    ->SetVAlign(VerticalAlignment::Center)
+                                    ->SetHAlign(HorizontalAlignment::Center)
+                                    ->Opacity(0.0)  // 初始隐藏
+                                    ->Child(
+                                        (new Border())
+                                            ->Width(12.0f)
+                                            ->Height(12.0f)
+                                            ->Background(new SolidColorBrush(Color::FromRGB(0, 120, 215, 255)))
+                                            ->CornerRadius(2.0f)
+                                    )
+                            ),
+                        (new ContentPresenter<>())
+                            ->SetVAlign(VerticalAlignment::Center)
+                    }); })
             // CommonStates 状态组（鼠标交互效果）
             ->AddVisualStateGroup(
                 animation::VisualStateBuilder::CreateGroup("CommonStates")
@@ -129,7 +125,7 @@ namespace fk::ui
                     ->State("Pressed")
                     // 按下时边框更深
                     ->ColorAnimation("CheckBoxBorder", "BorderBrush.Color")
-                    ->To(Color::FromRGB(0, 90, 158, 255)) // 深蓝色
+                    ->To(Color::FromRGB(50, 120, 215, 255)) // 深蓝色
                     ->Duration(50)
                     ->EndAnimation()
                     ->ColorAnimation("CheckBoxBorder", "Background.Color")
@@ -174,7 +170,7 @@ namespace fk::ui
                     ->Duration(150)
                     ->EndAnimation()
                     ->ColorAnimation("CheckBoxBorder", "Background.Color")
-                    ->ToBinding(ToggleButton::CheckedBackgroundProperty()) // 使用选中背景色
+                    ->To(Color::FromRGB(200, 200, 255, 255)) // 使用选中背景色
                     ->Duration(150)
                     ->EndAnimation()
                     ->ColorAnimation("CheckBoxBorder", "BorderBrush.Color")
@@ -185,7 +181,7 @@ namespace fk::ui
                     ->State("Indeterminate")
                     // 不确定状态 - 部分显示标记
                     ->DoubleAnimation("CheckMark", "Opacity")
-                    ->To(0.6)
+                    ->To(1.0)
                     ->Duration(150)
                     ->EndAnimation()
                     ->ColorAnimation("CheckBoxBorder", "Background.Color")
@@ -215,10 +211,30 @@ namespace fk::ui
         }
 
         // 设置默认模板
-        if (!GetTemplate())
-        {
-            SetTemplate(CreateDefaultCheckBoxTemplate());
-        }
+        SetTemplate(CreateDefaultCheckBoxTemplate());
+    }
+
+    void CheckBox::OnTemplateApplied()
+    {
+        ToggleButton::OnTemplateApplied();
+
+        // 初始化 CheckBox 特有的视觉状态
+        InitializeToggleVisualStates();
+    }
+
+    void CheckBox::OnPointerPressed(PointerEventArgs &e)
+    {
+        ToggleButton::OnPointerPressed(e);
+    }
+
+    void CheckBox::OnPointerReleased(PointerEventArgs &e)
+    {
+        ToggleButton::OnPointerReleased(e);
+    }
+
+    void CheckBox::OnClick()
+    {
+        ToggleButton::OnClick();
     }
 
 } // namespace fk::ui

@@ -11,6 +11,7 @@
 #include <any>
 #include <string>
 #include <memory>
+#include <iostream>
 
 namespace fk::ui {
 
@@ -276,6 +277,16 @@ protected:
         
         // 3. 调用派生类的测量逻辑
         auto desiredSize = MeasureOverride(constrainedSize);
+        
+        // 3.5. 如果设置了显式 Width/Height，强制应用（WPF 行为）
+        float explicitWidth = GetWidth();
+        float explicitHeight = GetHeight();
+        if (!std::isnan(explicitWidth) && explicitWidth > 0) {
+            desiredSize.width = explicitWidth;
+        }
+        if (!std::isnan(explicitHeight) && explicitHeight > 0) {
+            desiredSize.height = explicitHeight;
+        }
         
         // 4. 加上 Padding（但不加 Margin！）
         // Margin 是外边距，由父容器处理
