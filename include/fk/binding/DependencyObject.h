@@ -74,6 +74,8 @@ public:
     DependencyObject* FindElementByName(std::string_view name);
     const DependencyObject* FindElementByName(std::string_view name) const;
 
+    virtual const DependencyProperty* FindProperty(const std::string& propertyName) const;
+
     BindingContext& GetBindingContext() noexcept { return bindingContext_; }
     const BindingContext& GetBindingContext() const noexcept { return bindingContext_; }
 

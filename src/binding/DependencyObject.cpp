@@ -258,4 +258,11 @@ void DependencyObject::ValidateValue(const DependencyProperty& property, const s
     }
 }
 
+const DependencyProperty* DependencyObject::FindProperty(const std::string& propertyName) const {
+    // 使用 Registry 通过对象的实际类型查找属性
+    // 这样就不需要在每个派生类中手动重写 FindProperty 了
+    extern const DependencyProperty* FindDependencyProperty(std::type_index ownerType, const std::string& name);
+    return FindDependencyProperty(typeid(*this), propertyName);
+}
+
 } // namespace fk::binding

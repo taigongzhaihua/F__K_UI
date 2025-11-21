@@ -41,6 +41,19 @@ public:
         return *propertyPtr;
     }
 
+    const DependencyProperty* Find(std::type_index ownerType, const std::string& name) {
+        std::lock_guard lock(mutex_);
+        auto ownerIt = propertiesByOwner_.find(ownerType);
+        if (ownerIt == propertiesByOwner_.end()) {
+            return nullptr;
+        }
+        auto propIt = ownerIt->second.find(name);
+        if (propIt == ownerIt->second.end()) {
+            return nullptr;
+        }
+        return propIt->second;
+    }
+
 private:
     std::mutex mutex_;
     std::vector<std::unique_ptr<DependencyProperty>> properties_;
@@ -89,6 +102,11 @@ const DependencyProperty& DependencyProperty::RegisterInternal(std::string name,
     }
 
     return DependencyPropertyRegistry::Instance().Register(std::move(name), propertyType, ownerType, std::move(metadata), attached);
+}
+
+// 全局函数，用于通过类型和属性名查找 DependencyProperty
+const DependencyProperty* FindDependencyProperty(std::type_index ownerType, const std::string& name) {
+    return DependencyPropertyRegistry::Instance().Find(ownerType, name);
 }
 
 } // namespace fk::binding

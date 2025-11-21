@@ -6,6 +6,10 @@
 #include <string>
 #include <unordered_map>
 
+namespace fk::ui {
+    class UIElement;
+}
+
 namespace fk::animation {
 
 // Storyboard - 故事板，管理一组动画的容器
@@ -31,6 +35,7 @@ public:
 
     // 附加属性：设置动画目标
     static void SetTarget(Timeline* timeline, binding::DependencyObject* target);
+    static void SetTarget(Timeline* timeline, binding::DependencyObject* target, const binding::DependencyProperty* property);
     static binding::DependencyObject* GetTarget(Timeline* timeline);
     
     static void SetTargetProperty(Timeline* timeline, const std::string& propertyPath);
@@ -49,6 +54,8 @@ protected:
     void UpdateCurrentValue(double progress) override;
 
 private:
+    // 解析属性路径并设置动画目标（支持嵌套属性如 "BorderBrush.Color"）
+    static void ResolvePropertyPath(Timeline* timeline, ui::UIElement* targetElement, const std::string& propertyPath);
     std::vector<std::shared_ptr<Timeline>> children_;
     
     // 存储附加属性的静态映射
