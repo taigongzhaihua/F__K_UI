@@ -116,9 +116,13 @@ namespace fk::ui
                     ->EndAnimation()
                     ->EndState()
                     ->State("MouseOver")
-                    // 鼠标悬停时边框高亮
+                    // 鼠标悬停时边框高亮和背景变化
+                    ->ColorAnimation("CheckBoxBorder", "Background.Color")
+                    ->To(Color::FromRGB(240, 248, 255, 255)) // 淡蓝色背景
+                    ->Duration(100)
+                    ->EndAnimation()
                     ->ColorAnimation("CheckBoxBorder", "BorderBrush.Color")
-                    ->To(Color::FromRGB(0, 120, 215, 255)) // 蓝色高亮
+                    ->To(Color::FromRGB(0, 120, 215, 255)) // 蓝色高亮边框
                     ->Duration(100)
                     ->EndAnimation()
                     ->EndState()
@@ -150,46 +154,29 @@ namespace fk::ui
                     ->EndState()
                     ->Build())
             // CheckStates 状态组（选中状态）
+            // 设计原则：只控制勾选标记，不与 CommonStates 冲突
+            // CommonStates 负责鼠标交互效果（背景和边框颜色）
+            // CheckStates 负责勾选标记的显示/隐藏
             ->AddVisualStateGroup(
                 animation::VisualStateBuilder::CreateGroup("CheckStates")
                     ->State("Unchecked")
-                    // 未选中状态 - 隐藏勾选标记
+                    // 未选中 - 隐藏勾选标记
                     ->DoubleAnimation("CheckMark", "Opacity")
                     ->To(0.0)
                     ->Duration(150)
                     ->EndAnimation()
-                    ->ColorAnimation("CheckBoxBorder", "Background.Color")
-                    ->To(Color::FromRGB(255, 255, 255, 255)) // 白色背景
-                    ->Duration(150)
-                    ->EndAnimation()
                     ->EndState()
                     ->State("Checked")
-                    // 选中状态 - 显示勾选标记，背景变色
+                    // 选中 - 显示勾选标记
                     ->DoubleAnimation("CheckMark", "Opacity")
                     ->To(1.0)
-                    ->Duration(150)
-                    ->EndAnimation()
-                    ->ColorAnimation("CheckBoxBorder", "Background.Color")
-                    ->To(Color::FromRGB(200, 200, 255, 255)) // 使用选中背景色
-                    ->Duration(150)
-                    ->EndAnimation()
-                    ->ColorAnimation("CheckBoxBorder", "BorderBrush.Color")
-                    ->ToBinding(ToggleButton::CheckedBackgroundProperty()) // 边框也使用选中色
                     ->Duration(150)
                     ->EndAnimation()
                     ->EndState()
                     ->State("Indeterminate")
-                    // 不确定状态 - 部分显示标记
+                    // 不确定 - 半透明勾选标记
                     ->DoubleAnimation("CheckMark", "Opacity")
-                    ->To(1.0)
-                    ->Duration(150)
-                    ->EndAnimation()
-                    ->ColorAnimation("CheckBoxBorder", "Background.Color")
-                    ->To(Color::FromRGB(200, 200, 200, 255)) // 灰色表示不确定
-                    ->Duration(150)
-                    ->EndAnimation()
-                    ->ColorAnimation("CheckBoxBorder", "BorderBrush.Color")
-                    ->To(Color::FromRGB(150, 150, 150, 255))
+                    ->To(0.5)
                     ->Duration(150)
                     ->EndAnimation()
                     ->EndState()
