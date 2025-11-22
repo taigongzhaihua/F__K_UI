@@ -266,6 +266,30 @@ target_link_libraries(shape_test PRIVATE fk)
 add_executable(star_test examples/star_test.cpp)
 target_link_libraries(star_test PRIVATE fk)
 
+add_executable(path_test examples/path_test.cpp)
+target_link_libraries(path_test PRIVATE fk)
+
+add_executable(arc_demo examples/arc_demo.cpp)
+target_link_libraries(arc_demo PRIVATE fk)
+
+add_executable(simple_arc_test examples/simple_arc_test.cpp)
+target_link_libraries(simple_arc_test PRIVATE fk)
+
+add_executable(sweep_test examples/sweep_test.cpp)
+target_link_libraries(sweep_test PRIVATE fk)
+
+add_executable(path_line_test examples/path_line_test.cpp)
+target_link_libraries(path_line_test PRIVATE fk)
+
+add_executable(multicolor_path_test examples/multicolor_path_test.cpp)
+target_link_libraries(multicolor_path_test PRIVATE fk)
+
+add_executable(multicolor_simple_test examples/multicolor_simple_test.cpp)
+target_link_libraries(multicolor_simple_test PRIVATE fk)
+
+add_executable(subpath_fill_test examples/subpath_fill_test.cpp)
+target_link_libraries(subpath_fill_test PRIVATE fk)
+
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库
 # 

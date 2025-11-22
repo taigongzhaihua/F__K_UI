@@ -1246,6 +1246,7 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
     
     // 将 Path 的曲线段转换为多边形点
     std::vector<ui::Point> pathPoints;
+    std::vector<size_t> pointSegmentIndices; // 记录每个点属于哪个segment
     ui::Point currentPos(0, 0);
     ui::Point startPos(0, 0);
     
@@ -1279,7 +1280,8 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
         );
     };
     
-    for (const auto& segment : payload.segments) {
+    for (size_t segIdx = 0; segIdx < payload.segments.size(); ++segIdx) {
+        const auto& segment = payload.segments[segIdx];
         switch (segment.type) {
             case PathSegmentType::MoveTo:
                 if (!segment.points.empty()) {
@@ -1291,8 +1293,10 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
             case PathSegmentType::LineTo:
                 if (!segment.points.empty()) {
                     pathPoints.push_back(currentPos);
+                    pointSegmentIndices.push_back(segIdx);
                     currentPos = segment.points[0];
                     pathPoints.push_back(currentPos);
+                    pointSegmentIndices.push_back(segIdx);
                 }
                 break;
                 
@@ -1306,6 +1310,7 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
                         float t = static_cast<float>(i) / bezierSteps;
                         ui::Point pt = evaluateQuadraticBezier(currentPos, control, end, t);
                         pathPoints.push_back(pt);
+                        pointSegmentIndices.push_back(segIdx);
                     }
                     
                     currentPos = end;
@@ -1323,6 +1328,7 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
                         float t = static_cast<float>(i) / bezierSteps;
                         ui::Point pt = evaluateCubicBezier(currentPos, control1, control2, end, t);
                         pathPoints.push_back(pt);
+                        pointSegmentIndices.push_back(segIdx);
                     }
                     
                     currentPos = end;
@@ -1332,18 +1338,116 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
             case PathSegmentType::Close:
                 if (pathPoints.size() >= 2) {
                     pathPoints.push_back(currentPos);
+                    pointSegmentIndices.push_back(segIdx);
                     pathPoints.push_back(startPos);
+                    pointSegmentIndices.push_back(segIdx);
                 }
                 currentPos = startPos;
                 break;
                 
             case PathSegmentType::ArcTo:
-                // TODO: 实现圆弧
-                // 暂时用直线代替
-                if (!segment.points.empty()) {
-                    pathPoints.push_back(currentPos);
-                    currentPos = segment.points.back();
-                    pathPoints.push_back(currentPos);
+                // 实现 SVG 风格的椭圆弧
+                // segment.points[0] = (radiusX, radiusY)
+                // segment.points[1] = (xAxisRotation, 0)
+                // segment.points[2] = (largeArcFlag, sweepFlag)
+                // segment.points[3] = end point
+                if (segment.points.size() >= 4) {
+                    float rx = segment.points[0].x;
+                    float ry = segment.points[0].y;
+                    float xAxisRotation = segment.points[1].x * 3.14159265f / 180.0f; // 转为弧度
+                    bool largeArcFlag = segment.points[2].x > 0.5f;
+                    bool sweepFlag = segment.points[2].y > 0.5f;
+                    ui::Point end = segment.points[3];
+                    
+                    // 计算椭圆弧的参数化表示
+                    // 参考: https://www.w3.org/TR/SVG/implnotes.html#ArcImplementationNotes
+                    
+                    float x1 = currentPos.x;
+                    float y1 = currentPos.y;
+                    float x2 = end.x;
+                    float y2 = end.y;
+                    
+                    // 如果起点和终点相同,不绘制
+                    if (std::abs(x1 - x2) < 0.001f && std::abs(y1 - y2) < 0.001f) {
+                        break;
+                    }
+                    
+                    // 如果半径为0,绘制直线
+                    if (rx < 0.001f || ry < 0.001f) {
+                        pathPoints.push_back(currentPos);
+                        pathPoints.push_back(end);
+                        currentPos = end;
+                        break;
+                    }
+                    
+                    // 确保半径为正
+                    rx = std::abs(rx);
+                    ry = std::abs(ry);
+                    
+                    // 计算旋转后的中点
+                    float cos_rot = std::cos(xAxisRotation);
+                    float sin_rot = std::sin(xAxisRotation);
+                    float dx = (x1 - x2) / 2.0f;
+                    float dy = (y1 - y2) / 2.0f;
+                    float x1p = cos_rot * dx + sin_rot * dy;
+                    float y1p = -sin_rot * dx + cos_rot * dy;
+                    
+                    // 修正半径
+                    float lambda = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+                    if (lambda > 1.0f) {
+                        rx *= std::sqrt(lambda);
+                        ry *= std::sqrt(lambda);
+                    }
+                    
+                    // 计算圆心
+                    // 屏幕坐标系Y轴向下,需要调整符号
+                    float sign = (largeArcFlag != sweepFlag) ? -1.0f : 1.0f;
+                    float sq = std::max(0.0f, (rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p) / 
+                                               (rx * rx * y1p * y1p + ry * ry * x1p * x1p));
+                    float coef = sign * std::sqrt(sq);
+                    float cxp = coef * rx * y1p / ry;
+                    float cyp = -coef * ry * x1p / rx;
+                    
+                    float cx = cos_rot * cxp - sin_rot * cyp + (x1 + x2) / 2.0f;
+                    float cy = sin_rot * cxp + cos_rot * cyp + (y1 + y2) / 2.0f;
+                    
+                    // 计算起始和结束角度
+                    auto vectorAngle = [](float ux, float uy, float vx, float vy) -> float {
+                        float dot = ux * vx + uy * vy;
+                        float det = ux * vy - uy * vx;
+                        float angle = std::atan2(det, dot);
+                        return angle;
+                    };
+                    
+                    float theta1 = vectorAngle(1.0f, 0.0f, (x1p - cxp) / rx, (y1p - cyp) / ry);
+                    float dtheta = vectorAngle((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry);
+                    
+                    // 修正 sweep 方向
+                    if (!sweepFlag && dtheta < 0) {
+                        dtheta += 2.0f * 3.14159265f;
+                    } else if (sweepFlag && dtheta > 0) {
+                        dtheta -= 2.0f * 3.14159265f;
+                    }
+                    
+                    // 将圆弧细分为多个点
+                    int arcSteps = std::max(4, static_cast<int>(std::abs(dtheta) * 10.0f)); // 根据角度调整精度
+                    for (int i = 0; i <= arcSteps; ++i) {
+                        float t = static_cast<float>(i) / arcSteps;
+                        float angle = theta1 + dtheta * t;
+                        
+                        // 参数化椭圆上的点
+                        float x = rx * std::cos(angle);
+                        float y = ry * std::sin(angle);
+                        
+                        // 旋转和平移
+                        float xr = cos_rot * x - sin_rot * y + cx;
+                        float yr = sin_rot * x + cos_rot * y + cy;
+                        
+                        pathPoints.push_back(ui::Point(xr, yr));
+                        pointSegmentIndices.push_back(segIdx);
+                    }
+                    
+                    currentPos = end;
                 }
                 break;
         }
@@ -1352,15 +1456,26 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
     // 如果路径为空,直接返回
     if (pathPoints.empty()) return;
     
-    // 去重连续的重复点
+    // 去重连续的重复点,同时保留segment索引
     std::vector<ui::Point> uniquePoints;
+    std::vector<size_t> uniqueSegmentIndices;
     uniquePoints.reserve(pathPoints.size());
-    uniquePoints.push_back(pathPoints[0]);
+    uniqueSegmentIndices.reserve(pathPoints.size());
+    
+    if (!pathPoints.empty()) {
+        uniquePoints.push_back(pathPoints[0]);
+        if (!pointSegmentIndices.empty()) {
+            uniqueSegmentIndices.push_back(pointSegmentIndices[0]);
+        }
+    }
     
     for (size_t i = 1; i < pathPoints.size(); ++i) {
         if (std::abs(pathPoints[i].x - uniquePoints.back().x) > 0.001f ||
             std::abs(pathPoints[i].y - uniquePoints.back().y) > 0.001f) {
             uniquePoints.push_back(pathPoints[i]);
+            if (i < pointSegmentIndices.size()) {
+                uniqueSegmentIndices.push_back(pointSegmentIndices[i]);
+            }
         }
     }
     
@@ -1455,7 +1570,156 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
         glBindVertexArray(0);
     }
     
-    // TODO: 实现路径描边
+    // 绘制路径描边
+    if (payload.strokeThickness > 0.0f && payload.strokeColor[3] > 0.0f && uniquePoints.size() >= 2) {
+        glBindVertexArray(vao_);
+        glUseProgram(simpleShaderProgram_);
+        
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
+        int viewportLoc = glGetUniformLocation(simpleShaderProgram_, "uViewport");
+        glUniform2f(viewportLoc, 
+            static_cast<float>(viewportSize_.width), 
+            static_cast<float>(viewportSize_.height));
+        
+        int colorLoc = glGetUniformLocation(simpleShaderProgram_, "uColor");
+        glUniform4f(colorLoc, 
+            payload.strokeColor[0], 
+            payload.strokeColor[1], 
+            payload.strokeColor[2], 
+            payload.strokeColor[3]);
+        
+        float effectiveOpacity = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
+        int opacityLoc = glGetUniformLocation(simpleShaderProgram_, "uOpacity");
+        glUniform1f(opacityLoc, effectiveOpacity);
+        
+        float halfThickness = payload.strokeThickness / 2.0f;
+        
+        // 判断路径是否闭合(最后一点是否等于第一点)
+        bool isClosed = (uniquePoints.size() >= 2 && 
+                        std::abs(uniquePoints.front().x - uniquePoints.back().x) < 0.1f &&
+                        std::abs(uniquePoints.front().y - uniquePoints.back().y) < 0.1f);
+        
+        size_t segmentCount = isClosed ? uniquePoints.size() : uniquePoints.size() - 1;
+        
+        // 按颜色分批绘制
+        std::vector<float> strokeVertices;
+        std::array<float, 4> currentBatchColor = payload.strokeColor;
+        bool batchStarted = false;
+        
+        auto flushBatch = [&]() {
+            if (!strokeVertices.empty()) {
+                glUniform4f(colorLoc, currentBatchColor[0], currentBatchColor[1], 
+                           currentBatchColor[2], currentBatchColor[3]);
+                
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+                size_t bufferSize = strokeVertices.size() * sizeof(float);
+                glBufferData(GL_ARRAY_BUFFER, bufferSize, strokeVertices.data(), GL_DYNAMIC_DRAW);
+                
+                int vertexCount = static_cast<int>(strokeVertices.size() / 4);
+                glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+                
+                strokeVertices.clear();
+            }
+        };
+        
+        for (size_t i = 0; i < segmentCount; ++i) {
+            size_t nextIdx = (i + 1) % uniquePoints.size();
+            
+            ui::Point p1 = uniquePoints[i];
+            ui::Point p2 = uniquePoints[nextIdx];
+            
+            // 获取该线段的颜色
+            std::array<float, 4> lineColor = payload.strokeColor;
+            bool hasSegmentColor = false;
+            if (i < uniqueSegmentIndices.size() && uniqueSegmentIndices[i] < payload.segments.size()) {
+                const auto& seg = payload.segments[uniqueSegmentIndices[i]];
+                if (seg.hasStrokeColor) {
+                    lineColor = seg.strokeColor;
+                    hasSegmentColor = true;
+                }
+            }
+            
+            // 如果颜色改变,先绘制之前的批次
+            if (batchStarted && hasSegmentColor) {
+                bool colorChanged = false;
+                for (int c = 0; c < 4; ++c) {
+                    if (std::abs(lineColor[c] - currentBatchColor[c]) > 0.01f) {
+                        colorChanged = true;
+                        break;
+                    }
+                }
+                if (colorChanged) {
+                    flushBatch();
+                    currentBatchColor = lineColor;
+                }
+            } else if (hasSegmentColor) {
+                currentBatchColor = lineColor;
+            }
+            
+            batchStarted = true;
+            
+            // 计算线段方向
+            float dx = p2.x - p1.x;
+            float dy = p2.y - p1.y;
+            float len = std::sqrt(dx * dx + dy * dy);
+            
+            if (len < 0.001f) continue;
+            
+            // 归一化并旋转90度得到法向量
+            float nx = -dy / len;
+            float ny = dx / len;
+            
+            // 生成四个顶点(矩形)
+            float x1_out = p1.x + nx * halfThickness;
+            float y1_out = p1.y + ny * halfThickness;
+            float x1_in = p1.x - nx * halfThickness;
+            float y1_in = p1.y - ny * halfThickness;
+            
+            float x2_out = p2.x + nx * halfThickness;
+            float y2_out = p2.y + ny * halfThickness;
+            float x2_in = p2.x - nx * halfThickness;
+            float y2_in = p2.y - ny * halfThickness;
+            
+            // 第一个三角形
+            strokeVertices.push_back(x1_out);
+            strokeVertices.push_back(y1_out);
+            strokeVertices.push_back(0.0f);
+            strokeVertices.push_back(0.0f);
+            
+            strokeVertices.push_back(x1_in);
+            strokeVertices.push_back(y1_in);
+            strokeVertices.push_back(0.0f);
+            strokeVertices.push_back(0.0f);
+            
+            strokeVertices.push_back(x2_in);
+            strokeVertices.push_back(y2_in);
+            strokeVertices.push_back(0.0f);
+            strokeVertices.push_back(0.0f);
+            
+            // 第二个三角形
+            strokeVertices.push_back(x1_out);
+            strokeVertices.push_back(y1_out);
+            strokeVertices.push_back(0.0f);
+            strokeVertices.push_back(0.0f);
+            
+            strokeVertices.push_back(x2_in);
+            strokeVertices.push_back(y2_in);
+            strokeVertices.push_back(0.0f);
+            strokeVertices.push_back(0.0f);
+            
+            strokeVertices.push_back(x2_out);
+            strokeVertices.push_back(y2_out);
+            strokeVertices.push_back(0.0f);
+            strokeVertices.push_back(0.0f);
+        }
+        
+        // 绘制最后一批
+        flushBatch();
+        
+        glBindVertexArray(0);
+    }
 }
 
 void GlRenderer::PushLayer(const LayerPayload& payload) {

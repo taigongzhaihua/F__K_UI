@@ -622,6 +622,64 @@ Path* Path::Close() {
     return this;
 }
 
+Path* Path::SetSegmentStroke(const render::Color& color) {
+    if (!segments_.empty()) {
+        segments_.back().strokeColor = color;
+        segments_.back().hasStrokeColor = true;
+        InvalidateVisual();
+    }
+    return this;
+}
+
+Path* Path::SetSegmentStroke(float r, float g, float b, float a) {
+    return SetSegmentStroke(render::Color::FromRGB(static_cast<uint8_t>(r * 255),
+                                                    static_cast<uint8_t>(g * 255),
+                                                    static_cast<uint8_t>(b * 255),
+                                                    static_cast<uint8_t>(a * 255)));
+}
+
+Path* Path::SetSubPathFill(const render::Color& color) {
+    // 找到最近的MoveTo段
+    for (auto it = segments_.rbegin(); it != segments_.rend(); ++it) {
+        if (it->command == PathCommand::MoveTo) {
+            it->fillColor = color;
+            it->hasFillColor = true;
+            InvalidateVisual();
+            break;
+        }
+    }
+    return this;
+}
+
+Path* Path::SetSubPathFill(float r, float g, float b, float a) {
+    return SetSubPathFill(render::Color::FromRGB(static_cast<uint8_t>(r * 255),
+                                                  static_cast<uint8_t>(g * 255),
+                                                  static_cast<uint8_t>(b * 255),
+                                                  static_cast<uint8_t>(a * 255)));
+}
+
+Path* Path::SetSubPathStroke(const render::Color& color, float thickness) {
+    // 找到最近的MoveTo段
+    for (auto it = segments_.rbegin(); it != segments_.rend(); ++it) {
+        if (it->command == PathCommand::MoveTo) {
+            it->subPathStrokeColor = color;
+            it->subPathStrokeThickness = thickness;
+            it->hasSubPathStroke = true;
+            InvalidateVisual();
+            break;
+        }
+    }
+    return this;
+}
+
+Path* Path::SetSubPathStroke(float r, float g, float b, float a, float thickness) {
+    return SetSubPathStroke(render::Color::FromRGB(static_cast<uint8_t>(r * 255),
+                                                    static_cast<uint8_t>(g * 255),
+                                                    static_cast<uint8_t>(b * 255),
+                                                    static_cast<uint8_t>(a * 255)),
+                            thickness);
+}
+
 void Path::ClearPath() {
     segments_.clear();
     currentPoint_ = Point(0, 0);
@@ -715,11 +773,82 @@ void Path::OnRender(render::RenderContext& context) {
         // 复制点
         renderSeg.points = seg.points;
         
+        // 复制分段颜色
+        if (seg.hasStrokeColor) {
+            auto c = seg.strokeColor;
+            renderSeg.strokeColor = {{c.r, c.g, c.b, c.a}};
+            renderSeg.hasStrokeColor = true;
+        }
+        
+        // 复制子路径填充颜色
+        if (seg.hasFillColor) {
+            auto c = seg.fillColor;
+            renderSeg.fillColor = {{c.r, c.g, c.b, c.a}};
+            renderSeg.hasFillColor = true;
+        }
+        
+        // 复制子路径描边
+        if (seg.hasSubPathStroke) {
+            auto c = seg.subPathStrokeColor;
+            renderSeg.subPathStrokeColor = {{c.r, c.g, c.b, c.a}};
+            renderSeg.subPathStrokeThickness = seg.subPathStrokeThickness;
+            renderSeg.hasSubPathStroke = true;
+        }
+        
         renderSegments.push_back(renderSeg);
     }
     
-    // 使用 RenderContext 绘制路径
-    context.DrawPath(renderSegments, fillColor, strokeColor, strokeThickness);
+    // 检查是否有子路径独立设置
+    bool hasSubPathSettings = false;
+    for (const auto& seg : renderSegments) {
+        if (seg.hasFillColor || seg.hasSubPathStroke) {
+            hasSubPathSettings = true;
+            break;
+        }
+    }
+    
+    if (hasSubPathSettings) {
+        // 按子路径分组渲染
+        std::vector<render::PathSegment> subPath;
+        std::array<float, 4> subPathFillColor = fillColor;
+        std::array<float, 4> subPathStrokeColor = strokeColor;
+        float subPathStrokeThickness = strokeThickness;
+        
+        for (size_t i = 0; i < renderSegments.size(); ++i) {
+            const auto& seg = renderSegments[i];
+            
+            if (seg.type == render::PathSegmentType::MoveTo) {
+                // 绘制前一个子路径
+                if (!subPath.empty()) {
+                    context.DrawPath(subPath, subPathFillColor, subPathStrokeColor, subPathStrokeThickness);
+                    subPath.clear();
+                }
+                // 开始新子路径,设置颜色
+                if (seg.hasFillColor) {
+                    subPathFillColor = seg.fillColor;
+                } else {
+                    subPathFillColor = fillColor;
+                }
+                if (seg.hasSubPathStroke) {
+                    subPathStrokeColor = seg.subPathStrokeColor;
+                    subPathStrokeThickness = seg.subPathStrokeThickness;
+                } else {
+                    subPathStrokeColor = strokeColor;
+                    subPathStrokeThickness = strokeThickness;
+                }
+            }
+            
+            subPath.push_back(seg);
+        }
+        
+        // 绘制最后一个子路径
+        if (!subPath.empty()) {
+            context.DrawPath(subPath, subPathFillColor, subPathStrokeColor, subPathStrokeThickness);
+        }
+    } else {
+        // 整体渲染
+        context.DrawPath(renderSegments, fillColor, strokeColor, strokeThickness);
+    }
 }
 
 // ========== 模板显式实例化 ==========

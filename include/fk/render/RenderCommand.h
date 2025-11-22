@@ -127,6 +127,13 @@ enum class PathSegmentType : std::uint8_t {
 struct PathSegment {
     PathSegmentType type;
     std::vector<ui::Point> points; // 控制点/端点
+    std::array<float, 4> strokeColor; // 分段描边颜色(RGBA,可选)
+    bool hasStrokeColor{false};       // 是否设置了分段颜色
+    std::array<float, 4> fillColor;   // 子路径填充颜色(RGBA,可选,仅MoveTo有效)
+    bool hasFillColor{false};         // 是否设置了子路径填充颜色
+    std::array<float, 4> subPathStrokeColor; // 子路径描边颜色(RGBA,可选,仅MoveTo有效)
+    float subPathStrokeThickness{0.0f};      // 子路径描边粗细(可选,仅MoveTo有效)
+    bool hasSubPathStroke{false};            // 是否设置了子路径描边
     // 用于圆弧的额外参数
     float radiusX{0.0f};
     float radiusY{0.0f};

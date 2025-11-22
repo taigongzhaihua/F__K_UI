@@ -13,6 +13,8 @@
 
 #include "fk/ui/FrameworkElement.h"
 #include "fk/binding/DependencyProperty.h"
+#include "fk/ui/Primitives.h"
+#include "fk/render/DrawCommand.h"  // for render::Color
 
 namespace fk::ui {
 
@@ -234,13 +236,20 @@ public:
     
     struct PathSegment {
         PathCommand command;
-        std::vector<Point> points;  // 根据命令类型，点数不同
+        std::vector<Point> points;  // 根据命令类型,点数不同
+        render::Color strokeColor;           // 该段的描边颜色(可选)
+        bool hasStrokeColor{false};  // 是否设置了分段颜色
+        render::Color fillColor;             // 该子路径的填充颜色(可选,仅MoveTo有效)
+        bool hasFillColor{false};    // 是否设置了子路径填充颜色
+        render::Color subPathStrokeColor;    // 该子路径的描边颜色(可选,仅MoveTo有效)
+        float subPathStrokeThickness{0.0f};  // 该子路径的描边粗细(可选,仅MoveTo有效)
+        bool hasSubPathStroke{false}; // 是否设置了子路径描边
         
-        PathSegment(PathCommand cmd) : command(cmd) {}
+        PathSegment(PathCommand cmd) : command(cmd), strokeColor(0,0,0,0), fillColor(0,0,0,0), subPathStrokeColor(0,0,0,0) {}
         PathSegment(PathCommand cmd, const Point& p) 
-            : command(cmd), points{p} {}
+            : command(cmd), points{p}, strokeColor(0,0,0,0), fillColor(0,0,0,0), subPathStrokeColor(0,0,0,0) {}
         PathSegment(PathCommand cmd, const std::vector<Point>& pts) 
-            : command(cmd), points(pts) {}
+            : command(cmd), points(pts), strokeColor(0,0,0,0), fillColor(0,0,0,0), subPathStrokeColor(0,0,0,0) {}
     };
 
     // ========== 路径构建API ==========
@@ -266,6 +275,18 @@ public:
     
     /// 闭合当前路径
     Path* Close();
+    
+    /// 设置当前段的描边颜色(必须在添加段后立即调用)
+    Path* SetSegmentStroke(const render::Color& color);
+    Path* SetSegmentStroke(float r, float g, float b, float a = 1.0f);
+    
+    /// 设置当前子路径的填充颜色(在MoveTo后调用)
+    Path* SetSubPathFill(const render::Color& color);
+    Path* SetSubPathFill(float r, float g, float b, float a = 1.0f);
+    
+    /// 设置当前子路径的描边(在MoveTo后调用)
+    Path* SetSubPathStroke(const render::Color& color, float thickness);
+    Path* SetSubPathStroke(float r, float g, float b, float a, float thickness);
     
     /// 清空路径
     void ClearPath();

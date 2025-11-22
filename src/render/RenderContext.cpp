@@ -388,9 +388,48 @@ void RenderContext::DrawPath(
     
     for (const auto& segment : segments) {
         PathSegment globalSegment = segment;
-        for (auto& point : globalSegment.points) {
-            point = TransformPoint(point);
+        
+        // 根据段类型,只变换真正的坐标点
+        switch (segment.type) {
+            case PathSegmentType::MoveTo:
+            case PathSegmentType::LineTo:
+                // 单个终点
+                for (auto& point : globalSegment.points) {
+                    point = TransformPoint(point);
+                }
+                break;
+                
+            case PathSegmentType::QuadraticBezierTo:
+                // 控制点 + 终点
+                for (auto& point : globalSegment.points) {
+                    point = TransformPoint(point);
+                }
+                break;
+                
+            case PathSegmentType::CubicBezierTo:
+                // 两个控制点 + 终点
+                for (auto& point : globalSegment.points) {
+                    point = TransformPoint(point);
+                }
+                break;
+                
+            case PathSegmentType::ArcTo:
+                // ArcTo 的点布局:
+                // [0] = (radiusX, radiusY) - 半径,不需要变换(目前只有平移变换)
+                // [1] = (xAxisRotation, 0) - 角度,不变换
+                // [2] = (largeArcFlag, sweepFlag) - 标志,不变换
+                // [3] = end point - 终点,需要完整变换
+                if (globalSegment.points.size() >= 4) {
+                    // points[0] (半径) 和 points[1] (角度) 和 points[2] (标志) 保持不变
+                    globalSegment.points[3] = TransformPoint(globalSegment.points[3]); // 终点
+                }
+                break;
+                
+            case PathSegmentType::Close:
+                // 无参数
+                break;
         }
+        
         globalSegments.push_back(globalSegment);
     }
     
