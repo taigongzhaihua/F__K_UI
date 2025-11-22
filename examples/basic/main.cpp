@@ -213,14 +213,14 @@ int main(int argc, char **argv)
                                                                    ->Background(new fk::ui::SolidColorBrush(120, 120, 120))
                                                                    ->CheckedBackground(new fk::ui::SolidColorBrush(255, 140, 0))
                                                                    ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
-                                                                (new fk::ui::CheckBox())
-                                                                ->Name("checkUpdates")
-                                                                ->Content(
-                                                                    (new fk::ui::TextBlock())
-                                                                        ->Text("Enable Automatic Updates")
-                                                                        ->FontSize(14))
-                                                                ->Background(new fk::ui::SolidColorBrush(0, 0, 0, 0))
-                                                                ->BorderBrush(new fk::ui::SolidColorBrush(0, 0, 0, 0)),
+                                                               (new fk::ui::CheckBox())
+                                                                   ->Name("checkUpdates")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("Enable Automatic Updates")
+                                                                           ->FontSize(14))
+                                                                   ->Background(new fk::ui::SolidColorBrush(0, 0, 0, 0))
+                                                                   ->BorderBrush(new fk::ui::SolidColorBrush(0, 0, 0, 0)),
                                                                (new fk::ui::TextBlock())
                                                                    ->Text("Select Theme:")
                                                                    ->FontSize(14)
@@ -246,8 +246,7 @@ int main(int argc, char **argv)
                                                                        (new fk::ui::TextBlock())
                                                                            ->Text("Auto (System)")
                                                                            ->FontSize(14))
-                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5))
-                                                            }) |
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5))}) |
                                                       fk::ui::cell(1, 0)}) |
                                          fk::ui::cell(0, 1),
 
