@@ -256,7 +256,7 @@ void Window::Show() {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        glfwWindowHint(GLFW_SAMPLES, 8); // 启用8x MSAA抗锯齿，提供更好的线条质量
+        glfwWindowHint(GLFW_SAMPLES, 16); // 启用16x MSAA抗锯齿，提供最佳的线条质量
         
         // 获取窗口尺寸
         int width = static_cast<int>(GetWidth());

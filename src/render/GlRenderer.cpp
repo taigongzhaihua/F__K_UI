@@ -1669,7 +1669,7 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
         
         // 添加圆形端点的辅助函数
         auto addRoundCap = [&](ui::Point center, float radius) {
-            const int segments = 16; // 增加圆形分段数以获得更平滑的效果
+            const int segments = 32; // 高质量圆形分段数,提供最佳平滑效果
             for (int j = 0; j < segments; ++j) {
                 float angle1 = (j * 2.0f * 3.14159265f) / segments;
                 float angle2 = ((j + 1) * 2.0f * 3.14159265f) / segments;

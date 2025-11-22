@@ -82,7 +82,7 @@ namespace fk::ui
                     ->SetVAlign(VerticalAlignment::Center)
                     ->SetHAlign(HorizontalAlignment::Center)
                     ->Stroke(new SolidColorBrush(Color::FromRGB(0, 120, 215, 255)))
-                    ->StrokeThickness(3.0f)
+                    ->StrokeThickness(3.f)
                     ->MoveTo(2.0f, 8.0f)
                     ->LineTo(6.0f, 12.0f)
                     ->LineTo(14.0f, 4.0f)
