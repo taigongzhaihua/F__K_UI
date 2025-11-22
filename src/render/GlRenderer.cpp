@@ -448,6 +448,12 @@ void GlRenderer::ExecuteCommand(const RenderCommand& cmd) {
             }
             break;
 
+        case CommandType::DrawPolygon:
+            if (std::holds_alternative<PolygonPayload>(cmd.payload)) {
+                DrawPolygon(std::get<PolygonPayload>(cmd.payload));
+            }
+            break;
+
         case CommandType::PushLayer:
             if (std::holds_alternative<LayerPayload>(cmd.payload)) {
                 PushLayer(std::get<LayerPayload>(cmd.payload));
@@ -992,6 +998,122 @@ void GlRenderer::DrawText(const TextPayload& payload) {
 void GlRenderer::DrawImage(const ImagePayload& payload) {
     // TODO: 实现图像渲染
     // 需要纹理管理
+}
+
+void GlRenderer::DrawPolygon(const PolygonPayload& payload) {
+    if (payload.points.size() < 2) {
+        return;  // 至少需要2个点
+    }
+
+    // 对于线条（2个点且不填充），使用矩形近似
+    if (payload.points.size() == 2 && !payload.filled) {
+        const auto& p1 = payload.points[0];
+        const auto& p2 = payload.points[1];
+        
+        // 计算线条方向和长度
+        float dx = p2.x - p1.x;
+        float dy = p2.y - p1.y;
+        float length = std::sqrt(dx * dx + dy * dy);
+        
+        if (length < 0.001f) {
+            return;  // 线条太短，不绘制
+        }
+        
+        // 归一化方向向量
+        float ndx = dx / length;
+        float ndy = dy / length;
+        
+        // 垂直向量（用于线宽）
+        float perpX = -ndy;
+        float perpY = ndx;
+        
+        // 线宽的一半
+        float halfWidth = payload.strokeThickness * 0.5f;
+        
+        // 计算矩形的四个顶点
+        float x1 = p1.x + perpX * halfWidth;
+        float y1 = p1.y + perpY * halfWidth;
+        float x2 = p1.x - perpX * halfWidth;
+        float y2 = p1.y - perpY * halfWidth;
+        float x3 = p2.x - perpX * halfWidth;
+        float y3 = p2.y - perpY * halfWidth;
+        float x4 = p2.x + perpX * halfWidth;
+        float y4 = p2.y + perpY * halfWidth;
+        
+        // 使用 borderShaderProgram 渲染线条（作为填充矩形）
+        glBindVertexArray(vao_);
+        glUseProgram(borderShaderProgram_);
+        
+        // 设置视口
+        int viewportLoc = glGetUniformLocation(borderShaderProgram_, "uViewport");
+        glUniform2f(viewportLoc, 
+            static_cast<float>(viewportSize_.width), 
+            static_cast<float>(viewportSize_.height));
+        
+        // 设置颜色
+        int colorLoc = glGetUniformLocation(borderShaderProgram_, "uColor");
+        glUniform4f(colorLoc, 
+            payload.strokeColor[0], 
+            payload.strokeColor[1], 
+            payload.strokeColor[2], 
+            payload.strokeColor[3]);
+        
+        // 设置不透明度
+        float effectiveOpacity = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
+        int opacityLoc = glGetUniformLocation(borderShaderProgram_, "uOpacity");
+        glUniform1f(opacityLoc, effectiveOpacity);
+        
+        // 设置矩形尺寸（线条的包围盒）
+        float minX = std::min({x1, x2, x3, x4});
+        float minY = std::min({y1, y2, y3, y4});
+        float maxX = std::max({x1, x2, x3, x4});
+        float maxY = std::max({y1, y2, y3, y4});
+        float rectWidth = maxX - minX;
+        float rectHeight = maxY - minY;
+        
+        int rectSizeLoc = glGetUniformLocation(borderShaderProgram_, "uRectSize");
+        glUniform2f(rectSizeLoc, rectWidth, rectHeight);
+        
+        // 无圆角
+        int cornerRadiusLoc = glGetUniformLocation(borderShaderProgram_, "uCornerRadius");
+        glUniform4f(cornerRadiusLoc, 0.0f, 0.0f, 0.0f, 0.0f);
+        
+        // 无描边（线条本身就是填充）
+        int strokeColorLoc = glGetUniformLocation(borderShaderProgram_, "uStrokeColor");
+        glUniform4f(strokeColorLoc, 0.0f, 0.0f, 0.0f, 0.0f);
+        
+        int strokeWidthLoc = glGetUniformLocation(borderShaderProgram_, "uStrokeWidth");
+        glUniform1f(strokeWidthLoc, 0.0f);
+        
+        int strokeAlignLoc = glGetUniformLocation(borderShaderProgram_, "uStrokeAlignment");
+        glUniform2f(strokeAlignLoc, 0.0f, 0.0f);
+        
+        // 抗锯齿
+        int aaLoc = glGetUniformLocation(borderShaderProgram_, "uAAWidth");
+        glUniform1f(aaLoc, 1.0f);
+        
+        // 构建顶点数据（两个三角形组成矩形）
+        float vertices[] = {
+            // 第一个三角形
+            x1, y1, 0.0f, 0.0f,
+            x4, y4, rectWidth, 0.0f,
+            x2, y2, 0.0f, rectHeight,
+            
+            // 第二个三角形
+            x4, y4, rectWidth, 0.0f,
+            x3, y3, rectWidth, rectHeight,
+            x2, y2, 0.0f, rectHeight
+        };
+        
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+    } else {
+        // TODO: 实现真正的多边形渲染（填充和描边）
+        // 目前先不实现，因为需要三角剖分算法
+    }
 }
 
 void GlRenderer::PushLayer(const LayerPayload& payload) {

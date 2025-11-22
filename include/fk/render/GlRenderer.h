@@ -68,6 +68,11 @@ private:
     void DrawImage(const struct ImagePayload& payload);
 
     /**
+     * @brief 绘制多边形
+     */
+    void DrawPolygon(const struct PolygonPayload& payload);
+
+    /**
      * @brief 推入透明度图层
      */
     void PushLayer(const struct LayerPayload& payload);

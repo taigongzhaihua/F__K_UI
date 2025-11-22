@@ -105,19 +105,16 @@ Size Shape::MeasureOverride(const Size& availableSize) {
     // Shape 使用显式设置的 Width/Height，如果没有设置则使用几何边界
     float width = GetWidth();
     float height = GetHeight();
-    float strokeThickness = GetStrokeThickness();
     
-    // 如果没有显式设置 Width/Height，使用几何边界
-    if (std::isnan(width) || std::isnan(height)) {
+    // 如果没有显式设置 Width/Height (默认值为 -1.0)，使用几何边界
+    if (width <= 0.0f || height <= 0.0f) {
         Rect bounds = GetDefiningGeometry();
-        if (std::isnan(width)) width = bounds.width;
-        if (std::isnan(height)) height = bounds.height;
+        if (width <= 0.0f) width = bounds.width;
+        if (height <= 0.0f) height = bounds.height;
     }
     
-    return Size(
-        width + strokeThickness,
-        height + strokeThickness
-    );
+    // GetDefiningGeometry 已经包含了线宽的计算，直接返回
+    return Size(width, height);
 }
 
 Size Shape::ArrangeOverride(const Size& finalSize) {
@@ -342,18 +339,81 @@ Rect Line::GetDefiningGeometry() const {
     float y1 = GetY1();
     float x2 = GetX2();
     float y2 = GetY2();
+    float halfThickness = GetStrokeThickness() / 2.0f;
     
-    float minX = std::min(x1, x2);
-    float minY = std::min(y1, y2);
-    float maxX = std::max(x1, x2);
-    float maxY = std::max(y1, y2);
+    // 计算线段的方向向量
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float length = std::sqrt(dx * dx + dy * dy);
     
-    return Rect(minX, minY, maxX - minX, maxY - minY);
+    if (length < 0.001f) {
+        // 退化为点，返回一个以线宽为半径的正方形
+        float size = halfThickness * 2.0f;
+        return Rect(0.0f, 0.0f, size, size);
+    }
+    
+    // 计算垂直于线段的单位向量
+    float perpX = -dy / length;
+    float perpY = dx / length;
+    
+    // 线段端点沿垂直方向扩展半个线宽后的四个顶点
+    float p1x1 = x1 + perpX * halfThickness;
+    float p1y1 = y1 + perpY * halfThickness;
+    float p1x2 = x1 - perpX * halfThickness;
+    float p1y2 = y1 - perpY * halfThickness;
+    
+    float p2x1 = x2 + perpX * halfThickness;
+    float p2y1 = y2 + perpY * halfThickness;
+    float p2x2 = x2 - perpX * halfThickness;
+    float p2y2 = y2 - perpY * halfThickness;
+    
+    // 找出四个顶点的包围盒
+    float minX = std::min({p1x1, p1x2, p2x1, p2x2});
+    float minY = std::min({p1y1, p1y2, p2y1, p2y2});
+    float maxX = std::max({p1x1, p1x2, p2x1, p2x2});
+    float maxY = std::max({p1y1, p1y2, p2y1, p2y2});
+    
+    float width = maxX - minX;
+    float height = maxY - minY;
+    
+    // 返回从 (0, 0) 开始的矩形，控件内容相对于自身原点
+    return Rect(0.0f, 0.0f, width, height);
 }
 
 void Line::OnRender(render::RenderContext& context) {
-    Point start(GetX1(), GetY1());
-    Point end(GetX2(), GetY2());
+    float x1 = GetX1();
+    float y1 = GetY1();
+    float x2 = GetX2();
+    float y2 = GetY2();
+    float halfThickness = GetStrokeThickness() / 2.0f;
+    
+    // 计算线段的方向向量和垂直向量（与 GetDefiningGeometry 相同的计算）
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float length = std::sqrt(dx * dx + dy * dy);
+    
+    float perpX = 0.0f, perpY = 0.0f;
+    if (length >= 0.001f) {
+        perpX = -dy / length;
+        perpY = dx / length;
+    }
+    
+    // 计算四个顶点来找到偏移量
+    float p1x1 = x1 + perpX * halfThickness;
+    float p1y1 = y1 + perpY * halfThickness;
+    float p1x2 = x1 - perpX * halfThickness;
+    float p1y2 = y1 - perpY * halfThickness;
+    float p2x1 = x2 + perpX * halfThickness;
+    float p2y1 = y2 + perpY * halfThickness;
+    float p2x2 = x2 - perpX * halfThickness;
+    float p2y2 = y2 - perpY * halfThickness;
+    
+    float minX = std::min({p1x1, p1x2, p2x1, p2x2});
+    float minY = std::min({p1y1, p1y2, p2y1, p2y2});
+    
+    // 调整坐标到控件坐标系
+    Point start(x1 - minX, y1 - minY);
+    Point end(x2 - minX, y2 - minY);
     
     // Line 使用 Stroke 作为线条颜色，不使用 Fill
     auto brushToColor = [](Brush* brush) -> std::array<float, 4> {
