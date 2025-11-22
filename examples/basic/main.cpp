@@ -6,6 +6,7 @@
 #include "fk/ui/Button.h"
 #include "fk/ui/ToggleButton.h"
 #include "fk/ui/CheckBox.h"
+#include "fk/ui/RadioButton.h"
 #include "fk/ui/Border.h"
 #include "fk/ui/Grid.h"
 #include "fk/ui/GridCellAttacher.h"
@@ -219,7 +220,33 @@ int main(int argc, char **argv)
                                                                         ->Text("Enable Automatic Updates")
                                                                         ->FontSize(14))
                                                                 ->Background(new fk::ui::SolidColorBrush(0, 0, 0, 0))
-                                                                ->BorderBrush(new fk::ui::SolidColorBrush(0, 0, 0, 0))
+                                                                ->BorderBrush(new fk::ui::SolidColorBrush(0, 0, 0, 0)),
+                                                               (new fk::ui::TextBlock())
+                                                                   ->Text("Select Theme:")
+                                                                   ->FontSize(14)
+                                                                   ->Margin(fk::ui::Thickness(0, 15, 0, 10)),
+                                                               (new fk::ui::RadioButton())
+                                                                   ->Name("radioLight")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("Light Theme")
+                                                                           ->FontSize(14))
+                                                                   ->IsChecked(true)
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
+                                                               (new fk::ui::RadioButton())
+                                                                   ->Name("radioDark")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("Dark Theme")
+                                                                           ->FontSize(14))
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5)),
+                                                               (new fk::ui::RadioButton())
+                                                                   ->Name("radioAuto")
+                                                                   ->Content(
+                                                                       (new fk::ui::TextBlock())
+                                                                           ->Text("Auto (System)")
+                                                                           ->FontSize(14))
+                                                                   ->Margin(fk::ui::Thickness(0, 5, 0, 5))
                                                             }) |
                                                       fk::ui::cell(1, 0)}) |
                                          fk::ui::cell(0, 1),

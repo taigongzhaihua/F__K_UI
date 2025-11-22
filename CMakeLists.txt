@@ -197,6 +197,7 @@ add_library(fk STATIC
     src/ui/Button.cpp
     src/ui/ToggleButton.cpp
     src/ui/CheckBox.cpp
+    src/ui/RadioButton.cpp
     src/ui/StackPanel.cpp
     src/ui/Grid.cpp
     src/ui/GridCellAttacher.cpp
@@ -258,6 +259,9 @@ endif()
 # Basic Examples
 add_executable(example_app examples/basic/main.cpp)
 target_link_libraries(example_app PRIVATE fk)
+
+add_executable(radiobutton_demo examples/basic/radiobutton_demo.cpp)
+target_link_libraries(radiobutton_demo PRIVATE fk)
 
 # Shape Examples
 add_executable(shape_demo examples/shapes/shape_demo.cpp)
