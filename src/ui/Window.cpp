@@ -383,6 +383,29 @@ void Window::Show() {
             self->inputManager_->ProcessKeyboardEvent(event);
         });
         
+        // 设置窗口刷新回调（在拖动/调整大小时继续渲染）
+        glfwSetWindowRefreshCallback(window, [](GLFWwindow* win) {
+            auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+            if (!self) return;
+            
+            // 在拖动或调整大小时也继续渲染
+            self->RenderFrame();
+        });
+        
+        // 设置窗口尺寸变化回调
+        glfwSetFramebufferSizeCallback(window, [](GLFWwindow* win, int width, int height) {
+            auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
+            if (!self) return;
+            
+            // 更新窗口尺寸
+            self->SetValue(WidthProperty(), static_cast<float>(width));
+            self->SetValue(HeightProperty(), static_cast<float>(height));
+            self->SetRenderSize(Size(static_cast<float>(width), static_cast<float>(height)));
+            
+            // 立即重新渲染
+            self->RenderFrame();
+        });
+        
         // 注意：InputManager 和 FocusManager 的根节点已在构造函数中设置
         
         std::cout << "GLFW window created: " << GetTitle() 
