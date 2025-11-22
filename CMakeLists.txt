@@ -114,6 +114,10 @@ set(SKIP_INSTALL_ALL ON CACHE BOOL "Skip FreeType install targets" FORCE)
 
 add_subdirectory(${FREETYPE_SOURCE_DIR})
 
+# ===== libtess2 配置 =====
+set(LIBTESS2_SOURCE_DIR "${THIRD_PARTY_DIR}/src/libtess2")
+add_subdirectory(${LIBTESS2_SOURCE_DIR})
+
 # ===== OpenGL 配置 =====
 # 在无头环境中 OpenGL 可能不可用，设为可选
 find_package(OpenGL)
@@ -230,7 +234,7 @@ target_include_directories(fk PUBLIC
 
 # freetype 作为 PRIVATE 依赖，用户不需要直接链接
 target_link_libraries(fk 
-    PRIVATE freetype
+    PRIVATE freetype libtess2
     PUBLIC glfw3 ${OPENGL_LIBS} ${PLATFORM_LIBS}
 )
 
@@ -258,6 +262,9 @@ target_link_libraries(shape_demo PRIVATE fk)
 
 add_executable(shape_test examples/shape_test.cpp)
 target_link_libraries(shape_test PRIVATE fk)
+
+add_executable(star_test examples/star_test.cpp)
+target_link_libraries(star_test PRIVATE fk)
 
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库

@@ -6,6 +6,7 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <tesselator.h>
 #include <stdexcept>
 #include <cmath>
 #include <algorithm>
@@ -272,6 +273,24 @@ void main() {
 }
 )";
 
+// 简单多边形填充的片段着色器（无SDF，直接填充）
+const char* simpleFragmentShaderSource = R"(
+#version 330 core
+in vec2 vTexCoord;
+in vec2 vFragPos;
+
+out vec4 FragColor;
+
+uniform vec4 uColor;
+uniform float uOpacity;
+
+void main() {
+    vec4 color = uColor * uOpacity;
+    if (color.a < 0.001) discard;
+    FragColor = color;
+}
+)";
+
 // 文本渲染的顶点着色器
 const char* textVertexShaderSource = R"(
 #version 330 core
@@ -451,6 +470,12 @@ void GlRenderer::ExecuteCommand(const RenderCommand& cmd) {
         case CommandType::DrawPolygon:
             if (std::holds_alternative<PolygonPayload>(cmd.payload)) {
                 DrawPolygon(std::get<PolygonPayload>(cmd.payload));
+            }
+            break;
+
+        case CommandType::DrawPath:
+            if (std::holds_alternative<PathPayload>(cmd.payload)) {
+                DrawPath(std::get<PathPayload>(cmd.payload));
             }
             break;
 
@@ -1111,9 +1136,326 @@ void GlRenderer::DrawPolygon(const PolygonPayload& payload) {
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
     } else {
-        // TODO: 实现真正的多边形渲染（填充和描边）
-        // 目前先不实现，因为需要三角剖分算法
+        // 多边形渲染（3个或更多点）
+        // 使用简单的扇形三角剖分（适用于凸多边形）
+        
+        if (payload.filled && payload.fillColor[3] > 0.0f) {
+            // 绘制填充的多边形 - 使用简单着色器（无SDF）
+            glBindVertexArray(vao_);
+            glUseProgram(simpleShaderProgram_);
+            
+            // 启用混合
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            
+            // 设置视口
+            int viewportLoc = glGetUniformLocation(simpleShaderProgram_, "uViewport");
+            glUniform2f(viewportLoc, 
+                static_cast<float>(viewportSize_.width), 
+                static_cast<float>(viewportSize_.height));
+            
+            // 设置颜色
+            int colorLoc = glGetUniformLocation(simpleShaderProgram_, "uColor");
+            glUniform4f(colorLoc, 
+                payload.fillColor[0], 
+                payload.fillColor[1], 
+                payload.fillColor[2], 
+                payload.fillColor[3]);
+            
+            // 设置不透明度
+            float effectiveOpacity = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
+            int opacityLoc = glGetUniformLocation(simpleShaderProgram_, "uOpacity");
+            glUniform1f(opacityLoc, effectiveOpacity);
+            
+            // 使用 libtess2 进行三角剖分，支持任意复杂多边形
+            TESStesselator* tess = tessNewTess(nullptr);
+            if (!tess) {
+                std::cerr << "Failed to create tesselator" << std::endl;
+                glBindVertexArray(0);
+                return;
+            }
+            
+            // 准备顶点数据（libtess2 需要连续的坐标数组）
+            std::vector<TESSreal> coords;
+            coords.reserve(payload.points.size() * 2);
+            for (const auto& pt : payload.points) {
+                coords.push_back(static_cast<TESSreal>(pt.x));
+                coords.push_back(static_cast<TESSreal>(pt.y));
+            }
+            
+
+            
+            // 添加轮廓到 tesselator
+            tessAddContour(tess, 2, coords.data(), sizeof(TESSreal) * 2, static_cast<int>(payload.points.size()));
+            
+            // 执行三角剖分 - 使用 TESS_WINDING_NONZERO 对顺时针/逆时针都有效
+            int result = tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, 3, 2, nullptr);
+            
+            std::vector<float> vertices;
+            if (result) {
+                // 获取剖分结果
+                const TESSreal* tessVerts = tessGetVertices(tess);
+                const TESSindex* tessElements = tessGetElements(tess);
+                int numElements = tessGetElementCount(tess);
+                
+                // 将三角形转换为顶点数组
+                vertices.reserve(numElements * 3 * 4);  // 每个三角形3个顶点，每个顶点4个float
+                
+                for (int i = 0; i < numElements; ++i) {
+                    const TESSindex* tri = &tessElements[i * 3];
+                    
+                    for (int j = 0; j < 3; ++j) {
+                        TESSindex idx = tri[j];
+                        if (idx == TESS_UNDEF) continue;
+                        
+                        float x = static_cast<float>(tessVerts[idx * 2]);
+                        float y = static_cast<float>(tessVerts[idx * 2 + 1]);
+                        
+                        vertices.push_back(x);
+                        vertices.push_back(y);
+                        vertices.push_back(0.0f);  // 纹理坐标 u
+                        vertices.push_back(0.0f);  // 纹理坐标 v
+                    }
+                }
+            }
+            
+            tessDeleteTess(tess);
+            
+            // 只有在有顶点数据时才绘制
+            if (!vertices.empty()) {
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+                
+                // 动态分配足够大的缓冲区
+                size_t bufferSize = vertices.size() * sizeof(float);
+                glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_DYNAMIC_DRAW);
+                
+                int triangleCount = static_cast<int>(vertices.size() / 12);  // 每个三角形12个float
+                glDrawArrays(GL_TRIANGLES, 0, triangleCount * 3);
+            }
+            
+            glBindVertexArray(0);
+        }
+        
+        // TODO: 实现多边形描边
+        // 需要沿每条边绘制线条
     }
+}
+
+void GlRenderer::DrawPath(const PathPayload& payload) {
+    if (payload.segments.empty()) return;
+    
+    // 将 Path 的曲线段转换为多边形点
+    std::vector<ui::Point> pathPoints;
+    ui::Point currentPos(0, 0);
+    ui::Point startPos(0, 0);
+    
+    // 贝塞尔曲线细分精度
+    const int bezierSteps = 20;
+    
+    auto evaluateQuadraticBezier = [](const ui::Point& p0, const ui::Point& p1, const ui::Point& p2, float t) -> ui::Point {
+        float u = 1.0f - t;
+        float tt = t * t;
+        float uu = u * u;
+        float ut2 = 2 * u * t;
+        
+        return ui::Point(
+            uu * p0.x + ut2 * p1.x + tt * p2.x,
+            uu * p0.y + ut2 * p1.y + tt * p2.y
+        );
+    };
+    
+    auto evaluateCubicBezier = [](const ui::Point& p0, const ui::Point& p1, const ui::Point& p2, const ui::Point& p3, float t) -> ui::Point {
+        float u = 1.0f - t;
+        float tt = t * t;
+        float ttt = tt * t;
+        float uu = u * u;
+        float uuu = uu * u;
+        float uut3 = 3 * uu * t;
+        float utt3 = 3 * u * tt;
+        
+        return ui::Point(
+            uuu * p0.x + uut3 * p1.x + utt3 * p2.x + ttt * p3.x,
+            uuu * p0.y + uut3 * p1.y + utt3 * p2.y + ttt * p3.y
+        );
+    };
+    
+    for (const auto& segment : payload.segments) {
+        switch (segment.type) {
+            case PathSegmentType::MoveTo:
+                if (!segment.points.empty()) {
+                    currentPos = segment.points[0];
+                    startPos = currentPos;
+                }
+                break;
+                
+            case PathSegmentType::LineTo:
+                if (!segment.points.empty()) {
+                    pathPoints.push_back(currentPos);
+                    currentPos = segment.points[0];
+                    pathPoints.push_back(currentPos);
+                }
+                break;
+                
+            case PathSegmentType::QuadraticBezierTo:
+                if (segment.points.size() >= 2) {
+                    ui::Point control = segment.points[0];
+                    ui::Point end = segment.points[1];
+                    
+                    // 细分二次贝塞尔曲线
+                    for (int i = 0; i <= bezierSteps; ++i) {
+                        float t = static_cast<float>(i) / bezierSteps;
+                        ui::Point pt = evaluateQuadraticBezier(currentPos, control, end, t);
+                        pathPoints.push_back(pt);
+                    }
+                    
+                    currentPos = end;
+                }
+                break;
+                
+            case PathSegmentType::CubicBezierTo:
+                if (segment.points.size() >= 3) {
+                    ui::Point control1 = segment.points[0];
+                    ui::Point control2 = segment.points[1];
+                    ui::Point end = segment.points[2];
+                    
+                    // 细分三次贝塞尔曲线
+                    for (int i = 0; i <= bezierSteps; ++i) {
+                        float t = static_cast<float>(i) / bezierSteps;
+                        ui::Point pt = evaluateCubicBezier(currentPos, control1, control2, end, t);
+                        pathPoints.push_back(pt);
+                    }
+                    
+                    currentPos = end;
+                }
+                break;
+                
+            case PathSegmentType::Close:
+                if (pathPoints.size() >= 2) {
+                    pathPoints.push_back(currentPos);
+                    pathPoints.push_back(startPos);
+                }
+                currentPos = startPos;
+                break;
+                
+            case PathSegmentType::ArcTo:
+                // TODO: 实现圆弧
+                // 暂时用直线代替
+                if (!segment.points.empty()) {
+                    pathPoints.push_back(currentPos);
+                    currentPos = segment.points.back();
+                    pathPoints.push_back(currentPos);
+                }
+                break;
+        }
+    }
+    
+    // 如果路径为空,直接返回
+    if (pathPoints.empty()) return;
+    
+    // 去重连续的重复点
+    std::vector<ui::Point> uniquePoints;
+    uniquePoints.reserve(pathPoints.size());
+    uniquePoints.push_back(pathPoints[0]);
+    
+    for (size_t i = 1; i < pathPoints.size(); ++i) {
+        if (std::abs(pathPoints[i].x - uniquePoints.back().x) > 0.001f ||
+            std::abs(pathPoints[i].y - uniquePoints.back().y) > 0.001f) {
+            uniquePoints.push_back(pathPoints[i]);
+        }
+    }
+    
+    // 如果是填充路径,使用 libtess2 三角剖分
+    if (payload.filled && payload.fillColor[3] > 0.0f && uniquePoints.size() >= 3) {
+        glBindVertexArray(vao_);
+        glUseProgram(simpleShaderProgram_);
+        
+        // 启用混合
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
+        // 设置视口
+        int viewportLoc = glGetUniformLocation(simpleShaderProgram_, "uViewport");
+        glUniform2f(viewportLoc, 
+            static_cast<float>(viewportSize_.width), 
+            static_cast<float>(viewportSize_.height));
+        
+        // 设置颜色
+        int colorLoc = glGetUniformLocation(simpleShaderProgram_, "uColor");
+        glUniform4f(colorLoc, 
+            payload.fillColor[0], 
+            payload.fillColor[1], 
+            payload.fillColor[2], 
+            payload.fillColor[3]);
+        
+        // 设置不透明度
+        float effectiveOpacity = layerStack_.empty() ? 1.0f : layerStack_.back().opacity;
+        int opacityLoc = glGetUniformLocation(simpleShaderProgram_, "uOpacity");
+        glUniform1f(opacityLoc, effectiveOpacity);
+        
+        // 使用 libtess2 进行三角剖分
+        TESStesselator* tess = tessNewTess(nullptr);
+        if (!tess) {
+            std::cerr << "Failed to create tesselator for path" << std::endl;
+            glBindVertexArray(0);
+            return;
+        }
+        
+        // 准备顶点数据
+        std::vector<TESSreal> coords;
+        coords.reserve(uniquePoints.size() * 2);
+        for (const auto& pt : uniquePoints) {
+            coords.push_back(static_cast<TESSreal>(pt.x));
+            coords.push_back(static_cast<TESSreal>(pt.y));
+        }
+        
+        // 添加轮廓到 tesselator
+        tessAddContour(tess, 2, coords.data(), sizeof(TESSreal) * 2, static_cast<int>(uniquePoints.size()));
+        
+        // 执行三角剖分
+        int result = tessTesselate(tess, TESS_WINDING_NONZERO, TESS_POLYGONS, 3, 2, nullptr);
+        
+        std::vector<float> vertices;
+        if (result) {
+            const TESSreal* tessVerts = tessGetVertices(tess);
+            const TESSindex* tessElements = tessGetElements(tess);
+            int numElements = tessGetElementCount(tess);
+            
+            vertices.reserve(numElements * 3 * 4);
+            
+            for (int i = 0; i < numElements; ++i) {
+                const TESSindex* tri = &tessElements[i * 3];
+                
+                for (int j = 0; j < 3; ++j) {
+                    TESSindex idx = tri[j];
+                    if (idx == TESS_UNDEF) continue;
+                    
+                    float x = static_cast<float>(tessVerts[idx * 2]);
+                    float y = static_cast<float>(tessVerts[idx * 2 + 1]);
+                    
+                    vertices.push_back(x);
+                    vertices.push_back(y);
+                    vertices.push_back(0.0f);
+                    vertices.push_back(0.0f);
+                }
+            }
+        }
+        
+        tessDeleteTess(tess);
+        
+        // 绘制填充
+        if (!vertices.empty()) {
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+            size_t bufferSize = vertices.size() * sizeof(float);
+            glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices.data(), GL_DYNAMIC_DRAW);
+            
+            int triangleCount = static_cast<int>(vertices.size() / 12);
+            glDrawArrays(GL_TRIANGLES, 0, triangleCount * 3);
+        }
+        
+        glBindVertexArray(0);
+    }
+    
+    // TODO: 实现路径描边
 }
 
 void GlRenderer::PushLayer(const LayerPayload& payload) {
@@ -1198,6 +1540,42 @@ void GlRenderer::InitializeShaders() {
     }
 
     glDeleteShader(rectangleFragmentShader);
+
+    // === 编译简单片段着色器（用于多边形）===
+    unsigned int simpleFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(simpleFragmentShader, 1, &simpleFragmentShaderSource, nullptr);
+    glCompileShader(simpleFragmentShader);
+
+    glGetShaderiv(simpleFragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(simpleFragmentShader, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("Simple fragment shader compilation failed: ") + infoLog);
+    }
+
+    // 链接简单着色器程序（重新使用顶点着色器）
+    unsigned int simpleVertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(simpleVertexShader, 1, &vertexShaderSource, nullptr);
+    glCompileShader(simpleVertexShader);
+
+    glGetShaderiv(simpleVertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(simpleVertexShader, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("Simple vertex shader compilation failed: ") + infoLog);
+    }
+
+    simpleShaderProgram_ = glCreateProgram();
+    glAttachShader(simpleShaderProgram_, simpleVertexShader);
+    glAttachShader(simpleShaderProgram_, simpleFragmentShader);
+    glLinkProgram(simpleShaderProgram_);
+
+    glGetProgramiv(simpleShaderProgram_, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(simpleShaderProgram_, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("Simple shader program linking failed: ") + infoLog);
+    }
+
+    glDeleteShader(simpleFragmentShader);
+    glDeleteShader(simpleVertexShader);
     glDeleteShader(vertexShader);
 
     // === 初始化文本着色器 ===
@@ -1304,6 +1682,11 @@ void GlRenderer::CleanupResources() {
     if (textShaderProgram_ != 0) {
         glDeleteProgram(textShaderProgram_);
         textShaderProgram_ = 0;
+    }
+
+    if (simpleShaderProgram_ != 0) {
+        glDeleteProgram(simpleShaderProgram_);
+        simpleShaderProgram_ = 0;
     }
 
     if (rectangleShaderProgram_ != 0) {

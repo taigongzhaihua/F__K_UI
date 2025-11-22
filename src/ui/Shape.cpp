@@ -477,6 +477,7 @@ Rect Polygon::GetDefiningGeometry() const {
         return Rect(0, 0, 0, 0);
     }
     
+    // 找到所有点的包围盒
     float minX = points_[0].x;
     float minY = points_[0].y;
     float maxX = points_[0].x;
@@ -489,11 +490,39 @@ Rect Polygon::GetDefiningGeometry() const {
         maxY = std::max(maxY, points_[i].y);
     }
     
-    return Rect(minX, minY, maxX - minX, maxY - minY);
+    // 扩展半个线宽（线宽会向外扩展）
+    float halfThickness = GetStrokeThickness() / 2.0f;
+    
+    float width = (maxX - minX) + halfThickness * 2.0f;
+    float height = (maxY - minY) + halfThickness * 2.0f;
+    
+    // 返回从 (0, 0) 开始的矩形
+    return Rect(0.0f, 0.0f, width, height);
 }
 
 void Polygon::OnRender(render::RenderContext& context) {
     if (points_.size() < 3) return;  // 需要至少3个点才能构成多边形
+    
+    // 计算偏移量（使多边形相对于控件的 (0, 0) 位置）
+    float minX = points_[0].x;
+    float minY = points_[0].y;
+    
+    for (size_t i = 1; i < points_.size(); ++i) {
+        minX = std::min(minX, points_[i].x);
+        minY = std::min(minY, points_[i].y);
+    }
+    
+    // 线宽会向外扩展半个厚度
+    float halfThickness = GetStrokeThickness() / 2.0f;
+    float offsetX = minX - halfThickness;
+    float offsetY = minY - halfThickness;
+    
+    // 调整所有点到控件坐标系
+    std::vector<Point> adjustedPoints;
+    adjustedPoints.reserve(points_.size());
+    for (const auto& pt : points_) {
+        adjustedPoints.emplace_back(pt.x - offsetX, pt.y - offsetY);
+    }
     
     // 从 Brush 获取颜色（转换为 RenderContext 格式）
     auto brushToColor = [](Brush* brush) -> std::array<float, 4> {
@@ -510,7 +539,7 @@ void Polygon::OnRender(render::RenderContext& context) {
     float strokeThickness = GetStrokeThickness();
     
     // 使用 RenderContext 绘制多边形
-    context.DrawPolygon(points_, fillColor, strokeColor, strokeThickness);
+    context.DrawPolygon(adjustedPoints, fillColor, strokeColor, strokeThickness);
 }
 
 // ========== Path 路径构建API ==========

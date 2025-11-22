@@ -73,6 +73,11 @@ private:
     void DrawPolygon(const struct PolygonPayload& payload);
 
     /**
+     * @brief 绘制路径
+     */
+    void DrawPath(const struct PathPayload& payload);
+
+    /**
      * @brief 推入透明度图层
      */
     void PushLayer(const struct LayerPayload& payload);
@@ -100,6 +105,7 @@ private:
     // OpenGL 资源
     unsigned int borderShaderProgram_{0};     // Border 着色器（圆形圆角）
     unsigned int rectangleShaderProgram_{0};  // Rectangle 着色器（椭圆圆角）
+    unsigned int simpleShaderProgram_{0};     // 简单着色器（无SDF，用于多边形）
     unsigned int textShaderProgram_{0};       // 文本渲染着色器
     unsigned int vao_{0};
     unsigned int vbo_{0};
