@@ -395,7 +395,10 @@ void Window::Show() {
         // 设置窗口尺寸变化回调
         glfwSetFramebufferSizeCallback(window, [](GLFWwindow* win, int width, int height) {
             auto* self = static_cast<Window*>(glfwGetWindowUserPointer(win));
-            if (!self) return;
+            if (!self || self->isUpdatingSize_) return;
+            
+            // 设置标志防止循环更新
+            self->isUpdatingSize_ = true;
             
             // 更新窗口尺寸
             self->SetValue(WidthProperty(), static_cast<float>(width));
@@ -404,6 +407,9 @@ void Window::Show() {
             
             // 立即重新渲染
             self->RenderFrame();
+            
+            // 重置标志
+            self->isUpdatingSize_ = false;
         });
         
         // 注意：InputManager 和 FocusManager 的根节点已在构造函数中设置
@@ -739,7 +745,7 @@ void Window::OnWidthChanged(
     const std::any& newValue
 ) {
     auto* window = dynamic_cast<Window*>(&d);
-    if (!window) {
+    if (!window || window->isUpdatingSize_) {
         return;
     }
     
@@ -751,7 +757,9 @@ void Window::OnWidthChanged(
 #ifdef FK_HAS_GLFW
         if (window->nativeHandle_) {
             GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
+            window->isUpdatingSize_ = true;
             glfwSetWindowSize(glfwWindow, static_cast<int>(width), static_cast<int>(height));
+            window->isUpdatingSize_ = false;
         }
 #else
         if (window->nativeHandle_) {
@@ -771,7 +779,7 @@ void Window::OnHeightChanged(
     const std::any& newValue
 ) {
     auto* window = dynamic_cast<Window*>(&d);
-    if (!window) {
+    if (!window || window->isUpdatingSize_) {
         return;
     }
     
@@ -783,7 +791,9 @@ void Window::OnHeightChanged(
 #ifdef FK_HAS_GLFW
         if (window->nativeHandle_) {
             GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
+            window->isUpdatingSize_ = true;
             glfwSetWindowSize(glfwWindow, static_cast<int>(width), static_cast<int>(height));
+            window->isUpdatingSize_ = false;
         }
 #else
         if (window->nativeHandle_) {

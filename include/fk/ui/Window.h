@@ -263,6 +263,9 @@ private:
     int lastViewportWidth_{0};
     int lastViewportHeight_{0};
     
+    // 防止循环更新标志
+    bool isUpdatingSize_{false};
+    
     // 属性变更回调（用于同步到原生窗口）
     static void OnTitleChanged(
         binding::DependencyObject& d,
