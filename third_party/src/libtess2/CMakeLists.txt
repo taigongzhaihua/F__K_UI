@@ -17,9 +17,10 @@ set(LIBTESS2_SOURCES
 # 创建静态库
 add_library(libtess2 STATIC ${LIBTESS2_SOURCES})
 
-# 设置头文件目录
+# 设置头文件目录（使用生成器表达式支持导出）
 target_include_directories(libtess2 PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/Include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Include>
+    $<INSTALL_INTERFACE:include>
 )
 
 # 设置编译选项

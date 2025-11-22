@@ -254,40 +254,44 @@ if(OPENGL_FOUND)
 endif()
 
 # ===== 示例可执行文件 =====
-add_executable(example_app examples/main.cpp)
+
+# Basic Examples
+add_executable(example_app examples/basic/main.cpp)
 target_link_libraries(example_app PRIVATE fk)
 
-add_executable(shape_demo examples/shape_demo.cpp)
+# Shape Examples
+add_executable(shape_demo examples/shapes/shape_demo.cpp)
 target_link_libraries(shape_demo PRIVATE fk)
 
-add_executable(shape_test examples/shape_test.cpp)
+add_executable(shape_test examples/shapes/shape_test.cpp)
 target_link_libraries(shape_test PRIVATE fk)
 
-add_executable(star_test examples/star_test.cpp)
+add_executable(star_test examples/shapes/star_test.cpp)
 target_link_libraries(star_test PRIVATE fk)
 
-add_executable(path_test examples/path_test.cpp)
+# Path Examples
+add_executable(path_test examples/path/path_test.cpp)
 target_link_libraries(path_test PRIVATE fk)
 
-add_executable(arc_demo examples/arc_demo.cpp)
-target_link_libraries(arc_demo PRIVATE fk)
-
-add_executable(simple_arc_test examples/simple_arc_test.cpp)
-target_link_libraries(simple_arc_test PRIVATE fk)
-
-add_executable(sweep_test examples/sweep_test.cpp)
-target_link_libraries(sweep_test PRIVATE fk)
-
-add_executable(path_line_test examples/path_line_test.cpp)
+add_executable(path_line_test examples/path/path_line_test.cpp)
 target_link_libraries(path_line_test PRIVATE fk)
 
-add_executable(multicolor_path_test examples/multicolor_path_test.cpp)
-target_link_libraries(multicolor_path_test PRIVATE fk)
+add_executable(arc_demo examples/path/arc_demo.cpp)
+target_link_libraries(arc_demo PRIVATE fk)
 
-add_executable(multicolor_simple_test examples/multicolor_simple_test.cpp)
+add_executable(simple_arc_test examples/path/simple_arc_test.cpp)
+target_link_libraries(simple_arc_test PRIVATE fk)
+
+add_executable(sweep_test examples/path/sweep_test.cpp)
+target_link_libraries(sweep_test PRIVATE fk)
+
+add_executable(multicolor_simple_test examples/path/multicolor_simple_test.cpp)
 target_link_libraries(multicolor_simple_test PRIVATE fk)
 
-add_executable(subpath_fill_test examples/subpath_fill_test.cpp)
+add_executable(multicolor_path_test examples/path/multicolor_path_test.cpp)
+target_link_libraries(multicolor_path_test PRIVATE fk)
+
+add_executable(subpath_fill_test examples/path/subpath_fill_test.cpp)
 target_link_libraries(subpath_fill_test PRIVATE fk)
 
 # ===== F__K_UI 库构建完成 =====
@@ -340,6 +344,18 @@ install(DIRECTORY ${THIRD_PARTY_DIR}/include/
         PATTERN "*.h"
         PATTERN "*.hpp"
     PATTERN "glm/detail" EXCLUDE
+)
+
+# 安装 libtess2 头文件
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/third_party/src/libtess2/Include/
+    DESTINATION ${FK_UI_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
+)
+
+# 将 libtess2 添加到导出集（作为 fk 的依赖）
+install(TARGETS libtess2
+    EXPORT FK_UI_Targets
+    ARCHIVE DESTINATION ${FK_UI_INSTALL_LIBDIR}
 )
 
 # 生成并安装 CMake 配置文件
