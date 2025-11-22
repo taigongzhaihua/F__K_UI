@@ -106,9 +106,12 @@ private:
     unsigned int borderShaderProgram_{0};     // Border 着色器（圆形圆角）
     unsigned int rectangleShaderProgram_{0};  // Rectangle 着色器（椭圆圆角）
     unsigned int simpleShaderProgram_{0};     // 简单着色器（无SDF，用于多边形）
+    unsigned int pathAAShaderProgram_{0};     // Path抗锯齿着色器（边缘羽化）
     unsigned int textShaderProgram_{0};       // 文本渲染着色器
     unsigned int vao_{0};
     unsigned int vbo_{0};
+    unsigned int pathAAVAO_{0};  // Path抗锯齿 VAO
+    unsigned int pathAAVBO_{0};  // Path抗锯齿 VBO
     unsigned int textVAO_{0};  // 文本渲染 VAO
     unsigned int textVBO_{0};  // 文本渲染 VBO
     

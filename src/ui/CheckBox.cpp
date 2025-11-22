@@ -70,9 +70,42 @@ namespace fk::ui
                          {
                 // StackPanel (水平布局)
                 //   ├─ CheckBoxBorder (20x20 方框，灰色边框，白色背景)
-                //   │    └─ CheckMark (12x12 外层容器，初始隐藏)
-                //   │         └─ CheckMarkContent (16x16 蓝色方块，实际内容)
+                //   │    ├─ CheckMark (对勾符号，Path绘制，初始隐藏)
+                //   │    └─ IndeterminateMark (方块符号，Border绘制，初始隐藏)
                 //   └─ ContentPresenter (显示文本标签)
+                
+                // 创建对勾Path - 用于选中状态
+                // CheckBox是20x20，对勾路径：左下(2, 8) -> 中间底部(6, 11) -> 右上(14, 4)
+                auto* checkPath = (new Path())
+                    ->Width(20.0f)
+                    ->Height(20.0f)
+                    ->SetVAlign(VerticalAlignment::Center)
+                    ->SetHAlign(HorizontalAlignment::Center)
+                    ->Stroke(new SolidColorBrush(Color::FromRGB(0, 120, 215, 255)))
+                    ->StrokeThickness(3.0f)
+                    ->MoveTo(2.0f, 8.0f)
+                    ->LineTo(6.0f, 12.0f)
+                    ->LineTo(14.0f, 4.0f)
+                    ->Name("CheckMark")
+                    ->Opacity(0.0);
+                
+                // 创建方块Border - 用于不确定状态
+                auto* indeterminateMark = (new Border())
+                    ->Name("IndeterminateMark")
+                    ->Width(10.0f)
+                    ->Height(10.0f)
+                    ->SetVAlign(VerticalAlignment::Center)
+                    ->SetHAlign(HorizontalAlignment::Center)
+                    ->Background(new SolidColorBrush(Color::FromRGB(0, 120, 215, 255)))
+                    ->CornerRadius(1.0f)
+                    ->Opacity(0.0);  // 初始隐藏
+                
+                // 创建容器Grid来放置对勾和方块（它们都在同一位置）
+                auto* checkContainer = (new Grid())
+                    ->Children({
+                        checkPath,
+                        indeterminateMark
+                    });
                 
                 return (new StackPanel())
                     ->SetOrient(Orientation::Horizontal)
@@ -87,22 +120,7 @@ namespace fk::ui
                             ->BorderBrush(new SolidColorBrush(Color::FromRGB(120, 120, 120, 255)))
                             ->Background(new SolidColorBrush(Color::FromRGB(255, 255, 255, 255)))
                             ->Margin(0.0f, 0.0f, 8.0f, 0.0f)
-                            ->Child(
-                                (new Border())
-                                    ->Name("CheckMark")
-                                    ->Width(12.0f)
-                                    ->Height(12.0f)
-                                    ->SetVAlign(VerticalAlignment::Center)
-                                    ->SetHAlign(HorizontalAlignment::Center)
-                                    ->Opacity(0.0)  // 初始隐藏
-                                    ->Child(
-                                        (new Border())
-                                            ->Width(12.0f)
-                                            ->Height(12.0f)
-                                            ->Background(new SolidColorBrush(Color::FromRGB(0, 120, 215, 255)))
-                                            ->CornerRadius(2.0f)
-                                    )
-                            ),
+                            ->Child(checkContainer),
                         (new ContentPresenter<>())
                             ->SetVAlign(VerticalAlignment::Center)
                     }); })
@@ -156,27 +174,39 @@ namespace fk::ui
             // CheckStates 状态组（选中状态）
             // 设计原则：只控制勾选标记，不与 CommonStates 冲突
             // CommonStates 负责鼠标交互效果（背景和边框颜色）
-            // CheckStates 负责勾选标记的显示/隐藏
+            // CheckStates 负责对勾和方块的显示/隐藏
             ->AddVisualStateGroup(
                 animation::VisualStateBuilder::CreateGroup("CheckStates")
                     ->State("Unchecked")
-                    // 未选中 - 隐藏勾选标记
+                    // 未选中 - 隐藏对勾和方块
                     ->DoubleAnimation("CheckMark", "Opacity")
+                    ->To(0.0)
+                    ->Duration(150)
+                    ->EndAnimation()
+                    ->DoubleAnimation("IndeterminateMark", "Opacity")
                     ->To(0.0)
                     ->Duration(150)
                     ->EndAnimation()
                     ->EndState()
                     ->State("Checked")
-                    // 选中 - 显示勾选标记
+                    // 选中 - 显示对勾，隐藏方块
                     ->DoubleAnimation("CheckMark", "Opacity")
                     ->To(1.0)
                     ->Duration(150)
                     ->EndAnimation()
+                    ->DoubleAnimation("IndeterminateMark", "Opacity")
+                    ->To(0.0)
+                    ->Duration(150)
+                    ->EndAnimation()
                     ->EndState()
                     ->State("Indeterminate")
-                    // 不确定 - 半透明勾选标记
+                    // 不确定 - 隐藏对勾，显示方块
                     ->DoubleAnimation("CheckMark", "Opacity")
-                    ->To(0.5)
+                    ->To(0.0)
+                    ->Duration(150)
+                    ->EndAnimation()
+                    ->DoubleAnimation("IndeterminateMark", "Opacity")
+                    ->To(1.0)
                     ->Duration(150)
                     ->EndAnimation()
                     ->EndState()

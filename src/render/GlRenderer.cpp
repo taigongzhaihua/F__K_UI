@@ -291,6 +291,59 @@ void main() {
 }
 )";
 
+// 带抗锯齿的Path线条顶点着色器
+const char* pathAAVertexShaderSource = R"(
+#version 330 core
+layout (location = 0) in vec2 aPos;
+layout (location = 1) in vec2 aTexCoord;
+layout (location = 2) in float aEdgeDistance; // 到边缘的距离
+
+out vec2 vTexCoord;
+out vec2 vFragPos;
+out float vEdgeDistance;
+
+uniform vec2 uViewport;
+
+void main() {
+    vec2 normalizedPos = vec2(
+        (aPos.x / uViewport.x) * 2.0 - 1.0,
+        1.0 - (aPos.y / uViewport.y) * 2.0
+    );
+    gl_Position = vec4(normalizedPos, 0.0, 1.0);
+    vTexCoord = aTexCoord;
+    vFragPos = aPos;
+    vEdgeDistance = aEdgeDistance;
+}
+)";
+
+// 带抗锯齿的Path线条片段着色器
+const char* pathAAFragmentShaderSource = R"(
+#version 330 core
+in vec2 vTexCoord;
+in vec2 vFragPos;
+in float vEdgeDistance;
+
+out vec4 FragColor;
+
+uniform vec4 uColor;
+uniform float uOpacity;
+uniform float uAAWidth; // 抗锯齿边缘宽度
+
+void main() {
+    // 根据到边缘的距离计算alpha值
+    float alpha = 1.0;
+    if (vEdgeDistance > 0.0) {
+        alpha = smoothstep(uAAWidth, 0.0, vEdgeDistance);
+    }
+    
+    vec4 color = uColor * uOpacity;
+    color.a *= alpha;
+    
+    if (color.a < 0.001) discard;
+    FragColor = color;
+}
+)";
+
 // 文本渲染的顶点着色器
 const char* textVertexShaderSource = R"(
 #version 330 core
@@ -354,6 +407,12 @@ void GlRenderer::Initialize(const RendererInitParams& params) {
     
     // 启用多重采样抗锯齿 (MSAA)
     glEnable(GL_MULTISAMPLE);
+    
+    // 启用线条和多边形平滑抗锯齿
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_POLYGON_SMOOTH);
+    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
     // 初始化着色器和缓冲区
     InitializeShaders();
@@ -1608,6 +1667,33 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
         std::array<float, 4> currentBatchColor = payload.strokeColor;
         bool batchStarted = false;
         
+        // 添加圆形端点的辅助函数
+        auto addRoundCap = [&](ui::Point center, float radius) {
+            const int segments = 16; // 增加圆形分段数以获得更平滑的效果
+            for (int j = 0; j < segments; ++j) {
+                float angle1 = (j * 2.0f * 3.14159265f) / segments;
+                float angle2 = ((j + 1) * 2.0f * 3.14159265f) / segments;
+                
+                // 中心点
+                strokeVertices.push_back(center.x);
+                strokeVertices.push_back(center.y);
+                strokeVertices.push_back(0.0f);
+                strokeVertices.push_back(0.0f);
+                
+                // 第一个边缘点
+                strokeVertices.push_back(center.x + std::cos(angle1) * radius);
+                strokeVertices.push_back(center.y + std::sin(angle1) * radius);
+                strokeVertices.push_back(0.0f);
+                strokeVertices.push_back(0.0f);
+                
+                // 第二个边缘点
+                strokeVertices.push_back(center.x + std::cos(angle2) * radius);
+                strokeVertices.push_back(center.y + std::sin(angle2) * radius);
+                strokeVertices.push_back(0.0f);
+                strokeVertices.push_back(0.0f);
+            }
+        };
+        
         auto flushBatch = [&]() {
             if (!strokeVertices.empty()) {
                 glUniform4f(colorLoc, currentBatchColor[0], currentBatchColor[1], 
@@ -1713,6 +1799,17 @@ void GlRenderer::DrawPath(const PathPayload& payload) {
             strokeVertices.push_back(y2_out);
             strokeVertices.push_back(0.0f);
             strokeVertices.push_back(0.0f);
+            
+            // 在连接点添加圆形连接（除了路径闭合的情况）
+            if (!isClosed || i < segmentCount - 1) {
+                addRoundCap(p2, halfThickness);
+            }
+        }
+        
+        // 如果路径不闭合，在起点和终点添加圆形端点
+        if (!isClosed && !uniquePoints.empty()) {
+            addRoundCap(uniquePoints.front(), halfThickness);
+            addRoundCap(uniquePoints.back(), halfThickness);
         }
         
         // 绘制最后一批
@@ -1840,6 +1937,41 @@ void GlRenderer::InitializeShaders() {
 
     glDeleteShader(simpleFragmentShader);
     glDeleteShader(simpleVertexShader);
+
+    // === 编译Path抗锯齿着色器 ===
+    unsigned int pathAAVertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(pathAAVertexShader, 1, &pathAAVertexShaderSource, nullptr);
+    glCompileShader(pathAAVertexShader);
+
+    glGetShaderiv(pathAAVertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(pathAAVertexShader, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("PathAA vertex shader compilation failed: ") + infoLog);
+    }
+
+    unsigned int pathAAFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(pathAAFragmentShader, 1, &pathAAFragmentShaderSource, nullptr);
+    glCompileShader(pathAAFragmentShader);
+
+    glGetShaderiv(pathAAFragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(pathAAFragmentShader, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("PathAA fragment shader compilation failed: ") + infoLog);
+    }
+
+    pathAAShaderProgram_ = glCreateProgram();
+    glAttachShader(pathAAShaderProgram_, pathAAVertexShader);
+    glAttachShader(pathAAShaderProgram_, pathAAFragmentShader);
+    glLinkProgram(pathAAShaderProgram_);
+
+    glGetProgramiv(pathAAShaderProgram_, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(pathAAShaderProgram_, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string("PathAA shader program linking failed: ") + infoLog);
+    }
+
+    glDeleteShader(pathAAVertexShader);
+    glDeleteShader(pathAAFragmentShader);
     glDeleteShader(vertexShader);
 
     // === 初始化文本着色器 ===
@@ -1904,6 +2036,31 @@ void GlRenderer::InitializeBuffers() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    // === 初始化Path抗锯齿渲染缓冲区 ===
+    glGenVertexArrays(1, &pathAAVAO_);
+    glGenBuffers(1, &pathAAVBO_);
+    
+    glBindVertexArray(pathAAVAO_);
+    glBindBuffer(GL_ARRAY_BUFFER, pathAAVBO_);
+    
+    // 每个顶点：(x, y, u, v, edgeDistance) = 5 floats
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 1000 * 5, nullptr, GL_DYNAMIC_DRAW);
+    
+    // location = 0: 位置 (x, y)
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    
+    // location = 1: 纹理坐标 (u, v)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    
+    // location = 2: 边缘距离
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(4 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 

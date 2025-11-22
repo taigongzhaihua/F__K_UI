@@ -137,7 +137,7 @@ const binding::DependencyProperty& FrameworkElement<Derived>::VerticalAlignmentP
 #include "fk/ui/ToggleButton.h"
 
 // 显式实例化 FrameworkElement 模板（必须在命名空间之外）
-// 注意：Rectangle、Ellipse、Line 等继承自 Shape，不直接继承 FrameworkElement
+// 注意：Rectangle、Ellipse、Line、Path、Polygon 等继承自 Shape<T>，Shape<T> 继承自 FrameworkElement<T>
 template class fk::ui::FrameworkElement<fk::ui::Border>;
 template class fk::ui::FrameworkElement<fk::ui::TextBlock>;
 template class fk::ui::FrameworkElement<fk::ui::Image>;
@@ -145,7 +145,12 @@ template class fk::ui::FrameworkElement<fk::ui::Button>;
 template class fk::ui::FrameworkElement<fk::ui::Window>;
 template class fk::ui::FrameworkElement<fk::ui::StackPanel>;
 template class fk::ui::FrameworkElement<fk::ui::Grid>;
-template class fk::ui::FrameworkElement<fk::ui::Shape>;
+// Shape 现在是模板类，需要实例化具体的 Shape 子类
+template class fk::ui::FrameworkElement<fk::ui::Rectangle>;
+template class fk::ui::FrameworkElement<fk::ui::Ellipse>;
+template class fk::ui::FrameworkElement<fk::ui::Line>;
+template class fk::ui::FrameworkElement<fk::ui::Polygon>;
+template class fk::ui::FrameworkElement<fk::ui::Path>;
 template class fk::ui::FrameworkElement<fk::ui::ContentPresenter<>>;
 template class fk::ui::FrameworkElement<fk::ui::ScrollBar>;
 template class fk::ui::FrameworkElement<fk::ui::ScrollViewer>;

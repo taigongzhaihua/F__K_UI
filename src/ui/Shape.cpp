@@ -16,31 +16,34 @@ namespace fk::ui {
 
 // ========== Shape 依赖属性 ==========
 
-const binding::DependencyProperty& Shape::FillProperty() {
+template<typename Derived>
+const binding::DependencyProperty& Shape<Derived>::FillProperty() {
     static auto& property = binding::DependencyProperty::Register(
         "Fill",
         typeid(Brush*),
-        typeid(Shape),
+        typeid(Derived),
         {static_cast<Brush*>(nullptr)}
     );
     return property;
 }
 
-const binding::DependencyProperty& Shape::StrokeProperty() {
+template<typename Derived>
+const binding::DependencyProperty& Shape<Derived>::StrokeProperty() {
     static auto& property = binding::DependencyProperty::Register(
         "Stroke",
         typeid(Brush*),
-        typeid(Shape),
+        typeid(Derived),
         {static_cast<Brush*>(nullptr)}
     );
     return property;
 }
 
-const binding::DependencyProperty& Shape::StrokeThicknessProperty() {
+template<typename Derived>
+const binding::DependencyProperty& Shape<Derived>::StrokeThicknessProperty() {
     static auto& property = binding::DependencyProperty::Register(
         "StrokeThickness",
         typeid(float),
-        typeid(Shape),
+        typeid(Derived),
         {1.0f}
     );
     return property;
@@ -48,63 +51,43 @@ const binding::DependencyProperty& Shape::StrokeThicknessProperty() {
 
 // ========== Shape 属性访问 ==========
 
-Brush* Shape::GetFill() const {
-    return GetValue<Brush*>(FillProperty());
+template<typename Derived>
+Brush* Shape<Derived>::GetFill() const {
+    return this->template GetValue<Brush*>(FillProperty());
 }
 
-void Shape::SetFill(Brush* value) {
-    SetValue(FillProperty(), value);
+template<typename Derived>
+void Shape<Derived>::SetFill(Brush* value) {
+    this->SetValue(FillProperty(), value);
 }
 
-Shape* Shape::Fill(Brush* brush) {
-    SetFill(brush);
-    return this;
+template<typename Derived>
+Brush* Shape<Derived>::GetStroke() const {
+    return this->template GetValue<Brush*>(StrokeProperty());
 }
 
-Brush* Shape::Fill() const {
-    return GetFill();
+template<typename Derived>
+void Shape<Derived>::SetStroke(Brush* value) {
+    this->SetValue(StrokeProperty(), value);
 }
 
-Brush* Shape::GetStroke() const {
-    return GetValue<Brush*>(StrokeProperty());
+template<typename Derived>
+float Shape<Derived>::GetStrokeThickness() const {
+    return this->template GetValue<float>(StrokeThicknessProperty());
 }
 
-void Shape::SetStroke(Brush* value) {
-    SetValue(StrokeProperty(), value);
-}
-
-Shape* Shape::Stroke(Brush* brush) {
-    SetStroke(brush);
-    return this;
-}
-
-Brush* Shape::Stroke() const {
-    return GetStroke();
-}
-
-float Shape::GetStrokeThickness() const {
-    return GetValue<float>(StrokeThicknessProperty());
-}
-
-void Shape::SetStrokeThickness(float value) {
-    SetValue(StrokeThicknessProperty(), value);
-}
-
-Shape* Shape::StrokeThickness(float thickness) {
-    SetStrokeThickness(thickness);
-    return this;
-}
-
-float Shape::StrokeThickness() const {
-    return GetStrokeThickness();
+template<typename Derived>
+void Shape<Derived>::SetStrokeThickness(float value) {
+    this->SetValue(StrokeThicknessProperty(), value);
 }
 
 // ========== Shape 布局 ==========
 
-Size Shape::MeasureOverride(const Size& availableSize) {
+template<typename Derived>
+Size Shape<Derived>::MeasureOverride(const Size& availableSize) {
     // Shape 使用显式设置的 Width/Height，如果没有设置则使用几何边界
-    float width = GetWidth();
-    float height = GetHeight();
+    float width = this->GetWidth();
+    float height = this->GetHeight();
     
     // 如果没有显式设置 Width/Height (默认值为 -1.0)，使用几何边界
     if (width <= 0.0f || height <= 0.0f) {
@@ -117,11 +100,13 @@ Size Shape::MeasureOverride(const Size& availableSize) {
     return Size(width, height);
 }
 
-Size Shape::ArrangeOverride(const Size& finalSize) {
+template<typename Derived>
+Size Shape<Derived>::ArrangeOverride(const Size& finalSize) {
     return finalSize;
 }
 
-void Shape::OnRender(render::RenderContext& context) {
+template<typename Derived>
+void Shape<Derived>::OnRender(render::RenderContext& context) {
     // 派生类实现具体渲染
 }
 
@@ -852,6 +837,12 @@ void Path::OnRender(render::RenderContext& context) {
 }
 
 // ========== 模板显式实例化 ==========
-// Shape 的实例化在 FrameworkElement.cpp 中统一处理
+
+// 显式实例化 Shape 模板
+template class Shape<Rectangle>;
+template class Shape<Ellipse>;
+template class Shape<Line>;
+template class Shape<Polygon>;
+template class Shape<Path>;
 
 } // namespace fk::ui
