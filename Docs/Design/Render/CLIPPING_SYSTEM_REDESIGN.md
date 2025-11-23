@@ -860,6 +860,531 @@ private:
 };
 ```
 
+#### 几何体操作算法
+
+裁剪几何体之间的交集、并集等布尔运算是裁剪系统的核心。以下详细说明不同几何体类型之间的操作算法。
+
+##### 操作类型定义
+
+```cpp
+/**
+ * @brief 几何体布尔操作类型
+ */
+enum class GeometryOperation {
+    Intersect,    // 交集（裁剪系统主要使用）
+    Union,        // 并集（用于复合裁剪区域）
+    Subtract,     // 差集（挖空效果）
+    Xor           // 异或（用于特殊效果）
+};
+
+/**
+ * @brief 几何体操作接口扩展
+ */
+class ClipGeometry {
+public:
+    // 交集（裁剪系统核心操作）
+    virtual std::unique_ptr<ClipGeometry> Intersect(const ClipGeometry* other) const = 0;
+    
+    // 并集（可选，用于复合区域）
+    virtual std::unique_ptr<ClipGeometry> Union(const ClipGeometry* other) const = 0;
+    
+    // 差集（可选，用于挖空）
+    virtual std::unique_ptr<ClipGeometry> Subtract(const ClipGeometry* other) const = 0;
+    
+    // 通用布尔操作
+    virtual std::unique_ptr<ClipGeometry> BooleanOp(
+        const ClipGeometry* other,
+        GeometryOperation op
+    ) const = 0;
+};
+```
+
+##### 交集算法实现策略
+
+**1. 矩形 ∩ 矩形**（最简单，最快）
+
+```cpp
+std::unique_ptr<ClipGeometry> RectangleClipGeometry::Intersect(
+    const ClipGeometry* other) const 
+{
+    if (other->GetType() == ClipGeometryType::Rectangle) {
+        auto* otherRect = static_cast<const RectangleClipGeometry*>(other);
+        
+        // 直接计算矩形交集
+        float x1 = std::max(rect_.x, otherRect->rect_.x);
+        float y1 = std::max(rect_.y, otherRect->rect_.y);
+        float x2 = std::min(rect_.x + rect_.width, 
+                           otherRect->rect_.x + otherRect->rect_.width);
+        float y2 = std::min(rect_.y + rect_.height,
+                           otherRect->rect_.y + otherRect->rect_.height);
+        
+        if (x2 <= x1 || y2 <= y1) {
+            // 无交集，返回空矩形
+            return std::make_unique<RectangleClipGeometry>(
+                ui::Rect{0, 0, 0, 0}
+            );
+        }
+        
+        return std::make_unique<RectangleClipGeometry>(
+            ui::Rect{x1, y1, x2 - x1, y2 - y1}
+        );
+    }
+    
+    // 矩形与其他类型：降级到多边形操作
+    return IntersectAsPolygon(other);
+}
+```
+
+**2. 圆角矩形 ∩ 矩形**（保持圆角矩形）
+
+```cpp
+std::unique_ptr<ClipGeometry> RoundedRectangleClipGeometry::Intersect(
+    const ClipGeometry* other) const 
+{
+    if (other->GetType() == ClipGeometryType::Rectangle) {
+        auto* otherRect = static_cast<const RectangleClipGeometry*>(other);
+        
+        // 先计算边界矩形的交集
+        auto bounds = GetBounds();
+        float x1 = std::max(bounds.x, otherRect->GetRect().x);
+        float y1 = std::max(bounds.y, otherRect->GetRect().y);
+        float x2 = std::min(bounds.x + bounds.width,
+                           otherRect->GetRect().x + otherRect->GetRect().width);
+        float y2 = std::min(bounds.y + bounds.height,
+                           otherRect->GetRect().y + otherRect->GetRect().height);
+        
+        if (x2 <= x1 || y2 <= y1) {
+            return std::make_unique<RectangleClipGeometry>(ui::Rect{0, 0, 0, 0});
+        }
+        
+        ui::Rect intersectRect{x1, y1, x2 - x1, y2 - y1};
+        
+        // 调整圆角：如果交集裁剪掉了某些角，需要相应调整圆角半径
+        ui::CornerRadius adjustedRadius = AdjustCornerRadiusForIntersection(
+            intersectRect, rect_, cornerRadius_
+        );
+        
+        return std::make_unique<RoundedRectangleClipGeometry>(
+            intersectRect, adjustedRadius
+        );
+    }
+    
+    if (other->GetType() == ClipGeometryType::RoundedRectangle) {
+        // 两个圆角矩形的交集：降级到路径操作
+        return IntersectAsPath(other);
+    }
+    
+    // 与其他类型：路径操作
+    return IntersectAsPath(other);
+}
+```
+
+**3. 椭圆 ∩ 矩形**（转换为多边形近似）
+
+```cpp
+std::unique_ptr<ClipGeometry> EllipseClipGeometry::Intersect(
+    const ClipGeometry* other) const 
+{
+    if (other->GetType() == ClipGeometryType::Rectangle) {
+        auto* otherRect = static_cast<const RectangleClipGeometry*>(other);
+        
+        // 快速边界检查
+        auto bounds = GetBounds();
+        if (!bounds.Intersects(otherRect->GetRect())) {
+            return std::make_unique<RectangleClipGeometry>(ui::Rect{0, 0, 0, 0});
+        }
+        
+        // 椭圆与矩形的交集：
+        // 方案1：如果矩形完全包含椭圆，返回椭圆本身
+        if (otherRect->GetRect().Contains(bounds)) {
+            return std::make_unique<EllipseClipGeometry>(
+                center_, radiusX_, radiusY_
+            );
+        }
+        
+        // 方案2：转换为多边形近似（64边）
+        auto polygonPoints = EllipseToPolygon(center_, radiusX_, radiusY_, 64);
+        auto ellipsePolygon = std::make_unique<PolygonClipGeometry>(polygonPoints);
+        return ellipsePolygon->Intersect(other);
+    }
+    
+    // 椭圆与其他类型：多边形近似
+    return IntersectAsPolygon(other);
+}
+
+std::vector<ui::Point> EllipseToPolygon(
+    const ui::Point& center, float radiusX, float radiusY, int segments) 
+{
+    std::vector<ui::Point> points;
+    points.reserve(segments);
+    
+    for (int i = 0; i < segments; ++i) {
+        float angle = (2.0f * M_PI * i) / segments;
+        points.push_back(ui::Point{
+            center.x + radiusX * std::cos(angle),
+            center.y + radiusY * std::sin(angle)
+        });
+    }
+    
+    return points;
+}
+```
+
+**4. 多边形 ∩ 多边形**（Sutherland-Hodgman算法）
+
+```cpp
+std::unique_ptr<ClipGeometry> PolygonClipGeometry::Intersect(
+    const ClipGeometry* other) const 
+{
+    if (other->GetType() == ClipGeometryType::Rectangle) {
+        // 使用Sutherland-Hodgman算法裁剪多边形到矩形
+        auto* otherRect = static_cast<const RectangleClipGeometry*>(other);
+        auto clippedPoints = SutherlandHodgmanClip(points_, otherRect->GetRect());
+        
+        if (clippedPoints.empty()) {
+            return std::make_unique<RectangleClipGeometry>(ui::Rect{0, 0, 0, 0});
+        }
+        
+        return std::make_unique<PolygonClipGeometry>(clippedPoints);
+    }
+    
+    if (other->GetType() == ClipGeometryType::Polygon) {
+        // 使用Weiler-Atherton算法或Clipper2库
+        auto* otherPoly = static_cast<const PolygonClipGeometry*>(other);
+        auto result = PolygonIntersection(points_, otherPoly->GetPoints());
+        
+        return std::make_unique<PolygonClipGeometry>(result);
+    }
+    
+    // 与其他类型：先转换为多边形
+    auto otherPolygon = other->ToPolygon();
+    return Intersect(otherPolygon.get());
+}
+
+// Sutherland-Hodgman算法实现（多边形裁剪到矩形）
+std::vector<ui::Point> SutherlandHodgmanClip(
+    const std::vector<ui::Point>& polygon,
+    const ui::Rect& clipRect)
+{
+    auto output = polygon;
+    
+    // 四条边依次裁剪：左、右、上、下
+    struct Edge {
+        float value;
+        bool (*inside)(const ui::Point&, float);
+        ui::Point (*intersect)(const ui::Point&, const ui::Point&, float);
+    };
+    
+    Edge edges[] = {
+        {clipRect.x, [](const ui::Point& p, float v) { return p.x >= v; },
+         [](const ui::Point& p1, const ui::Point& p2, float x) {
+             float t = (x - p1.x) / (p2.x - p1.x);
+             return ui::Point{x, p1.y + t * (p2.y - p1.y)};
+         }},
+        {clipRect.x + clipRect.width, [](const ui::Point& p, float v) { return p.x <= v; },
+         [](const ui::Point& p1, const ui::Point& p2, float x) {
+             float t = (x - p1.x) / (p2.x - p1.x);
+             return ui::Point{x, p1.y + t * (p2.y - p1.y)};
+         }},
+        {clipRect.y, [](const ui::Point& p, float v) { return p.y >= v; },
+         [](const ui::Point& p1, const ui::Point& p2, float y) {
+             float t = (y - p1.y) / (p2.y - p1.y);
+             return ui::Point{p1.x + t * (p2.x - p1.x), y};
+         }},
+        {clipRect.y + clipRect.height, [](const ui::Point& p, float v) { return p.y <= v; },
+         [](const ui::Point& p1, const ui::Point& p2, float y) {
+             float t = (y - p1.y) / (p2.y - p1.y);
+             return ui::Point{p1.x + t * (p2.x - p1.x), y};
+         }}
+    };
+    
+    for (const auto& edge : edges) {
+        if (output.empty()) break;
+        
+        std::vector<ui::Point> input = output;
+        output.clear();
+        
+        for (size_t i = 0; i < input.size(); ++i) {
+            const auto& current = input[i];
+            const auto& next = input[(i + 1) % input.size()];
+            
+            bool currentInside = edge.inside(current, edge.value);
+            bool nextInside = edge.inside(next, edge.value);
+            
+            if (currentInside) {
+                output.push_back(current);
+                if (!nextInside) {
+                    // 离开裁剪区域：添加交点
+                    output.push_back(edge.intersect(current, next, edge.value));
+                }
+            } else if (nextInside) {
+                // 进入裁剪区域：添加交点
+                output.push_back(edge.intersect(current, next, edge.value));
+            }
+        }
+    }
+    
+    return output;
+}
+```
+
+**5. 路径 ∩ 路径**（使用第三方库）
+
+```cpp
+std::unique_ptr<ClipGeometry> PathClipGeometry::Intersect(
+    const ClipGeometry* other) const 
+{
+    // 路径操作复杂，推荐使用成熟的几何库
+    // 选项1：Clipper2（C++，高性能）
+    // 选项2：CGAL（强大但较重）
+    // 选项3：自定义简化实现（仅支持简单情况）
+    
+    if (other->GetType() == ClipGeometryType::Rectangle) {
+        // 路径裁剪到矩形：使用Clipper2
+        return ClipPathToRect(path_, 
+            static_cast<const RectangleClipGeometry*>(other)->GetRect());
+    }
+    
+    // 通用路径操作：使用Clipper2库
+    auto otherPath = other->ToPath();
+    return ClipperIntersect(path_, otherPath->GetPath());
+}
+
+// 使用Clipper2库的示例
+std::unique_ptr<ClipGeometry> ClipperIntersect(
+    const PathGeometry& path1,
+    const PathGeometry& path2)
+{
+    // 转换为Clipper2格式
+    Clipper2Lib::PathsD subject = ToClipperPaths(path1);
+    Clipper2Lib::PathsD clip = ToClipperPaths(path2);
+    
+    // 执行交集操作
+    Clipper2Lib::PathsD solution = Clipper2Lib::Intersect(
+        subject, clip, Clipper2Lib::FillRule::NonZero
+    );
+    
+    // 转换回PathGeometry
+    if (solution.empty()) {
+        return std::make_unique<RectangleClipGeometry>(ui::Rect{0, 0, 0, 0});
+    }
+    
+    PathGeometry resultPath = FromClipperPaths(solution);
+    return std::make_unique<PathClipGeometry>(resultPath);
+}
+```
+
+##### 并集算法（可选功能）
+
+并集主要用于创建复合裁剪区域，例如"裁剪到区域A或区域B"：
+
+```cpp
+std::unique_ptr<ClipGeometry> ClipGeometry::Union(
+    const ClipGeometry* other) const 
+{
+    // 矩形 ∪ 矩形：可能返回矩形或多边形
+    if (GetType() == ClipGeometryType::Rectangle && 
+        other->GetType() == ClipGeometryType::Rectangle) {
+        
+        auto* rect1 = static_cast<const RectangleClipGeometry*>(this);
+        auto* rect2 = static_cast<const RectangleClipGeometry*>(other);
+        
+        // 检查是否可以合并为单个矩形
+        if (CanMergeRects(rect1->GetRect(), rect2->GetRect())) {
+            return std::make_unique<RectangleClipGeometry>(
+                MergeRects(rect1->GetRect(), rect2->GetRect())
+            );
+        }
+        
+        // 否则创建复合几何体
+        return std::make_unique<CompoundClipGeometry>(
+            GeometryOperation::Union,
+            std::make_unique<RectangleClipGeometry>(rect1->GetRect()),
+            std::make_unique<RectangleClipGeometry>(rect2->GetRect())
+        );
+    }
+    
+    // 通用情况：使用Clipper2或转换为多边形
+    return PolygonUnion(ToPolygon(), other->ToPolygon());
+}
+```
+
+##### 性能优化策略
+
+**1. 分层处理**
+
+```cpp
+// 优先级：简单类型 > 复杂类型
+enum class GeometryComplexity {
+    Simple,      // 矩形（直接计算）
+    Moderate,    // 圆角矩形、椭圆（近似或简化）
+    Complex      // 多边形、路径（完整算法）
+};
+
+std::unique_ptr<ClipGeometry> OptimizedIntersect(
+    const ClipGeometry* a, const ClipGeometry* b) 
+{
+    auto complexityA = GetComplexity(a->GetType());
+    auto complexityB = GetComplexity(b->GetType());
+    
+    // 优先使用简单算法
+    if (complexityA == GeometryComplexity::Simple && 
+        complexityB == GeometryComplexity::Simple) {
+        return FastRectIntersect(a, b);
+    }
+    
+    // 中等复杂度：边界快速检查
+    if (!a->GetBounds().Intersects(b->GetBounds())) {
+        return std::make_unique<RectangleClipGeometry>(ui::Rect{0, 0, 0, 0});
+    }
+    
+    // 完整算法
+    return a->Intersect(b);
+}
+```
+
+**2. 缓存交集结果**
+
+```cpp
+class GeometryOperationCache {
+public:
+    std::unique_ptr<ClipGeometry> GetCachedIntersection(
+        const ClipGeometry* a,
+        const ClipGeometry* b)
+    {
+        auto key = MakeCacheKey(a, b);
+        auto it = cache_.find(key);
+        
+        if (it != cache_.end()) {
+            return it->second->Clone();
+        }
+        
+        auto result = a->Intersect(b);
+        cache_[key] = result->Clone();
+        return result;
+    }
+
+private:
+    struct CacheKey {
+        size_t hashA;
+        size_t hashB;
+        // 比较运算符...
+    };
+    
+    std::unordered_map<CacheKey, std::unique_ptr<ClipGeometry>> cache_;
+};
+```
+
+**3. 近似处理**
+
+对于不影响视觉效果的情况，使用边界矩形近似：
+
+```cpp
+std::unique_ptr<ClipGeometry> ApproximateIntersect(
+    const ClipGeometry* a, const ClipGeometry* b,
+    float tolerance = 1.0f)  // 1像素误差
+{
+    // 如果边界矩形足够接近，直接使用边界矩形交集
+    auto boundsA = a->GetBounds();
+    auto boundsB = b->GetBounds();
+    
+    if (ShouldApproximate(a, b, tolerance)) {
+        return RectIntersect(boundsA, boundsB);
+    }
+    
+    // 否则使用精确算法
+    return a->Intersect(b);
+}
+```
+
+##### 复合几何体（高级）
+
+对于无法简化的复杂操作结果，使用复合几何体：
+
+```cpp
+/**
+ * @brief 复合裁剪几何体（表示多个几何体的布尔运算）
+ */
+class CompoundClipGeometry : public ClipGeometry {
+public:
+    CompoundClipGeometry(
+        GeometryOperation op,
+        std::unique_ptr<ClipGeometry> left,
+        std::unique_ptr<ClipGeometry> right)
+        : operation_(op)
+        , left_(std::move(left))
+        , right_(std::move(right)) {}
+    
+    ClipGeometryType GetType() const override { 
+        return ClipGeometryType::Compound; 
+    }
+    
+    ui::Rect GetBounds() const override {
+        auto boundsA = left_->GetBounds();
+        auto boundsB = right_->GetBounds();
+        
+        switch (operation_) {
+            case GeometryOperation::Intersect:
+                return RectIntersect(boundsA, boundsB);
+            case GeometryOperation::Union:
+                return RectUnion(boundsA, boundsB);
+            default:
+                return boundsA;
+        }
+    }
+    
+    bool Contains(const ui::Point& point) const override {
+        bool inLeft = left_->Contains(point);
+        bool inRight = right_->Contains(point);
+        
+        switch (operation_) {
+            case GeometryOperation::Intersect:
+                return inLeft && inRight;
+            case GeometryOperation::Union:
+                return inLeft || inRight;
+            case GeometryOperation::Subtract:
+                return inLeft && !inRight;
+            case GeometryOperation::Xor:
+                return inLeft != inRight;
+            default:
+                return false;
+        }
+    }
+
+private:
+    GeometryOperation operation_;
+    std::unique_ptr<ClipGeometry> left_;
+    std::unique_ptr<ClipGeometry> right_;
+};
+```
+
+##### 第三方库集成建议
+
+| 库 | 优势 | 适用场景 |
+|----|------|---------|
+| **Clipper2** | 快速、轻量、许可友好 | 多边形和路径的布尔运算 |
+| **CGAL** | 功能强大、精确 | 需要高精度几何计算 |
+| **libtess2** | OpenGL集成、已使用 | 多边形三角化（已在项目中） |
+| **Boost.Geometry** | 功能全面 | 复杂几何操作 |
+
+推荐选择：**Clipper2**（高性能，MIT许可，专注于2D布尔运算）
+
+##### 交集操作总结表
+
+| 类型A | 类型B | 算法 | 复杂度 | 结果类型 |
+|-------|-------|------|--------|---------|
+| 矩形 | 矩形 | 直接计算 | O(1) | 矩形 |
+| 矩形 | 圆角矩形 | 边界+圆角调整 | O(1) | 圆角矩形 |
+| 矩形 | 椭圆 | 多边形近似 | O(n) | 多边形 |
+| 矩形 | 多边形 | Sutherland-Hodgman | O(n) | 多边形 |
+| 矩形 | 路径 | Clipper2 | O(n log n) | 路径 |
+| 圆角矩形 | 圆角矩形 | 路径操作 | O(n log n) | 路径 |
+| 椭圆 | 椭圆 | 多边形近似 | O(n²) | 多边形 |
+| 多边形 | 多边形 | Clipper2 | O(n log n) | 多边形 |
+| 路径 | 路径 | Clipper2 | O(n log n) | 路径 |
+
+**n**: 顶点/段数量
+
 #### 扩展的裁剪上下文
 
 ```cpp
