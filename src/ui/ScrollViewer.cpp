@@ -15,6 +15,7 @@
 
 #include "fk/ui/ScrollViewer.h"
 #include "fk/ui/ScrollBar.h"
+#include <algorithm>
 
 namespace fk::ui {
 
