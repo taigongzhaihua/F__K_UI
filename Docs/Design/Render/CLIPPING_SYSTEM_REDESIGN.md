@@ -1,9 +1,10 @@
 # 裁剪系统重构设计文档
 
-**版本**: 1.0  
+**版本**: 1.1  
 **日期**: 2025-11-23  
 **状态**: 设计中  
-**优先级**: P0（最高）
+**优先级**: P0（最高）  
+**更新**: 添加高级裁剪几何体支持（圆角、椭圆、多边形、路径、变换）
 
 ---
 
@@ -13,6 +14,7 @@
 2. [现有系统分析](#现有系统分析)
 3. [问题诊断](#问题诊断)
 4. [新系统设计](#新系统设计)
+   - [高级裁剪几何体支持](#高级裁剪几何体支持)
 5. [实施计划](#实施计划)
 6. [API 设计](#api-设计)
 7. [测试策略](#测试策略)
@@ -703,6 +705,601 @@ void RenderContext::DrawClipDebugOverlay() {
 }
 ```
 
+### 高级裁剪几何体支持
+
+#### 设计目标
+
+当前基础设计主要关注**矩形裁剪**以解决最常见的容器边界管理问题。但完整的UI框架还需要支持更复杂的裁剪几何体：
+
+1. **圆角矩形裁剪** - Border的CornerRadius属性
+2. **椭圆/圆形裁剪** - 圆形头像、圆形按钮等
+3. **多边形裁剪** - 不规则形状的容器
+4. **路径裁剪** - 自定义形状（SVG路径、贝塞尔曲线等）
+5. **变换裁剪** - 支持旋转、缩放、倾斜等变换后的裁剪
+
+#### 裁剪几何体类型系统
+
+```cpp
+/**
+ * @brief 裁剪几何体类型
+ */
+enum class ClipGeometryType {
+    Rectangle,          // 矩形（默认，最快）
+    RoundedRectangle,   // 圆角矩形
+    Ellipse,            // 椭圆
+    Polygon,            // 多边形
+    Path                // 自定义路径
+};
+
+/**
+ * @brief 裁剪几何体基类
+ */
+class ClipGeometry {
+public:
+    virtual ~ClipGeometry() = default;
+    
+    virtual ClipGeometryType GetType() const = 0;
+    
+    // 获取边界矩形（用于快速剔除）
+    virtual ui::Rect GetBounds() const = 0;
+    
+    // 判断点是否在裁剪区域内
+    virtual bool Contains(const ui::Point& point) const = 0;
+    
+    // 应用变换
+    virtual std::unique_ptr<ClipGeometry> Transform(const Matrix3x2& matrix) const = 0;
+    
+    // 与另一个几何体求交集
+    virtual std::unique_ptr<ClipGeometry> Intersect(const ClipGeometry* other) const = 0;
+};
+
+/**
+ * @brief 矩形裁剪几何体（硬件加速）
+ */
+class RectangleClipGeometry : public ClipGeometry {
+public:
+    explicit RectangleClipGeometry(const ui::Rect& rect) : rect_(rect) {}
+    
+    ClipGeometryType GetType() const override { return ClipGeometryType::Rectangle; }
+    ui::Rect GetBounds() const override { return rect_; }
+    bool Contains(const ui::Point& point) const override;
+    
+    std::unique_ptr<ClipGeometry> Transform(const Matrix3x2& matrix) const override;
+    std::unique_ptr<ClipGeometry> Intersect(const ClipGeometry* other) const override;
+    
+    const ui::Rect& GetRect() const { return rect_; }
+
+private:
+    ui::Rect rect_;
+};
+
+/**
+ * @brief 圆角矩形裁剪几何体
+ */
+class RoundedRectangleClipGeometry : public ClipGeometry {
+public:
+    RoundedRectangleClipGeometry(const ui::Rect& rect, const ui::CornerRadius& radius)
+        : rect_(rect), cornerRadius_(radius) {}
+    
+    ClipGeometryType GetType() const override { return ClipGeometryType::RoundedRectangle; }
+    ui::Rect GetBounds() const override { return rect_; }
+    bool Contains(const ui::Point& point) const override;
+    
+    std::unique_ptr<ClipGeometry> Transform(const Matrix3x2& matrix) const override;
+    std::unique_ptr<ClipGeometry> Intersect(const ClipGeometry* other) const override;
+    
+    const ui::Rect& GetRect() const { return rect_; }
+    const ui::CornerRadius& GetCornerRadius() const { return cornerRadius_; }
+
+private:
+    ui::Rect rect_;
+    ui::CornerRadius cornerRadius_;
+};
+
+/**
+ * @brief 椭圆裁剪几何体
+ */
+class EllipseClipGeometry : public ClipGeometry {
+public:
+    EllipseClipGeometry(const ui::Point& center, float radiusX, float radiusY)
+        : center_(center), radiusX_(radiusX), radiusY_(radiusY) {}
+    
+    ClipGeometryType GetType() const override { return ClipGeometryType::Ellipse; }
+    ui::Rect GetBounds() const override;
+    bool Contains(const ui::Point& point) const override;
+    
+    std::unique_ptr<ClipGeometry> Transform(const Matrix3x2& matrix) const override;
+    std::unique_ptr<ClipGeometry> Intersect(const ClipGeometry* other) const override;
+
+private:
+    ui::Point center_;
+    float radiusX_;
+    float radiusY_;
+};
+
+/**
+ * @brief 多边形裁剪几何体
+ */
+class PolygonClipGeometry : public ClipGeometry {
+public:
+    explicit PolygonClipGeometry(const std::vector<ui::Point>& points)
+        : points_(points) {}
+    
+    ClipGeometryType GetType() const override { return ClipGeometryType::Polygon; }
+    ui::Rect GetBounds() const override;
+    bool Contains(const ui::Point& point) const override;
+    
+    std::unique_ptr<ClipGeometry> Transform(const Matrix3x2& matrix) const override;
+    std::unique_ptr<ClipGeometry> Intersect(const ClipGeometry* other) const override;
+    
+    const std::vector<ui::Point>& GetPoints() const { return points_; }
+
+private:
+    std::vector<ui::Point> points_;
+};
+
+/**
+ * @brief 路径裁剪几何体
+ */
+class PathClipGeometry : public ClipGeometry {
+public:
+    explicit PathClipGeometry(const PathGeometry& path)
+        : path_(path) {}
+    
+    ClipGeometryType GetType() const override { return ClipGeometryType::Path; }
+    ui::Rect GetBounds() const override;
+    bool Contains(const ui::Point& point) const override;
+    
+    std::unique_ptr<ClipGeometry> Transform(const Matrix3x2& matrix) const override;
+    std::unique_ptr<ClipGeometry> Intersect(const ClipGeometry* other) const override;
+    
+    const PathGeometry& GetPath() const { return path_; }
+
+private:
+    PathGeometry path_;
+};
+```
+
+#### 扩展的裁剪上下文
+
+```cpp
+class RenderContext {
+public:
+    // === 基础矩形裁剪（阶段1实施） ===
+    void PushClip(const ui::Rect& clipRect);
+    void PopClip();
+    
+    // === 高级几何体裁剪（阶段2+扩展） ===
+    void PushClip(std::unique_ptr<ClipGeometry> geometry);
+    
+    // 便捷方法
+    void PushRoundedRectClip(const ui::Rect& rect, const ui::CornerRadius& radius);
+    void PushEllipseClip(const ui::Point& center, float radiusX, float radiusY);
+    void PushPolygonClip(const std::vector<ui::Point>& points);
+    void PushPathClip(const PathGeometry& path);
+    
+    // 获取当前裁剪几何体
+    const ClipGeometry* GetCurrentClipGeometry() const;
+    
+    // 快速矩形裁剪检查（向后兼容）
+    bool IsCompletelyClipped(const ui::Rect& rect) const;
+
+private:
+    struct ClipState {
+        std::unique_ptr<ClipGeometry> geometry;
+        ClippingStrategy strategy;
+        bool enabled;
+    };
+    
+    std::stack<ClipState> clipStack_;
+};
+```
+
+#### 渲染实现策略
+
+##### 1. 硬件加速裁剪（优先）
+
+```cpp
+// GlRenderer.cpp
+void GlRenderer::ApplyClip(const ClipPayload& payload) {
+    if (!payload.geometry) {
+        glDisable(GL_SCISSOR_TEST);
+        return;
+    }
+    
+    switch (payload.geometry->GetType()) {
+        case ClipGeometryType::Rectangle: {
+            // 使用 glScissor（硬件加速，最快）
+            auto* rectGeom = static_cast<const RectangleClipGeometry*>(payload.geometry.get());
+            auto bounds = rectGeom->GetBounds();
+            
+            glEnable(GL_SCISSOR_TEST);
+            glScissor(bounds.x, bounds.y, bounds.width, bounds.height);
+            break;
+        }
+        
+        case ClipGeometryType::RoundedRectangle:
+        case ClipGeometryType::Ellipse:
+        case ClipGeometryType::Polygon:
+        case ClipGeometryType::Path: {
+            // 使用模板缓冲区（Stencil Buffer）
+            ApplyStencilClip(payload.geometry.get());
+            break;
+        }
+    }
+}
+```
+
+##### 2. 模板缓冲区裁剪
+
+对于复杂几何体，使用OpenGL的Stencil Buffer：
+
+```cpp
+void GlRenderer::ApplyStencilClip(const ClipGeometry* geometry) {
+    // 1. 清除模板缓冲区
+    glClearStencil(0);
+    glClear(GL_STENCIL_BUFFER_BIT);
+    
+    // 2. 设置模板测试
+    glEnable(GL_STENCIL_TEST);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    
+    // 3. 禁用颜色写入，只写入模板
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    
+    // 4. 绘制裁剪几何体到模板缓冲区
+    RenderClipGeometryToStencil(geometry);
+    
+    // 5. 启用颜色写入，配置模板测试
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glStencilFunc(GL_EQUAL, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    
+    // 后续绘制将只在模板值为1的区域显示
+}
+
+void GlRenderer::RenderClipGeometryToStencil(const ClipGeometry* geometry) {
+    switch (geometry->GetType()) {
+        case ClipGeometryType::RoundedRectangle: {
+            auto* rrGeom = static_cast<const RoundedRectangleClipGeometry*>(geometry);
+            // 使用SDF着色器绘制圆角矩形
+            DrawRoundedRectToStencil(rrGeom->GetRect(), rrGeom->GetCornerRadius());
+            break;
+        }
+        
+        case ClipGeometryType::Ellipse: {
+            auto* ellipseGeom = static_cast<const EllipseClipGeometry*>(geometry);
+            // 绘制椭圆到模板
+            DrawEllipseToStencil(ellipseGeom);
+            break;
+        }
+        
+        case ClipGeometryType::Polygon: {
+            auto* polyGeom = static_cast<const PolygonClipGeometry*>(geometry);
+            // 使用tessellation绘制多边形
+            DrawPolygonToStencil(polyGeom->GetPoints());
+            break;
+        }
+        
+        case ClipGeometryType::Path: {
+            auto* pathGeom = static_cast<const PathClipGeometry*>(geometry);
+            // 使用tessellation绘制路径
+            DrawPathToStencil(pathGeom->GetPath());
+            break;
+        }
+        
+        default:
+            break;
+    }
+}
+```
+
+##### 3. 软件裁剪（后备方案）
+
+对于不支持的硬件或特殊情况，提供软件实现：
+
+```cpp
+class SoftwareClipper {
+public:
+    // 软件光栅化裁剪
+    static std::vector<ui::Point> ClipPolygon(
+        const std::vector<ui::Point>& polygon,
+        const ClipGeometry* clipGeometry
+    );
+    
+    // Sutherland-Hodgman算法（多边形裁剪）
+    static std::vector<ui::Point> SutherlandHodgmanClip(
+        const std::vector<ui::Point>& subject,
+        const std::vector<ui::Point>& clipPoly
+    );
+};
+```
+
+#### 变换支持
+
+##### 变换矩阵管理
+
+```cpp
+class RenderContext {
+public:
+    // 推入仿射变换
+    void PushTransform(const Matrix3x2& matrix);
+    
+    // 便捷方法
+    void PushTranslation(float x, float y);
+    void PushRotation(float angle, const ui::Point& center);
+    void PushScale(float scaleX, float scaleY, const ui::Point& center);
+    void PushSkew(float angleX, float angleY, const ui::Point& center);
+    
+    void PopTransform();
+    
+    // 获取当前累积变换
+    Matrix3x2 GetCurrentTransform() const;
+
+private:
+    std::stack<Matrix3x2> transformStack_;
+    Matrix3x2 currentTransform_;
+};
+```
+
+##### 变换后的裁剪
+
+当裁剪区域或元素应用变换时：
+
+```cpp
+void RenderContext::PushClip(std::unique_ptr<ClipGeometry> geometry) {
+    // 1. 保存当前状态
+    clipStack_.push(std::move(currentClip_));
+    
+    // 2. 应用当前变换到裁剪几何体
+    auto transformedGeometry = geometry->Transform(currentTransform_);
+    
+    // 3. 与父裁剪求交集
+    if (currentClip_.geometry) {
+        transformedGeometry = transformedGeometry->Intersect(currentClip_.geometry.get());
+    }
+    
+    // 4. 更新当前裁剪
+    currentClip_.geometry = std::move(transformedGeometry);
+    currentClip_.enabled = true;
+    
+    // 5. 应用到渲染器
+    ApplyCurrentClip();
+}
+```
+
+#### 控件API扩展
+
+##### Border - 圆角裁剪
+
+```cpp
+class Border : public FrameworkElement<Border>, public IClippable {
+public:
+    ClippingStrategy GetClippingStrategy() const override {
+        // 如果有圆角，使用圆角矩形裁剪
+        auto cornerRadius = GetCornerRadius();
+        if (cornerRadius.IsUniform() && cornerRadius.topLeft > 0) {
+            return ClippingStrategy::Custom;
+        }
+        return ClippingStrategy::ToContentArea;
+    }
+    
+    std::unique_ptr<ClipGeometry> CalculateClipGeometry() const override {
+        auto contentRect = CalculateContentRect();
+        auto cornerRadius = GetCornerRadius();
+        
+        if (cornerRadius.topLeft > 0 || cornerRadius.topRight > 0 ||
+            cornerRadius.bottomRight > 0 || cornerRadius.bottomLeft > 0) {
+            // 圆角矩形裁剪
+            return std::make_unique<RoundedRectangleClipGeometry>(
+                contentRect, cornerRadius
+            );
+        }
+        
+        // 普通矩形裁剪
+        return std::make_unique<RectangleClipGeometry>(contentRect);
+    }
+};
+```
+
+##### UIElement - 自定义几何体裁剪
+
+```cpp
+class UIElement : public Visual {
+public:
+    // 现有矩形裁剪API（向后兼容）
+    void SetClip(const Rect& rect);
+    Rect GetClip() const;
+    
+    // 新增：几何体裁剪API
+    void SetClipGeometry(std::unique_ptr<ClipGeometry> geometry);
+    const ClipGeometry* GetClipGeometry() const;
+    
+    // 便捷方法
+    void SetRoundedRectClip(const Rect& rect, const CornerRadius& radius);
+    void SetEllipseClip(const Point& center, float radiusX, float radiusY);
+    void SetPolygonClip(const std::vector<Point>& points);
+    void SetPathClip(const PathGeometry& path);
+    
+private:
+    std::unique_ptr<ClipGeometry> clipGeometry_;
+};
+```
+
+#### 性能优化策略
+
+##### 1. 分层优化
+
+```cpp
+// 优先级：硬件裁剪 > 模板裁剪 > 软件裁剪
+enum class ClipImplementation {
+    Hardware,    // glScissor（仅矩形）
+    Stencil,     // 模板缓冲区（复杂几何体）
+    Software     // CPU裁剪（后备）
+};
+
+ClipImplementation ChooseImplementation(const ClipGeometry* geometry) {
+    // 1. 矩形优先使用硬件裁剪
+    if (geometry->GetType() == ClipGeometryType::Rectangle) {
+        return ClipImplementation::Hardware;
+    }
+    
+    // 2. 检查是否支持模板缓冲区
+    if (stencilBufferAvailable_) {
+        return ClipImplementation::Stencil;
+    }
+    
+    // 3. 后备到软件裁剪
+    return ClipImplementation::Software;
+}
+```
+
+##### 2. 边界矩形快速剔除
+
+```cpp
+bool RenderContext::IsCompletelyClipped(const ui::Rect& bounds) const {
+    if (!currentClip_.geometry) {
+        return false;
+    }
+    
+    // 第一步：快速边界检查
+    auto clipBounds = currentClip_.geometry->GetBounds();
+    if (!bounds.Intersects(clipBounds)) {
+        return true;  // 边界不相交，完全被裁剪
+    }
+    
+    // 第二步：精确几何检查（仅在必要时）
+    // 对于简单几何体可以跳过
+    if (currentClip_.geometry->GetType() == ClipGeometryType::Rectangle) {
+        return false;  // 已经通过边界检查
+    }
+    
+    // 对于复杂几何体，检查四个角点
+    return CheckComplexClipping(bounds, currentClip_.geometry.get());
+}
+```
+
+##### 3. 缓存和复用
+
+```cpp
+class ClipGeometryCache {
+public:
+    // 缓存变换后的几何体
+    const ClipGeometry* GetTransformed(
+        const ClipGeometry* original,
+        const Matrix3x2& transform
+    );
+    
+    // 缓存交集结果
+    const ClipGeometry* GetIntersection(
+        const ClipGeometry* a,
+        const ClipGeometry* b
+    );
+    
+private:
+    std::unordered_map<CacheKey, std::unique_ptr<ClipGeometry>> cache_;
+};
+```
+
+#### 实施路线图扩展
+
+现有的6周基础实施计划完成后，可以按以下顺序添加高级几何体支持：
+
+**阶段5: 圆角矩形裁剪（第7-8周）**
+- [ ] 实现RoundedRectangleClipGeometry
+- [ ] Border控件集成圆角裁剪
+- [ ] 模板缓冲区渲染实现
+- [ ] 测试和性能优化
+
+**阶段6: 椭圆和多边形裁剪（第9-10周）**
+- [ ] 实现EllipseClipGeometry
+- [ ] 实现PolygonClipGeometry
+- [ ] Stencil渲染扩展
+- [ ] API文档和示例
+
+**阶段7: 路径裁剪和变换（第11-12周）**
+- [ ] 实现PathClipGeometry
+- [ ] 完整的变换矩阵支持
+- [ ] 变换裁剪交集算法
+- [ ] 性能基准和优化
+
+**阶段8: 优化和完善（第13-14周）**
+- [ ] 缓存机制
+- [ ] 软件后备实现
+- [ ] 全面性能测试
+- [ ] 完整文档和示例
+
+#### 使用示例
+
+##### 示例1: Border圆角裁剪
+```cpp
+auto border = std::make_shared<Border>();
+border->SetCornerRadius(CornerRadius(10)); // 圆角10px
+border->SetChild(content);
+// content会自动裁剪到圆角矩形内 ✅
+```
+
+##### 示例2: 圆形头像裁剪
+```cpp
+auto image = std::make_shared<Image>();
+image->SetSource("avatar.png");
+image->SetWidth(100);
+image->SetHeight(100);
+
+// 圆形裁剪
+image->SetEllipseClip(Point(50, 50), 50, 50);
+```
+
+##### 示例3: 自定义路径裁剪
+```cpp
+auto element = std::make_shared<UIElement>();
+
+// 星形裁剪
+PathGeometry starPath;
+starPath.MoveTo(Point(50, 0));
+starPath.LineTo(Point(60, 35));
+starPath.LineTo(Point(95, 35));
+starPath.LineTo(Point(65, 55));
+starPath.LineTo(Point(75, 90));
+starPath.LineTo(Point(50, 70));
+starPath.LineTo(Point(25, 90));
+starPath.LineTo(Point(35, 55));
+starPath.LineTo(Point(5, 35));
+starPath.LineTo(Point(40, 35));
+starPath.Close();
+
+element->SetPathClip(starPath);
+```
+
+##### 示例4: 旋转裁剪
+```cpp
+auto container = std::make_shared<Panel>();
+container->SetRenderTransform(
+    RotateTransform(45, Point(100, 100))
+);
+container->SetClipToBounds(true);
+// 子元素会被裁剪到旋转后的边界 ✅
+```
+
+#### 技术挑战和解决方案
+
+| 挑战 | 解决方案 |
+|------|---------|
+| 复杂几何体交集计算 | 使用成熟的几何库（如Clipper2）或分层近似 |
+| 变换后的裁剪性能 | 缓存变换结果，边界矩形快速剔除 |
+| 模板缓冲区限制 | 嵌套深度限制（通常8层），超出回退到软件 |
+| 抗锯齿边缘 | 使用多重采样或SDF着色器 |
+| 跨平台兼容性 | 提供软件后备实现，检测硬件能力 |
+
+#### 向后兼容性
+
+所有高级几何体功能都是**可选的扩展**：
+- 基础矩形裁剪保持不变
+- 现有API继续工作
+- 高级功能通过新API访问
+- 自动降级到支持的实现
+
 ---
 
 ## 实施计划
@@ -1189,6 +1786,7 @@ TEST(PerformanceTest, MassiveElementCulling) {
 | 日期 | 版本 | 作者 | 变更说明 |
 |------|------|------|----------|
 | 2025-11-23 | 1.0 | AI | 初始版本，完整的重构设计 |
+| 2025-11-23 | 1.1 | AI | 新增高级裁剪几何体支持章节（圆角矩形、椭圆、多边形、路径裁剪、变换支持） |
 
 ---
 
