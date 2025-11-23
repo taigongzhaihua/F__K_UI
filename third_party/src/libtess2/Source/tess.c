@@ -1015,6 +1015,7 @@ int tessTesselate( TESStesselator *tess, int windingRule, int elementType,
 {
 	TESSmesh *mesh;
 	int rc = 1;
+	volatile int vSize = vertexSize;  /* Prevent clobbering by longjmp */
 
 	if (tess->vertices != NULL) {
 		tess->alloc.memfree( tess->alloc.userData, tess->vertices );
@@ -1040,10 +1041,10 @@ int tessTesselate( TESStesselator *tess, int windingRule, int elementType,
 
 	tess->windingRule = windingRule;
 
-	if (vertexSize < 2)
-		vertexSize = 2;
-	if (vertexSize > 3)
-		vertexSize = 3;
+	if (vSize < 2)
+		vSize = 2;
+	if (vSize > 3)
+		vSize = 3;
 
 	if (setjmp(tess->env) != 0) {
 		/* come back here if out of memory */
@@ -1088,11 +1089,11 @@ int tessTesselate( TESStesselator *tess, int windingRule, int elementType,
 	tessMeshCheckMesh( mesh );
 
 	if (elementType == TESS_BOUNDARY_CONTOURS) {
-		OutputContours( tess, mesh, vertexSize );     /* output contours */
+		OutputContours( tess, mesh, vSize );     /* output contours */
 	}
 	else
 	{
-		OutputPolymesh( tess, mesh, elementType, polySize, vertexSize );     /* output polygons */
+		OutputPolymesh( tess, mesh, elementType, polySize, vSize );     /* output polygons */
 	}
 
 	tessMeshDeleteMesh( &tess->alloc, mesh );
