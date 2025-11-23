@@ -1,49 +1,68 @@
 /**
  * @file ScrollViewer.h
- * @brief ScrollViewer 滚动查看器控件
+ * @brief ScrollViewer 滚动查看器控件 - 新设计（WPF 风格）
  * 
- * 职责：
- * - 提供可滚动的内容容器
- * - 自动显示/隐藏滚动条
- * - 内容裁剪和偏移
- * - 鼠标滚轮支持
+ * 设计理念：
+ * 1. 采用 WPF ScrollViewer 的架构设计
+ * 2. 使用 ScrollContentPresenter 作为内容呈现器
+ * 3. 支持模板化的滚动条（可通过样式/模板自定义）
+ * 4. 清晰的职责分离：
+ *    - ScrollViewer: 顶层容器，管理滚动策略和状态
+ *    - ScrollContentPresenter: 负责内容的裁剪和偏移
+ *    - ScrollBar: 独立的滚动条控件（可模板化）
  * 
  * WPF 对应：ScrollViewer
+ * 
+ * TODO 实现计划：
+ * - Phase 1: 基础架构和接口定义 ✓
+ * - Phase 2: ScrollContentPresenter 实现
+ * - Phase 3: 滚动条集成和事件处理
+ * - Phase 4: 模板和样式支持
+ * - Phase 5: 鼠标滚轮和触摸支持
  */
 
 #pragma once
 
 #include "fk/ui/ContentControl.h"
-#include "fk/ui/ScrollBar.h"
 #include "fk/ui/Enums.h"
-
-namespace fk::render {
-    class RenderContext;
-}
 
 namespace fk::ui {
 
+class ScrollBar;
+class ScrollContentPresenter;
+
 /**
- * @brief 滚动条可见性模式
+ * @brief 滚动条可见性模式（与 WPF 一致）
  */
 enum class ScrollBarVisibility {
-    Disabled,   ///< 禁用滚动条，内容不可滚动
+    Disabled,   ///< 禁用滚动，内容不可滚动
     Auto,       ///< 需要时自动显示滚动条
-    Hidden,     ///< 隐藏滚动条但内容可滚动
+    Hidden,     ///< 隐藏滚动条但内容可滚动（programmatic scrolling）
     Visible     ///< 始终显示滚动条
 };
 
 /**
- * @brief 滚动查看器控件
+ * @brief 滚动查看器控件（新设计 - WPF 风格）
  * 
- * 提供带滚动条的内容查看区域，支持内容超出时的滚动浏览。
+ * 架构特点：
+ * 1. 使用 ScrollContentPresenter 管理内容的实际滚动
+ * 2. ScrollViewer 本身只是容器和策略管理器
+ * 3. 支持通过 ControlTemplate 完全自定义外观
+ * 4. 滚动条作为模板的一部分，可以替换或重新定位
+ * 
+ * 使用示例：
+ * @code
+ * auto scrollViewer = new ScrollViewer();
+ * scrollViewer->SetVerticalScrollBarVisibility(ScrollBarVisibility::Auto);
+ * scrollViewer->SetContent(myLargeContent);
+ * @endcode
  */
 class ScrollViewer : public ContentControl<ScrollViewer> {
 public:
     ScrollViewer();
     virtual ~ScrollViewer() = default;
     
-    // ========== 依赖属性 ==========
+    // ========== 依赖属性（TODO: 完整实现）==========
     
     /// HorizontalScrollBarVisibility 属性
     static const binding::DependencyProperty& HorizontalScrollBarVisibilityProperty();
@@ -51,10 +70,10 @@ public:
     /// VerticalScrollBarVisibility 属性
     static const binding::DependencyProperty& VerticalScrollBarVisibilityProperty();
     
-    /// HorizontalOffset 属性
+    /// HorizontalOffset 属性（只读）
     static const binding::DependencyProperty& HorizontalOffsetProperty();
     
-    /// VerticalOffset 属性
+    /// VerticalOffset 属性（只读）
     static const binding::DependencyProperty& VerticalOffsetProperty();
     
     /// ViewportWidth 属性（只读）
@@ -69,35 +88,56 @@ public:
     /// ExtentHeight 属性（内容总高度，只读）
     static const binding::DependencyProperty& ExtentHeightProperty();
     
-    // ========== 属性访问 ==========
+    /// ScrollableWidth 属性（可滚动宽度，只读）
+    static const binding::DependencyProperty& ScrollableWidthProperty();
     
-    ScrollBarVisibility GetHorizontalScrollBarVisibility() const { return horizontalScrollBarVisibility_; }
-    ScrollViewer* SetHorizontalScrollBarVisibility(ScrollBarVisibility value) {
-        horizontalScrollBarVisibility_ = value;
-        UpdateScrollBarsVisibility();
-        return this;
-    }
+    /// ScrollableHeight 属性（可滚动高度，只读）
+    static const binding::DependencyProperty& ScrollableHeightProperty();
     
-    ScrollBarVisibility GetVerticalScrollBarVisibility() const { return verticalScrollBarVisibility_; }
-    ScrollViewer* SetVerticalScrollBarVisibility(ScrollBarVisibility value) {
-        verticalScrollBarVisibility_ = value;
-        UpdateScrollBarsVisibility();
-        return this;
-    }
+    /// CanContentScroll 属性（是否支持逻辑滚动）
+    static const binding::DependencyProperty& CanContentScrollProperty();
     
-    float GetHorizontalOffset() const { return horizontalOffset_; }
-    void SetHorizontalOffset(float value);
+    /// IsDeferredScrollingEnabled 属性（是否启用延迟滚动）
+    static const binding::DependencyProperty& IsDeferredScrollingEnabledProperty();
     
-    float GetVerticalOffset() const { return verticalOffset_; }
-    void SetVerticalOffset(float value);
+    // ========== 附加属性（WPF 风格）==========
     
-    float GetViewportWidth() const { return viewportWidth_; }
-    float GetViewportHeight() const { return viewportHeight_; }
+    /// 获取元素的 HorizontalScrollBarVisibility 附加属性
+    static ScrollBarVisibility GetHorizontalScrollBarVisibility(const UIElement* element);
     
-    float GetExtentWidth() const { return extentWidth_; }
-    float GetExtentHeight() const { return extentHeight_; }
+    /// 设置元素的 HorizontalScrollBarVisibility 附加属性
+    static void SetHorizontalScrollBarVisibility(UIElement* element, ScrollBarVisibility value);
     
-    // ========== 滚动方法 ==========
+    /// 获取元素的 VerticalScrollBarVisibility 附加属性
+    static ScrollBarVisibility GetVerticalScrollBarVisibility(const UIElement* element);
+    
+    /// 设置元素的 VerticalScrollBarVisibility 附加属性
+    static void SetVerticalScrollBarVisibility(UIElement* element, ScrollBarVisibility value);
+    
+    // ========== 属性访问器 ==========
+    
+    ScrollBarVisibility GetHorizontalScrollBarVisibility() const;
+    ScrollViewer* SetHorizontalScrollBarVisibility(ScrollBarVisibility value);
+    
+    ScrollBarVisibility GetVerticalScrollBarVisibility() const;
+    ScrollViewer* SetVerticalScrollBarVisibility(ScrollBarVisibility value);
+    
+    float GetHorizontalOffset() const;
+    float GetVerticalOffset() const;
+    
+    float GetViewportWidth() const;
+    float GetViewportHeight() const;
+    
+    float GetExtentWidth() const;
+    float GetExtentHeight() const;
+    
+    float GetScrollableWidth() const;
+    float GetScrollableHeight() const;
+    
+    bool GetCanContentScroll() const;
+    ScrollViewer* SetCanContentScroll(bool value);
+    
+    // ========== 滚动方法（WPF 兼容）==========
     
     /// 向左滚动一行
     void LineLeft();
@@ -135,46 +175,31 @@ public:
     /// 滚动到最右
     void ScrollToRightEnd();
     
-    /// 滚动到指定位置
+    /// 滚动到指定水平位置
     void ScrollToHorizontalOffset(float offset);
+    
+    /// 滚动到指定垂直位置
     void ScrollToVerticalOffset(float offset);
     
-    // ========== 滚动条访问 ==========
+    /// 滚动使指定元素可见
+    void ScrollToElement(UIElement* element);
     
-    ScrollBar* GetHorizontalScrollBar() const { return horizontalScrollBar_; }
-    ScrollBar* GetVerticalScrollBar() const { return verticalScrollBar_; }
+    // ========== 事件 ==========
+    
+    // TODO: 添加 ScrollChanged 路由事件
     
 protected:
-    // ========== 重写方法 ==========
+    // ========== 模板部分（TODO）==========
     
-    Size MeasureOverride(Size availableSize);
-    Size ArrangeOverride(Size finalSize);
-    void OnRender(render::RenderContext& context);
+    // 这些将在完整实现时处理模板化滚动条
+    // virtual void OnApplyTemplate() override;
     
-    // ========== 事件处理 ==========
+    // ========== 内部状态（临时，最终会移到实现类）==========
     
-    virtual void OnScrollChanged();
-    
-    // ========== 裁剪系统（新增）==========
-    
-    /**
-     * @brief ScrollViewer总是裁剪内容到视口
-     */
-    bool ShouldClipToBounds() const override { 
-        return true; 
-    }
-    
-    /**
-     * @brief 计算裁剪边界（视口区域，排除滚动条）
-     */
-    ui::Rect CalculateClipBounds() const override {
-        return CalculateViewportRect();
-    }
-    
-private:
     ScrollBarVisibility horizontalScrollBarVisibility_{ScrollBarVisibility::Auto};
     ScrollBarVisibility verticalScrollBarVisibility_{ScrollBarVisibility::Auto};
     
+    // 这些值由 ScrollContentPresenter 计算和更新
     float horizontalOffset_{0.0f};
     float verticalOffset_{0.0f};
     float viewportWidth_{0.0f};
@@ -182,21 +207,7 @@ private:
     float extentWidth_{0.0f};
     float extentHeight_{0.0f};
     
-    ScrollBar* horizontalScrollBar_{nullptr};
-    ScrollBar* verticalScrollBar_{nullptr};
-    
-    /// 更新滚动条可见性
-    void UpdateScrollBarsVisibility();
-    
-    /// 更新滚动条范围
-    void UpdateScrollBarsRange();
-    
-    /// 处理滚动条值变更
-    void OnHorizontalScrollBarValueChanged(float oldValue, float newValue);
-    void OnVerticalScrollBarValueChanged(float oldValue, float newValue);
-    
-    /// 计算视口矩形
-    Rect CalculateViewportRect() const;
+    bool canContentScroll_{false};
 };
 
 } // namespace fk::ui

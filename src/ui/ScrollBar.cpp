@@ -1,20 +1,26 @@
 /**
  * @file ScrollBar.cpp
- * @brief ScrollBar 滚动条控件实现
+ * @brief ScrollBar 滚动条控件实现 - Stub 版本
+ * 
+ * 这是一个临时的 stub 实现，仅提供基本接口以保证编译通过。
+ * 完整实现将在重构 Phase 3 及以后完成。
+ * 
+ * TODO: 完整实现计划
+ * - Phase 1: 基础架构和接口定义 ✓
+ * - Phase 2: RangeBase 行为实现
+ * - Phase 3: Track/Thumb/RepeatButton 模板部分
+ * - Phase 4: 鼠标交互和拖动支持
+ * - Phase 5: 样式和动画
  */
 
 #include "fk/ui/ScrollBar.h"
-#include "fk/render/DrawCommand.h"
-#include "fk/render/RenderContext.h"
-#include <algorithm>
 
 namespace fk::ui {
 
 // ========== 构造函数 ==========
 
 ScrollBar::ScrollBar() {
-    SetWidth(20.0f);  // 默认宽度
-    SetHeight(100.0f);  // 默认高度
+    // TODO: Phase 3 - 通过模板定义外观（而不是硬编码）
 }
 
 // ========== 依赖属性定义 ==========
@@ -96,7 +102,80 @@ const binding::DependencyProperty& ScrollBar::LargeChangeProperty() {
     return property;
 }
 
-// ========== 滚动操作 ==========
+// ========== 属性访问器 ==========
+
+Orientation ScrollBar::GetOrientation() const {
+    return orientation_;
+}
+
+ScrollBar* ScrollBar::SetOrientation(Orientation value) {
+    orientation_ = value;
+    // TODO: 更新布局
+    return this;
+}
+
+float ScrollBar::GetMinimum() const {
+    return minimum_;
+}
+
+ScrollBar* ScrollBar::SetMinimum(float value) {
+    minimum_ = value;
+    CoerceValue();
+    return this;
+}
+
+float ScrollBar::GetMaximum() const {
+    return maximum_;
+}
+
+ScrollBar* ScrollBar::SetMaximum(float value) {
+    maximum_ = value;
+    CoerceValue();
+    return this;
+}
+
+float ScrollBar::GetValue() const {
+    return value_;
+}
+
+ScrollBar* ScrollBar::SetValue(float value) {
+    float oldValue = value_;
+    value_ = std::max(minimum_, std::min(maximum_, value));
+    if (value_ != oldValue) {
+        OnValueChanged(oldValue, value_);
+    }
+    return this;
+}
+
+float ScrollBar::GetViewportSize() const {
+    return viewportSize_;
+}
+
+ScrollBar* ScrollBar::SetViewportSize(float value) {
+    viewportSize_ = value;
+    // TODO: 更新 Thumb 大小
+    return this;
+}
+
+float ScrollBar::GetSmallChange() const {
+    return smallChange_;
+}
+
+ScrollBar* ScrollBar::SetSmallChange(float value) {
+    smallChange_ = value;
+    return this;
+}
+
+float ScrollBar::GetLargeChange() const {
+    return largeChange_;
+}
+
+ScrollBar* ScrollBar::SetLargeChange(float value) {
+    largeChange_ = value;
+    return this;
+}
+
+// ========== 命令方法（Stub）==========
 
 void ScrollBar::LineUp() {
     SetValue(value_ - smallChange_);
@@ -122,70 +201,18 @@ void ScrollBar::ScrollToEnd() {
     SetValue(maximum_);
 }
 
-// ========== 布局 ==========
-
-Size ScrollBar::MeasureOverride(Size availableSize) {
-    if (orientation_ == Orientation::Vertical) {
-        return Size(20.0f, availableSize.height);
-    } else {
-        return Size(availableSize.width, 20.0f);
-    }
-}
-
-Size ScrollBar::ArrangeOverride(Size finalSize) {
-    return finalSize;
-}
-
-// ========== 渲染 ==========
-
-void ScrollBar::OnRender(render::RenderContext& context) {
-    Size size = GetRenderSize();
-    
-    // 绘制背景
-    Rect bgRect(0, 0, size.width, size.height);
-    context.DrawBorder(bgRect, {0.9f, 0.9f, 0.9f, 1.0f});
-    
-    // 计算滑块矩形
-    Rect thumbRect = CalculateThumbRect(size);
-    
-    // 绘制滑块
-    context.DrawBorder(thumbRect, {0.6f, 0.6f, 0.6f, 1.0f});
-}
-
 // ========== 事件处理 ==========
 
 void ScrollBar::OnValueChanged(float oldValue, float newValue) {
     ValueChanged(oldValue, newValue);
-    InvalidateVisual();
+    // TODO: 触发路由事件
+    // TODO: 更新 Thumb 位置
 }
 
 // ========== 私有方法 ==========
 
 void ScrollBar::CoerceValue() {
     value_ = std::max(minimum_, std::min(maximum_, value_));
-}
-
-Rect ScrollBar::CalculateThumbRect(Size containerSize) const {
-    float range = maximum_ - minimum_;
-    if (range <= 0.0f) {
-        return Rect(0, 0, 0, 0);
-    }
-    
-    if (orientation_ == Orientation::Vertical) {
-        // 垂直滚动条
-        float trackHeight = containerSize.height;
-        float thumbHeight = std::max(20.0f, (viewportSize_ / (range + viewportSize_)) * trackHeight);
-        float thumbY = ((value_ - minimum_) / range) * (trackHeight - thumbHeight);
-        
-        return Rect(0, thumbY, containerSize.width, thumbHeight);
-    } else {
-        // 水平滚动条
-        float trackWidth = containerSize.width;
-        float thumbWidth = std::max(20.0f, (viewportSize_ / (range + viewportSize_)) * trackWidth);
-        float thumbX = ((value_ - minimum_) / range) * (trackWidth - thumbWidth);
-        
-        return Rect(thumbX, 0, thumbWidth, containerSize.height);
-    }
 }
 
 } // namespace fk::ui

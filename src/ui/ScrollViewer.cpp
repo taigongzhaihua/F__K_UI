@@ -1,38 +1,28 @@
 /**
  * @file ScrollViewer.cpp
- * @brief ScrollViewer 滚动查看器控件实现
+ * @brief ScrollViewer 滚动查看器控件实现 - Stub 版本
+ * 
+ * 这是一个临时的 stub 实现，仅提供基本接口以保证编译通过。
+ * 完整实现将在重构 Phase 2 及以后完成。
+ * 
+ * TODO: 完整实现计划
+ * - Phase 1: 基础架构和接口定义 ✓
+ * - Phase 2: ScrollContentPresenter 实现
+ * - Phase 3: 滚动条集成和事件处理
+ * - Phase 4: 模板和样式支持
+ * - Phase 5: 鼠标滚轮和触摸支持
  */
 
 #include "fk/ui/ScrollViewer.h"
-#include "fk/render/DrawCommand.h"
-#include "fk/render/RenderContext.h"
-#include <algorithm>
+#include "fk/ui/ScrollBar.h"
 
 namespace fk::ui {
-
-using Color = fk::render::Color;
 
 // ========== 构造函数 ==========
 
 ScrollViewer::ScrollViewer() {
-    // 创建滚动条
-    horizontalScrollBar_ = new ScrollBar();
-    horizontalScrollBar_->SetOrientation(Orientation::Horizontal);
-    
-    verticalScrollBar_ = new ScrollBar();
-    verticalScrollBar_->SetOrientation(Orientation::Vertical);
-    
-    // 订阅滚动条值变更事件
-    horizontalScrollBar_->ValueChanged.Connect([this](float oldValue, float newValue) {
-        OnHorizontalScrollBarValueChanged(oldValue, newValue);
-    });
-    
-    verticalScrollBar_->ValueChanged.Connect([this](float oldValue, float newValue) {
-        OnVerticalScrollBarValueChanged(oldValue, newValue);
-    });
-    
-    // 初始隐藏滚动条
-    UpdateScrollBarsVisibility();
+    // TODO: Phase 2 - 创建 ScrollContentPresenter
+    // TODO: Phase 3 - 通过模板创建滚动条（而不是直接创建）
 }
 
 // ========== 依赖属性定义 ==========
@@ -125,279 +115,194 @@ const binding::DependencyProperty& ScrollViewer::ExtentHeightProperty() {
     return property;
 }
 
-// ========== 属性设置 ==========
-
-void ScrollViewer::SetHorizontalOffset(float value) {
-    float maxOffset = std::max(0.0f, extentWidth_ - viewportWidth_);
-    horizontalOffset_ = std::max(0.0f, std::min(maxOffset, value));
-    
-    if (horizontalScrollBar_) {
-        horizontalScrollBar_->SetValue(horizontalOffset_);
-    }
-    
-    InvalidateVisual();
-    OnScrollChanged();
+const binding::DependencyProperty& ScrollViewer::ScrollableWidthProperty() {
+    static auto& property = 
+        binding::DependencyProperty::Register(
+            "ScrollableWidth",
+            typeid(float),
+            typeid(ScrollViewer),
+            binding::PropertyMetadata{std::any(0.0f)}
+        );
+    return property;
 }
 
-void ScrollViewer::SetVerticalOffset(float value) {
-    float maxOffset = std::max(0.0f, extentHeight_ - viewportHeight_);
-    verticalOffset_ = std::max(0.0f, std::min(maxOffset, value));
-    
-    if (verticalScrollBar_) {
-        verticalScrollBar_->SetValue(verticalOffset_);
-    }
-    
-    InvalidateVisual();
-    OnScrollChanged();
+const binding::DependencyProperty& ScrollViewer::ScrollableHeightProperty() {
+    static auto& property = 
+        binding::DependencyProperty::Register(
+            "ScrollableHeight",
+            typeid(float),
+            typeid(ScrollViewer),
+            binding::PropertyMetadata{std::any(0.0f)}
+        );
+    return property;
 }
 
-// ========== 滚动方法 ==========
+const binding::DependencyProperty& ScrollViewer::CanContentScrollProperty() {
+    static auto& property = 
+        binding::DependencyProperty::Register(
+            "CanContentScroll",
+            typeid(bool),
+            typeid(ScrollViewer),
+            binding::PropertyMetadata{std::any(false)}
+        );
+    return property;
+}
+
+const binding::DependencyProperty& ScrollViewer::IsDeferredScrollingEnabledProperty() {
+    static auto& property = 
+        binding::DependencyProperty::Register(
+            "IsDeferredScrollingEnabled",
+            typeid(bool),
+            typeid(ScrollViewer),
+            binding::PropertyMetadata{std::any(false)}
+        );
+    return property;
+}
+
+// ========== 附加属性实现 ==========
+
+ScrollBarVisibility ScrollViewer::GetHorizontalScrollBarVisibility(const UIElement* element) {
+    // TODO: 实现附加属性获取
+    return ScrollBarVisibility::Auto;
+}
+
+void ScrollViewer::SetHorizontalScrollBarVisibility(UIElement* element, ScrollBarVisibility value) {
+    // TODO: 实现附加属性设置
+}
+
+ScrollBarVisibility ScrollViewer::GetVerticalScrollBarVisibility(const UIElement* element) {
+    // TODO: 实现附加属性获取
+    return ScrollBarVisibility::Auto;
+}
+
+void ScrollViewer::SetVerticalScrollBarVisibility(UIElement* element, ScrollBarVisibility value) {
+    // TODO: 实现附加属性设置
+}
+
+// ========== 属性访问器 ==========
+
+ScrollBarVisibility ScrollViewer::GetHorizontalScrollBarVisibility() const {
+    return horizontalScrollBarVisibility_;
+}
+
+ScrollViewer* ScrollViewer::SetHorizontalScrollBarVisibility(ScrollBarVisibility value) {
+    horizontalScrollBarVisibility_ = value;
+    // TODO: 更新滚动条可见性
+    return this;
+}
+
+ScrollBarVisibility ScrollViewer::GetVerticalScrollBarVisibility() const {
+    return verticalScrollBarVisibility_;
+}
+
+ScrollViewer* ScrollViewer::SetVerticalScrollBarVisibility(ScrollBarVisibility value) {
+    verticalScrollBarVisibility_ = value;
+    // TODO: 更新滚动条可见性
+    return this;
+}
+
+float ScrollViewer::GetHorizontalOffset() const {
+    return horizontalOffset_;
+}
+
+float ScrollViewer::GetVerticalOffset() const {
+    return verticalOffset_;
+}
+
+float ScrollViewer::GetViewportWidth() const {
+    return viewportWidth_;
+}
+
+float ScrollViewer::GetViewportHeight() const {
+    return viewportHeight_;
+}
+
+float ScrollViewer::GetExtentWidth() const {
+    return extentWidth_;
+}
+
+float ScrollViewer::GetExtentHeight() const {
+    return extentHeight_;
+}
+
+float ScrollViewer::GetScrollableWidth() const {
+    return std::max(0.0f, extentWidth_ - viewportWidth_);
+}
+
+float ScrollViewer::GetScrollableHeight() const {
+    return std::max(0.0f, extentHeight_ - viewportHeight_);
+}
+
+bool ScrollViewer::GetCanContentScroll() const {
+    return canContentScroll_;
+}
+
+ScrollViewer* ScrollViewer::SetCanContentScroll(bool value) {
+    canContentScroll_ = value;
+    // TODO: 通知 ScrollContentPresenter
+    return this;
+}
+
+// ========== 滚动方法（Stub）==========
 
 void ScrollViewer::LineLeft() {
-    ScrollToHorizontalOffset(horizontalOffset_ - 16.0f);  // 默认16像素
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::LineRight() {
-    ScrollToHorizontalOffset(horizontalOffset_ + 16.0f);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::LineUp() {
-    ScrollToVerticalOffset(verticalOffset_ - 16.0f);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::LineDown() {
-    ScrollToVerticalOffset(verticalOffset_ + 16.0f);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::PageUp() {
-    ScrollToVerticalOffset(verticalOffset_ - viewportHeight_);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::PageDown() {
-    ScrollToVerticalOffset(verticalOffset_ + viewportHeight_);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::PageLeft() {
-    ScrollToHorizontalOffset(horizontalOffset_ - viewportWidth_);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::PageRight() {
-    ScrollToHorizontalOffset(horizontalOffset_ + viewportWidth_);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::ScrollToTop() {
-    ScrollToVerticalOffset(0.0f);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::ScrollToBottom() {
-    ScrollToVerticalOffset(extentHeight_);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::ScrollToLeftEnd() {
-    ScrollToHorizontalOffset(0.0f);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::ScrollToRightEnd() {
-    ScrollToHorizontalOffset(extentWidth_);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::ScrollToHorizontalOffset(float offset) {
-    SetHorizontalOffset(offset);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
 void ScrollViewer::ScrollToVerticalOffset(float offset) {
-    SetVerticalOffset(offset);
+    // TODO: Phase 3 - 实现滚动逻辑
 }
 
-// ========== 布局 ==========
-
-Size ScrollViewer::MeasureOverride(Size availableSize) {
-    // 测量内容
-    std::any contentAny = GetContent();
-    if (contentAny.has_value()) {
-        // 尝试转换为UIElement
-        try {
-            auto* content = std::any_cast<UIElement*>(contentAny);
-            if (content) {
-                // 给内容无限空间进行测量，以确定其实际大小
-                Size infiniteSize(
-                    std::numeric_limits<float>::infinity(),
-                    std::numeric_limits<float>::infinity()
-                );
-                content->Measure(infiniteSize);
-                
-                Size contentSize = content->GetDesiredSize();
-                extentWidth_ = contentSize.width;
-                extentHeight_ = contentSize.height;
-            }
-        } catch (const std::bad_any_cast&) {
-            extentWidth_ = 0.0f;
-            extentHeight_ = 0.0f;
-        }
-    } else {
-        extentWidth_ = 0.0f;
-        extentHeight_ = 0.0f;
-    }
-    
-    // 计算视口大小
-    viewportWidth_ = availableSize.width;
-    viewportHeight_ = availableSize.height;
-    
-    // 更新滚动条
-    UpdateScrollBarsRange();
-    UpdateScrollBarsVisibility();
-    
-    return availableSize;
-}
-
-Size ScrollViewer::ArrangeOverride(Size finalSize) {
-    // 排列内容
-    std::any contentAny = GetContent();
-    if (contentAny.has_value()) {
-        try {
-            auto* content = std::any_cast<UIElement*>(contentAny);
-            if (content) {
-                // 内容按其实际大小排列
-                Rect contentRect(
-                    -horizontalOffset_,
-                    -verticalOffset_,
-                    std::max(extentWidth_, viewportWidth_),
-                    std::max(extentHeight_, viewportHeight_)
-                );
-                content->Arrange(contentRect);
-            }
-        } catch (const std::bad_any_cast&) {
-            // 忽略
-        }
-    }
-    
-    // 排列滚动条
-    if (horizontalScrollBar_ && horizontalScrollBar_->GetVisibility() == Visibility::Visible) {
-        Rect hScrollRect(0, finalSize.height - 20, finalSize.width - 20, 20);
-        horizontalScrollBar_->Arrange(hScrollRect);
-    }
-    
-    if (verticalScrollBar_ && verticalScrollBar_->GetVisibility() == Visibility::Visible) {
-        Rect vScrollRect(finalSize.width - 20, 0, 20, finalSize.height - 20);
-        verticalScrollBar_->Arrange(vScrollRect);
-    }
-    
-    return finalSize;
-}
-
-// ========== 渲染 ==========
-
-void ScrollViewer::OnRender(render::RenderContext& context) {
-    // 绘制背景
-    Size size = GetRenderSize();
-    Rect rect(0, 0, size.width, size.height);
-    auto white = Color::White();
-    context.DrawBorder(rect, {white.r, white.g, white.b, white.a});
-    
-    // ✅ 裁剪现在由UIElement::CollectDrawCommands自动处理
-    // 通过重写ShouldClipToBounds()和CalculateClipBounds()实现
-    // 内容会自动裁剪到视口区域（排除滚动条）
-    
-    // 渲染内容
-    // 内容渲染会由视觉树系统自动处理
-    
-    // 渲染滚动条
-    if (horizontalScrollBar_ && horizontalScrollBar_->GetVisibility() == Visibility::Visible) {
-        // TODO: 渲染水平滚动条
-    }
-    
-    if (verticalScrollBar_ && verticalScrollBar_->GetVisibility() == Visibility::Visible) {
-        // TODO: 渲染垂直滚动条
-    }
-}
-
-// ========== 事件处理 ==========
-
-void ScrollViewer::OnScrollChanged() {
-    // 滚动变更事件
-    // 可以在这里触发事件通知
-}
-
-void ScrollViewer::OnHorizontalScrollBarValueChanged(float oldValue, float newValue) {
-    horizontalOffset_ = newValue;
-    InvalidateArrange();
-    InvalidateVisual();
-}
-
-void ScrollViewer::OnVerticalScrollBarValueChanged(float oldValue, float newValue) {
-    verticalOffset_ = newValue;
-    InvalidateArrange();
-    InvalidateVisual();
-}
-
-// ========== 私有方法 ==========
-
-void ScrollViewer::UpdateScrollBarsVisibility() {
-    // 水平滚动条
-    bool showHorizontal = false;
-    switch (horizontalScrollBarVisibility_) {
-        case ScrollBarVisibility::Disabled:
-            showHorizontal = false;
-            break;
-        case ScrollBarVisibility::Auto:
-            showHorizontal = (extentWidth_ > viewportWidth_);
-            break;
-        case ScrollBarVisibility::Hidden:
-            showHorizontal = false;
-            break;
-        case ScrollBarVisibility::Visible:
-            showHorizontal = true;
-            break;
-    }
-    
-    if (horizontalScrollBar_) {
-        horizontalScrollBar_->SetVisibility(
-            showHorizontal ? Visibility::Visible : Visibility::Collapsed
-        );
-    }
-    
-    // 垂直滚动条
-    bool showVertical = false;
-    switch (verticalScrollBarVisibility_) {
-        case ScrollBarVisibility::Disabled:
-            showVertical = false;
-            break;
-        case ScrollBarVisibility::Auto:
-            showVertical = (extentHeight_ > viewportHeight_);
-            break;
-        case ScrollBarVisibility::Hidden:
-            showVertical = false;
-            break;
-        case ScrollBarVisibility::Visible:
-            showVertical = true;
-            break;
-    }
-    
-    if (verticalScrollBar_) {
-        verticalScrollBar_->SetVisibility(
-            showVertical ? Visibility::Visible : Visibility::Collapsed
-        );
-    }
-}
-
-void ScrollViewer::UpdateScrollBarsRange() {
-    if (horizontalScrollBar_) {
-        horizontalScrollBar_->SetMinimum(0.0f);
-        horizontalScrollBar_->SetMaximum(std::max(0.0f, extentWidth_ - viewportWidth_));
-        horizontalScrollBar_->SetViewportSize(viewportWidth_);
-        horizontalScrollBar_->SetLargeChange(viewportWidth_);
-    }
-    
-    if (verticalScrollBar_) {
-        verticalScrollBar_->SetMinimum(0.0f);
-        verticalScrollBar_->SetMaximum(std::max(0.0f, extentHeight_ - viewportHeight_));
-        verticalScrollBar_->SetViewportSize(viewportHeight_);
-        verticalScrollBar_->SetLargeChange(viewportHeight_);
-    }
-}
-
-Rect ScrollViewer::CalculateViewportRect() const {
-    return Rect(0, 0, viewportWidth_, viewportHeight_);
+void ScrollViewer::ScrollToElement(UIElement* element) {
+    // TODO: Phase 3 - 实现滚动到元素的逻辑
 }
 
 } // namespace fk::ui

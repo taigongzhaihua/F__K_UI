@@ -1,15 +1,24 @@
 /**
  * @file ScrollBar.h
- * @brief ScrollBar 滚动条控件
+ * @brief ScrollBar 滚动条控件 - 新设计（WPF 风格）
  * 
- * 职责：
- * - 提供滚动条UI控件
- * - 支持水平和垂直方向
- * - 值范围控制（Minimum/Maximum）
- * - 视口大小控制（ViewportSize）
- * - 滚动增量控制
+ * 设计理念：
+ * 1. 采用 WPF ScrollBar 的架构设计
+ * 2. 完全可模板化 - 支持通过 ControlTemplate 自定义外观
+ * 3. 由三个主要部分组成（通过模板定义）：
+ *    - Track: 滚动轨道（包含 Thumb 和两个 RepeatButton）
+ *    - Thumb: 可拖动的滑块
+ *    - RepeatButton: 两端的递增/递减按钮
+ * 4. 支持 RangeBase 模式（继承值范围行为）
  * 
- * WPF 对应：ScrollBar
+ * WPF 对应：ScrollBar (继承自 RangeBase)
+ * 
+ * TODO 实现计划：
+ * - Phase 1: 基础架构和接口定义 ✓
+ * - Phase 2: RangeBase 行为实现（或直接集成）
+ * - Phase 3: Track/Thumb/RepeatButton 模板部分
+ * - Phase 4: 鼠标交互和拖动支持
+ * - Phase 5: 样式和动画
  */
 
 #pragma once
@@ -18,134 +27,125 @@
 #include "fk/ui/Enums.h"
 #include "fk/core/Event.h"
 
-namespace fk::render {
-    class RenderContext;
-}
-
 namespace fk::ui {
 
+class Track;
+class Thumb;
+class RepeatButton;
+
 /**
- * @brief 滚动条控件
+ * @brief 滚动条控件（新设计 - WPF 风格）
  * 
- * 提供可视化的滚动条，用于在有限空间内浏览大量内容。
+ * 架构特点：
+ * 1. 作为 RangeBase 的特化，提供滚动条特有的功能
+ * 2. 完全基于模板 - 外观由 ControlTemplate 定义
+ * 3. 默认模板包含：
+ *    - LineUpButton (RepeatButton): 向上/左按钮
+ *    - LineDownButton (RepeatButton): 向下/右按钮
+ *    - Track: 包含 Thumb 和可点击区域的轨道
+ * 4. ViewportSize 决定 Thumb 的大小（比例）
+ * 
+ * 使用示例：
+ * @code
+ * auto scrollBar = new ScrollBar();
+ * scrollBar->SetOrientation(Orientation::Vertical);
+ * scrollBar->SetMinimum(0);
+ * scrollBar->SetMaximum(100);
+ * scrollBar->SetValue(50);
+ * scrollBar->SetViewportSize(10);
+ * @endcode
  */
 class ScrollBar : public Control<ScrollBar> {
 public:
     ScrollBar();
     virtual ~ScrollBar() = default;
     
-    // ========== 依赖属性 ==========
+    // ========== 依赖属性（TODO: 完整实现）==========
     
     /// Orientation 属性
     static const binding::DependencyProperty& OrientationProperty();
     
-    /// Minimum 属性
+    /// Minimum 属性（继承自 RangeBase 概念）
     static const binding::DependencyProperty& MinimumProperty();
     
-    /// Maximum 属性
+    /// Maximum 属性（继承自 RangeBase 概念）
     static const binding::DependencyProperty& MaximumProperty();
     
-    /// Value 属性
+    /// Value 属性（继承自 RangeBase 概念）
     static const binding::DependencyProperty& ValueProperty();
     
-    /// ViewportSize 属性（可见区域大小）
+    /// ViewportSize 属性（滚动条特有）
     static const binding::DependencyProperty& ViewportSizeProperty();
     
-    /// SmallChange 属性（小增量）
+    /// SmallChange 属性（小增量，用于 RepeatButton）
     static const binding::DependencyProperty& SmallChangeProperty();
     
-    /// LargeChange 属性（大增量）
+    /// LargeChange 属性（大增量，用于 Track 点击）
     static const binding::DependencyProperty& LargeChangeProperty();
     
-    // ========== 属性访问 ==========
+    // ========== 属性访问器 ==========
     
-    Orientation GetOrientation() const { return orientation_; }
-    ScrollBar* SetOrientation(Orientation value) {
-        orientation_ = value;
-        InvalidateVisual();
-        return this;
-    }
+    Orientation GetOrientation() const;
+    ScrollBar* SetOrientation(Orientation value);
     
-    float GetMinimum() const { return minimum_; }
-    ScrollBar* SetMinimum(float value) {
-        minimum_ = value;
-        CoerceValue();
-        return this;
-    }
+    float GetMinimum() const;
+    ScrollBar* SetMinimum(float value);
     
-    float GetMaximum() const { return maximum_; }
-    ScrollBar* SetMaximum(float value) {
-        maximum_ = value;
-        CoerceValue();
-        return this;
-    }
+    float GetMaximum() const;
+    ScrollBar* SetMaximum(float value);
     
-    float GetValue() const { return value_; }
-    ScrollBar* SetValue(float value) {
-        float oldValue = value_;
-        value_ = std::max(minimum_, std::min(maximum_, value));
-        if (value_ != oldValue) {
-            OnValueChanged(oldValue, value_);
-        }
-        return this;
-    }
+    float GetValue() const;
+    ScrollBar* SetValue(float value);
     
-    float GetViewportSize() const { return viewportSize_; }
-    ScrollBar* SetViewportSize(float value) {
-        viewportSize_ = value;
-        InvalidateVisual();
-        return this;
-    }
+    float GetViewportSize() const;
+    ScrollBar* SetViewportSize(float value);
     
-    float GetSmallChange() const { return smallChange_; }
-    ScrollBar* SetSmallChange(float value) {
-        smallChange_ = value;
-        return this;
-    }
+    float GetSmallChange() const;
+    ScrollBar* SetSmallChange(float value);
     
-    float GetLargeChange() const { return largeChange_; }
-    ScrollBar* SetLargeChange(float value) {
-        largeChange_ = value;
-        return this;
-    }
+    float GetLargeChange() const;
+    ScrollBar* SetLargeChange(float value);
     
     // ========== 事件 ==========
     
-    /// 值改变事件
+    /// 值改变事件（TODO: 改为路由事件）
     core::Event<float, float> ValueChanged;
     
-    // ========== 滚动操作 ==========
+    /// Scroll 事件（WPF 特有，提供滚动类型信息）
+    // TODO: 添加 Scroll 路由事件
     
-    /// 向上/左滚动（小增量）
+    // ========== 命令方法 ==========
+    
+    /// 向上/左滚动（SmallChange）
     void LineUp();
     
-    /// 向下/右滚动（小增量）
+    /// 向下/右滚动（SmallChange）
     void LineDown();
     
-    /// 向上/左滚动（大增量）
+    /// 向上/左滚动（LargeChange）
     void PageUp();
     
-    /// 向下/右滚动（大增量）
+    /// 向下/右滚动（LargeChange）
     void PageDown();
     
-    /// 滚动到开始
+    /// 滚动到开始位置
     void ScrollToStart();
     
-    /// 滚动到结束
+    /// 滚动到结束位置
     void ScrollToEnd();
     
 protected:
-    // ========== 重写方法 ==========
+    // ========== 模板部分（TODO）==========
     
-    Size MeasureOverride(Size availableSize);
-    Size ArrangeOverride(Size finalSize);
-    void OnRender(render::RenderContext& context);
+    // 在完整实现中，这些方法将处理模板元素的获取和事件绑定
+    // virtual void OnApplyTemplate() override;
     
     // ========== 事件处理 ==========
     
     virtual void OnValueChanged(float oldValue, float newValue);
     
-private:
+    // ========== 内部状态（临时）==========
+    
     Orientation orientation_{Orientation::Vertical};
     float minimum_{0.0f};
     float maximum_{100.0f};
@@ -154,11 +154,42 @@ private:
     float smallChange_{1.0f};
     float largeChange_{10.0f};
     
+private:
     /// 强制值在有效范围内
     void CoerceValue();
-    
-    /// 计算滑块位置
-    Rect CalculateThumbRect(Size containerSize) const;
+};
+
+/**
+ * @brief Track - 滚动条轨道（WPF 中的 Track 类）
+ * 
+ * TODO: 未来实现
+ * Track 是一个特殊的布局控件，包含三个子元素：
+ * - DecreaseRepeatButton: 在 Thumb 之前的区域
+ * - Thumb: 可拖动的滑块
+ * - IncreaseRepeatButton: 在 Thumb 之后的区域
+ */
+class Track : public UIElement {
+    // TODO: 实现 Track 布局逻辑
+};
+
+/**
+ * @brief Thumb - 可拖动的滑块（WPF 中的 Thumb 类）
+ * 
+ * TODO: 未来实现
+ * Thumb 提供拖动功能，触发 DragStarted、DragDelta、DragCompleted 事件
+ */
+class Thumb : public Control<Thumb> {
+    // TODO: 实现 Thumb 拖动逻辑
+};
+
+/**
+ * @brief RepeatButton - 重复按钮（WPF 中的 RepeatButton 类）
+ * 
+ * TODO: 未来实现
+ * RepeatButton 在按住时重复触发 Click 事件
+ */
+class RepeatButton : public Control<RepeatButton> {
+    // TODO: 实现 RepeatButton 重复点击逻辑
 };
 
 } // namespace fk::ui

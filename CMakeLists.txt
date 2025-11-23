@@ -204,8 +204,8 @@ add_library(fk STATIC
     src/ui/Brush.cpp
     src/ui/ContentPresenter.cpp
     src/ui/Shape.cpp
-    src/ui/ScrollBar.cpp
-    src/ui/ScrollViewer.cpp
+    src/ui/ScrollBar.cpp      # 重新设计（WPF 风格），当前为 stub 实现
+    src/ui/ScrollViewer.cpp   # 重新设计（WPF 风格），当前为 stub 实现
     src/ui/ListBox.cpp
     src/ui/Popup.cpp
     src/ui/ComboBox.cpp
