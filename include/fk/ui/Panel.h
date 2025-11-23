@@ -31,6 +31,9 @@ public:
     
     /// CornerRadius 属性：圆角半径
     static const binding::DependencyProperty& CornerRadiusProperty();
+    
+    /// ClipToBounds 属性：是否裁剪到边界
+    static const binding::DependencyProperty& ClipToBoundsProperty();
 
 public:
     Panel() = default;
@@ -61,6 +64,17 @@ public:
         return static_cast<Derived*>(this);
     }
     ui::CornerRadius CornerRadius() const { return GetCornerRadius(); }
+    
+    // ========== 裁剪控制 ==========
+    
+    bool GetClipToBounds() const { return this->template GetValue<bool>(ClipToBoundsProperty()); }
+    void SetClipToBounds(bool value) { this->SetValue(ClipToBoundsProperty(), value); }
+    
+    Derived* ClipToBounds(bool value) {
+        SetClipToBounds(value);
+        return static_cast<Derived*>(this);
+    }
+    bool ClipToBounds() const { return GetClipToBounds(); }
 
     // ========== 子元素集合 ==========
     
@@ -152,6 +166,15 @@ protected:
                 // 派生类的 ArrangeOverride 应该调用 child->Arrange()
             }
         }
+    }
+    
+    // ========== 裁剪系统（新增）==========
+    
+    /**
+     * @brief Panel的裁剪由ClipToBounds属性控制
+     */
+    bool ShouldClipToBounds() const override {
+        return GetClipToBounds();
     }
 
     // 子元素集合
