@@ -256,9 +256,11 @@ endif()
 
 # ===== 示例可执行文件 =====
 
-# Basic Examples
-add_executable(example_app examples/basic/main.cpp)
+# Demo Examples
+add_executable(example_app examples/demos/complex_layout_demo.cpp)
 target_link_libraries(example_app PRIVATE fk)
+
+# Basic Examples
 
 add_executable(radiobutton_demo examples/basic/radiobutton_demo.cpp)
 target_link_libraries(radiobutton_demo PRIVATE fk)
@@ -410,7 +412,7 @@ message(STATUS "F__K_UI library build configured successfully!")
 message(STATUS "  - Library: libfk.a")
 message(STATUS "  - Include: ${CMAKE_SOURCE_DIR}/include")
 message(STATUS "  - Third-party: ${THIRD_PARTY_DIR}")
-message(STATUS "  - Example target: example_app (examples/main.cpp)")
+message(STATUS "  - Example target: example_app (examples/demos/complex_layout_demo.cpp)")
 message(STATUS "  - Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "  - Install command: cmake --install . [--prefix <path>]")
 
