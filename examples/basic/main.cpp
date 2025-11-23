@@ -146,6 +146,7 @@ int main(int argc, char **argv)
                                 ->Margin(fk::ui::Thickness(20))
                                 ->Children( // Card 1 - Welcome
                                     {(new fk::ui::Grid())
+                                             ->Name("Card1")
                                              ->Background(fk::ui::Brushes::White())
                                              ->CornerRadius(8)
                                              ->Rows("Auto, *")
@@ -167,10 +168,12 @@ int main(int argc, char **argv)
 
                                      // Card 2 - ToggleButton Demo
                                      (new fk::ui::Grid())
+                                             ->Name("Card2")
                                              ->Background(new fk::ui::SolidColorBrush(255, 250, 240))
                                              ->CornerRadius(8)
                                              ->Rows("Auto, *")
                                              ->Margin(fk::ui::Thickness(10, 0, 0, 10))
+                                             ->Padding(fk::ui::Thickness(0,0,0,15))
                                              ->Children(
                                                  {(new fk::ui::TextBlock())
                                                           ->Text("ToggleButton Demo")
@@ -179,7 +182,7 @@ int main(int argc, char **argv)
                                                           ->Margin(fk::ui::Thickness(15)) |
                                                       fk::ui::cell(0, 0),
                                                   (new fk::ui::StackPanel())
-                                                          ->Margin(fk::ui::Thickness(15, 0, 15, 15))
+                                                          ->Margin(fk::ui::Thickness(15, 0, 15, 0))
                                                           ->Children(
                                                               {(new fk::ui::TextBlock())
                                                                    ->Text("Click to toggle state:")

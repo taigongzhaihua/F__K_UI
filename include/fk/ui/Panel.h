@@ -171,10 +171,18 @@ protected:
     // ========== 裁剪系统（新增）==========
     
     /**
-     * @brief Panel的裁剪由ClipToBounds属性控制
+     * @brief Panel的裁剪：ClipToBounds=true 或 有圆角时自动启用
      */
     bool ShouldClipToBounds() const override {
-        return GetClipToBounds();
+        // 显式设置了ClipToBounds
+        if (GetClipToBounds()) {
+            return true;
+        }
+        
+        // 有圆角时自动启用裁剪
+        auto cornerRadius = GetCornerRadius();
+        return cornerRadius.topLeft > 0.0f || cornerRadius.topRight > 0.0f ||
+               cornerRadius.bottomRight > 0.0f || cornerRadius.bottomLeft > 0.0f;
     }
 
     // 子元素集合

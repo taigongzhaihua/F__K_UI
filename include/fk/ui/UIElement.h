@@ -438,6 +438,11 @@ protected:
      * @brief 设置渲染尺寸（由 ArrangeCore 使用）
      */
     void SetRenderSize(const Size& size) { renderSize_ = size; }
+    
+    /**
+     * @brief 设置布局矩形（由 FrameworkElement::ArrangeCore 使用）
+     */
+    void SetLayoutRect(const Rect& rect) { layoutRect_ = rect; }
 
 private:
     /**

@@ -391,22 +391,6 @@ void UIElement::CollectDrawCommands(render::RenderContext& context) {
         context.PushLayer(opacity);
     }
 
-    // 统一的裁剪处理（新设计）
-    auto clipRegion = DetermineClipRegion();
-    if (clipRegion.has_value()) {
-        // 提前剔除优化：如果完全被裁剪，跳过整个子树
-        if (context.IsCompletelyClipped(*clipRegion)) {
-            // 完全被裁剪，跳过绘制
-            if (hasOpacity) {
-                context.PopLayer();
-            }
-            context.PopTransform();
-            return;
-        }
-        
-        context.PushClip(*clipRegion);
-    }
-
     // TODO: 应用渲染变换（RenderTransform属性）
     // Transform* renderTransform = GetRenderTransform();
     // if (renderTransform) {
@@ -414,8 +398,14 @@ void UIElement::CollectDrawCommands(render::RenderContext& context) {
     //     // context.PushTransform(renderTransform->GetMatrix());
     // }
 
-    // 绘制自身内容
+    // 绘制自身内容（不受裁剪影响）
     OnRender(context);
+
+    // 统一的裁剪处理（新设计）- 只影响子元素
+    auto clipRegion = DetermineClipRegion();
+    if (clipRegion.has_value()) {
+        context.PushClip(*clipRegion);
+    }
 
     // 收集子元素绘制命令
     Visual::CollectDrawCommands(context);

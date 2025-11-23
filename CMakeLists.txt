@@ -263,6 +263,15 @@ target_link_libraries(example_app PRIVATE fk)
 add_executable(radiobutton_demo examples/basic/radiobutton_demo.cpp)
 target_link_libraries(radiobutton_demo PRIVATE fk)
 
+add_executable(border_test examples/basic/border_test.cpp)
+target_link_libraries(border_test PRIVATE fk)
+
+add_executable(clip_test examples/basic/clip_test.cpp)
+target_link_libraries(clip_test PRIVATE fk)
+
+add_executable(constraint_test examples/basic/constraint_test.cpp)
+target_link_libraries(constraint_test PRIVATE fk)
+
 # Shape Examples
 add_executable(shape_demo examples/shapes/shape_demo.cpp)
 target_link_libraries(shape_demo PRIVATE fk)

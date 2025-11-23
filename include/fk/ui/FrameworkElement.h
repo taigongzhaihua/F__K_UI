@@ -266,11 +266,11 @@ protected:
         auto margin = GetMargin();
         auto padding = GetPadding();
         
-        // 1. 减去 Margin 和 Padding
+        // 1. 只减去 Padding（Margin 不在 MeasureCore 中处理，而是由父容器在 Arrange 时考虑）
         float availWidth = std::max(0.0f, 
-            availableSize.width - margin.left - margin.right - padding.left - padding.right);
+            availableSize.width - padding.left - padding.right);
         float availHeight = std::max(0.0f,
-            availableSize.height - margin.top - margin.bottom - padding.top - padding.bottom);
+            availableSize.height - padding.top - padding.bottom);
         
         // 2. 应用尺寸约束
         auto constrainedSize = ApplySizeConstraints(Size(availWidth, availHeight));
@@ -288,9 +288,9 @@ protected:
             desiredSize.height = explicitHeight;
         }
         
-        // 4. 加上 Padding（但不加 Margin！）
-        // Margin 是外边距，由父容器处理
-        // Padding 是内边距，由元素自己处理
+        // 4. 只加上 Padding（Margin 由父容器处理，不应包含在 DesiredSize 中）
+        // DesiredSize = 内容尺寸 + Padding
+        // Margin 完全由父容器在 Arrange 时处理
         desiredSize.width += padding.left + padding.right;
         desiredSize.height += padding.top + padding.bottom;
         
@@ -312,6 +312,12 @@ protected:
         float desiredWidth = std::max(0.0f, desiredSize.width - padding.left - padding.right);
         float desiredHeight = std::max(0.0f, desiredSize.height - padding.top - padding.bottom);
         
+        // 2.5 检查是否有显式尺寸
+        float explicitWidth = GetWidth();
+        float explicitHeight = GetHeight();
+        bool hasExplicitWidth = (explicitWidth > 0 && !std::isnan(explicitWidth));
+        bool hasExplicitHeight = (explicitHeight > 0 && !std::isnan(explicitHeight));
+        
         // 3. 应用对齐方式
         auto hAlign = GetHorizontalAlignment();
         auto vAlign = GetVerticalAlignment();
@@ -321,19 +327,41 @@ protected:
         
         // 水平对齐
         if (hAlign != HorizontalAlignment::Stretch) {
-            finalWidth = std::min(desiredWidth, arrangeWidth);
+            // 如果有显式宽度，使用显式值（即使超出arrangeWidth）
+            // 否则使用desiredWidth但不超过arrangeWidth
+            if (hasExplicitWidth) {
+                finalWidth = explicitWidth;
+            } else {
+                finalWidth = std::min(desiredWidth, arrangeWidth);
+            }
+        } else if (hasExplicitWidth) {
+            // 即使是Stretch，如果有显式宽度也使用显式值
+            finalWidth = explicitWidth;
         }
         
         // 垂直对齐
         if (vAlign != VerticalAlignment::Stretch) {
-            finalHeight = std::min(desiredHeight, arrangeHeight);
+            // 如果有显式高度，使用显式值（即使超出arrangeHeight）
+            // 否则使用desiredHeight但不超过arrangeHeight
+            if (hasExplicitHeight) {
+                finalHeight = explicitHeight;
+            } else {
+                finalHeight = std::min(desiredHeight, arrangeHeight);
+            }
+        } else if (hasExplicitHeight) {
+            // 即使是Stretch，如果有显式高度也使用显式值
+            finalHeight = explicitHeight;
         }
         
         // 4. 调用派生类的排列逻辑，获取实际渲染尺寸
         auto actualSize = ArrangeOverride(Size(finalWidth, finalHeight));
         
-        // 5. 设置渲染尺寸
+        // 5. 设置渲染尺寸（这是内容区域的尺寸，已减去Padding）
         SetRenderSize(actualSize);
+        
+        // 注意：layoutRect 保持为 finalRect（由基类UIElement::Arrange设置）
+        // layoutRect 包含完整的元素区域（含Padding），用于背景/边框绘制
+        // renderSize 是内容区域的尺寸（减去Padding），用于子元素布局
     }
 
 protected:

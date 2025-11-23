@@ -406,6 +406,9 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
         colOffsets[i + 1] = colOffsets[i] + columnDefinitions_[i].actualWidth;
     }
     
+    // 获取 Padding（子元素需要排列在内容区域）
+    auto padding = GetPadding();
+    
     // 排列子元素（支持对齐和边距）
     for (auto* child : children_) {
         if (child && child->GetVisibility() != Visibility::Collapsed) {
@@ -487,7 +490,8 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
                     break;
             }
             
-            child->Arrange(Rect(childX, childY, childWidth, childHeight));
+            // 加上 Padding 偏移（子元素坐标相对于 Panel 的 (0,0)）
+            child->Arrange(Rect(padding.left + childX, padding.top + childY, childWidth, childHeight));
         }
     }
     
@@ -795,9 +799,9 @@ void Grid::OnRender(render::RenderContext& context) {
         return; // 没有背景，不需要绘制
     }
     
-    // 获取渲染大小
-    auto renderSize = GetRenderSize();
-    Rect rect(0, 0, renderSize.width, renderSize.height);
+    // 背景应该覆盖整个布局区域（包括Padding）
+    auto layoutRect = GetLayoutRect();
+    Rect rect(0, 0, layoutRect.width, layoutRect.height);
     
     // 获取圆角
     auto cornerRadius = GetCornerRadius();

@@ -184,10 +184,55 @@ Size Border::ArrangeOverride(const Size& finalSize) {
 }
 
 void Border::ArrangeCore(const Rect& finalRect) {
-    // 直接调用 ArrangeOverride，传入完整的尺寸（不减去 Padding）
-    // Border 的 Padding 是内部的，由 ArrangeOverride 处理
-    Size finalSize(finalRect.width, finalRect.height);
-    Size renderSize = ArrangeOverride(finalSize);
+    // Border 的 Padding 是用于子元素布局的，不应在此处减去
+    // 但需要支持显式 Width/Height
+    
+    // 1. 获取期望尺寸
+    auto desiredSize = GetDesiredSize();
+    
+    // 2. 检查是否有显式尺寸
+    float explicitWidth = GetWidth();
+    float explicitHeight = GetHeight();
+    bool hasExplicitWidth = (explicitWidth > 0 && !std::isnan(explicitWidth));
+    bool hasExplicitHeight = (explicitHeight > 0 && !std::isnan(explicitHeight));
+    
+    // 3. 应用对齐方式决定最终尺寸
+    auto hAlign = GetHorizontalAlignment();
+    auto vAlign = GetVerticalAlignment();
+    
+    float finalWidth = finalRect.width;
+    float finalHeight = finalRect.height;
+    
+    // 水平对齐
+    if (hAlign != HorizontalAlignment::Stretch) {
+        // 如果有显式宽度，使用显式值（即使超出finalRect.width）
+        // 否则使用desiredWidth但不超过finalRect.width
+        if (hasExplicitWidth) {
+            finalWidth = explicitWidth;
+        } else {
+            finalWidth = std::min(desiredSize.width, finalRect.width);
+        }
+    } else if (hasExplicitWidth) {
+        // 即使是Stretch，如果有显式宽度也使用显式值
+        finalWidth = explicitWidth;
+    }
+    
+    // 垂直对齐
+    if (vAlign != VerticalAlignment::Stretch) {
+        // 如果有显式高度，使用显式值（即使超出finalRect.height）
+        // 否则使用desiredHeight但不超过finalRect.height
+        if (hasExplicitHeight) {
+            finalHeight = explicitHeight;
+        } else {
+            finalHeight = std::min(desiredSize.height, finalRect.height);
+        }
+    } else if (hasExplicitHeight) {
+        // 即使是Stretch，如果有显式高度也使用显式值
+        finalHeight = explicitHeight;
+    }
+    
+    // 4. 调用 ArrangeOverride 并设置渲染尺寸
+    Size renderSize = ArrangeOverride(Size(finalWidth, finalHeight));
     SetRenderSize(renderSize);
 }
 
@@ -202,9 +247,9 @@ void Border::OnRender(render::RenderContext& context) {
         return {{0.0f, 0.0f, 0.0f, 0.0f}};
     };
     
-    // 获取渲染大小
-    auto renderSize = GetRenderSize();
-    Rect rect(0, 0, renderSize.width, renderSize.height);
+    // 背景和边框应该覆盖整个布局区域（包括Padding）
+    auto layoutRect = GetLayoutRect();
+    Rect rect(0, 0, layoutRect.width, layoutRect.height);
     
     // 获取背景和边框属性
     auto background = GetBackground();

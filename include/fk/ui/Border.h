@@ -125,7 +125,7 @@ protected:
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
     
-    // 重写 ArrangeCore 以避免 FrameworkElement 自动减去 Padding
+    // 重写 ArrangeCore：Border 的 Padding 由 ArrangeOverride 处理，同时需要支持显式尺寸
     void ArrangeCore(const Rect& finalRect) override;
     
     void OnRender(render::RenderContext& context) override;
@@ -139,10 +139,12 @@ protected:
     // ========== 裁剪系统（新增）==========
     
     /**
-     * @brief Border总是裁剪子元素到内容区域
+     * @brief Border的裁剪：有圆角时自动启用
      */
     bool ShouldClipToBounds() const override { 
-        return true; 
+        auto cornerRadius = GetCornerRadius();
+        return cornerRadius.topLeft > 0.0f || cornerRadius.topRight > 0.0f ||
+               cornerRadius.bottomRight > 0.0f || cornerRadius.bottomLeft > 0.0f;
     }
     
     /**

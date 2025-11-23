@@ -557,8 +557,9 @@ void GlRenderer::ApplyClip(const ClipPayload& payload) {
         
         // 计算裁切区域 (需要转换为窗口坐标系)
         // OpenGL 的裁切坐标系原点在左下角,Y 轴向上
-        float x = currentOffsetX_ + payload.clipRect.x;
-        float y = viewportSize_.height - (currentOffsetY_ + payload.clipRect.y + payload.clipRect.height);
+        // clipRect 已经是全局坐标，不需要再加 currentOffset
+        float x = payload.clipRect.x;
+        float y = viewportSize_.height - (payload.clipRect.y + payload.clipRect.height);
         float width = payload.clipRect.width;
         float height = payload.clipRect.height;
         

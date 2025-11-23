@@ -3,6 +3,7 @@
 #include "fk/render/TextRenderer.h"
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 namespace fk::render {
 

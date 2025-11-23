@@ -43,15 +43,16 @@ Size StackPanel::MeasureOverride(const Size& availableSize) {
     float pendingMargin = 0;
     bool hasVisibleChild = false;
     
-    // 在堆叠方向给予无限空间，让子元素自由测量
-    // 在垂直方向给予容器的约束，避免子元素过度扩展
+    // WPF标准行为：StackPanel在堆叠方向总是给子元素infinity
+    // 这样子元素可以报告真实的期望尺寸，不受限制
+    // 非堆叠方向传递父元素的约束
     Size childAvailable = availableSize;
     
     if (orientation == Orientation::Vertical) {
-        // 垂直堆叠：高度无限，宽度受限
+        // 垂直堆叠：高度方向给infinity，宽度传递约束
         childAvailable.height = std::numeric_limits<float>::infinity();
     } else {
-        // 水平堆叠：宽度无限，高度受限
+        // 水平堆叠：宽度方向给infinity，高度传递约束
         childAvailable.width = std::numeric_limits<float>::infinity();
     }
     
@@ -188,8 +189,10 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
                         break;
                 }
                 
-                // 高度始终使用期望高度（垂直堆叠方向由内容决定）
-                float childHeight = std::max(0.0f, childDesired.height);
+                // WPF标准行为：在堆叠方向（垂直），给子元素其期望高度
+                // 不限制子元素高度，允许超出StackPanel边界
+                // 如果需要裁剪，由父元素或裁剪系统处理
+                float childHeight = childDesired.height;
                 float childY = offset;
 
                 child->Arrange(Rect(childX, childY, childWidth, childHeight));
@@ -246,8 +249,10 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
                         break;
                 }
                 
-                // 宽度始终使用期望宽度（水平堆叠方向由内容决定）
-                float childWidth = std::max(0.0f, childDesired.width);
+                // WPF标准行为：在堆叠方向（水平），给子元素其期望宽度
+                // 不限制子元素宽度，允许超出StackPanel边界
+                // 如果需要裁剪，由父元素或裁剪系统处理
+                float childWidth = childDesired.width;
                 float childX = offset;
 
                 child->Arrange(Rect(childX, childY, childWidth, childHeight));
@@ -279,9 +284,9 @@ void StackPanel::OnRender(render::RenderContext& context) {
         return; // 没有背景，不需要绘制
     }
     
-    // 获取渲染大小
-    auto renderSize = GetRenderSize();
-    Rect rect(0, 0, renderSize.width, renderSize.height);
+    // 背景应该覆盖整个布局区域（包括Padding）
+    auto layoutRect = GetLayoutRect();
+    Rect rect(0, 0, layoutRect.width, layoutRect.height);
     
     // 获取圆角
     auto cornerRadius = GetCornerRadius();

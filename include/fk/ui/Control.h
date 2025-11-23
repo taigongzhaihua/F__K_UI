@@ -322,6 +322,30 @@ protected:
         // 派生类覆写以获取模板部件
     }
     
+    // ========== 布局逻辑 ==========
+    
+    /**
+     * @brief Control的测量逻辑：测量模板根元素
+     */
+    Size MeasureOverride(const Size& availableSize) override {
+        if (templateRoot_) {
+            templateRoot_->Measure(availableSize);
+            return templateRoot_->GetDesiredSize();
+        }
+        return Size(0, 0);
+    }
+    
+    /**
+     * @brief Control的排列逻辑：排列模板根元素
+     */
+    Size ArrangeOverride(const Size& finalSize) override {
+        if (templateRoot_) {
+            templateRoot_->Arrange(Rect(0, 0, finalSize.width, finalSize.height));
+            return finalSize;
+        }
+        return Size(0, 0);
+    }
+    
     /**
      * @brief 鼠标进入
      */
@@ -435,6 +459,15 @@ protected:
         // if (implicitTemplate) {
         //     SetTemplate(implicitTemplate);
         // }
+    }
+    
+    // ========== 裁剪系统 ==========
+    
+    /**
+     * @brief Control启用裁剪以调试问题
+     */
+    bool ShouldClipToBounds() const override {
+        return true;  // 临时启用以调试
     }
 
 private:
