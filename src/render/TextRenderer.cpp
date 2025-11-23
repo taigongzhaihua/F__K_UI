@@ -2,8 +2,118 @@
 
 #include <glad/glad.h>
 #include <iostream>
+#include <vector>
+#include <cstring>
+
+#include FT_COLOR_H
+#include FT_GLYPH_H
 
 namespace fk::render {
+
+// COLR 层渲染辅助函数
+static bool RenderCOLRLayers(FT_Face face, FT_UInt glyphIndex, int& outWidth, int& outHeight, 
+                            int& outBearingX, int& outBearingY, std::vector<unsigned char>& outBuffer) {
+    FT_LayerIterator iterator;
+    FT_UInt layerGlyphIndex;
+    FT_UInt layerColorIndex;
+    FT_Bool haveLayer;
+    
+    iterator.p = NULL;
+    
+    // 首先获取所有层的边界来确定最终尺寸
+    FT_BBox bbox;
+    bbox.xMin = bbox.yMin = 32000;
+    bbox.xMax = bbox.yMax = -32000;
+    
+    // 第一次遍历：计算边界
+    while ((haveLayer = FT_Get_Color_Glyph_Layer(face, glyphIndex, &layerGlyphIndex, &layerColorIndex, &iterator))) {
+        if (FT_Load_Glyph(face, layerGlyphIndex, FT_LOAD_DEFAULT) != 0) continue;
+        
+        FT_Glyph glyph;
+        if (FT_Get_Glyph(face->glyph, &glyph) != 0) continue;
+        
+        FT_BBox layerBbox;
+        FT_Glyph_Get_CBox(glyph, FT_GLYPH_BBOX_PIXELS, &layerBbox);
+        FT_Done_Glyph(glyph);
+        
+        if (layerBbox.xMin < bbox.xMin) bbox.xMin = layerBbox.xMin;
+        if (layerBbox.yMin < bbox.yMin) bbox.yMin = layerBbox.yMin;
+        if (layerBbox.xMax > bbox.xMax) bbox.xMax = layerBbox.xMax;
+        if (layerBbox.yMax > bbox.yMax) bbox.yMax = layerBbox.yMax;
+    }
+    
+    if (bbox.xMin >= bbox.xMax || bbox.yMin >= bbox.yMax) {
+        return false;
+    }
+    
+    outWidth = bbox.xMax - bbox.xMin;
+    outHeight = bbox.yMax - bbox.yMin;
+    outBearingX = bbox.xMin;
+    outBearingY = bbox.yMax;
+    
+    // 创建 RGBA 缓冲区
+    outBuffer.resize(outWidth * outHeight * 4, 0);
+    
+    // 获取调色板
+    FT_Palette_Data paletteData;
+    FT_Palette_Data_Get(face, &paletteData);
+    
+    FT_Color* palette = nullptr;
+    if (paletteData.num_palettes > 0) {
+        FT_Palette_Select(face, 0, &palette);
+    }
+    
+    // 第二次遍历：渲染每一层
+    iterator.p = NULL;
+    while ((haveLayer = FT_Get_Color_Glyph_Layer(face, glyphIndex, &layerGlyphIndex, &layerColorIndex, &iterator))) {
+        if (FT_Load_Glyph(face, layerGlyphIndex, FT_LOAD_RENDER) != 0) continue;
+        
+        FT_Bitmap& bitmap = face->glyph->bitmap;
+        if (bitmap.pixel_mode != FT_PIXEL_MODE_GRAY) continue;
+        
+        // 获取颜色
+        unsigned char r = 0, g = 0, b = 0, a = 255;
+        if (palette && layerColorIndex != 0xFFFF && layerColorIndex < paletteData.num_palette_entries) {
+            FT_Color color = palette[layerColorIndex];
+            r = color.red;
+            g = color.green;
+            b = color.blue;
+            a = color.alpha;
+        }
+        
+        // 混合到输出缓冲区
+        int offsetX = face->glyph->bitmap_left - bbox.xMin;
+        int offsetY = bbox.yMax - face->glyph->bitmap_top;
+        
+        for (unsigned int y = 0; y < bitmap.rows; y++) {
+            for (unsigned int x = 0; x < bitmap.width; x++) {
+                int dstX = offsetX + x;
+                int dstY = offsetY + y;
+                
+                if (dstX < 0 || dstX >= outWidth || dstY < 0 || dstY >= outHeight) continue;
+                
+                unsigned char alpha = bitmap.buffer[y * bitmap.pitch + x];
+                if (alpha == 0) continue;
+                
+                // Alpha blending
+                float srcAlpha = (alpha / 255.0f) * (a / 255.0f);
+                int idx = (dstY * outWidth + dstX) * 4;
+                
+                float dstAlpha = outBuffer[idx + 3] / 255.0f;
+                float outAlpha = srcAlpha + dstAlpha * (1.0f - srcAlpha);
+                
+                if (outAlpha > 0) {
+                    outBuffer[idx + 0] = static_cast<unsigned char>((r * srcAlpha + outBuffer[idx + 0] * dstAlpha * (1.0f - srcAlpha)) / outAlpha);
+                    outBuffer[idx + 1] = static_cast<unsigned char>((g * srcAlpha + outBuffer[idx + 1] * dstAlpha * (1.0f - srcAlpha)) / outAlpha);
+                    outBuffer[idx + 2] = static_cast<unsigned char>((b * srcAlpha + outBuffer[idx + 2] * dstAlpha * (1.0f - srcAlpha)) / outAlpha);
+                    outBuffer[idx + 3] = static_cast<unsigned char>(outAlpha * 255.0f);
+                }
+            }
+        }
+    }
+    
+    return true;
+}
 
 TextRenderer::TextRenderer()
     : ftLibrary_(nullptr)
@@ -86,11 +196,9 @@ int TextRenderer::LoadFont(const std::string& fontPath, unsigned int fontSize) {
     // 禁用字节对齐限制
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    // 预加载 ASCII 字符
+    // 预加载 ASCII 字符（失败是正常的，依赖 fallback）
     for (unsigned char c = 0; c < 128; c++) {
-        if (!LoadCharacter(c, fontId)) {
-            std::cerr << "ERROR::FREETYPE: Failed to load character: " << c << std::endl;
-        }
+        LoadCharacter(c, fontId);
     }
     
     // Phase 5.0.3: 如果是第一个字体，设为默认
@@ -117,26 +225,92 @@ bool TextRenderer::LoadCharacter(char32_t c, int fontId) {
         return true;
     }
 
-    // 加载字符字形
-    if (FT_Load_Char(font->face, c, FT_LOAD_RENDER)) {
+    // 先检查字体是否包含该字符
+    FT_UInt glyph_index = FT_Get_Char_Index(font->face, c);
+    if (glyph_index == 0) {
+        // 字体不包含该字符（这是正常的，不是错误）
         return false;
+    }
+
+    // 检查是否为 COLR 字形
+    FT_UInt glyphIndex = FT_Get_Char_Index(font->face, c);
+    bool isColorGlyph = false;
+    std::vector<unsigned char> colorBuffer;
+    int colorWidth = 0, colorHeight = 0;
+    int colorBearingX = 0, colorBearingY = 0;
+    
+    // 尝试使用 COLR 渲染
+    if (FT_HAS_COLOR(font->face) && glyphIndex != 0) {
+        if (RenderCOLRLayers(font->face, glyphIndex, colorWidth, colorHeight, 
+                            colorBearingX, colorBearingY, colorBuffer)) {
+            isColorGlyph = true;
+        }
+    }
+    
+    // 如果 COLR 失败，尝试 BGRA 位图
+    if (!isColorGlyph) {
+        FT_Error error = FT_Load_Char(font->face, c, FT_LOAD_COLOR | FT_LOAD_RENDER);
+        if (error) {
+            error = FT_Load_Char(font->face, c, FT_LOAD_RENDER);
+            if (error) {
+                return false;
+            }
+        }
+        
+        if (font->face->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA) {
+            isColorGlyph = true;
+        }
     }
 
     // 生成纹理
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_RED,
-        font->face->glyph->bitmap.width,
-        font->face->glyph->bitmap.rows,
-        0,
-        GL_RED,
-        GL_UNSIGNED_BYTE,
-        font->face->glyph->bitmap.buffer
-    );
+    
+    // 根据像素格式选择纹理格式
+    if (!colorBuffer.empty()) {
+        // COLR 渲染的 RGBA 缓冲区
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            colorWidth,
+            colorHeight,
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            colorBuffer.data()
+        );
+    } else if (font->face->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA) {
+        // SBIX/CBDT 位图格式
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            font->face->glyph->bitmap.width,
+            font->face->glyph->bitmap.rows,
+            0,
+            GL_BGRA,
+            GL_UNSIGNED_BYTE,
+            font->face->glyph->bitmap.buffer
+        );
+    } else {
+        // 灰度字形
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RED,
+            font->face->glyph->bitmap.width,
+            font->face->glyph->bitmap.rows,
+            0,
+            GL_RED,
+            GL_UNSIGNED_BYTE,
+            font->face->glyph->bitmap.buffer
+        );
+    }
 
     // 设置纹理选项
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -147,11 +321,12 @@ bool TextRenderer::LoadCharacter(char32_t c, int fontId) {
     // 存储字形信息
     Glyph glyph{
         texture,
-        static_cast<int>(font->face->glyph->bitmap.width),
-        static_cast<int>(font->face->glyph->bitmap.rows),
-        font->face->glyph->bitmap_left,
-        font->face->glyph->bitmap_top,
-        static_cast<int>(font->face->glyph->advance.x >> 6)  // 转换为像素 (1/64 像素)
+        !colorBuffer.empty() ? colorWidth : static_cast<int>(font->face->glyph->bitmap.width),
+        !colorBuffer.empty() ? colorHeight : static_cast<int>(font->face->glyph->bitmap.rows),
+        !colorBuffer.empty() ? colorBearingX : font->face->glyph->bitmap_left,
+        !colorBuffer.empty() ? colorBearingY : font->face->glyph->bitmap_top,
+        static_cast<int>(font->face->glyph->advance.x >> 6),  // 转换为像素 (1/64 像素)
+        isColorGlyph  // 标记是否为彩色字形
     };
 
     font->glyphs[c] = glyph;
@@ -182,18 +357,13 @@ void TextRenderer::MeasureText(
     int x = 0;
 
     for (char32_t c : utf32Text) {
-        // 确保字符已加载
-        if (font->glyphs.find(c) == font->glyphs.end()) {
-            LoadCharacter(c, fontId);
-        }
-
-        auto it = font->glyphs.find(c);
-        if (it == font->glyphs.end()) {
+        // 使用 fallback 机制获取字形
+        const Glyph* glyph = GetGlyphWithFallback(c, fontId);
+        if (!glyph) {
             continue;
         }
-
-        const Glyph& glyph = it->second;
-        x += glyph.advance;
+        
+        x += glyph->advance;
     }
 
     outWidth = x;
@@ -264,7 +434,17 @@ std::u32string TextRenderer::Utf8ToUtf32(const std::string& utf8) {
             continue;
         }
         
-        result.push_back(codepoint);
+        // 过滤变体选择符和其他不可见字符
+        // U+FE00-U+FE0F: Variation Selectors (变体选择符)
+        // U+E0100-U+E01EF: Variation Selectors Supplement
+        // U+200B-U+200D: Zero Width Space, Zero Width Joiner, etc.
+        bool isVariationSelector = (codepoint >= 0xFE00 && codepoint <= 0xFE0F) ||
+                                   (codepoint >= 0xE0100 && codepoint <= 0xE01EF) ||
+                                   (codepoint >= 0x200B && codepoint <= 0x200D);
+        
+        if (!isVariationSelector) {
+            result.push_back(codepoint);
+        }
     }
     
     return result;
@@ -282,9 +462,7 @@ const Glyph* TextRenderer::GetGlyph(char32_t c, int fontId) {
 
     // 如果字形未加载,尝试加载
     if (font->glyphs.find(c) == font->glyphs.end()) {
-        if (!LoadCharacter(c, fontId)) {
-            return nullptr;
-        }
+        LoadCharacter(c, fontId);
     }
 
     auto it = font->glyphs.find(c);

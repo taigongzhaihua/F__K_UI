@@ -371,10 +371,19 @@ out vec4 color;
 uniform sampler2D text;
 uniform vec4 textColor;
 uniform float uOpacity;
+uniform bool isColorTexture;  // 是否为彩色纹理（emoji）
 
 void main() {
-    vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);
-    color = vec4(textColor.rgb, textColor.a * uOpacity) * sampled;
+    vec4 texSample = texture(text, TexCoords);
+    
+    if (isColorTexture) {
+        // 彩色 emoji：直接使用纹理的 RGBA 值
+        color = vec4(texSample.rgb, texSample.a * uOpacity);
+    } else {
+        // 普通灰度文本：使用文本颜色
+        vec4 sampled = vec4(1.0, 1.0, 1.0, texSample.r);
+        color = vec4(textColor.rgb, textColor.a * uOpacity) * sampled;
+    }
 }
 )";
 
@@ -422,6 +431,45 @@ void GlRenderer::Initialize(const RendererInitParams& params) {
     textRenderer_ = std::make_unique<TextRenderer>();
     if (!textRenderer_->Initialize()) {
         std::cerr << "WARNING: Failed to initialize TextRenderer" << std::endl;
+    } else {
+        // 加载 emoji/symbol fallback 字体
+        #ifdef _WIN32
+            // Windows 字体 - 使用彩色 emoji 字体
+            std::vector<std::string> fallbackFontPaths = {
+                "C:/Windows/Fonts/seguiemj.ttf",       // Segoe UI Emoji (彩色 emoji)
+                "C:/Windows/Fonts/seguisym.ttf",       // Segoe UI Symbol (符号支持)
+                "C:/Windows/Fonts/symbol.ttf"          // Symbol 字体
+            };
+        #elif __APPLE__
+            // macOS 字体
+            std::vector<std::string> fallbackFontPaths = {
+                "/System/Library/Fonts/Apple Color Emoji.ttc",
+                "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
+            };
+        #else
+            // Linux 字体
+            std::vector<std::string> fallbackFontPaths = {
+                "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/ancient-scripts/Symbola.ttf"
+            };
+        #endif
+        
+        // 尝试加载 fallback 字体
+        for (const auto& path : fallbackFontPaths) {
+            // 只加载几个常用大小
+            bool loadedThisFont = false;
+            for (unsigned int size : {14, 16, 20, 24}) {
+                int fontId = textRenderer_->LoadFont(path, size);
+                if (fontId >= 0) {
+                    textRenderer_->AddFallbackFont(fontId);
+                    if (!loadedThisFont) {
+                        std::cout << "Loaded fallback font: " << path << std::endl;
+                        loadedThisFont = true;
+                    }
+                }
+            }
+        }
     }
 
     // 注意：不再需要初始化 uniform 值
@@ -878,7 +926,7 @@ void GlRenderer::DrawText(const TextPayload& payload) {
             std::string utf8Buffer;
             
             for (char32_t c : utf32Text) {
-                const auto* glyph = textRenderer_->GetGlyph(c, fontId);
+                const auto* glyph = textRenderer_->GetGlyphWithFallback(c, fontId);
                 if (!glyph) continue;
                 
                 // 检查是否需要自动换行
@@ -941,7 +989,7 @@ void GlRenderer::DrawText(const TextPayload& payload) {
         // Phase 5.0.4: 计算行宽用于对齐
         float lineWidth = 0.0f;
         for (char32_t c : utf32Text) {
-            const auto* glyph = textRenderer_->GetGlyph(c, fontId);
+            const auto* glyph = textRenderer_->GetGlyphWithFallback(c, fontId);
             if (glyph) {
                 lineWidth += glyph->advance;
             }
@@ -960,7 +1008,7 @@ void GlRenderer::DrawText(const TextPayload& payload) {
         // }
         
         for (char32_t c : utf32Text) {
-            const auto* glyph = textRenderer_->GetGlyph(c, fontId);
+            const auto* glyph = textRenderer_->GetGlyphWithFallback(c, fontId);
             if (!glyph) {
                 continue; // 跳过无法加载的字符
             }
@@ -1047,6 +1095,9 @@ void GlRenderer::DrawText(const TextPayload& payload) {
             
             // 绑定字形纹理
             glBindTexture(GL_TEXTURE_2D, glyph->textureID);
+            
+            // 设置是否为彩色纹理
+            glUniform1i(glGetUniformLocation(textShaderProgram_, "isColorTexture"), glyph->isColor ? 1 : 0);
             
             // 更新 VBO 内容
             glBindBuffer(GL_ARRAY_BUFFER, textVBO_);

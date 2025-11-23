@@ -19,6 +19,7 @@ struct Glyph {
     int bearingX;           // 字形水平偏移
     int bearingY;           // 字形垂直偏移
     int advance;            // 水平前进值
+    bool isColor;           // 是否为彩色字形（emoji）
 };
 
 // 字体信息
@@ -158,6 +159,14 @@ public:
      * @return 字形指针,如果不存在返回 nullptr
      */
     const Glyph* GetGlyph(char32_t c, int fontId);
+    
+    /**
+     * @brief 获取字符字形（带回退）
+     * @param c 字符码点
+     * @param fontId 字体 ID
+     * @return 字形指针,如果不存在返回 nullptr
+     */
+    const Glyph* GetGlyphWithFallback(char32_t c, int fontId);
 
     /**
      * @brief UTF-8 转 UTF-32
@@ -203,15 +212,6 @@ private:
      * @return 是否成功
      */
     bool LoadCharacter(char32_t c, int fontId);
-
-private:
-    /**
-     * @brief 获取字符字形（带回退）
-     * @param c 字符码点
-     * @param fontId 字体 ID
-     * @return 字形指针,如果不存在返回 nullptr
-     */
-    const Glyph* GetGlyphWithFallback(char32_t c, int fontId);
 
 private:
     FT_Library ftLibrary_;

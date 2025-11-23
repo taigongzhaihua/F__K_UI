@@ -153,13 +153,13 @@ int main(int argc, char **argv)
                                              ->Margin(fk::ui::Thickness(0, 0, 10, 10))
                                              ->Children(
                                                  {(new fk::ui::TextBlock())
-                                                          ->Text("Welcome Back!")
+                                                          ->Text("Welcome Back! 👋😊")
                                                           ->FontSize(20)
                                                           ->Foreground(new fk::ui::SolidColorBrush(60, 80, 120))
                                                           ->Margin(fk::ui::Thickness(15)) |
                                                       fk::ui::cell(0, 0),
                                                   (new fk::ui::TextBlock())
-                                                          ->Text("This is a complex layout example\nwith nested Grids and controls")
+                                                          ->Text("Emoji Test: 😀 😎 🚀 ❤️ 🌟 🎉\nSymbols: ★☆ ①②③ ▲▼◆ ✓✗")
                                                           ->FontSize(14)
                                                           ->Foreground(fk::ui::Brushes::DarkGray())
                                                           ->Margin(fk::ui::Thickness(15, 0, 15, 15)) |
