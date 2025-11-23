@@ -135,6 +135,20 @@ protected:
                           const std::any& newValue,
                           binding::ValueSource oldSource,
                           binding::ValueSource newSource) override;
+    
+    // ========== 裁剪系统（新增）==========
+    
+    /**
+     * @brief Border总是裁剪子元素到内容区域
+     */
+    bool ShouldClipToBounds() const override { 
+        return true; 
+    }
+    
+    /**
+     * @brief 计算裁剪边界（排除BorderThickness和Padding）
+     */
+    ui::Rect CalculateClipBounds() const override;
 
 private:
     void ObserveBrush(Brush* brush, core::Event<const binding::DependencyProperty&, const std::any&, const std::any&, binding::ValueSource, binding::ValueSource>::Connection& connection);

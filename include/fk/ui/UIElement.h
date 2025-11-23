@@ -378,6 +378,55 @@ protected:
      */
     virtual void ArrangeCore(const Rect& finalRect);
     
+    // ========== 裁剪系统（新增）==========
+    
+    /**
+     * @brief 是否应该裁剪子元素到边界
+     * 
+     * 默认返回false。容器控件（如Border、ScrollViewer）应该重写此方法
+     * 返回true以启用自动裁剪。
+     * 
+     * 优先级：
+     * 1. 显式ClipProperty（最高优先级）
+     * 2. ShouldClipToBounds()（容器自动裁剪）
+     * 3. 不裁剪（默认）
+     * 
+     * @return true=启用自动裁剪，false=不裁剪（默认）
+     * 
+     * 示例：
+     * @code
+     * class Border : public FrameworkElement<Border> {
+     * protected:
+     *     bool ShouldClipToBounds() const override { return true; }
+     * };
+     * @endcode
+     */
+    virtual bool ShouldClipToBounds() const { return false; }
+    
+    /**
+     * @brief 计算裁剪边界（局部坐标）
+     * 
+     * 仅在ShouldClipToBounds()返回true时调用。
+     * 默认实现返回整个元素边界，子类可重写以返回自定义裁剪区域
+     * （如排除Padding的区域）。
+     * 
+     * @return 裁剪区域矩形（局部坐标系）
+     * 
+     * 示例：
+     * @code
+     * class Border : public FrameworkElement<Border> {
+     * protected:
+     *     ui::Rect CalculateClipBounds() const override {
+     *         // 返回内容区域（排除Border和Padding）
+     *         return CalculateContentRect();
+     *     }
+     * };
+     * @endcode
+     */
+    virtual ui::Rect CalculateClipBounds() const {
+        return ui::Rect{0, 0, renderSize_.width, renderSize_.height};
+    }
+    
     /**
      * @brief 获取子对象所有权（用于自动内存管理）
      * 当子对象添加到父对象时，父对象调用此方法获取所有权
@@ -389,6 +438,19 @@ protected:
      * @brief 设置渲染尺寸（由 ArrangeCore 使用）
      */
     void SetRenderSize(const Size& size) { renderSize_ = size; }
+
+private:
+    /**
+     * @brief 判断裁剪策略并返回裁剪区域
+     * 
+     * 优先级：
+     * 1. 显式ClipProperty（最高优先级）
+     * 2. ShouldClipToBounds()（容器自动裁剪）
+     * 3. 不裁剪（默认）
+     * 
+     * @return 裁剪区域，如果不需要裁剪返回空optional
+     */
+    std::optional<ui::Rect> DetermineClipRegion() const;
 
 private:
     Size desiredSize_;

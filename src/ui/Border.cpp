@@ -273,4 +273,23 @@ void Border::ObserveBrush(Brush* brush, core::Event<const binding::DependencyPro
     }
 }
 
+ui::Rect Border::CalculateClipBounds() const {
+    auto borderThickness = GetBorderThickness();
+    auto padding = GetPadding();
+    auto size = GetRenderSize();
+    
+    // 计算内容区域（排除BorderThickness和Padding）
+    float left = borderThickness.left + padding.left;
+    float top = borderThickness.top + padding.top;
+    float right = borderThickness.right + padding.right;
+    float bottom = borderThickness.bottom + padding.bottom;
+    
+    return ui::Rect{
+        left,
+        top,
+        std::max(0.0f, size.width - left - right),
+        std::max(0.0f, size.height - top - bottom)
+    };
+}
+
 } // namespace fk::ui
