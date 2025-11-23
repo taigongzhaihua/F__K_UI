@@ -359,6 +359,21 @@ void UIElement::OnRender(render::RenderContext& /*context*/) {
     // 默认不绘制，由派生类实现
 }
 
+std::optional<ui::Rect> UIElement::DetermineClipRegion() const {
+    // 优先级1：显式ClipProperty
+    if (HasClip()) {
+        return GetClip();
+    }
+    
+    // 优先级2：容器自动裁剪
+    if (ShouldClipToBounds()) {
+        return CalculateClipBounds();
+    }
+    
+    // 不需要裁剪
+    return std::nullopt;
+}
+
 void UIElement::CollectDrawCommands(render::RenderContext& context) {
     // 检查可见性
     auto visibility = GetVisibility();
@@ -376,10 +391,20 @@ void UIElement::CollectDrawCommands(render::RenderContext& context) {
         context.PushLayer(opacity);
     }
 
-    // 应用裁剪区域（Clip属性）
-    bool hasClip = HasClip();
-    if (hasClip) {
-        context.PushClip(GetClip());
+    // 统一的裁剪处理（新设计）
+    auto clipRegion = DetermineClipRegion();
+    if (clipRegion.has_value()) {
+        // 提前剔除优化：如果完全被裁剪，跳过整个子树
+        if (context.IsCompletelyClipped(*clipRegion)) {
+            // 完全被裁剪，跳过绘制
+            if (hasOpacity) {
+                context.PopLayer();
+            }
+            context.PopTransform();
+            return;
+        }
+        
+        context.PushClip(*clipRegion);
     }
 
     // TODO: 应用渲染变换（RenderTransform属性）
@@ -396,7 +421,7 @@ void UIElement::CollectDrawCommands(render::RenderContext& context) {
     Visual::CollectDrawCommands(context);
 
     // 弹出裁剪区域
-    if (hasClip) {
+    if (clipRegion.has_value()) {
         context.PopClip();
     }
 

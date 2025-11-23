@@ -155,6 +155,22 @@ protected:
     
     virtual void OnScrollChanged();
     
+    // ========== 裁剪系统（新增）==========
+    
+    /**
+     * @brief ScrollViewer总是裁剪内容到视口
+     */
+    bool ShouldClipToBounds() const override { 
+        return true; 
+    }
+    
+    /**
+     * @brief 计算裁剪边界（视口区域，排除滚动条）
+     */
+    ui::Rect CalculateClipBounds() const override {
+        return CalculateViewportRect();
+    }
+    
 private:
     ScrollBarVisibility horizontalScrollBarVisibility_{ScrollBarVisibility::Auto};
     ScrollBarVisibility verticalScrollBarVisibility_{ScrollBarVisibility::Auto};

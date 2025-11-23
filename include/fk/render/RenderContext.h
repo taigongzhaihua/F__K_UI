@@ -108,8 +108,19 @@ public:
     
     /**
      * @brief 判断矩形是否被完全裁剪
+     * @param rect 矩形（局部坐标）
+     * @return true=完全被裁剪，false=部分或完全可见
      */
     bool IsClipped(const ui::Rect& rect) const;
+    
+    /**
+     * @brief 判断矩形是否被完全裁剪（IsClipped的别名，更清晰的命名）
+     * @param rect 矩形（局部坐标）
+     * @return true=完全被裁剪，false=部分或完全可见
+     */
+    bool IsCompletelyClipped(const ui::Rect& rect) const {
+        return IsClipped(rect);
+    }
 
     // ========== 图层管理 ==========
     

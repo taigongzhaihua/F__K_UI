@@ -294,9 +294,9 @@ void ScrollViewer::OnRender(render::RenderContext& context) {
     auto white = Color::White();
     context.DrawBorder(rect, {white.r, white.g, white.b, white.a});
     
-    // 设置裁剪区域
-    Rect viewportRect = CalculateViewportRect();
-    // TODO: 实现裁剪
+    // ✅ 裁剪现在由UIElement::CollectDrawCommands自动处理
+    // 通过重写ShouldClipToBounds()和CalculateClipBounds()实现
+    // 内容会自动裁剪到视口区域（排除滚动条）
     
     // 渲染内容
     // 内容渲染会由视觉树系统自动处理

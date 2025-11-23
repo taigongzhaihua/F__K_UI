@@ -26,6 +26,17 @@ const binding::DependencyProperty& Panel<Derived>::CornerRadiusProperty() {
     return property;
 }
 
+template<typename Derived>
+const binding::DependencyProperty& Panel<Derived>::ClipToBoundsProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "ClipToBounds",
+        typeid(bool),
+        typeid(Panel<Derived>),
+        {false}  // 默认不裁剪
+    );
+    return property;
+}
+
 } // namespace fk::ui
 
 // 显式实例化 Panel 模板（必须在命名空间之外）
