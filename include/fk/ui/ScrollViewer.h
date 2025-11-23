@@ -28,8 +28,9 @@
 
 namespace fk::ui {
 
-class ScrollBar;
-class ScrollContentPresenter;
+// 前向声明（待实现的组件）
+class ScrollBar;  // Phase 3
+// class ScrollContentPresenter;  // Phase 2
 
 /**
  * @brief 滚动条可见性模式（与 WPF 一致）

@@ -163,21 +163,37 @@ const binding::DependencyProperty& ScrollViewer::IsDeferredScrollingEnabledPrope
 // ========== 附加属性实现 ==========
 
 ScrollBarVisibility ScrollViewer::GetHorizontalScrollBarVisibility(const UIElement* element) {
+    if (!element) {
+        return ScrollBarVisibility::Auto;  // 默认值
+    }
     // TODO: 实现附加属性获取
+    // 需要通过依赖属性系统从元素获取附加属性值
     return ScrollBarVisibility::Auto;
 }
 
 void ScrollViewer::SetHorizontalScrollBarVisibility(UIElement* element, ScrollBarVisibility value) {
+    if (!element) {
+        return;  // 忽略 null 元素
+    }
     // TODO: 实现附加属性设置
+    // 需要通过依赖属性系统设置元素的附加属性值
 }
 
 ScrollBarVisibility ScrollViewer::GetVerticalScrollBarVisibility(const UIElement* element) {
+    if (!element) {
+        return ScrollBarVisibility::Auto;  // 默认值
+    }
     // TODO: 实现附加属性获取
+    // 需要通过依赖属性系统从元素获取附加属性值
     return ScrollBarVisibility::Auto;
 }
 
 void ScrollViewer::SetVerticalScrollBarVisibility(UIElement* element, ScrollBarVisibility value) {
+    if (!element) {
+        return;  // 忽略 null 元素
+    }
     // TODO: 实现附加属性设置
+    // 需要通过依赖属性系统设置元素的附加属性值
 }
 
 // ========== 属性访问器 ==========
@@ -303,6 +319,10 @@ void ScrollViewer::ScrollToVerticalOffset(float offset) {
 }
 
 void ScrollViewer::ScrollToElement(UIElement* element) {
+    // 输入验证
+    if (!element) {
+        return;  // 忽略 null 元素
+    }
     // TODO: Phase 3 - 实现滚动到元素的逻辑
 }
 

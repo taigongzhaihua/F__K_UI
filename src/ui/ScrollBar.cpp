@@ -141,7 +141,8 @@ float ScrollBar::GetValue() const {
 
 ScrollBar* ScrollBar::SetValue(float value) {
     float oldValue = value_;
-    value_ = std::max(minimum_, std::min(maximum_, value));
+    value_ = value;
+    CoerceValue();  // 使用统一的值强制逻辑
     if (value_ != oldValue) {
         OnValueChanged(oldValue, value_);
     }

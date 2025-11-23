@@ -29,9 +29,10 @@
 
 namespace fk::ui {
 
-class Track;
-class Thumb;
-class RepeatButton;
+// 前向声明（待实现的组件，Phase 3）
+// class Track;
+// class Thumb;
+// class RepeatButton;
 
 /**
  * @brief 滚动条控件（新设计 - WPF 风格）
@@ -162,34 +163,35 @@ private:
 /**
  * @brief Track - 滚动条轨道（WPF 中的 Track 类）
  * 
- * TODO: 未来实现
+ * TODO: Phase 3 实现
  * Track 是一个特殊的布局控件，包含三个子元素：
  * - DecreaseRepeatButton: 在 Thumb 之前的区域
  * - Thumb: 可拖动的滑块
  * - IncreaseRepeatButton: 在 Thumb 之后的区域
+ * 
+ * 实现时将创建单独的头文件：fk/ui/Track.h
  */
-class Track : public UIElement {
-    // TODO: 实现 Track 布局逻辑
-};
+// class Track : public UIElement;
 
 /**
  * @brief Thumb - 可拖动的滑块（WPF 中的 Thumb 类）
  * 
- * TODO: 未来实现
+ * TODO: Phase 3 实现
  * Thumb 提供拖动功能，触发 DragStarted、DragDelta、DragCompleted 事件
+ * 
+ * 实现时将创建单独的头文件：fk/ui/Thumb.h
  */
-class Thumb : public Control<Thumb> {
-    // TODO: 实现 Thumb 拖动逻辑
-};
+// class Thumb : public Control<Thumb>;
 
 /**
  * @brief RepeatButton - 重复按钮（WPF 中的 RepeatButton 类）
  * 
- * TODO: 未来实现
+ * TODO: Phase 3 实现
  * RepeatButton 在按住时重复触发 Click 事件
+ * 用于滚动条两端的递增/递减按钮
+ * 
+ * 实现时将创建单独的头文件：fk/ui/RepeatButton.h
  */
-class RepeatButton : public Control<RepeatButton> {
-    // TODO: 实现 RepeatButton 重复点击逻辑
-};
+// class RepeatButton : public Control<RepeatButton>;
 
 } // namespace fk::ui
