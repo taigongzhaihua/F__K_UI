@@ -14,7 +14,7 @@
  */
 
 #include "fk/ui/ScrollViewer.h"
-#include "fk/ui/ScrollBar.h"
+// #include "fk/ui/ScrollBar.h"  // Phase 3: 当需要创建滚动条实例时取消注释
 #include <algorithm>
 
 namespace fk::ui {
