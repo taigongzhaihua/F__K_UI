@@ -159,6 +159,29 @@ Grid 拥有最完整的文档集合 ⭐
 | InputManager | 98% | - |
 | FocusManager | 98% | - |
 | Rendering | 110% | - |
+| **Clipping System** | **设计中** | **[裁剪系统重构](Design/Render/CLIPPING_SYSTEM_REDESIGN.md)** ⭐ |
+
+---
+
+## 🔧 设计文档
+
+### 渲染系统
+
+**[裁剪系统重构设计](Design/Render/CLIPPING_SYSTEM_REDESIGN.md)** - 裁剪系统全面重构 ⭐
+- 现有系统问题诊断
+- 新架构设计（策略驱动）
+- 控件特定实现（Border、ScrollViewer、Panel）
+- 性能优化方案（提前剔除）
+- 完整实施计划（6周）
+- API设计和使用示例
+- 测试策略和风险评估
+
+**[裁剪系统重构摘要](Design/Render/CLIPPING_SYSTEM_REDESIGN_SUMMARY.md)** - 快速摘要版
+- 核心问题和解决方案
+- 主要特性和预期效果
+- 使用示例
+
+👉 **推荐**: 了解裁剪系统的设计思路和未来规划
 
 ---
 
