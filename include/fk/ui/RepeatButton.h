@@ -19,7 +19,9 @@
 
 #include "fk/ui/ButtonBase.h"
 #include "fk/binding/DependencyProperty.h"
+#include "fk/core/Timer.h"
 #include <chrono>
+#include <memory>
 
 namespace fk::ui {
 
@@ -87,12 +89,10 @@ private:
     
     bool isPressed_{false};  ///< 是否处于按下状态
     
-    // TODO: 实现定时器逻辑
-    // 由于目前框架可能没有完整的定时器系统，
-    // 这里先提供接口定义，具体实现可能需要：
-    // 1. 使用框架的定时器（如果有）
-    // 2. 使用渲染循环的更新回调
-    // 3. 使用独立的线程（不推荐，可能有线程安全问题）
+    // ========== 定时器 ==========
+    
+    std::shared_ptr<core::Timer> delayTimer_;     ///< 延迟定时器
+    std::shared_ptr<core::Timer> intervalTimer_;  ///< 重复间隔定时器
     
     /// 开始重复触发
     void StartRepeating();
@@ -100,8 +100,14 @@ private:
     /// 停止重复触发
     void StopRepeating();
     
+    /// 首次延迟后开始间隔触发
+    void OnDelayComplete();
+    
     /// 触发一次 Click（由定时器调用）
     void OnRepeat();
+    
+    /// 获取 Dispatcher（用于创建定时器）
+    std::shared_ptr<core::Dispatcher> GetDispatcher();
 };
 
 } // namespace fk::ui

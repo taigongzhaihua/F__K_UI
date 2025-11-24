@@ -23,7 +23,10 @@ void Thumb::CancelDrag() {
     if (isDragging_) {
         isDragging_ = false;
         // 不触发 DragCompleted，因为是取消
-        // TODO: ReleasePointerCapture() when available
+        
+        // TODO: 添加指针捕获释放
+        // 需要从 UIElement 访问 Window 的 InputManager
+        // window->GetInputManager()->ReleasePointerCapture(pointerId);
     }
 }
 
@@ -32,7 +35,13 @@ void Thumb::CancelDrag() {
 void Thumb::OnPointerPressed(PointerEventArgs& e) {
     Control<Thumb>::OnPointerPressed(e);
     
-    // TODO: CapturePointer() when available
+    // TODO: 捕获指针以确保后续的移动和释放事件都能收到
+    // 需要从 UIElement 访问 Window 的 InputManager
+    // 理想实现：window->GetInputManager()->CapturePointer(this, e.pointerId);
+    // 
+    // 当前限制：框架需要提供从 UIElement 获取 Window 的方法
+    // 例如：GetWindow() 或通过可视树向上查找
+    
     // 开始拖动
     StartDrag(e.position.x, e.position.y);
     e.handled = true;
@@ -54,7 +63,10 @@ void Thumb::OnPointerReleased(PointerEventArgs& e) {
     if (isDragging_) {
         // 结束拖动
         EndDrag();
-        // TODO: ReleasePointerCapture() when available
+        
+        // TODO: 释放指针捕获
+        // window->GetInputManager()->ReleasePointerCapture(e.pointerId);
+        
         e.handled = true;
     }
 }
@@ -62,10 +74,17 @@ void Thumb::OnPointerReleased(PointerEventArgs& e) {
 void Thumb::OnPointerExited(PointerEventArgs& e) {
     Control<Thumb>::OnPointerExited(e);
     
-    // 鼠标离开时结束拖动
-    if (isDragging_) {
-        EndDrag();
-    }
+    // 注意：在指针被捕获时，鼠标移出元素边界不应该结束拖动
+    // 当前由于未实现指针捕获，这里会导致拖动被终止
+    // 
+    // 理想行为：
+    // - 如果有指针捕获，OnPointerExited 不会被调用（或被忽略）
+    // - 只有 OnPointerReleased 或 OnPointerCaptureLost 才应结束拖动
+    //
+    // 临时方案：保持拖动直到释放，但这可能导致鼠标移出后无法停止
+    // if (isDragging_) {
+    //     EndDrag();
+    // }
 }
 
 // ========== 内部方法 ==========
