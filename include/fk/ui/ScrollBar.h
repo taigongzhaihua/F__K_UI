@@ -29,10 +29,10 @@
 
 namespace fk::ui {
 
-// 前向声明（待实现的组件，Phase 3）
-// class Track;
-// class Thumb;
-// class RepeatButton;
+// 前向声明（Phase 3 组件）
+class Track;
+class Thumb;
+class RepeatButton;
 
 /**
  * @brief 滚动条控件（新设计 - WPF 风格）
@@ -145,7 +145,12 @@ protected:
     
     virtual void OnValueChanged(float oldValue, float newValue);
     
-    // ========== 内部状态（临时）==========
+    // ========== 布局重写（Phase 3）==========
+    
+    Size MeasureOverride(const Size& availableSize) override;
+    Size ArrangeOverride(const Size& finalSize) override;
+    
+    // ========== 内部状态 ==========
     
     Orientation orientation_{Orientation::Vertical};
     float minimum_{0.0f};
@@ -155,19 +160,33 @@ protected:
     float smallChange_{1.0f};
     float largeChange_{10.0f};
     
+    // ========== 组件（Phase 3）==========
+    
+    Track* track_{nullptr};                   ///< 轨道布局管理器
+    Thumb* thumb_{nullptr};                   ///< 可拖动滑块
+    RepeatButton* decreaseButton_{nullptr};   ///< 向上/左按钮
+    RepeatButton* increaseButton_{nullptr};   ///< 向下/右按钮
+    
 private:
     /// 强制值在有效范围内
     void CoerceValue();
+    
+    /// 初始化组件（Phase 3）
+    void InitializeComponents();
+    
+    /// 连接事件处理（Phase 3）
+    void ConnectEvents();
+    
+    /// 同步属性到 Track（Phase 3）
+    void SyncPropertiesToTrack();
 };
 
+// 移除旧的 Track 注释，已在 Track.h 中实现
+
 /**
- * @brief Track - 滚动条轨道（WPF 中的 Track 类）
+ * @brief Track - 滚动条轨道（已在 Phase 3 Step 3 实现）
  * 
- * TODO: Phase 3 实现
- * Track 是一个特殊的布局控件，包含三个子元素：
- * - DecreaseRepeatButton: 在 Thumb 之前的区域
- * - Thumb: 可拖动的滑块
- * - IncreaseRepeatButton: 在 Thumb 之后的区域
+ * 参见 include/fk/ui/Track.h
  * 
  * 实现时将创建单独的头文件：fk/ui/Track.h
  */
