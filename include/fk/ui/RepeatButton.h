@@ -110,6 +110,7 @@ private:
     
     std::shared_ptr<core::Timer> repeatTimer_;  // 重复定时器
     bool isPressed_{false};  // 是否处于按下状态
+    bool isFirstTick_{true}; // 是否是首次定时器触发
     
     /**
      * @brief 启动重复定时器

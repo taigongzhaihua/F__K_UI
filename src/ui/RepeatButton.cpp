@@ -105,20 +105,16 @@ void RepeatButton::StartRepeatTimer() {
     // 创建定时器
     repeatTimer_ = std::make_shared<core::Timer>(dispatcher);
     
+    // 重置首次触发标志
+    isFirstTick_ = true;
+    
     // 订阅定时器Tick事件
     repeatTimer_->Tick.Connect([this]() {
         OnRepeatTimerTick();
     });
     
-    // 启动定时器：首次延迟后开始以interval_间隔重复
-    // 注意：Timer的Start方法接受间隔和是否重复
-    // 为了实现不同的首次延迟和后续间隔，我们需要分两步：
-    // 1. 先以delay_启动一次性定时器
-    // 2. 在首次触发后，改为以interval_重复
-    
-    // 由于Timer的设计，我们直接使用interval_作为重复间隔
-    // 首次Click已经在OnPointerPressed中触发
-    // 这里启动重复定时器，首次触发会在delay_后
+    // 启动定时器：首次以delay_延迟触发（不重复）
+    // 在首次触发后，会在OnRepeatTimerTick中改为以interval_重复
     repeatTimer_->Start(std::chrono::milliseconds(delay_), false);
 }
 
@@ -127,41 +123,31 @@ void RepeatButton::StopRepeatTimer() {
         repeatTimer_->Stop();
         repeatTimer_.reset();
     }
+    isFirstTick_ = true;
 }
 
 void RepeatButton::OnRepeatTimerTick() {
+    // 只在按下状态时触发
+    if (!isPressed_) {
+        return;
+    }
+    
     // 触发Click事件
-    if (isPressed_) {
-        Click();
-        
-        // 首次触发后，改为使用interval_间隔重复
-        if (repeatTimer_) {
-            repeatTimer_->Start(std::chrono::milliseconds(interval_), true);
-        }
+    Click();
+    
+    // 如果是首次触发，改为使用interval_间隔重复
+    if (isFirstTick_ && repeatTimer_) {
+        isFirstTick_ = false;
+        repeatTimer_->Start(std::chrono::milliseconds(interval_), true);
     }
 }
 
 std::shared_ptr<core::Dispatcher> RepeatButton::GetDispatcher() {
-    // 向上遍历视觉树，找到Window，从Window获取Application的Dispatcher
-    Visual* current = this;
-    while (current) {
-        if (auto* window = dynamic_cast<Window*>(current)) {
-            // Window应该有访问Application的方式
-            // 由于我们没有直接的Application引用，使用静态方法
-            // 注意：这里假设有Application::GetCurrent()方法
-            // 如果没有，需要另一种方式获取Dispatcher
-            
-            // 临时方案：创建一个Dispatcher
-            // 在实际应用中，应该从Application获取主Dispatcher
-            static auto dispatcher = std::make_shared<core::Dispatcher>();
-            return dispatcher;
-        }
-        current = current->GetVisualParent();
-    }
-    
-    // 如果找不到Window，返回默认Dispatcher
-    static auto defaultDispatcher = std::make_shared<core::Dispatcher>();
-    return defaultDispatcher;
+    // 使用全局单例Dispatcher
+    // 注意：所有UI操作都应该在主线程/UI线程上执行
+    // 这个单例Dispatcher用于所有UI定时器和异步操作
+    static auto globalDispatcher = std::make_shared<core::Dispatcher>();
+    return globalDispatcher;
 }
 
 } // namespace fk::ui
