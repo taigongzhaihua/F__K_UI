@@ -32,6 +32,7 @@ public:
     void SetName(const std::string& value) {
         if (name_ != value) {
             name_ = value;
+            // 使用std::string_view避免重载歧义（ObservableObject有两个重载）
             RaisePropertyChanged(std::string_view("Name"));
         }
     }

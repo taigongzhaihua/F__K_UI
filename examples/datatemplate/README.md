@@ -246,10 +246,10 @@ auto data = std::any_cast<MyType>(dataContext);
 
 ## 相关文档
 
-- [API文档 - DataTemplate](/Docs/API/UI/DataTemplate.md)
-- [API文档 - ItemsControl](/Docs/API/UI/ItemsControl.md)
-- [API文档 - ContentPresenter](/Docs/API/UI/ContentPresenter.md)
-- [设计文档 - DataTemplate](/Docs/Design/UI/DataTemplate.md)
+- [API文档 - DataTemplate](../../Docs/API/UI/DataTemplate.md)
+- [API文档 - ItemsControl](../../Docs/API/UI/ItemsControl.md)
+- [API文档 - ContentPresenter](../../Docs/API/UI/ContentPresenter.md)
+- [设计文档 - DataTemplate](../../Docs/Design/UI/DataTemplate.md)
 
 ## 总结
 
