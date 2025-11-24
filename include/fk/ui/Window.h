@@ -221,6 +221,15 @@ public:
      * @endcode
      */
     UIElement* FindName(const std::string& name);
+    
+    /**
+     * @brief 获取输入管理器
+     * @return InputManager指针
+     * 
+     * 用于访问窗口的输入管理系统，例如进行指针捕获等操作。
+     * UIElement会自动通过此方法访问InputManager。
+     */
+    class InputManager* GetInputManager() const { return inputManager_.get(); }
 
     // ========== 窗口事件 ==========
     

@@ -1,5 +1,7 @@
 #include "fk/ui/UIElement.h"
 #include "fk/ui/NameScope.h"
+#include "fk/ui/InputManager.h"
+#include "fk/ui/Window.h"
 #include "fk/render/RenderContext.h"
 #include <algorithm>
 #include <iostream>
@@ -562,6 +564,45 @@ void UIElement::SetTemplatedParent(UIElement* parent) {
         auto dummyNew = std::any{};
         DataContextChanged(dummyOld, dummyNew);
     }
+}
+
+// ========== 指针捕获 ==========
+
+bool UIElement::CapturePointer(int pointerId) {
+    InputManager* inputManager = GetInputManager();
+    if (inputManager) {
+        inputManager->CapturePointer(this, pointerId);
+        return true;
+    }
+    return false;
+}
+
+void UIElement::ReleasePointerCapture(int pointerId) {
+    InputManager* inputManager = GetInputManager();
+    if (inputManager) {
+        inputManager->ReleasePointerCapture(pointerId);
+    }
+}
+
+bool UIElement::HasPointerCapture(int pointerId) const {
+    InputManager* inputManager = GetInputManager();
+    if (inputManager) {
+        return inputManager->GetPointerCapture(pointerId) == this;
+    }
+    return false;
+}
+
+InputManager* UIElement::GetInputManager() const {
+    // 向上遍历视觉树，找到Window
+    Visual* current = const_cast<UIElement*>(this);
+    while (current) {
+        // 尝试转换为Window
+        if (auto* window = dynamic_cast<Window*>(current)) {
+            return window->GetInputManager();
+        }
+        current = current->GetVisualParent();
+    }
+    return nullptr;
 }
 
 } // namespace fk::ui

@@ -195,6 +195,7 @@ add_library(fk STATIC
     src/ui/ItemsControl.cpp
     src/ui/ItemContainerGenerator.cpp
     src/ui/Button.cpp
+    src/ui/RepeatButton.cpp
     src/ui/ToggleButton.cpp
     src/ui/CheckBox.cpp
     src/ui/RadioButton.cpp
