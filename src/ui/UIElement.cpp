@@ -71,7 +71,15 @@ UIElement::UIElement()
     SetValue(OpacityProperty(), 1.0f);
 }
 
-UIElement::~UIElement() = default;
+UIElement::~UIElement() {
+    // 释放所有指针捕获，防止InputManager持有悬空指针
+    // 注意：通常只会捕获pointerId=0（主指针），但为了完整性检查常见的ID
+    for (int pointerId = 0; pointerId < 10; ++pointerId) {
+        if (HasPointerCapture(pointerId)) {
+            ReleasePointerCapture(pointerId);
+        }
+    }
+}
 
 void UIElement::SetName(const std::string& name) {
     std::string oldName = GetElementName();
@@ -594,11 +602,14 @@ bool UIElement::HasPointerCapture(int pointerId) const {
 
 InputManager* UIElement::GetInputManager() const {
     // 向上遍历视觉树，找到Window
-    Visual* current = const_cast<UIElement*>(this);
+    // 注意：使用const_cast是因为Visual::GetVisualParent()返回非const指针
+    // 但这个遍历操作本身不会修改任何对象
+    const Visual* current = this;
     while (current) {
         // 尝试转换为Window
-        if (auto* window = dynamic_cast<Window*>(current)) {
-            return window->GetInputManager();
+        if (const auto* window = dynamic_cast<const Window*>(current)) {
+            // GetInputManager()返回非const指针是合理的，因为我们需要调用捕获/释放操作
+            return const_cast<Window*>(window)->GetInputManager();
         }
         current = current->GetVisualParent();
     }
