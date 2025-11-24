@@ -67,6 +67,9 @@ private:
  * 
  * 这个函数演示了如何创建一个DataTemplate来自定义数据对象的可视化表示
  * 类似于WPF中的DataTemplate定义
+ * 
+ * 注意：这里使用raw pointer创建UI元素是FK_UI框架的标准做法。
+ * 父元素会通过TakeOwnership()获取子元素的所有权并管理其生命周期。
  */
 std::shared_ptr<DataTemplate> CreateUserDataTemplate() {
     auto dataTemplate = std::make_shared<DataTemplate>();
@@ -160,12 +163,14 @@ std::shared_ptr<DataTemplate> CreateSimpleTextTemplate() {
 
 // ========== 主程序 ==========
 
-int main(int argc, char** argv) {
+int main() {
     std::cout << "=== DataTemplate 演示程序 ===" << std::endl;
     std::cout << "这个示例展示了如何在C++中实现类似WPF DataTemplate的效果" << std::endl;
     std::cout << std::endl;
     
     Application app;
+    // 注意：mainWindow使用shared_ptr是因为Application::Run需要WindowPtr参数
+    // 而子UI元素使用raw pointer是FK_UI框架的标准模式（父元素会管理其生命周期）
     auto mainWindow = std::make_shared<Window>();
     
     // 创建主布局面板
