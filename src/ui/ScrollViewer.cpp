@@ -31,6 +31,14 @@ ScrollViewer::ScrollViewer() {
     // TODO: Phase 3 - 通过模板创建滚动条（而不是直接创建）
 }
 
+ScrollViewer::~ScrollViewer() {
+    // 清理 ScrollContentPresenter
+    delete scrollContentPresenter_;
+    scrollContentPresenter_ = nullptr;
+    
+    // TODO: Phase 3 - 清理滚动条
+}
+
 // ========== 依赖属性定义 ==========
 
 const binding::DependencyProperty& ScrollViewer::HorizontalScrollBarVisibilityProperty() {
@@ -267,30 +275,35 @@ ScrollViewer* ScrollViewer::SetCanContentScroll(bool value) {
 
 // ========== 滚动方法（Phase 2 实现）==========
 
+namespace {
+    // 默认滚动增量（像素）
+    constexpr float DEFAULT_LINE_DELTA = 16.0f;
+}
+
 void ScrollViewer::LineLeft() {
     if (scrollContentPresenter_) {
-        float offset = scrollContentPresenter_->GetHorizontalOffset() - 16.0f;  // 默认 16 像素
+        float offset = scrollContentPresenter_->GetHorizontalOffset() - DEFAULT_LINE_DELTA;
         scrollContentPresenter_->SetHorizontalOffset(offset);
     }
 }
 
 void ScrollViewer::LineRight() {
     if (scrollContentPresenter_) {
-        float offset = scrollContentPresenter_->GetHorizontalOffset() + 16.0f;
+        float offset = scrollContentPresenter_->GetHorizontalOffset() + DEFAULT_LINE_DELTA;
         scrollContentPresenter_->SetHorizontalOffset(offset);
     }
 }
 
 void ScrollViewer::LineUp() {
     if (scrollContentPresenter_) {
-        float offset = scrollContentPresenter_->GetVerticalOffset() - 16.0f;
+        float offset = scrollContentPresenter_->GetVerticalOffset() - DEFAULT_LINE_DELTA;
         scrollContentPresenter_->SetVerticalOffset(offset);
     }
 }
 
 void ScrollViewer::LineDown() {
     if (scrollContentPresenter_) {
-        float offset = scrollContentPresenter_->GetVerticalOffset() + 16.0f;
+        float offset = scrollContentPresenter_->GetVerticalOffset() + DEFAULT_LINE_DELTA;
         scrollContentPresenter_->SetVerticalOffset(offset);
     }
 }
@@ -331,7 +344,9 @@ void ScrollViewer::ScrollToTop() {
 
 void ScrollViewer::ScrollToBottom() {
     if (scrollContentPresenter_) {
-        scrollContentPresenter_->SetVerticalOffset(extentHeight_);
+        // 滚动到底部：offset = extent - viewport
+        float maxOffset = std::max(0.0f, extentHeight_ - viewportHeight_);
+        scrollContentPresenter_->SetVerticalOffset(maxOffset);
     }
 }
 
@@ -343,7 +358,9 @@ void ScrollViewer::ScrollToLeftEnd() {
 
 void ScrollViewer::ScrollToRightEnd() {
     if (scrollContentPresenter_) {
-        scrollContentPresenter_->SetHorizontalOffset(extentWidth_);
+        // 滚动到最右：offset = extent - viewport
+        float maxOffset = std::max(0.0f, extentWidth_ - viewportWidth_);
+        scrollContentPresenter_->SetHorizontalOffset(maxOffset);
     }
 }
 

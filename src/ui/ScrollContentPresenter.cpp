@@ -182,8 +182,7 @@ void ScrollContentPresenter::NotifyScrollChanged() {
     // 通知关联的 ScrollViewer
     if (scrollOwner_) {
         // ScrollViewer 会更新其属性和滚动条
-        // 这个调用将在下一步实现
-        // scrollOwner_->OnScrollContentPresenterChanged();
+        scrollOwner_->OnScrollContentPresenterChanged();
     }
 }
 

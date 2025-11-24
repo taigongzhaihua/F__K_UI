@@ -61,7 +61,7 @@ enum class ScrollBarVisibility {
 class ScrollViewer : public ContentControl<ScrollViewer> {
 public:
     ScrollViewer();
-    virtual ~ScrollViewer() = default;
+    virtual ~ScrollViewer();
     
     // ========== 依赖属性（TODO: 完整实现）==========
     
@@ -194,16 +194,16 @@ public:
     
     // TODO: 添加 ScrollChanged 路由事件
     
+    // ========== 内部回调 ==========
+    
+    /// 当 ScrollContentPresenter 的滚动信息变更时调用（由 ScrollContentPresenter 调用）
+    void OnScrollContentPresenterChanged();
+    
 protected:
     // ========== 布局重写 ==========
     
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
-    
-    // ========== 内部回调 ==========
-    
-    /// 当 ScrollContentPresenter 的滚动信息变更时调用
-    void OnScrollContentPresenterChanged();
     
     // ========== 模板部分（TODO）==========
     
@@ -211,6 +211,8 @@ protected:
     // virtual void OnApplyTemplate() override;
     
 private:
+    // ScrollContentPresenter 需要访问回调方法
+    friend class ScrollContentPresenter;
     // ========== 内部状态 ==========
     
     ScrollBarVisibility horizontalScrollBarVisibility_{ScrollBarVisibility::Auto};
