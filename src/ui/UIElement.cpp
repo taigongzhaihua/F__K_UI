@@ -73,8 +73,10 @@ UIElement::UIElement()
 
 UIElement::~UIElement() {
     // 释放所有指针捕获，防止InputManager持有悬空指针
-    // 注意：通常只会捕获pointerId=0（主指针），但为了完整性检查常见的ID
-    for (int pointerId = 0; pointerId < 10; ++pointerId) {
+    // 注意：通常只会捕获pointerId=0（主指针）
+    // 如果有更多的pointerId被捕获，它们也应该在控件逻辑中被显式释放
+    constexpr int MAX_COMMON_POINTER_IDS = 10; // 支持最多10个触控点
+    for (int pointerId = 0; pointerId < MAX_COMMON_POINTER_IDS; ++pointerId) {
         if (HasPointerCapture(pointerId)) {
             ReleasePointerCapture(pointerId);
         }
