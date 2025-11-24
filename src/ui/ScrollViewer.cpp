@@ -11,8 +11,9 @@
 
 #include "fk/ui/ScrollViewer.h"
 #include "fk/ui/ScrollContentPresenter.h"
-// #include "fk/ui/ScrollBar.h"  // Phase 3: 当需要创建滚动条实例时取消注释
+#include "fk/ui/ScrollBar.h"  // Phase 3 Step 6: 创建滚动条实例
 #include <algorithm>
+#include <limits>  // For std::numeric_limits
 
 namespace fk::ui {
 
@@ -28,7 +29,9 @@ ScrollViewer::ScrollViewer() {
         OnScrollContentPresenterChanged();
     });
     
-    // TODO: Phase 3 - 通过模板创建滚动条（而不是直接创建）
+    // Phase 3 Step 6: 创建滚动条
+    CreateScrollBars();
+    ConnectScrollBarEvents();
 }
 
 ScrollViewer::~ScrollViewer() {
@@ -36,7 +39,12 @@ ScrollViewer::~ScrollViewer() {
     delete scrollContentPresenter_;
     scrollContentPresenter_ = nullptr;
     
-    // TODO: Phase 3 - 清理滚动条
+    // Phase 3 Step 6: 清理滚动条
+    delete verticalScrollBar_;
+    verticalScrollBar_ = nullptr;
+    
+    delete horizontalScrollBar_;
+    horizontalScrollBar_ = nullptr;
 }
 
 // ========== 依赖属性定义 ==========
@@ -217,7 +225,7 @@ ScrollBarVisibility ScrollViewer::GetHorizontalScrollBarVisibility() const {
 
 ScrollViewer* ScrollViewer::SetHorizontalScrollBarVisibility(ScrollBarVisibility value) {
     horizontalScrollBarVisibility_ = value;
-    // TODO: 更新滚动条可见性
+    UpdateScrollBarVisibility();  // Phase 3 Step 6: 更新滚动条可见性
     return this;
 }
 
@@ -227,7 +235,7 @@ ScrollBarVisibility ScrollViewer::GetVerticalScrollBarVisibility() const {
 
 ScrollViewer* ScrollViewer::SetVerticalScrollBarVisibility(ScrollBarVisibility value) {
     verticalScrollBarVisibility_ = value;
-    // TODO: 更新滚动条可见性
+    UpdateScrollBarVisibility();  // Phase 3 Step 6: 更新滚动条可见性
     return this;
 }
 
@@ -403,10 +411,29 @@ Size ScrollViewer::MeasureOverride(const Size& availableSize) {
     // 将内容传递给 ScrollContentPresenter
     scrollContentPresenter_->SetContent(GetContent());
     
-    // 测量 ScrollContentPresenter
-    scrollContentPresenter_->Measure(availableSize);
+    // Phase 3 Step 6: 预留滚动条空间
+    Size contentSize = availableSize;
     
-    // TODO: Phase 3 - 为滚动条预留空间
+    // 如果垂直滚动条可能可见，预留空间
+    if (verticalScrollBar_ && verticalScrollBarVisibility_ != ScrollBarVisibility::Disabled) {
+        verticalScrollBar_->Measure(Size(std::numeric_limits<float>::infinity(), availableSize.height));
+        float scrollBarWidth = verticalScrollBar_->GetDesiredSize().width;
+        if (scrollBarWidth > 0) {
+            contentSize.width = std::max(0.0f, contentSize.width - scrollBarWidth);
+        }
+    }
+    
+    // 如果水平滚动条可能可见，预留空间
+    if (horizontalScrollBar_ && horizontalScrollBarVisibility_ != ScrollBarVisibility::Disabled) {
+        horizontalScrollBar_->Measure(Size(availableSize.width, std::numeric_limits<float>::infinity()));
+        float scrollBarHeight = horizontalScrollBar_->GetDesiredSize().height;
+        if (scrollBarHeight > 0) {
+            contentSize.height = std::max(0.0f, contentSize.height - scrollBarHeight);
+        }
+    }
+    
+    // 测量 ScrollContentPresenter
+    scrollContentPresenter_->Measure(contentSize);
     
     return scrollContentPresenter_->GetDesiredSize();
 }
@@ -416,10 +443,36 @@ Size ScrollViewer::ArrangeOverride(const Size& finalSize) {
         return finalSize;
     }
     
-    // 排列 ScrollContentPresenter
-    scrollContentPresenter_->Arrange(Rect(0, 0, finalSize.width, finalSize.height));
+    // Phase 3 Step 6: 计算滚动条大小和位置
+    float verticalScrollBarWidth = 0.0f;
+    float horizontalScrollBarHeight = 0.0f;
     
-    // TODO: Phase 3 - 排列滚动条
+    // 获取垂直滚动条宽度
+    if (verticalScrollBar_ && verticalScrollBar_->GetVisibility() == Visibility::Visible) {
+        verticalScrollBarWidth = verticalScrollBar_->GetDesiredSize().width;
+    }
+    
+    // 获取水平滚动条高度
+    if (horizontalScrollBar_ && horizontalScrollBar_->GetVisibility() == Visibility::Visible) {
+        horizontalScrollBarHeight = horizontalScrollBar_->GetDesiredSize().height;
+    }
+    
+    // 排列 ScrollContentPresenter（预留滚动条空间）
+    float contentWidth = std::max(0.0f, finalSize.width - verticalScrollBarWidth);
+    float contentHeight = std::max(0.0f, finalSize.height - horizontalScrollBarHeight);
+    scrollContentPresenter_->Arrange(Rect(0, 0, contentWidth, contentHeight));
+    
+    // 排列垂直滚动条（右侧）
+    if (verticalScrollBar_ && verticalScrollBar_->GetVisibility() == Visibility::Visible) {
+        float x = finalSize.width - verticalScrollBarWidth;
+        verticalScrollBar_->Arrange(Rect(x, 0, verticalScrollBarWidth, contentHeight));
+    }
+    
+    // 排列水平滚动条（底部）
+    if (horizontalScrollBar_ && horizontalScrollBar_->GetVisibility() == Visibility::Visible) {
+        float y = finalSize.height - horizontalScrollBarHeight;
+        horizontalScrollBar_->Arrange(Rect(0, y, contentWidth, horizontalScrollBarHeight));
+    }
     
     return finalSize;
 }
@@ -448,8 +501,123 @@ void ScrollViewer::OnScrollContentPresenterChanged() {
 // ========== 辅助方法（Phase 2 实现）==========
 
 void ScrollViewer::UpdateScrollBars() {
-    // TODO: Phase 3 - 更新滚动条的范围、位置和可见性
-    // 目前只是占位，Phase 3 会实现完整的滚动条集成
+    // Phase 3 Step 6: 更新滚动条的范围、位置和可见性
+    if (!verticalScrollBar_ || !horizontalScrollBar_) {
+        return;
+    }
+    
+    // 防止循环更新
+    if (isUpdatingFromScrollBar_) {
+        return;
+    }
+    
+    // 更新垂直滚动条
+    verticalScrollBar_->SetMinimum(0.0f);
+    verticalScrollBar_->SetMaximum(extentHeight_);
+    verticalScrollBar_->SetViewportSize(viewportHeight_);
+    verticalScrollBar_->SetValue(verticalOffset_);
+    
+    // 更新水平滚动条
+    horizontalScrollBar_->SetMinimum(0.0f);
+    horizontalScrollBar_->SetMaximum(extentWidth_);
+    horizontalScrollBar_->SetViewportSize(viewportWidth_);
+    horizontalScrollBar_->SetValue(horizontalOffset_);
+    
+    // 更新可见性
+    UpdateScrollBarVisibility();
+}
+
+// ========== Phase 3 Step 6 实现 ==========
+
+void ScrollViewer::CreateScrollBars() {
+    // 创建垂直滚动条
+    verticalScrollBar_ = new ScrollBar();
+    verticalScrollBar_->SetOrientation(Orientation::Vertical);
+    
+    // 创建水平滚动条
+    horizontalScrollBar_ = new ScrollBar();
+    horizontalScrollBar_->SetOrientation(Orientation::Horizontal);
+}
+
+void ScrollViewer::ConnectScrollBarEvents() {
+    if (!verticalScrollBar_ || !horizontalScrollBar_) {
+        return;
+    }
+    
+    // 连接垂直滚动条 ValueChanged 事件
+    verticalScrollBar_->ValueChanged.Connect([this](float oldValue, float newValue) {
+        OnScrollBarValueChanged(true, newValue);
+    });
+    
+    // 连接水平滚动条 ValueChanged 事件
+    horizontalScrollBar_->ValueChanged.Connect([this](float oldValue, float newValue) {
+        OnScrollBarValueChanged(false, newValue);
+    });
+}
+
+void ScrollViewer::UpdateScrollBarVisibility() {
+    if (!verticalScrollBar_ || !horizontalScrollBar_) {
+        return;
+    }
+    
+    // 计算是否需要显示滚动条
+    bool needsVerticalScroll = extentHeight_ > viewportHeight_;
+    bool needsHorizontalScroll = extentWidth_ > viewportWidth_;
+    
+    // 更新垂直滚动条可见性
+    switch (verticalScrollBarVisibility_) {
+        case ScrollBarVisibility::Disabled:
+            verticalScrollBar_->SetVisibility(Visibility::Collapsed);
+            break;
+        case ScrollBarVisibility::Auto:
+            verticalScrollBar_->SetVisibility(
+                needsVerticalScroll ? Visibility::Visible : Visibility::Collapsed
+            );
+            break;
+        case ScrollBarVisibility::Hidden:
+            verticalScrollBar_->SetVisibility(Visibility::Collapsed);
+            break;
+        case ScrollBarVisibility::Visible:
+            verticalScrollBar_->SetVisibility(Visibility::Visible);
+            break;
+    }
+    
+    // 更新水平滚动条可见性
+    switch (horizontalScrollBarVisibility_) {
+        case ScrollBarVisibility::Disabled:
+            horizontalScrollBar_->SetVisibility(Visibility::Collapsed);
+            break;
+        case ScrollBarVisibility::Auto:
+            horizontalScrollBar_->SetVisibility(
+                needsHorizontalScroll ? Visibility::Visible : Visibility::Collapsed
+            );
+            break;
+        case ScrollBarVisibility::Hidden:
+            horizontalScrollBar_->SetVisibility(Visibility::Collapsed);
+            break;
+        case ScrollBarVisibility::Visible:
+            horizontalScrollBar_->SetVisibility(Visibility::Visible);
+            break;
+    }
+}
+
+void ScrollViewer::OnScrollBarValueChanged(bool isVertical, float value) {
+    if (!scrollContentPresenter_) {
+        return;
+    }
+    
+    // 设置标志防止循环更新
+    isUpdatingFromScrollBar_ = true;
+    
+    // 更新 ScrollContentPresenter 的偏移
+    if (isVertical) {
+        scrollContentPresenter_->SetVerticalOffset(value);
+    } else {
+        scrollContentPresenter_->SetHorizontalOffset(value);
+    }
+    
+    // 重置标志
+    isUpdatingFromScrollBar_ = false;
 }
 
 } // namespace fk::ui

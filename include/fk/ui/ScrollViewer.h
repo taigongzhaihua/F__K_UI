@@ -231,10 +231,29 @@ private:
     // ScrollContentPresenter 实例（Phase 2 新增）
     ScrollContentPresenter* scrollContentPresenter_{nullptr};
     
+    // ScrollBar 实例（Phase 3 Step 6 新增）
+    ScrollBar* verticalScrollBar_{nullptr};
+    ScrollBar* horizontalScrollBar_{nullptr};
+    
+    // 防止循环更新的标志
+    bool isUpdatingFromScrollBar_{false};
+    
     // ========== 辅助方法 ==========
     
-    /// 更新滚动条的范围和可见性
+    /// 更新滚动条的范围和可见性（Phase 3 Step 6）
     void UpdateScrollBars();
+    
+    /// 创建滚动条（Phase 3 Step 6）
+    void CreateScrollBars();
+    
+    /// 连接滚动条事件（Phase 3 Step 6）
+    void ConnectScrollBarEvents();
+    
+    /// 更新滚动条可见性（Phase 3 Step 6）
+    void UpdateScrollBarVisibility();
+    
+    /// 从 ScrollBar 更新偏移（Phase 3 Step 6）
+    void OnScrollBarValueChanged(bool isVertical, float value);
 };
 
 } // namespace fk::ui
