@@ -123,7 +123,7 @@ void RepeatButton::StopRepeatTimer() {
         repeatTimer_->Stop();
         repeatTimer_.reset();
     }
-    isFirstTick_ = true;
+    // 注意：isFirstTick_会在StartRepeatTimer中重置，这里不需要重复设置
 }
 
 void RepeatButton::OnRepeatTimerTick() {
