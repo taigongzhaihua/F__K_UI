@@ -7,6 +7,7 @@
 #include "fk/ui/DataTemplate.h"
 #include "fk/ui/Brush.h"
 #include "fk/binding/ObservableObject.h"
+#include "fk/binding/ObservableProperty.h"
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -20,45 +21,34 @@ using namespace fk::binding;
 /**
  * @brief 用户数据模型
  * 
- * 这个类演示如何定义一个数据模型，用于在DataTemplate中显示
+ * 这个类演示如何定义一个数据模型，用于在DataTemplate中显示。
+ * 使用 ObservableProperty 模板类替代手动 getter/setter 实现。
  */
 class UserData : public ObservableObject {
 public:
-    UserData(const std::string& name, int age, const std::string& email)
-        : name_(name), age_(age), email_(email) {}
+    // 使用 ObservableProperty，自动支持属性变更通知和绑定注册
+    // C++17 CTAD 自动推导 Owner 类型为 UserData
+    ObservableProperty<std::string> name{this, "Name"};
+    ObservableProperty<int> age{this, "Age"};
+    ObservableProperty<std::string> email{this, "Email"};
     
-    // 姓名属性
-    std::string GetName() const { return name_; }
-    void SetName(const std::string& value) {
-        if (name_ != value) {
-            name_ = value;
-            // 使用std::string_view避免重载歧义（ObservableObject有两个重载）
-            RaisePropertyChanged(std::string_view("Name"));
-        }
+    UserData(const std::string& name_val, int age_val, const std::string& email_val)
+        : name(this, "Name"), age(this, "Age"), email(this, "Email") {
+        // 初始化属性值
+        name = name_val;
+        age = age_val;
+        email = email_val;
     }
     
-    // 年龄属性
-    int GetAge() const { return age_; }
-    void SetAge(int value) {
-        if (age_ != value) {
-            age_ = value;
-            RaisePropertyChanged(std::string_view("Age"));
-        }
-    }
+    // 提供传统的 getter 方法以保持向后兼容
+    std::string GetName() const { return name.get(); }
+    int GetAge() const { return age.get(); }
+    std::string GetEmail() const { return email.get(); }
     
-    // 邮箱属性
-    std::string GetEmail() const { return email_; }
-    void SetEmail(const std::string& value) {
-        if (email_ != value) {
-            email_ = value;
-            RaisePropertyChanged(std::string_view("Email"));
-        }
-    }
-
-private:
-    std::string name_;
-    int age_;
-    std::string email_;
+    // 提供传统的 setter 方法以保持向后兼容
+    void SetName(const std::string& value) { name.set(value); }
+    void SetAge(int value) { age.set(value); }
+    void SetEmail(const std::string& value) { email.set(value); }
 };
 
 // ========== DataTemplate 示例 ==========

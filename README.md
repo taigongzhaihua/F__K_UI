@@ -102,13 +102,19 @@ int main() {
 ```cpp
 #include <fk/ui/DataTemplate.h>
 #include <fk/ui/ListBox.h>
+#include <fk/binding/ObservableProperty.h>
 
-// 定义数据模型
-class UserData {
+// 定义数据模型 - 使用 ObservableProperty 自动支持属性变更通知
+class UserData : public binding::ObservableObject {
 public:
-    std::string name;
-    int age;
-    std::string email;
+    binding::ObservableProperty<std::string> name{this, "Name"};
+    binding::ObservableProperty<int> age{this, "Age"};
+    binding::ObservableProperty<std::string> email{this, "Email"};
+    
+    UserData(const std::string& n, int a, const std::string& e)
+        : name(this, "Name"), age(this, "Age"), email(this, "Email") {
+        name = n; age = a; email = e;
+    }
 };
 
 // 创建DataTemplate来自定义数据的显示方式
@@ -127,12 +133,12 @@ auto CreateUserTemplate() {
         panel->SetOrientation(ui::Orientation::Vertical);
         
         auto nameText = new ui::TextBlock();
-        nameText->SetText("姓名: " + user->name);
+        nameText->SetText("姓名: " + user->name.get());
         nameText->SetFontSize(18);
         panel->AddChild(nameText);
         
         auto ageText = new ui::TextBlock();
-        ageText->SetText("年龄: " + std::to_string(user->age));
+        ageText->SetText("年龄: " + std::to_string(user->age.get()));
         panel->AddChild(ageText);
         
         border->SetChild(panel);
