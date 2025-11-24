@@ -15,6 +15,11 @@ RepeatButton::RepeatButton() {
     // 默认样式可以在此设置
 }
 
+RepeatButton::~RepeatButton() {
+    // 确保在析构时停止定时器，避免悬空指针问题
+    StopRepeatTimer();
+}
+
 // ========== 依赖属性定义 ==========
 
 const binding::DependencyProperty& RepeatButton::DelayProperty() {

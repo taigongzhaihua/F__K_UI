@@ -28,7 +28,7 @@ namespace fk::ui {
 class RepeatButton : public ButtonBase<RepeatButton> {
 public:
     RepeatButton();
-    virtual ~RepeatButton() = default;
+    virtual ~RepeatButton();
     
     // ========== 依赖属性 ==========
     
