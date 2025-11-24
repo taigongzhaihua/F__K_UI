@@ -1,5 +1,7 @@
 #include "fk/ui/UIElement.h"
 #include "fk/ui/NameScope.h"
+#include "fk/ui/InputManager.h"
+#include "fk/ui/Window.h"
 #include "fk/render/RenderContext.h"
 #include <algorithm>
 #include <iostream>
@@ -69,7 +71,17 @@ UIElement::UIElement()
     SetValue(OpacityProperty(), 1.0f);
 }
 
-UIElement::~UIElement() = default;
+UIElement::~UIElement() {
+    // 释放所有指针捕获，防止InputManager持有悬空指针
+    // 注意：通常只会捕获pointerId=0（主指针）
+    // 如果有更多的pointerId被捕获，它们也应该在控件逻辑中被显式释放
+    constexpr int MAX_COMMON_POINTER_IDS = 10; // 支持最多10个触控点
+    for (int pointerId = 0; pointerId < MAX_COMMON_POINTER_IDS; ++pointerId) {
+        if (HasPointerCapture(pointerId)) {
+            ReleasePointerCapture(pointerId);
+        }
+    }
+}
 
 void UIElement::SetName(const std::string& name) {
     std::string oldName = GetElementName();
@@ -562,6 +574,48 @@ void UIElement::SetTemplatedParent(UIElement* parent) {
         auto dummyNew = std::any{};
         DataContextChanged(dummyOld, dummyNew);
     }
+}
+
+// ========== 指针捕获 ==========
+
+bool UIElement::CapturePointer(int pointerId) {
+    InputManager* inputManager = GetInputManager();
+    if (inputManager) {
+        inputManager->CapturePointer(this, pointerId);
+        return true;
+    }
+    return false;
+}
+
+void UIElement::ReleasePointerCapture(int pointerId) {
+    InputManager* inputManager = GetInputManager();
+    if (inputManager) {
+        inputManager->ReleasePointerCapture(pointerId);
+    }
+}
+
+bool UIElement::HasPointerCapture(int pointerId) const {
+    InputManager* inputManager = GetInputManager();
+    if (inputManager) {
+        return inputManager->GetPointerCapture(pointerId) == this;
+    }
+    return false;
+}
+
+InputManager* UIElement::GetInputManager() const {
+    // 向上遍历视觉树，找到Window
+    // 注意：使用const_cast是因为Visual::GetVisualParent()返回非const指针
+    // 但这个遍历操作本身不会修改任何对象
+    const Visual* current = this;
+    while (current) {
+        // 尝试转换为Window
+        if (const auto* window = dynamic_cast<const Window*>(current)) {
+            // GetInputManager()返回非const指针是合理的，因为我们需要调用捕获/释放操作
+            return const_cast<Window*>(window)->GetInputManager();
+        }
+        current = current->GetVisualParent();
+    }
+    return nullptr;
 }
 
 } // namespace fk::ui

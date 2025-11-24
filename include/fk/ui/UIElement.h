@@ -24,6 +24,7 @@ struct PointerEventArgs;
 struct KeyEventArgs;
 class Transform;
 class NameScope;
+class InputManager;
 
 /**
  * @brief 可见性枚举
@@ -326,6 +327,45 @@ public:
     virtual void OnKeyDown(KeyEventArgs& e);
     virtual void OnKeyUp(KeyEventArgs& e);
     
+    // ========== 指针捕获 ==========
+    
+    /**
+     * @brief 捕获指针到当前元素
+     * @param pointerId 指针ID（默认0表示主指针）
+     * @return 是否成功捕获
+     * 
+     * 捕获指针后，所有指针事件都将发送到此元素，即使指针移出元素边界。
+     * 这对于拖动、滑动等交互非常有用。
+     * 
+     * 示例：
+     * @code
+     * void MyControl::OnPointerPressed(PointerEventArgs& e) {
+     *     CapturePointer(e.pointerId);
+     *     // 现在可以在元素外部也接收指针事件
+     * }
+     * 
+     * void MyControl::OnPointerReleased(PointerEventArgs& e) {
+     *     ReleasePointerCapture(e.pointerId);
+     * }
+     * @endcode
+     */
+    bool CapturePointer(int pointerId = 0);
+    
+    /**
+     * @brief 释放指针捕获
+     * @param pointerId 指针ID（默认0表示主指针）
+     * 
+     * 释放之前通过 CapturePointer 捕获的指针。
+     */
+    void ReleasePointerCapture(int pointerId = 0);
+    
+    /**
+     * @brief 检查当前元素是否捕获了指定指针
+     * @param pointerId 指针ID（默认0表示主指针）
+     * @return 如果此元素捕获了指针返回true，否则返回false
+     */
+    bool HasPointerCapture(int pointerId = 0) const;
+    
     // ========== 逻辑树遍历 ==========
     
     /**
@@ -481,6 +521,12 @@ private:
     
     // 辅助方法：递归注册子元素名称到 NameScope
     static void RegisterNamesToScope(UIElement* element, NameScope* scope);
+    
+    /**
+     * @brief 获取InputManager（通过向上遍历视觉树找到Window）
+     * @return InputManager指针，如果未找到返回nullptr
+     */
+    InputManager* GetInputManager() const;
 };
 
 /**
