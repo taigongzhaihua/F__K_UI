@@ -27,6 +27,13 @@
 - **multicolor_path_test.cpp** - 完整分段着色示例(8个场景)
 - **subpath_fill_test.cpp** - 子路径独立填充和描边示例
 
+### datatemplate/ - DataTemplate示例
+- **datatemplate_demo.cpp** - 完整的DataTemplate使用示例
+  - 展示如何在C++中实现类似WPF的DataTemplate效果
+  - 包含用户数据模型和自定义可视化
+  - 演示数据与视图分离的设计模式
+  - **[详细文档](datatemplate/README.md)**
+
 ### demos/ - 综合演示
 *（预留目录，用于复杂的综合示例）*
 
@@ -84,12 +91,17 @@ cd build
    - `basic/main.cpp` - 理解框架基本结构
    - `shapes/shape_demo.cpp` - 学习基础图形
 
-2. **Path绘制**
+2. **数据模板（重要）**
+   - `datatemplate/datatemplate_demo.cpp` - DataTemplate使用示例
+   - 学习如何在C++中实现类似WPF的DataTemplate效果
+   - 理解数据与视图分离的设计模式
+
+3. **Path绘制**
    - `path/path_test.cpp` - Path基础
    - `path/path_line_test.cpp` - 线条渲染
    - `path/arc_demo.cpp` - 圆弧绘制
 
-3. **高级特性**
+4. **高级特性**
    - `path/multicolor_simple_test.cpp` - 分段着色
    - `path/subpath_fill_test.cpp` - 子路径多色
 

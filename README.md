@@ -57,6 +57,8 @@ make
 
 ## 📖 示例代码
 
+### 基础示例
+
 ```cpp
 #include <fk/app/Application.h>
 #include <fk/ui/Window.h>
@@ -92,6 +94,60 @@ int main() {
     return app->Run(window);
 }
 ```
+
+### DataTemplate 示例
+
+**是的，FK_UI完全支持类似WPF中DataTemplate的效果！**
+
+```cpp
+#include <fk/ui/DataTemplate.h>
+#include <fk/ui/ListBox.h>
+
+// 定义数据模型
+class UserData {
+public:
+    std::string name;
+    int age;
+    std::string email;
+};
+
+// 创建DataTemplate来自定义数据的显示方式
+auto CreateUserTemplate() {
+    auto dataTemplate = std::make_shared<ui::DataTemplate>();
+    
+    dataTemplate->SetFactory([](const std::any& dataContext) -> ui::UIElement* {
+        auto user = std::any_cast<std::shared_ptr<UserData>>(dataContext);
+        
+        // 创建视觉树
+        auto border = new ui::Border();
+        border->SetBackground(new ui::SolidColorBrush(240, 240, 255));
+        border->SetPadding(ui::Thickness(10));
+        
+        auto panel = new ui::StackPanel();
+        panel->SetOrientation(ui::Orientation::Vertical);
+        
+        auto nameText = new ui::TextBlock();
+        nameText->SetText("姓名: " + user->name);
+        nameText->SetFontSize(18);
+        panel->AddChild(nameText);
+        
+        auto ageText = new ui::TextBlock();
+        ageText->SetText("年龄: " + std::to_string(user->age));
+        panel->AddChild(ageText);
+        
+        border->SetChild(panel);
+        return border;
+    });
+    
+    return dataTemplate;
+}
+
+// 使用DataTemplate
+auto listBox = new ui::ListBox();
+listBox->SetItemTemplate(CreateUserTemplate().get());
+```
+
+详细文档：[DataTemplate使用指南](Docs/Guides/DataTemplate使用指南.md) | [示例代码](examples/datatemplate/)
 
 ## 📚 文档
 
