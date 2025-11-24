@@ -28,9 +28,9 @@
 
 namespace fk::ui {
 
-// 前向声明（待实现的组件）
+// 前向声明
 class ScrollBar;  // Phase 3
-// class ScrollContentPresenter;  // Phase 2
+class ScrollContentPresenter;  // Phase 2 ✓
 
 /**
  * @brief 滚动条可见性模式（与 WPF 一致）
@@ -185,17 +185,33 @@ public:
     /// 滚动使指定元素可见
     void ScrollToElement(UIElement* element);
     
+    // ========== ScrollContentPresenter 访问 ==========
+    
+    /// 获取 ScrollContentPresenter（Phase 2 新增）
+    ScrollContentPresenter* GetScrollContentPresenter() const { return scrollContentPresenter_; }
+    
     // ========== 事件 ==========
     
     // TODO: 添加 ScrollChanged 路由事件
     
 protected:
+    // ========== 布局重写 ==========
+    
+    Size MeasureOverride(const Size& availableSize) override;
+    Size ArrangeOverride(const Size& finalSize) override;
+    
+    // ========== 内部回调 ==========
+    
+    /// 当 ScrollContentPresenter 的滚动信息变更时调用
+    void OnScrollContentPresenterChanged();
+    
     // ========== 模板部分（TODO）==========
     
     // 这些将在完整实现时处理模板化滚动条
     // virtual void OnApplyTemplate() override;
     
-    // ========== 内部状态（临时，最终会移到实现类）==========
+private:
+    // ========== 内部状态 ==========
     
     ScrollBarVisibility horizontalScrollBarVisibility_{ScrollBarVisibility::Auto};
     ScrollBarVisibility verticalScrollBarVisibility_{ScrollBarVisibility::Auto};
@@ -209,6 +225,14 @@ protected:
     float extentHeight_{0.0f};
     
     bool canContentScroll_{false};
+    
+    // ScrollContentPresenter 实例（Phase 2 新增）
+    ScrollContentPresenter* scrollContentPresenter_{nullptr};
+    
+    // ========== 辅助方法 ==========
+    
+    /// 更新滚动条的范围和可见性
+    void UpdateScrollBars();
 };
 
 } // namespace fk::ui

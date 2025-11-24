@@ -115,11 +115,14 @@ ScrollViewer (顶层容器)
 - [x] 文档化设计决策
 - [x] 删除旧实现
 
-### Phase 2: ScrollContentPresenter 实现
-- [ ] 实现 ScrollContentPresenter 类
-- [ ] 实现内容测量和排列逻辑
-- [ ] 实现内容裁剪和偏移
-- [ ] 实现 extent/viewport 计算
+### Phase 2: ScrollContentPresenter 实现 ✓
+- [x] 实现 ScrollContentPresenter 类
+- [x] 实现内容测量和排列逻辑
+- [x] 实现内容裁剪和偏移
+- [x] 实现 extent/viewport 计算
+- [x] 定义 IScrollInfo 接口（支持逻辑滚动）
+- [x] 集成到 ScrollViewer
+- [x] 实现所有滚动方法（LineUp/Down、PageUp/Down 等）
 
 ### Phase 3: 滚动条基础实现
 - [ ] 实现 ScrollBar 基础渲染

@@ -1,19 +1,16 @@
 /**
  * @file ScrollViewer.cpp
- * @brief ScrollViewer 滚动查看器控件实现 - Stub 版本
+ * @brief ScrollViewer 滚动查看器控件实现 - Phase 2
  * 
- * 这是一个临时的 stub 实现，仅提供基本接口以保证编译通过。
- * 完整实现将在重构 Phase 2 及以后完成。
- * 
- * TODO: 完整实现计划
- * - Phase 1: 基础架构和接口定义 ✓
- * - Phase 2: ScrollContentPresenter 实现
- * - Phase 3: 滚动条集成和事件处理
- * - Phase 4: 模板和样式支持
- * - Phase 5: 鼠标滚轮和触摸支持
+ * Phase 1: 基础架构和接口定义 ✓
+ * Phase 2: ScrollContentPresenter 实现 ✓
+ * Phase 3: 滚动条集成和事件处理（待实现）
+ * Phase 4: 模板和样式支持（待实现）
+ * Phase 5: 鼠标滚轮和触摸支持（待实现）
  */
 
 #include "fk/ui/ScrollViewer.h"
+#include "fk/ui/ScrollContentPresenter.h"
 // #include "fk/ui/ScrollBar.h"  // Phase 3: 当需要创建滚动条实例时取消注释
 #include <algorithm>
 
@@ -22,7 +19,15 @@ namespace fk::ui {
 // ========== 构造函数 ==========
 
 ScrollViewer::ScrollViewer() {
-    // TODO: Phase 2 - 创建 ScrollContentPresenter
+    // Phase 2: 创建 ScrollContentPresenter
+    scrollContentPresenter_ = new ScrollContentPresenter();
+    scrollContentPresenter_->SetScrollOwner(this);
+    
+    // 订阅 ScrollContentPresenter 的滚动变更事件
+    scrollContentPresenter_->ScrollChanged.Connect([this]() {
+        OnScrollContentPresenterChanged();
+    });
+    
     // TODO: Phase 3 - 通过模板创建滚动条（而不是直接创建）
 }
 
@@ -260,62 +265,98 @@ ScrollViewer* ScrollViewer::SetCanContentScroll(bool value) {
     return this;
 }
 
-// ========== 滚动方法（Stub）==========
+// ========== 滚动方法（Phase 2 实现）==========
 
 void ScrollViewer::LineLeft() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        float offset = scrollContentPresenter_->GetHorizontalOffset() - 16.0f;  // 默认 16 像素
+        scrollContentPresenter_->SetHorizontalOffset(offset);
+    }
 }
 
 void ScrollViewer::LineRight() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        float offset = scrollContentPresenter_->GetHorizontalOffset() + 16.0f;
+        scrollContentPresenter_->SetHorizontalOffset(offset);
+    }
 }
 
 void ScrollViewer::LineUp() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        float offset = scrollContentPresenter_->GetVerticalOffset() - 16.0f;
+        scrollContentPresenter_->SetVerticalOffset(offset);
+    }
 }
 
 void ScrollViewer::LineDown() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        float offset = scrollContentPresenter_->GetVerticalOffset() + 16.0f;
+        scrollContentPresenter_->SetVerticalOffset(offset);
+    }
 }
 
 void ScrollViewer::PageUp() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        float offset = scrollContentPresenter_->GetVerticalOffset() - viewportHeight_;
+        scrollContentPresenter_->SetVerticalOffset(offset);
+    }
 }
 
 void ScrollViewer::PageDown() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        float offset = scrollContentPresenter_->GetVerticalOffset() + viewportHeight_;
+        scrollContentPresenter_->SetVerticalOffset(offset);
+    }
 }
 
 void ScrollViewer::PageLeft() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        float offset = scrollContentPresenter_->GetHorizontalOffset() - viewportWidth_;
+        scrollContentPresenter_->SetHorizontalOffset(offset);
+    }
 }
 
 void ScrollViewer::PageRight() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        float offset = scrollContentPresenter_->GetHorizontalOffset() + viewportWidth_;
+        scrollContentPresenter_->SetHorizontalOffset(offset);
+    }
 }
 
 void ScrollViewer::ScrollToTop() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        scrollContentPresenter_->SetVerticalOffset(0.0f);
+    }
 }
 
 void ScrollViewer::ScrollToBottom() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        scrollContentPresenter_->SetVerticalOffset(extentHeight_);
+    }
 }
 
 void ScrollViewer::ScrollToLeftEnd() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        scrollContentPresenter_->SetHorizontalOffset(0.0f);
+    }
 }
 
 void ScrollViewer::ScrollToRightEnd() {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        scrollContentPresenter_->SetHorizontalOffset(extentWidth_);
+    }
 }
 
 void ScrollViewer::ScrollToHorizontalOffset(float offset) {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        scrollContentPresenter_->SetHorizontalOffset(offset);
+    }
 }
 
 void ScrollViewer::ScrollToVerticalOffset(float offset) {
-    // TODO: Phase 3 - 实现滚动逻辑
+    if (scrollContentPresenter_) {
+        scrollContentPresenter_->SetVerticalOffset(offset);
+    }
 }
 
 void ScrollViewer::ScrollToElement(UIElement* element) {
@@ -324,6 +365,74 @@ void ScrollViewer::ScrollToElement(UIElement* element) {
         return;  // 忽略 null 元素
     }
     // TODO: Phase 3 - 实现滚动到元素的逻辑
+    // 需要计算元素在内容中的位置，然后滚动到该位置
+}
+
+// ========== 布局重写（Phase 2 实现）==========
+
+Size ScrollViewer::MeasureOverride(const Size& availableSize) {
+    if (!scrollContentPresenter_) {
+        return Size(0, 0);
+    }
+    
+    // 配置 ScrollContentPresenter 的滚动能力
+    scrollContentPresenter_->SetCanHorizontallyScroll(
+        horizontalScrollBarVisibility_ != ScrollBarVisibility::Disabled
+    );
+    scrollContentPresenter_->SetCanVerticallyScroll(
+        verticalScrollBarVisibility_ != ScrollBarVisibility::Disabled
+    );
+    
+    // 将内容传递给 ScrollContentPresenter
+    scrollContentPresenter_->SetContent(GetContent());
+    
+    // 测量 ScrollContentPresenter
+    scrollContentPresenter_->Measure(availableSize);
+    
+    // TODO: Phase 3 - 为滚动条预留空间
+    
+    return scrollContentPresenter_->GetDesiredSize();
+}
+
+Size ScrollViewer::ArrangeOverride(const Size& finalSize) {
+    if (!scrollContentPresenter_) {
+        return finalSize;
+    }
+    
+    // 排列 ScrollContentPresenter
+    scrollContentPresenter_->Arrange(Rect(0, 0, finalSize.width, finalSize.height));
+    
+    // TODO: Phase 3 - 排列滚动条
+    
+    return finalSize;
+}
+
+// ========== 内部回调（Phase 2 实现）==========
+
+void ScrollViewer::OnScrollContentPresenterChanged() {
+    if (!scrollContentPresenter_) {
+        return;
+    }
+    
+    // 从 ScrollContentPresenter 同步滚动信息
+    horizontalOffset_ = scrollContentPresenter_->GetHorizontalOffset();
+    verticalOffset_ = scrollContentPresenter_->GetVerticalOffset();
+    viewportWidth_ = scrollContentPresenter_->GetViewportWidth();
+    viewportHeight_ = scrollContentPresenter_->GetViewportHeight();
+    extentWidth_ = scrollContentPresenter_->GetExtentWidth();
+    extentHeight_ = scrollContentPresenter_->GetExtentHeight();
+    
+    // 更新滚动条
+    UpdateScrollBars();
+    
+    // TODO: 触发 ScrollChanged 事件
+}
+
+// ========== 辅助方法（Phase 2 实现）==========
+
+void ScrollViewer::UpdateScrollBars() {
+    // TODO: Phase 3 - 更新滚动条的范围、位置和可见性
+    // 目前只是占位，Phase 3 会实现完整的滚动条集成
 }
 
 } // namespace fk::ui
