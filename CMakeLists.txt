@@ -313,6 +313,10 @@ target_link_libraries(multicolor_path_test PRIVATE fk)
 add_executable(subpath_fill_test examples/path/subpath_fill_test.cpp)
 target_link_libraries(subpath_fill_test PRIVATE fk)
 
+# DataTemplate Examples
+add_executable(datatemplate_demo examples/datatemplate/datatemplate_demo.cpp)
+target_link_libraries(datatemplate_demo PRIVATE fk)
+
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库
 # 

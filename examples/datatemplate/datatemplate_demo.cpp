@@ -32,7 +32,7 @@ public:
     void SetName(const std::string& value) {
         if (name_ != value) {
             name_ = value;
-            OnPropertyChanged("Name");
+            RaisePropertyChanged(std::string_view("Name"));
         }
     }
     
@@ -41,7 +41,7 @@ public:
     void SetAge(int value) {
         if (age_ != value) {
             age_ = value;
-            OnPropertyChanged("Age");
+            RaisePropertyChanged(std::string_view("Age"));
         }
     }
     
@@ -50,7 +50,7 @@ public:
     void SetEmail(const std::string& value) {
         if (email_ != value) {
             email_ = value;
-            OnPropertyChanged("Email");
+            RaisePropertyChanged(std::string_view("Email"));
         }
     }
 
@@ -269,5 +269,6 @@ int main(int argc, char** argv) {
     std::cout << "\n启动应用程序..." << std::endl;
     std::cout << "DataTemplate成功创建了自定义的数据可视化!" << std::endl;
     
-    return app.Run(mainWindow);
+    app.Run(mainWindow);
+    return 0;
 }
