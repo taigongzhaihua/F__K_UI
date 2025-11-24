@@ -266,10 +266,14 @@ protected:
     
     /**
      * @brief Scroll to make item at index visible
+     * 
+     * TODO: 实现滚动逻辑
+     * 注意：需要等待 ScrollViewer 重构完成后再实现此功能
+     * ScrollViewer 正在重构为 WPF 风格架构，包含 ScrollContentPresenter
      */
     virtual void ScrollIntoView(int index) {
         // TODO: Implement scrolling logic
-        // Requires ScrollViewer integration
+        // Requires ScrollViewer integration (currently being refactored)
     }
     
 private:

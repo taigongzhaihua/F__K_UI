@@ -31,7 +31,7 @@
 #include "fk/ui/TextBox.h"
 #include "fk/ui/ListBox.h"
 #include "fk/ui/ComboBox.h"
-#include "fk/ui/ScrollViewer.h"
+// #include "fk/ui/ScrollViewer.h"  // TODO: ScrollViewer 正在重构中，暂时禁用
 #include "fk/ui/ContentPresenter.h"
 #include "fk/ui/Image.h"
 
@@ -114,10 +114,13 @@ inline ui::ComboBox<T>* ComboBox() {
 /**
  * @brief ScrollViewer 工厂函数
  * @return 新创建的 ScrollViewer 指针
+ * 
+ * TODO: ScrollViewer 正在重构中，采用类似 WPF 的架构设计
+ * 暂时禁用此工厂方法，待重构完成后恢复
  */
-inline ui::ScrollViewer* ScrollViewer() {
-    return new ui::ScrollViewer();
-}
+// inline ui::ScrollViewer* ScrollViewer() {
+//     return new ui::ScrollViewer();
+// }
 
 /**
  * @brief ContentPresenter 工厂函数

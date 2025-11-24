@@ -16,8 +16,8 @@
 #include "fk/ui/TextBoxBase.h"
 #include "fk/ui/Border.h"
 #include "fk/ui/Image.h"
-#include "fk/ui/ScrollBar.h"
-#include "fk/ui/ScrollViewer.h"
+// #include "fk/ui/ScrollBar.h"     // TODO: 正在重构中，采用 WPF 风格架构
+// #include "fk/ui/ScrollViewer.h"  // TODO: 正在重构中，采用 WPF 风格架构
 #include "fk/ui/ListBox.h"
 #include "fk/ui/ComboBox.h"
 #include "fk/ui/Popup.h"
