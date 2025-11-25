@@ -14,15 +14,21 @@ namespace fk::binding {
  * @brief 可观察属性模板类
  * 
  * 提供自动属性变更通知和注册功能，用于替代 ViewModel 宏系统。
+ * 需要显式指定 Owner 类型参数，以确保类型安全。
  * 
  * @tparam T 属性值类型
- * @tparam Owner 属性所属的类类型
+ * @tparam Owner 属性所属的类类型（必须继承自 ObservableObject）
  * 
  * 特性：
- * - 自动注册到 PropertyAccessorRegistry
+ * - 自动注册到 PropertyAccessorRegistry，支持字符串路径绑定
  * - 支持自定义 getter、setter、validator
  * - 类型安全的属性访问
  * - 隐式转换支持
+ * 
+ * 优势（相比 ViewModel 宏）：
+ * - 无需在类外使用注册宏
+ * - 代码更清晰，更易调试
+ * - 编译期类型检查
  * 
  * 使用示例：
  * @code
