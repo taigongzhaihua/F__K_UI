@@ -4,20 +4,82 @@
  */
 
 #include "fk/ui/Thumb.h"
+#include "fk/ui/ControlTemplate.h"
+#include "fk/ui/Border.h"
+#include "fk/ui/Brush.h"
+#include "fk/binding/TemplateBinding.h"
 #include "fk/animation/VisualStateManager.h"
 #include "fk/animation/VisualState.h"
 #include "fk/animation/VisualStateGroup.h"
+#include "fk/animation/VisualStateBuilder.h"
 #include "fk/animation/Storyboard.h"
 #include "fk/animation/ColorAnimation.h"
-#include "fk/ui/Border.h"
-#include "fk/ui/Brush.h"
 
 namespace fk::ui {
+
+// ========== 默认模板 ==========
+
+static ControlTemplate* CreateDefaultThumbTemplate() {
+    auto* tmpl = new ControlTemplate();
+    tmpl->SetTargetType(typeid(Thumb))
+        ->SetFactory([]() -> UIElement* {
+            return (new Border())
+                ->Name("ThumbBorder")
+                ->Background(binding::TemplateBinding(Control<Thumb>::BackgroundProperty()))
+                ->BorderBrush(binding::TemplateBinding(Control<Thumb>::BorderBrushProperty()))
+                ->BorderThickness(binding::TemplateBinding(Control<Thumb>::BorderThicknessProperty()))
+                ->CornerRadius(2.0f);
+        })
+        ->AddVisualStateGroup(
+            animation::VisualStateBuilder::CreateGroup("CommonStates")
+                ->State("Normal")
+                    ->ColorAnimation("ThumbBorder", "Background.Color")
+                    ->ToBinding(Control<Thumb>::BackgroundProperty())
+                    ->Duration(75)
+                    ->EndAnimation()
+                ->EndState()
+                ->State("MouseOver")
+                    ->ColorAnimation("ThumbBorder", "Background.Color")
+                    ->To(Color::FromRGB(140, 140, 140, 255))  // 悬停时稍亮
+                    ->Duration(50)
+                    ->EndAnimation()
+                ->EndState()
+                ->State("Pressed")
+                    ->ColorAnimation("ThumbBorder", "Background.Color")
+                    ->To(Color::FromRGB(90, 90, 90, 255))     // 按下/拖动时更暗
+                    ->Duration(50)
+                    ->EndAnimation()
+                ->EndState()
+                ->State("Disabled")
+                    ->ColorAnimation("ThumbBorder", "Background.Color")
+                    ->To(Color::FromRGB(200, 200, 200, 255))
+                    ->Duration(100)
+                    ->EndAnimation()
+                    ->DoubleAnimation("ThumbBorder", "Opacity")
+                    ->To(0.5)
+                    ->Duration(100)
+                    ->EndAnimation()
+                ->EndState()
+                ->Build()
+        );
+    
+    return tmpl;
+}
 
 // ========== 构造函数 ==========
 
 Thumb::Thumb() {
-    // 初始化视觉状态
+    // 设置默认背景色（灰色滑块）
+    if (!GetBackground()) {
+        SetBackground(new SolidColorBrush(Color::FromRGB(120, 120, 120, 255)));
+    }
+    
+    // 设置默认模板
+    if (!GetTemplate()) {
+        SetTemplate(CreateDefaultThumbTemplate());
+    }
+    
+    // 初始化视觉状态（在 OnTemplateApplied 之后生效）
     InitializeVisualStates();
 }
 
