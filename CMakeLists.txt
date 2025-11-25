@@ -204,12 +204,7 @@ add_library(fk STATIC
     src/ui/Brush.cpp
     src/ui/ContentPresenter.cpp
     src/ui/Shape.cpp
-    src/ui/ScrollBar.cpp              # 重新设计（WPF 风格），Phase 1-2 完成
-    src/ui/ScrollViewer.cpp           # 重新设计（WPF 风格），Phase 1-2 完成
-    src/ui/ScrollContentPresenter.cpp # Phase 2：滚动内容呈现器
-    src/ui/RepeatButton.cpp           # Phase 3：重复按钮
-    src/ui/Thumb.cpp                  # Phase 3：可拖动滑块
-    src/ui/Track.cpp                  # Phase 3：轨道布局
+    # TODO: ScrollViewer 及相关组件待重构
     src/ui/ListBox.cpp
     src/ui/Popup.cpp
     src/ui/ComboBox.cpp

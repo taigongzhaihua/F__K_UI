@@ -129,8 +129,6 @@ const binding::DependencyProperty& FrameworkElement<Derived>::VerticalAlignmentP
 
 // 显式实例化需要的额外头文件
 #include "fk/ui/ContentPresenter.h"
-#include "fk/ui/ScrollBar.h"
-#include "fk/ui/ScrollViewer.h"
 #include "fk/ui/ListBox.h"
 #include "fk/ui/Popup.h"
 #include "fk/ui/ComboBox.h"
@@ -152,8 +150,6 @@ template class fk::ui::FrameworkElement<fk::ui::Line>;
 template class fk::ui::FrameworkElement<fk::ui::Polygon>;
 template class fk::ui::FrameworkElement<fk::ui::Path>;
 template class fk::ui::FrameworkElement<fk::ui::ContentPresenter<>>;
-template class fk::ui::FrameworkElement<fk::ui::ScrollBar>;
-template class fk::ui::FrameworkElement<fk::ui::ScrollViewer>;
 template class fk::ui::FrameworkElement<fk::ui::ListBox<>>;
 template class fk::ui::FrameworkElement<fk::ui::Popup<>>;
 template class fk::ui::FrameworkElement<fk::ui::ComboBox<>>;
