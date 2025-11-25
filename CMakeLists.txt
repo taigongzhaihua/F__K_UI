@@ -205,6 +205,9 @@ add_library(fk STATIC
     src/ui/ContentPresenter.cpp
     src/ui/Shape.cpp
     src/ui/Thumb.cpp                # 可拖动滑块控件
+    src/ui/RepeatButton.cpp         # 重复按钮控件
+    src/ui/Track.cpp                # 轨道布局组件
+    src/ui/ScrollBar.cpp            # 滚动条控件
     # TODO: ScrollViewer 及相关组件待重构
     src/ui/ListBox.cpp
     src/ui/Popup.cpp

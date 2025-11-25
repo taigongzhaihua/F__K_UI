@@ -153,8 +153,10 @@ void ContentControl<Derived>::OnRender(render::RenderContext& context) {
 
 // 显式实例化需要的额外头文件
 #include "fk/ui/ToggleButton.h"
+#include "fk/ui/RepeatButton.h"
 
 // 显式实例化 ContentControl 模板（必须在命名空间之外）
 template class fk::ui::ContentControl<fk::ui::Button>;
 template class fk::ui::ContentControl<fk::ui::Window>;
 template class fk::ui::ContentControl<fk::ui::ToggleButton>;
+template class fk::ui::ContentControl<fk::ui::RepeatButton>;
