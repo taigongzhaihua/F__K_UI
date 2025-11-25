@@ -204,6 +204,7 @@ add_library(fk STATIC
     src/ui/Brush.cpp
     src/ui/ContentPresenter.cpp
     src/ui/Shape.cpp
+    src/ui/Thumb.cpp                # 可拖动滑块控件
     # TODO: ScrollViewer 及相关组件待重构
     src/ui/ListBox.cpp
     src/ui/Popup.cpp
