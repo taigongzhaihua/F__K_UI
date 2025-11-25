@@ -19,19 +19,39 @@ using namespace fk::binding;
 // ========== 数据模型类 ==========
 
 /**
- * @brief 用户数据模型
+ * @brief 简单用户数据模型（POCO - Plain Old C++ Object）
  * 
- * 这个类演示如何定义一个数据模型，用于在DataTemplate中显示。
- * 使用 ObservableProperty 模板类替代手动 getter/setter 实现。
+ * 这个类演示 DataTemplate 不需要继承 ObservableObject 或使用 ObservableProperty。
+ * DataTemplate 可以用于任意数据类型，与 WPF 一样。
+ * 
+ * 注意：只有在需要数据绑定（UI 自动更新）时才需要 ObservableProperty。
+ * DataTemplate 本身只是将数据转换为可视化元素，不涉及绑定。
  */
-class UserData : public ObservableObject {
+struct SimpleUserData {
+    std::string name;
+    int age;
+    std::string email;
+    
+    SimpleUserData(const std::string& name_val, int age_val, const std::string& email_val)
+        : name(name_val), age(age_val), email(email_val) {}
+};
+
+/**
+ * @brief 可绑定用户数据模型
+ * 
+ * 这个类演示如何定义一个支持数据绑定的数据模型。
+ * 使用 ObservableProperty 模板类替代手动 getter/setter 实现。
+ * 
+ * 只有在需要双向绑定（如 TextBox 输入同步更新数据）时才需要这种方式。
+ */
+class BindableUserData : public ObservableObject {
 public:
     // 使用 ObservableProperty，自动支持属性变更通知和绑定注册
-    ObservableProperty<std::string, UserData> name{this, "Name"};
-    ObservableProperty<int, UserData> age{this, "Age"};
-    ObservableProperty<std::string, UserData> email{this, "Email"};
+    ObservableProperty<std::string, BindableUserData> name{this, "Name"};
+    ObservableProperty<int, BindableUserData> age{this, "Age"};
+    ObservableProperty<std::string, BindableUserData> email{this, "Email"};
     
-    UserData(const std::string& name_val, int age_val, const std::string& email_val) {
+    BindableUserData(const std::string& name_val, int age_val, const std::string& email_val) {
         // 初始化属性值（注意：这会触发属性变更通知）
         name = name_val;
         age = age_val;
@@ -48,6 +68,9 @@ public:
     void SetAge(int value) { age.set(value); }
     void SetEmail(const std::string& value) { email.set(value); }
 };
+
+// 为了向后兼容，UserData 使用简单结构体
+using UserData = SimpleUserData;
 
 // ========== DataTemplate 示例 ==========
 
@@ -84,21 +107,21 @@ std::shared_ptr<DataTemplate> CreateUserDataTemplate() {
             
             // 姓名文本块
             auto nameText = new TextBlock();
-            nameText->SetText("姓名: " + userData->GetName());
+            nameText->SetText("姓名: " + userData->name);  // 直接访问成员
             nameText->SetFontSize(18);
             nameText->SetForeground(new SolidColorBrush(0, 0, 100)); // 深蓝色
             panel->AddChild(nameText);
             
             // 年龄文本块
             auto ageText = new TextBlock();
-            ageText->SetText("年龄: " + std::to_string(userData->GetAge()));
+            ageText->SetText("年龄: " + std::to_string(userData->age));  // 直接访问成员
             ageText->SetFontSize(14);
             ageText->SetForeground(new SolidColorBrush(50, 50, 50)); // 深灰色
             panel->AddChild(ageText);
             
             // 邮箱文本块
             auto emailText = new TextBlock();
-            emailText->SetText("邮箱: " + userData->GetEmail());
+            emailText->SetText("邮箱: " + userData->email);  // 直接访问成员
             emailText->SetFontSize(14);
             emailText->SetForeground(new SolidColorBrush(50, 50, 50)); // 深灰色
             panel->AddChild(emailText);
@@ -203,7 +226,7 @@ int main() {
     // 手动演示DataTemplate的使用
     // 在实际应用中，ListBox会自动使用ItemTemplate来实例化每个数据项
     for (const auto& user : users) {
-        std::cout << "\n正在为用户实例化视觉树: " << user->GetName() << std::endl;
+        std::cout << "\n正在为用户实例化视觉树: " << user->name << std::endl;  // 直接访问成员
         
         // 使用DataTemplate实例化视觉树
         UIElement* visualElement = userTemplate->Instantiate(user);

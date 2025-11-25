@@ -99,21 +99,17 @@ int main() {
 
 **是的，FK_UI完全支持类似WPF中DataTemplate的效果！**
 
+DataTemplate 可用于**任意数据类型**，不需要继承特定基类：
+
 ```cpp
 #include <fk/ui/DataTemplate.h>
 #include <fk/ui/ListBox.h>
-#include <fk/binding/ObservableProperty.h>
 
-// 定义数据模型 - 使用 ObservableProperty 自动支持属性变更通知
-class UserData : public binding::ObservableObject {
-public:
-    binding::ObservableProperty<std::string, UserData> name{this, "Name"};
-    binding::ObservableProperty<int, UserData> age{this, "Age"};
-    binding::ObservableProperty<std::string, UserData> email{this, "Email"};
-    
-    UserData(const std::string& n, int a, const std::string& e) {
-        name = n; age = a; email = e;
-    }
+// 简单数据结构（POCO - 不需要任何特殊基类）
+struct UserData {
+    std::string name;
+    int age;
+    std::string email;
 };
 
 // 创建DataTemplate来自定义数据的显示方式
@@ -132,12 +128,12 @@ auto CreateUserTemplate() {
         panel->SetOrientation(ui::Orientation::Vertical);
         
         auto nameText = new ui::TextBlock();
-        nameText->SetText("姓名: " + user->name.get());
+        nameText->SetText("姓名: " + user->name);  // 直接访问成员
         nameText->SetFontSize(18);
         panel->AddChild(nameText);
         
         auto ageText = new ui::TextBlock();
-        ageText->SetText("年龄: " + std::to_string(user->age.get()));
+        ageText->SetText("年龄: " + std::to_string(user->age));
         panel->AddChild(ageText);
         
         border->SetChild(panel);
@@ -151,6 +147,9 @@ auto CreateUserTemplate() {
 auto listBox = new ui::ListBox();
 listBox->SetItemTemplate(CreateUserTemplate().get());
 ```
+
+> **提示**：只有在需要数据绑定（UI 自动更新）时才需要 `ObservableProperty`。
+> DataTemplate 本身只是将数据转换为可视化元素。
 
 详细文档：[DataTemplate使用指南](Docs/Guides/DataTemplate使用指南.md) | [示例代码](examples/datatemplate/)
 
