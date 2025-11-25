@@ -6,6 +6,10 @@
 
 namespace fk::binding {
 
+// Forward declaration for friend access
+template<typename T, typename Owner>
+class ObservableProperty;
+
 class ObservableObject : public INotifyPropertyChanged {
 public:
     ObservableObject() = default;
@@ -21,6 +25,10 @@ protected:
     void RaisePropertyChanged(const std::string& propertyName) {
         propertyChanged_(propertyName);
     }
+    
+    // Allow ObservableProperty to call RaisePropertyChanged
+    template<typename T, typename Owner>
+    friend class ObservableProperty;
 
 private:
     PropertyChangedEvent propertyChanged_;

@@ -107,12 +107,11 @@ int main() {
 // 定义数据模型 - 使用 ObservableProperty 自动支持属性变更通知
 class UserData : public binding::ObservableObject {
 public:
-    binding::ObservableProperty<std::string> name{this, "Name"};
-    binding::ObservableProperty<int> age{this, "Age"};
-    binding::ObservableProperty<std::string> email{this, "Email"};
+    binding::ObservableProperty<std::string, UserData> name{this, "Name"};
+    binding::ObservableProperty<int, UserData> age{this, "Age"};
+    binding::ObservableProperty<std::string, UserData> email{this, "Email"};
     
-    UserData(const std::string& n, int a, const std::string& e)
-        : name(this, "Name"), age(this, "Age"), email(this, "Email") {
+    UserData(const std::string& n, int a, const std::string& e) {
         name = n; age = a; email = e;
     }
 };

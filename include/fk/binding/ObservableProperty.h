@@ -14,7 +14,6 @@ namespace fk::binding {
  * @brief 可观察属性模板类
  * 
  * 提供自动属性变更通知和注册功能，用于替代 ViewModel 宏系统。
- * 支持 C++17 CTAD，可自动推导 Owner 类型。
  * 
  * @tparam T 属性值类型
  * @tparam Owner 属性所属的类类型
@@ -29,9 +28,12 @@ namespace fk::binding {
  * @code
  * class UserData : public ObservableObject {
  * public:
- *     ObservableProperty<std::string> name{this, "Name"};
- *     ObservableProperty<int> age{this, "Age"}
- *         .Validator([](int val) { return val >= 0 && val < 150; });
+ *     ObservableProperty<std::string, UserData> name{this, "Name"};
+ *     ObservableProperty<int, UserData> age{this, "Age"};
+ *     
+ *     // 使用 Validator 验证输入
+ *     ObservableProperty<int, UserData> score{this, "Score"}
+ *         .Validator([](int val) { return val >= 0 && val <= 100; });
  * };
  * @endcode
  */

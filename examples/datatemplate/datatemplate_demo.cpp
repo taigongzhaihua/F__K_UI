@@ -28,12 +28,11 @@ class UserData : public ObservableObject {
 public:
     // 使用 ObservableProperty，自动支持属性变更通知和绑定注册
     // C++17 CTAD 自动推导 Owner 类型为 UserData
-    ObservableProperty<std::string> name{this, "Name"};
-    ObservableProperty<int> age{this, "Age"};
-    ObservableProperty<std::string> email{this, "Email"};
+    ObservableProperty<std::string, UserData> name{this, "Name"};
+    ObservableProperty<int, UserData> age{this, "Age"};
+    ObservableProperty<std::string, UserData> email{this, "Email"};
     
-    UserData(const std::string& name_val, int age_val, const std::string& email_val)
-        : name(this, "Name"), age(this, "Age"), email(this, "Email") {
+    UserData(const std::string& name_val, int age_val, const std::string& email_val) {
         // 初始化属性值
         name = name_val;
         age = age_val;
