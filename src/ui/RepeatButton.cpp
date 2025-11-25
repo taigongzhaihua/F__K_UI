@@ -11,83 +11,8 @@
 #include "fk/binding/TemplateBinding.h"
 #include "fk/animation/VisualStateBuilder.h"
 #include <chrono>
-#include <thread>
-#include <atomic>
-#include <mutex>
-#include <condition_variable>
 
 namespace fk::ui {
-
-// ========== 简易定时器实现 ==========
-// 由于项目没有全局 Dispatcher，使用简单的线程 + 回调方式
-// 注意：回调会在后台线程中执行，需要注意线程安全
-
-class SimpleTimer {
-public:
-    using Callback = std::function<void()>;
-    
-    SimpleTimer() = default;
-    ~SimpleTimer() { Stop(); }
-    
-    void Start(int intervalMs, bool repeat, Callback callback) {
-        Stop();
-        
-        running_ = true;
-        callback_ = std::move(callback);
-        interval_ = intervalMs;
-        repeat_ = repeat;
-        
-        thread_ = std::thread([this]() {
-            // 使用条件变量实现可中断的等待
-            std::unique_lock<std::mutex> lock(mutex_);
-            
-            while (running_) {
-                // 等待指定时间或被中断
-                auto status = cv_.wait_for(lock, std::chrono::milliseconds(interval_));
-                
-                if (!running_) {
-                    break;
-                }
-                
-                // 超时触发回调
-                if (status == std::cv_status::timeout && callback_) {
-                    // 临时释放锁执行回调，避免死锁
-                    lock.unlock();
-                    callback_();
-                    lock.lock();
-                }
-                
-                if (!repeat_) {
-                    break;
-                }
-            }
-        });
-    }
-    
-    void Stop() {
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            running_ = false;
-        }
-        cv_.notify_all();  // 唤醒等待的线程
-        
-        if (thread_.joinable()) {
-            thread_.join();
-        }
-        callback_ = nullptr;
-    }
-    
-    bool IsRunning() const { return running_; }
-    
-private:
-    std::thread thread_;
-    std::atomic<bool> running_{false};
-    std::mutex mutex_;
-    std::condition_variable cv_;
-    Callback callback_;
-    int interval_{100};
-    bool repeat_{false};
-};
 
 // ========== 默认模板 ==========
 
@@ -237,6 +162,14 @@ void RepeatButton::OnPointerReleased(PointerEventArgs& e) {
     UpdateVisualState(true);
 }
 
+void RepeatButton::OnPointerExited(PointerEventArgs& e) {
+    // 当鼠标离开按钮时，停止重复
+    StopRepeat();
+    
+    // 调用基类处理
+    ButtonBase<RepeatButton>::OnPointerExited(e);
+}
+
 void RepeatButton::OnClick() {
     // RepeatButton 的 OnClick 由定时器调用
     // 直接触发 Click 事件
@@ -246,46 +179,61 @@ void RepeatButton::OnClick() {
 // ========== 重复逻辑 ==========
 
 void RepeatButton::StartRepeat() {
-    if (isRepeating_) {
-        return;
+    // 如果已经在重复中，先停止
+    if (isRepeating_.load()) {
+        StopRepeat();
     }
     
-    isRepeating_ = true;
+    isRepeating_.store(true);
+    shouldStop_.store(false);
     
-    // 创建延迟定时器
-    delayTimer_ = std::make_unique<SimpleTimer>();
+    int delay = GetDelay();
+    int interval = GetInterval();
     
-    // 启动延迟定时器（单次）
-    delayTimer_->Start(GetDelay(), false, [this]() {
-        if (!isRepeating_) {
-            return;
+    // 创建重复线程
+    repeatThread_ = std::make_unique<std::thread>([this, delay, interval]() {
+        // 等待初始延迟
+        {
+            std::unique_lock<std::mutex> lock(repeatMutex_);
+            if (repeatCv_.wait_for(lock, std::chrono::milliseconds(delay), 
+                [this]() { return shouldStop_.load(); })) {
+                // 被通知停止
+                return;
+            }
         }
         
-        // 延迟结束后触发一次
-        OnClick();
-        
-        // 启动重复定时器
-        repeatTimer_ = std::make_unique<SimpleTimer>();
-        repeatTimer_->Start(GetInterval(), true, [this]() {
-            if (isRepeating_) {
-                OnClick();
+        // 开始重复触发
+        while (!shouldStop_.load()) {
+            // 触发点击
+            if (!shouldStop_.load()) {
+                Click();
             }
-        });
+            
+            // 等待间隔
+            {
+                std::unique_lock<std::mutex> lock(repeatMutex_);
+                if (repeatCv_.wait_for(lock, std::chrono::milliseconds(interval),
+                    [this]() { return shouldStop_.load(); })) {
+                    // 被通知停止
+                    return;
+                }
+            }
+        }
     });
 }
 
 void RepeatButton::StopRepeat() {
-    isRepeating_ = false;
+    shouldStop_.store(true);
+    isRepeating_.store(false);
     
-    if (delayTimer_) {
-        delayTimer_->Stop();
-        delayTimer_.reset();
-    }
+    // 通知线程停止
+    repeatCv_.notify_all();
     
-    if (repeatTimer_) {
-        repeatTimer_->Stop();
-        repeatTimer_.reset();
+    // 等待线程结束
+    if (repeatThread_ && repeatThread_->joinable()) {
+        repeatThread_->join();
     }
+    repeatThread_.reset();
 }
 
 } // namespace fk::ui

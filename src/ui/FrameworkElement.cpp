@@ -135,6 +135,10 @@ const binding::DependencyProperty& FrameworkElement<Derived>::VerticalAlignmentP
 #include "fk/ui/ToggleButton.h"
 #include "fk/ui/Thumb.h"
 #include "fk/ui/RepeatButton.h"
+#include "fk/ui/Track.h"
+#include "fk/ui/ScrollBar.h"
+#include "fk/ui/ScrollContentPresenter.h"
+#include "fk/ui/ScrollViewer.h"
 
 // 显式实例化 FrameworkElement 模板（必须在命名空间之外）
 // 注意：Rectangle、Ellipse、Line、Path、Polygon 等继承自 Shape<T>，Shape<T> 继承自 FrameworkElement<T>
@@ -158,3 +162,7 @@ template class fk::ui::FrameworkElement<fk::ui::ComboBox<>>;
 template class fk::ui::FrameworkElement<fk::ui::ToggleButton>;
 template class fk::ui::FrameworkElement<fk::ui::Thumb>;
 template class fk::ui::FrameworkElement<fk::ui::RepeatButton>;
+template class fk::ui::FrameworkElement<fk::ui::Track>;
+template class fk::ui::FrameworkElement<fk::ui::ScrollBar>;
+template class fk::ui::FrameworkElement<fk::ui::ScrollContentPresenter<>>;
+template class fk::ui::FrameworkElement<fk::ui::ScrollViewer>;

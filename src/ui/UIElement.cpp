@@ -112,14 +112,16 @@ void UIElement::Measure(const Size& availableSize) {
 
 void UIElement::Arrange(const Rect& finalRect) {
     // 检查是否需要重新排列
-    // 注意：即使元素不脏，如果位置改变了也需要更新
+    // 注意：如果 arrangeDirty_ 为 true，即使位置没变也需要重新排列
+    //       因为子元素可能需要重新排列
     bool rectChanged = (layoutRect_.x != finalRect.x || 
                        layoutRect_.y != finalRect.y ||
                        layoutRect_.width != finalRect.width ||
                        layoutRect_.height != finalRect.height);
     
+    // 只有当既不脏也不需要位置更新时才跳过
     if (!arrangeDirty_ && !measureDirty_ && !rectChanged) {
-        return; // 已经排列过且位置没有改变
+        return; // 已经排列过且位置没有改变，且不需要重新排列子元素
     }
     
     auto visibility = GetValue<Visibility>(VisibilityProperty());
@@ -133,7 +135,7 @@ void UIElement::Arrange(const Rect& finalRect) {
     // 存储布局矩形
     layoutRect_ = finalRect;
     
-    // ArrangeCore 负责设置 renderSize_
+    // ArrangeCore 负责设置 renderSize_ 并排列子元素
     ArrangeCore(finalRect);
     arrangeDirty_ = false;
 }
@@ -319,6 +321,10 @@ void UIElement::OnPointerEntered(PointerEventArgs& e) {
 }
 
 void UIElement::OnPointerExited(PointerEventArgs& e) {
+    // 默认不处理
+}
+
+void UIElement::OnMouseWheel(PointerEventArgs& e) {
     // 默认不处理
 }
 

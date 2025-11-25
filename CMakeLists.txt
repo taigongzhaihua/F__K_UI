@@ -208,7 +208,8 @@ add_library(fk STATIC
     src/ui/RepeatButton.cpp         # 重复按钮控件
     src/ui/Track.cpp                # 轨道布局组件
     src/ui/ScrollBar.cpp            # 滚动条控件
-    # TODO: ScrollViewer 及相关组件待重构
+    src/ui/ScrollContentPresenter.cpp  # 滚动内容展示器
+    src/ui/ScrollViewer.cpp         # 滚动视图控件
     src/ui/ListBox.cpp
     src/ui/Popup.cpp
     src/ui/ComboBox.cpp
@@ -267,6 +268,9 @@ target_link_libraries(example_app PRIVATE fk)
 
 add_executable(radiobutton_demo examples/basic/radiobutton_demo.cpp)
 target_link_libraries(radiobutton_demo PRIVATE fk)
+
+add_executable(scrollviewer_demo examples/basic/scrollviewer_demo.cpp)
+target_link_libraries(scrollviewer_demo PRIVATE fk)
 
 add_executable(border_test examples/basic/border_test.cpp)
 target_link_libraries(border_test PRIVATE fk)

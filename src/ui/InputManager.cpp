@@ -164,7 +164,10 @@ void InputManager::ProcessPointerEvent(const PlatformPointerEvent& event) {
             break;
             
         case PlatformPointerEvent::Type::Wheel:
-            // TODO: 实现滚轮事件
+            // 滚轮事件 - 分发到命中测试到的元素
+            if (target) {
+                DispatchMouseWheel(target, event);
+            }
             break;
     }
 }
@@ -197,6 +200,26 @@ void InputManager::DispatchPointerLeave(UIElement* target, const PlatformPointer
     BubblePointerEvent(target, event, [](UIElement* element, PointerEventArgs& args) {
         element->OnPointerExited(args);
     });
+}
+
+void InputManager::DispatchMouseWheel(UIElement* target, const PlatformPointerEvent& event) {
+    if (!target) {
+        return;
+    }
+    
+    auto args = CreatePointerArgs(target, event);
+    args.wheelDelta = event.wheelDelta;
+    
+    // 冒泡滚轮事件
+    UIElement* current = target;
+    while (current) {
+        args.source = current;
+        current->OnMouseWheel(args);
+        if (args.handled) {
+            break;
+        }
+        current = GetBubbleParent(current);
+    }
 }
 
 void InputManager::BubblePointerEvent(

@@ -19,11 +19,13 @@
 
 #include "fk/ui/ButtonBase.h"
 #include <memory>
+#include <atomic>
+#include <mutex>
+#include <thread>
+#include <condition_variable>
+#include <functional>
 
 namespace fk::ui {
-
-// 前向声明内部定时器类
-class SimpleTimer;
 
 /**
  * @brief 重复按钮控件
@@ -91,6 +93,7 @@ protected:
     
     void OnPointerPressed(PointerEventArgs& e) override;
     void OnPointerReleased(PointerEventArgs& e) override;
+    void OnPointerExited(PointerEventArgs& e) override;
     
     /// 重写点击处理（由定时器调用触发 Click 事件）
     void OnClick() override;
@@ -106,12 +109,14 @@ private:
     
     // ========== 定时器 ==========
     
-    std::unique_ptr<SimpleTimer> delayTimer_;    ///< 首次延迟定时器
-    std::unique_ptr<SimpleTimer> repeatTimer_;   ///< 重复触发定时器
+    std::unique_ptr<std::thread> repeatThread_;  ///< 重复触发线程
+    std::mutex repeatMutex_;                      ///< 保护定时器状态
+    std::condition_variable repeatCv_;            ///< 用于停止定时器
     
     // ========== 状态 ==========
     
-    bool isRepeating_{false};        ///< 是否正在重复触发中
+    std::atomic<bool> isRepeating_{false};        ///< 是否正在重复触发中
+    std::atomic<bool> shouldStop_{false};         ///< 是否应该停止（用于线程同步）
 };
 
 } // namespace fk::ui

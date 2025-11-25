@@ -178,6 +178,11 @@ private:
      */
     void DispatchPointerEnter(UIElement* target, const PlatformPointerEvent& event);
     void DispatchPointerLeave(UIElement* target, const PlatformPointerEvent& event);
+    
+    /**
+     * @brief 分发鼠标滚轮事件
+     */
+    void DispatchMouseWheel(UIElement* target, const PlatformPointerEvent& event);
 
     void BubblePointerEvent(
         UIElement* target,

@@ -328,8 +328,11 @@ protected:
     
     /**
      * @brief 更新模板中的 ContentPresenter
+     * 
+     * 派生类（如 ScrollViewer）可以重写此方法以自定义内容传递方式。
+     * 默认实现会查找模板中任意的 ContentPresenter 并设置内容。
      */
-    void UpdateContentPresenter();
+    virtual void UpdateContentPresenter();
     
     /**
      * @brief 在视觉树中查找 ContentPresenter

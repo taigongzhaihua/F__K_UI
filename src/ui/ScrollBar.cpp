@@ -8,6 +8,7 @@
 #include "fk/ui/Thumb.h"
 #include "fk/ui/Grid.h"
 #include "fk/ui/Border.h"
+#include "fk/ui/TextBlock.h"
 #include "fk/ui/Brush.h"
 #include "fk/ui/ControlTemplate.h"
 #include "fk/binding/DependencyProperty.h"
@@ -39,13 +40,21 @@ static ControlTemplate* CreateVerticalScrollBarTemplate() {
                 RowDefinition::Auto()       // LineDown 按钮
             });
             
-            // LineUp 按钮
+            // LineUp 按钮（向上箭头）
             auto* lineUpButton = new RepeatButton();
             lineUpButton->Name("PART_LineUpButton");
             lineUpButton->SetDelay(250);
             lineUpButton->SetInterval(33);
             lineUpButton->Height(16);
+            lineUpButton->MinHeight(16);
             lineUpButton->SetBackground(new SolidColorBrush(Color::FromRGB(200, 200, 200, 255)));
+            lineUpButton->SetHAlign(HorizontalAlignment::Stretch);
+            lineUpButton->SetVAlign(VerticalAlignment::Stretch);
+            lineUpButton->Content((new TextBlock())
+                ->Text("^")
+                ->FontSize(10)
+                ->SetHAlign(HorizontalAlignment::Center)
+                ->SetVAlign(VerticalAlignment::Center));
             Grid::SetRow(lineUpButton, 0);
             grid->AddChild(lineUpButton);
             
@@ -74,13 +83,21 @@ static ControlTemplate* CreateVerticalScrollBarTemplate() {
             Grid::SetRow(track, 1);
             grid->AddChild(track);
             
-            // LineDown 按钮
+            // LineDown 按钮（向下箭头）
             auto* lineDownButton = new RepeatButton();
             lineDownButton->Name("PART_LineDownButton");
             lineDownButton->SetDelay(250);
             lineDownButton->SetInterval(33);
             lineDownButton->Height(16);
+            lineDownButton->MinHeight(16);
             lineDownButton->SetBackground(new SolidColorBrush(Color::FromRGB(200, 200, 200, 255)));
+            lineDownButton->SetHAlign(HorizontalAlignment::Stretch);
+            lineDownButton->SetVAlign(VerticalAlignment::Stretch);
+            lineDownButton->Content((new TextBlock())
+                ->Text("v")
+                ->FontSize(10)
+                ->SetHAlign(HorizontalAlignment::Center)
+                ->SetVAlign(VerticalAlignment::Center));
             Grid::SetRow(lineDownButton, 2);
             grid->AddChild(lineDownButton);
             
@@ -104,13 +121,21 @@ static ControlTemplate* CreateHorizontalScrollBarTemplate() {
                 ColumnDefinition::Auto()       // LineRight 按钮
             });
             
-            // LineLeft 按钮
+            // LineLeft 按钮（向左箭头）
             auto* lineUpButton = new RepeatButton();
             lineUpButton->Name("PART_LineUpButton");
             lineUpButton->SetDelay(250);
             lineUpButton->SetInterval(33);
             lineUpButton->Width(16);
+            lineUpButton->MinWidth(16);
             lineUpButton->SetBackground(new SolidColorBrush(Color::FromRGB(200, 200, 200, 255)));
+            lineUpButton->SetHAlign(HorizontalAlignment::Stretch);
+            lineUpButton->SetVAlign(VerticalAlignment::Stretch);
+            lineUpButton->Content((new TextBlock())
+                ->Text("<")
+                ->FontSize(10)
+                ->SetHAlign(HorizontalAlignment::Center)
+                ->SetVAlign(VerticalAlignment::Center));
             Grid::SetColumn(lineUpButton, 0);
             grid->AddChild(lineUpButton);
             
@@ -139,13 +164,21 @@ static ControlTemplate* CreateHorizontalScrollBarTemplate() {
             Grid::SetColumn(track, 1);
             grid->AddChild(track);
             
-            // LineRight 按钮
+            // LineRight 按钮（向右箭头）
             auto* lineDownButton = new RepeatButton();
             lineDownButton->Name("PART_LineDownButton");
             lineDownButton->SetDelay(250);
             lineDownButton->SetInterval(33);
             lineDownButton->Width(16);
+            lineDownButton->MinWidth(16);
             lineDownButton->SetBackground(new SolidColorBrush(Color::FromRGB(200, 200, 200, 255)));
+            lineDownButton->SetHAlign(HorizontalAlignment::Stretch);
+            lineDownButton->SetVAlign(VerticalAlignment::Stretch);
+            lineDownButton->Content((new TextBlock())
+                ->Text(">")
+                ->FontSize(10)
+                ->SetHAlign(HorizontalAlignment::Center)
+                ->SetVAlign(VerticalAlignment::Center));
             Grid::SetColumn(lineDownButton, 2);
             grid->AddChild(lineDownButton);
             

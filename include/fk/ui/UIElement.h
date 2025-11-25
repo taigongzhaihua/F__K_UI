@@ -324,6 +324,7 @@ public:
     virtual void OnPointerMoved(PointerEventArgs& e);
     virtual void OnPointerEntered(PointerEventArgs& e);
     virtual void OnPointerExited(PointerEventArgs& e);
+    virtual void OnMouseWheel(PointerEventArgs& e);
     virtual void OnKeyDown(KeyEventArgs& e);
     virtual void OnKeyUp(KeyEventArgs& e);
     
@@ -588,6 +589,7 @@ struct PointerEventArgs : RoutedEventArgs {
     int pointerId{0};
     MouseButton button{MouseButton::None};
     ModifierKeys modifiers{ModifierKeys::None};
+    int wheelDelta{0};  ///< 滚轮增量（正值向上，负值向下，标准增量为120）
     
     PointerEventArgs() = default;
     PointerEventArgs(UIElement* src, const Point& pos, int id = 0)

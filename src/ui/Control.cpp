@@ -104,6 +104,8 @@ const binding::DependencyProperty& Control<Derived>::FontWeightProperty() {
 #include "fk/ui/ToggleButton.h"
 #include "fk/ui/Thumb.h"
 #include "fk/ui/RepeatButton.h"
+#include "fk/ui/ScrollBar.h"
+#include "fk/ui/ScrollViewer.h"
 
 // 显式实例化 Control 模板（必须在命名空间之外）
 template class fk::ui::Control<fk::ui::Button>;
@@ -113,3 +115,5 @@ template class fk::ui::Control<fk::ui::ComboBox<>>;
 template class fk::ui::Control<fk::ui::ToggleButton>;
 template class fk::ui::Control<fk::ui::Thumb>;
 template class fk::ui::Control<fk::ui::RepeatButton>;
+template class fk::ui::Control<fk::ui::ScrollBar>;
+template class fk::ui::Control<fk::ui::ScrollViewer>;
