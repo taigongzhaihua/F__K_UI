@@ -91,8 +91,14 @@ protected:
     
     // 开始新状态的故事板
     void StartStateStoryboard(VisualState* state, bool useTransitions) {
-        if (!state || !state->GetStoryboard()) return;
+        if (!state || !state->GetStoryboard()) {
+            std::cout << "[VSM::StartStateStoryboard] No storyboard for state: " 
+                      << (state ? state->GetName() : "null") << std::endl;
+            return;
+        }
         
+        std::cout << "[VSM::StartStateStoryboard] Starting storyboard for state: " 
+                  << state->GetName() << std::endl;
         state->GetStoryboard()->Begin();
     }
     

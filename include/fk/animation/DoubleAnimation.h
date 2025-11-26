@@ -13,6 +13,9 @@ public:
     DoubleAnimation(double fromValue, double toValue, Duration duration);
     ~DoubleAnimation() override = default;
 
+    // 克隆动画
+    std::shared_ptr<DoubleAnimation> Clone() const;
+
     // 设置目标对象和属性
     void SetTarget(binding::DependencyObject* target, const binding::DependencyProperty* property);
     

@@ -283,6 +283,14 @@ public:
     virtual const std::type_info& GetDefaultStyleKey() const {
         return typeid(Derived);
     }
+    
+    /**
+     * @brief 检查此控件是否有自己的模板
+     * Control 有模板时返回 true
+     */
+    bool HasOwnTemplate() const override {
+        return GetTemplate() != nullptr;
+    }
 
 protected:
     /**
@@ -328,6 +336,12 @@ protected:
      * @brief Control的测量逻辑：测量模板根元素
      */
     Size MeasureOverride(const Size& availableSize) override {
+        // 确保模板已应用（在测量之前）
+        auto* tmpl = GetTemplate();
+        if (tmpl && tmpl->IsValid() && !templateRoot_) {
+            this->ApplyTemplate();
+        }
+        
         if (templateRoot_) {
             templateRoot_->Measure(availableSize);
             return templateRoot_->GetDesiredSize();

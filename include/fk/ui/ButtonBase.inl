@@ -134,6 +134,14 @@ template<typename Derived>
 void ButtonBase<Derived>::OnPointerEntered(PointerEventArgs &e)
 {
     ContentControl<Derived>::OnPointerEntered(e);
+    std::cout << "[ButtonBase::OnPointerEntered] " << typeid(*this).name() << " name=" << this->GetName() << std::endl;
+    
+    auto* manager = animation::VisualStateManager::GetVisualStateManager(this);
+    std::cout << "  VSM exists: " << (manager != nullptr) << std::endl;
+    if (manager) {
+        std::cout << "  StateGroups count: " << manager->GetStateGroups().size() << std::endl;
+    }
+    
     UpdateVisualState(true);
 }
 
@@ -172,19 +180,29 @@ template<typename Derived>
 bool ButtonBase<Derived>::LoadVisualStatesFromTemplate()
 {
     auto *tmpl = this->GetTemplate();
+    
     if (!tmpl || !tmpl->HasVisualStates())
     {
         return false;
     }
 
+    // 检查是否已经有 VisualStateManager，避免重复初始化
+    auto* existingManager = animation::VisualStateManager::GetVisualStateManager(this);
+    if (existingManager && existingManager->GetStateGroups().size() > 0)
+    {
+        // 已经初始化过了，直接返回 true
+        return true;
+    }
+
     auto manager = std::make_shared<animation::VisualStateManager>();
     animation::VisualStateManager::SetVisualStateManager(this, manager);
 
+    // 克隆每个 VisualStateGroup，避免多个控件共享同一个实例
     for (const auto &group : tmpl->GetVisualStateGroups())
     {
         if (group)
         {
-            manager->AddStateGroup(group);
+            manager->AddStateGroup(group->Clone());
         }
     }
 
@@ -194,22 +212,26 @@ bool ButtonBase<Derived>::LoadVisualStatesFromTemplate()
 template<typename Derived>
 void ButtonBase<Derived>::UpdateVisualState(bool useTransitions)
 {
+    std::string targetState;
     if (!this->GetIsEnabled())
     {
-        animation::VisualStateManager::GoToState(this, "Disabled", useTransitions);
+        targetState = "Disabled";
     }
     else if (isPressed_)
     {
-        animation::VisualStateManager::GoToState(this, "Pressed", useTransitions);
+        targetState = "Pressed";
     }
     else if (this->IsMouseOver())
     {
-        animation::VisualStateManager::GoToState(this, "MouseOver", useTransitions);
+        targetState = "MouseOver";
     }
     else
     {
-        animation::VisualStateManager::GoToState(this, "Normal", useTransitions);
+        targetState = "Normal";
     }
+    
+    // 实际调用 GoToState 切换到目标状态
+    animation::VisualStateManager::GoToState(this, targetState, useTransitions);
 }
 
 template<typename Derived>

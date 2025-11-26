@@ -14,7 +14,10 @@ class ColorAnimation : public Animation<Color> {
 public:
     ColorAnimation();
     ColorAnimation(const Color& fromColor, const Color& toColor, Duration duration);
-    ~ColorAnimation() override = default;
+    ~ColorAnimation() override;
+
+    // 克隆动画
+    std::shared_ptr<ColorAnimation> Clone() const;
 
     // 设置目标对象和属性
     void SetTarget(binding::DependencyObject* target, const binding::DependencyProperty* property);

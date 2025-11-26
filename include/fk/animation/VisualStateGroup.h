@@ -14,6 +14,24 @@ class VisualStateGroup {
 public:
     VisualStateGroup() = default;
     explicit VisualStateGroup(const std::string& name) : name_(name) {}
+    ~VisualStateGroup() = default;
+    
+    // 克隆
+    std::shared_ptr<VisualStateGroup> Clone() const {
+        auto clone = std::make_shared<VisualStateGroup>(name_);
+        for (const auto& state : states_) {
+            if (state) {
+                clone->AddState(state->Clone());
+            }
+        }
+        for (const auto& transition : transitions_) {
+            if (transition) {
+                // TODO: 如果需要，添加 VisualTransition 的克隆
+                clone->AddTransition(transition);
+            }
+        }
+        return clone;
+    }
     
     // 组名称
     std::string GetName() const { return name_; }

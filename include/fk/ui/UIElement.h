@@ -146,6 +146,13 @@ public:
     void SetTemplatedParent(UIElement* parent);
     
     /**
+     * @brief 检查此元素是否有自己的模板
+     * 用于 ControlTemplate 决定是否递归设置 TemplatedParent
+     * 默认返回 false，Control 类会覆写此方法
+     */
+    virtual bool HasOwnTemplate() const { return false; }
+    
+    /**
      * @brief 获取元素名称
      * 
      * 直接使用DependencyObject的elementName_，同时支持FindName和ElementName绑定

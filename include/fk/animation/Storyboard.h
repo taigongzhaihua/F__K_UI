@@ -16,7 +16,7 @@ namespace fk::animation {
 class Storyboard : public Timeline {
 public:
     Storyboard();
-    ~Storyboard() override = default;
+    ~Storyboard() override;
 
     // 添加子动画
     void AddChild(std::shared_ptr<Timeline> child);
@@ -48,6 +48,9 @@ public:
     // 设置模板根元素（用于解析TargetName）
     static void SetTemplateRoot(Storyboard* storyboard, binding::DependencyObject* root);
     static binding::DependencyObject* GetTemplateRoot(Storyboard* storyboard);
+
+    // 克隆故事板
+    std::shared_ptr<Storyboard> Clone() const;
 
 protected:
     Duration GetNaturalDuration() const override;

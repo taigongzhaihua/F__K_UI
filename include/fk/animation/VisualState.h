@@ -11,6 +11,16 @@ class VisualState {
 public:
     VisualState() = default;
     explicit VisualState(const std::string& name) : name_(name) {}
+    ~VisualState() = default;
+    
+    // 克隆
+    std::shared_ptr<VisualState> Clone() const {
+        auto clone = std::make_shared<VisualState>(name_);
+        if (storyboard_) {
+            clone->storyboard_ = storyboard_->Clone();
+        }
+        return clone;
+    }
     
     // 状态名称
     std::string GetName() const { return name_; }
