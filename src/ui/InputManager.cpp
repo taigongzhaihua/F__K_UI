@@ -2,6 +2,7 @@
 #include "fk/ui/Visual.h"
 #include "fk/ui/Transform.h"
 #include "fk/ui/FocusManager.h"
+#include <iostream>
 
 namespace fk::ui {
 

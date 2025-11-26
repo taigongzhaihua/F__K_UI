@@ -12,6 +12,15 @@ DoubleAnimation::DoubleAnimation(double fromValue, double toValue, Duration dura
     SetDuration(duration);
 }
 
+std::shared_ptr<DoubleAnimation> DoubleAnimation::Clone() const {
+    auto clone = std::make_shared<DoubleAnimation>();
+    clone->SetFrom(GetFrom());
+    clone->SetTo(GetTo());
+    clone->SetDuration(GetDuration());
+    // 注意：不复制 target_ 和 targetProperty_，因为这些需要在 ResolveVisualStateTargets 中重新绑定
+    return clone;
+}
+
 void DoubleAnimation::SetTarget(binding::DependencyObject* target, 
                                  const binding::DependencyProperty* property) {
     target_ = target;

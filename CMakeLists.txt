@@ -269,6 +269,9 @@ target_link_libraries(example_app PRIVATE fk)
 add_executable(radiobutton_demo examples/basic/radiobutton_demo.cpp)
 target_link_libraries(radiobutton_demo PRIVATE fk)
 
+add_executable(repeatbutton_demo examples/basic/repeatbutton_demo.cpp)
+target_link_libraries(repeatbutton_demo PRIVATE fk)
+
 add_executable(scrollviewer_demo examples/basic/scrollviewer_demo.cpp)
 target_link_libraries(scrollviewer_demo PRIVATE fk)
 

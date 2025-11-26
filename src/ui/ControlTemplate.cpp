@@ -1,5 +1,6 @@
 #include "fk/ui/ControlTemplate.h"
 #include "fk/ui/UIElement.h"
+#include "fk/ui/Control.h"
 #include "fk/animation/VisualStateGroup.h"
 #include <stdexcept>
 #include <iostream>
@@ -22,11 +23,23 @@ namespace {
     
     /**
      * @brief 递归设置视觉树中所有元素的 TemplatedParent
+     * 
+     * 注意：当遇到有自己模板的 Control 时，只设置该 Control 的 TemplatedParent，
+     * 不递归进入其内部，因为该 Control 会在自己的 OnApplyTemplate 中正确设置
+     * 其模板元素的 TemplatedParent。
      */
     void SetTemplatedParentRecursive(UIElement* element, UIElement* templatedParent) {
         if (!element) return;
         
         element->SetTemplatedParent(templatedParent);
+        
+        // 检查这个元素是否是一个有自己模板的 Control
+        // 如果是，不递归进入其模板子元素，让它自己处理
+        if (element->HasOwnTemplate()) {
+            // 这个 Control 有自己的模板，它会在自己的 OnApplyTemplate 中
+            // 正确设置其模板元素的 TemplatedParent
+            return;
+        }
         
         // 递归处理所有逻辑子元素
         for (UIElement* child : element->GetLogicalChildren()) {

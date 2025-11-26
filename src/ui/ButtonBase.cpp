@@ -183,6 +183,7 @@ namespace fk::ui
     bool ButtonBase<Derived>::LoadVisualStatesFromTemplate()
     {
         auto *tmpl = this->GetTemplate();
+        
         if (!tmpl || !tmpl->HasVisualStates())
         {
             return false;

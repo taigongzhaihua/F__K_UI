@@ -1,16 +1,27 @@
 #include "fk/animation/ColorAnimation.h"
 #include <algorithm>
-#include <iostream>
 
 namespace fk::animation {
 
 ColorAnimation::ColorAnimation() {
 }
 
+ColorAnimation::~ColorAnimation() = default;
+
 ColorAnimation::ColorAnimation(const Color& fromColor, const Color& toColor, Duration duration) {
     SetFrom(fromColor);
     SetTo(toColor);
     SetDuration(duration);
+}
+
+std::shared_ptr<ColorAnimation> ColorAnimation::Clone() const {
+    auto clone = std::make_shared<ColorAnimation>();
+    clone->SetFrom(GetFrom());
+    clone->SetTo(GetTo());
+    clone->SetDuration(GetDuration());
+    clone->SetToBinding(toBindingProperty_);
+    // 注意：不复制 target_ 和 targetProperty_，因为这些需要在 ResolveVisualStateTargets 中重新绑定
+    return clone;
 }
 
 void ColorAnimation::Begin() {

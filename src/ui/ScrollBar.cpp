@@ -41,16 +41,18 @@ static ControlTemplate* CreateVerticalScrollBarTemplate() {
             });
             
             // LineUp 按钮（向上箭头）
-            auto* lineUpButton = new RepeatButton();
-            lineUpButton->Name("PART_LineUpButton");
-            lineUpButton->SetDelay(250);
-            lineUpButton->SetInterval(33);
-            lineUpButton->Height(16);
-            lineUpButton->MinHeight(16);
-            lineUpButton->SetBackground(new SolidColorBrush(Color::FromRGB(200, 200, 200, 255)));
-            lineUpButton->SetHAlign(HorizontalAlignment::Stretch);
-            lineUpButton->SetVAlign(VerticalAlignment::Stretch);
-            lineUpButton->Content((new TextBlock())
+            auto* lineUpButton = (new RepeatButton())
+            ->Name("PART_LineUpButton")
+            ->Delay(250)
+            ->Interval(33)
+            ->Height(16)
+            ->MinHeight(16)
+            ->Background(new SolidColorBrush(Color::FromRGB(200, 200, 200, 255)))
+            ->MouseOverBackground(new SolidColorBrush(Color::FromRGB(180, 180, 180, 255)))
+            ->PressedBackground(new SolidColorBrush(Color::FromRGB(160, 160, 160, 255)))
+            ->SetHAlign(HorizontalAlignment::Stretch)
+            ->SetVAlign(VerticalAlignment::Stretch)
+            ->Content((new TextBlock())
                 ->Text("^")
                 ->FontSize(10)
                 ->SetHAlign(HorizontalAlignment::Center)
