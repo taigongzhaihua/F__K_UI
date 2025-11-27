@@ -32,13 +32,10 @@ bool VisualStateManager::GoToState(binding::DependencyObject* obj,
                                    bool useTransitions) {
     if (!obj || stateName.empty()) return false;
     
-    std::cout << "[VSM::GoToState] stateName=" << stateName << std::endl;
-    
     // 获取对象的 VisualStateManager
     auto manager = GetVisualStateManager(obj);
     
     if (!manager) {
-        std::cout << "[VSM::GoToState] No manager found, creating new one" << std::endl;
         // 如果没有管理器，创建一个默认的
         auto newManager = std::make_shared<VisualStateManager>();
         SetVisualStateManager(obj, newManager);
@@ -47,21 +44,11 @@ bool VisualStateManager::GoToState(binding::DependencyObject* obj,
     
     // 查找包含目标状态的组
     auto group = manager->FindGroupContainingState(stateName);
-    if (!group) {
-        std::cout << "[VSM::GoToState] No group found for state: " << stateName << std::endl;
-        return false;
-    }
-    
-    std::cout << "[VSM::GoToState] Found group: " << group->GetName() << std::endl;
+    if (!group) return false;
     
     // 查找目标状态
     auto toState = group->FindState(stateName);
-    if (!toState) {
-        std::cout << "[VSM::GoToState] State not found in group: " << stateName << std::endl;
-        return false;
-    }
-    
-    std::cout << "[VSM::GoToState] Found state, calling GoToStateCore" << std::endl;
+    if (!toState) return false;
     
     // 执行状态转换
     return manager->GoToStateCore(obj, group, toState, useTransitions);
@@ -75,15 +62,8 @@ bool VisualStateManager::GoToStateCore(binding::DependencyObject* obj,
     
     auto currentState = group->GetCurrentState();
     
-    std::cout << "[VSM::GoToStateCore] currentState=" 
-              << (currentState ? currentState->GetName() : "null")
-              << " -> targetState=" << state->GetName() << std::endl;
-    
     // 如果已经在目标状态，不需要转换
-    if (currentState == state) {
-        std::cout << "[VSM::GoToStateCore] Already in target state, skipping" << std::endl;
-        return true;
-    }
+    if (currentState == state) return true;
     
     // 触发状态改变前事件
     CurrentStateChanging(group, currentState, state);
@@ -106,7 +86,6 @@ bool VisualStateManager::GoToStateCore(binding::DependencyObject* obj,
     group->SetCurrentState(state);
     
     // 开始新状态的动画
-    std::cout << "[VSM::GoToStateCore] Calling StartStateStoryboard for: " << state->GetName() << std::endl;
     StartStateStoryboard(state, useTransitions);
     
     // 触发状态改变后事件

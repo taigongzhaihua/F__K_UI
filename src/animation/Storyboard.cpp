@@ -56,11 +56,8 @@ void Storyboard::ClearChildren() {
 void Storyboard::Begin() {
     Timeline::Begin();
     
-    std::cout << "[Storyboard::Begin] children count=" << children_.size() << std::endl;
-    
     // 在启动子动画前，先解析所有使用TargetName的动画
     auto templateRoot = GetTemplateRoot(this);
-    std::cout << "[Storyboard::Begin] templateRoot=" << (templateRoot ? "exists" : "null") << std::endl;
     
     if (templateRoot) {
         for (auto& child : children_) {
@@ -70,17 +67,12 @@ void Storyboard::Begin() {
             std::string targetName = GetTargetName(child.get());
             std::string propertyPath = GetTargetProperty(child.get());
             
-            std::cout << "[Storyboard::Begin] child targetName=" << targetName 
-                      << " propertyPath=" << propertyPath << std::endl;
-            
             if (!targetName.empty() && !propertyPath.empty()) {
                 // 尝试将 templateRoot 转换为 UIElement
                 ui::UIElement* rootElement = dynamic_cast<ui::UIElement*>(templateRoot);
                 if (rootElement) {
                     // 在模板树中查找命名元素
                     ui::UIElement* targetElement = rootElement->FindName(targetName);
-                    std::cout << "[Storyboard::Begin] FindName(" << targetName << ")=" 
-                              << (targetElement ? "found" : "NOT FOUND") << std::endl;
                     if (targetElement) {
                         // 解析属性路径（例如 "BorderBrush.Color"）
                         ResolvePropertyPath(child.get(), targetElement, propertyPath);
@@ -240,12 +232,8 @@ binding::DependencyObject* Storyboard::GetTemplateRoot(Storyboard* storyboard) {
 
 void Storyboard::ResolvePropertyPath(Timeline* timeline, ui::UIElement* targetElement, const std::string& propertyPath) {
     if (!timeline || !targetElement || propertyPath.empty()) {
-        std::cout << "[Storyboard::ResolvePropertyPath] Invalid params" << std::endl;
         return;
     }
-    
-    std::cout << "[Storyboard::ResolvePropertyPath] propertyPath=" << propertyPath 
-              << " targetElement=" << targetElement->GetName() << std::endl;
     
     // 检查是否是嵌套属性路径（例如 "BorderBrush.Color"）
     size_t dotPos = propertyPath.find('.');
@@ -253,10 +241,7 @@ void Storyboard::ResolvePropertyPath(Timeline* timeline, ui::UIElement* targetEl
         // 简单属性路径，直接在目标元素上查找
         auto prop = targetElement->FindProperty(propertyPath);
         if (prop) {
-            std::cout << "[Storyboard::ResolvePropertyPath] Found simple property: " << propertyPath << std::endl;
             SetTarget(timeline, targetElement, prop);
-        } else {
-            std::cout << "[Storyboard::ResolvePropertyPath] Simple property NOT FOUND: " << propertyPath << std::endl;
         }
         return;
     }
@@ -265,74 +250,35 @@ void Storyboard::ResolvePropertyPath(Timeline* timeline, ui::UIElement* targetEl
     std::string objectPropertyName = propertyPath.substr(0, dotPos);
     std::string subPropertyName = propertyPath.substr(dotPos + 1);
     
-    std::cout << "[Storyboard::ResolvePropertyPath] Nested: " << objectPropertyName << "." << subPropertyName << std::endl;
-    
     // 获取中间对象的 DependencyProperty
     auto objectProperty = targetElement->FindProperty(objectPropertyName);
     if (!objectProperty) {
-        std::cout << "[Storyboard::ResolvePropertyPath] Object property NOT FOUND: " << objectPropertyName << std::endl;
         return;
     }
-    
-    std::cout << "[Storyboard::ResolvePropertyPath] Found object property: " << objectPropertyName << std::endl;
     
     try {
         auto objectValue = targetElement->GetValue(*objectProperty);
         
-        // 检查 TemplatedParent 的情况
-        auto* templatedParent = targetElement->GetTemplatedParent();
-        std::cout << "[Storyboard::ResolvePropertyPath] TemplatedParent=" 
-                  << (templatedParent ? typeid(*templatedParent).name() : "null") << std::endl;
-        
-        if (templatedParent) {
-            // 从 TemplatedParent 获取 Background
-            auto parentProp = templatedParent->FindProperty(objectPropertyName);
-            if (parentProp) {
-                auto parentValue = templatedParent->GetValue(*parentProp);
-                std::cout << "[Storyboard::ResolvePropertyPath] TemplatedParent." << objectPropertyName 
-                          << " has_value=" << parentValue.has_value();
-                if (parentValue.has_value()) {
-                    std::cout << " type=" << parentValue.type().name();
-                    if (parentValue.type() == typeid(ui::Brush*)) {
-                        auto* parentBrush = std::any_cast<ui::Brush*>(parentValue);
-                        std::cout << " brush=" << (parentBrush ? "valid" : "null");
-                    }
-                }
-                std::cout << std::endl;
-            }
-        }
-        
         // 检查是否有值
         if (!objectValue.has_value()) {
-            std::cout << "[Storyboard::ResolvePropertyPath] No value for " << objectPropertyName << std::endl;
             return;
         }
-        
-        std::cout << "[Storyboard::ResolvePropertyPath] Object value type: " << objectValue.type().name() << std::endl;
         
         // 尝试获取 DependencyObject 指针（Brush 继承自 DependencyObject）
         binding::DependencyObject* subObject = nullptr;
         if (objectValue.type() == typeid(ui::Brush*)) {
             subObject = std::any_cast<ui::Brush*>(objectValue);
-            std::cout << "[Storyboard::ResolvePropertyPath] Cast to Brush*: " << (subObject ? "valid" : "null") << std::endl;
-        } else {
-            std::cout << "[Storyboard::ResolvePropertyPath] Value is NOT Brush*, type=" << objectValue.type().name() << std::endl;
         }
         
         if (subObject) {
             // 在子对象上查找子属性（例如 "Color"）
             auto subProperty = subObject->FindProperty(subPropertyName);
             if (subProperty) {
-                std::cout << "[Storyboard::ResolvePropertyPath] Found sub property: " << subPropertyName << ", calling SetTarget" << std::endl;
                 SetTarget(timeline, subObject, subProperty);
-            } else {
-                std::cout << "[Storyboard::ResolvePropertyPath] Sub property NOT FOUND: " << subPropertyName << std::endl;
             }
         }
-    } catch (const std::exception& e) {
-        std::cout << "[Storyboard::ResolvePropertyPath] Exception: " << e.what() << std::endl;
     } catch (...) {
-        std::cout << "[Storyboard::ResolvePropertyPath] Unknown exception" << std::endl;
+        // 属性访问失败，静默忽略
     }
 }
 

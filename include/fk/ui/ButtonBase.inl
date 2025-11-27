@@ -134,14 +134,6 @@ template<typename Derived>
 void ButtonBase<Derived>::OnPointerEntered(PointerEventArgs &e)
 {
     ContentControl<Derived>::OnPointerEntered(e);
-    std::cout << "[ButtonBase::OnPointerEntered] " << typeid(*this).name() << " name=" << this->GetName() << std::endl;
-    
-    auto* manager = animation::VisualStateManager::GetVisualStateManager(this);
-    std::cout << "  VSM exists: " << (manager != nullptr) << std::endl;
-    if (manager) {
-        std::cout << "  StateGroups count: " << manager->GetStateGroups().size() << std::endl;
-    }
-    
     UpdateVisualState(true);
 }
 
