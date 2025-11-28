@@ -221,9 +221,6 @@ namespace fk::ui
     void RadioButton::OnTemplateApplied()
     {
         ToggleButton::OnTemplateApplied();
-
-        // 初始化 RadioButton 特有的视觉状态
-        InitializeToggleVisualStates();
     }
 
     void RadioButton::OnClick()

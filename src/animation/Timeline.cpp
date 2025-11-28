@@ -160,6 +160,9 @@ void Timeline::Resume() {
 
 void Timeline::Seek(std::chrono::milliseconds offset) {
     currentTime_ = offset;
+    // 更新当前值以反映新的进度
+    double progress = GetProgress();
+    UpdateCurrentValue(progress);
     OnCurrentTimeInvalidated();
 }
 

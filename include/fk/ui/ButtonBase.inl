@@ -185,7 +185,7 @@ bool ButtonBase<Derived>::LoadVisualStatesFromTemplate()
         // 已经初始化过了，直接返回 true
         return true;
     }
-
+    
     auto manager = std::make_shared<animation::VisualStateManager>();
     animation::VisualStateManager::SetVisualStateManager(this, manager);
 
@@ -271,7 +271,10 @@ void ButtonBase<Derived>::ResolveVisualStateTargets()
                 auto *target = ControlTemplate::FindName(targetName, root);
                 if (!target)
                 {
-                    std::cerr << "警告：在模板中找不到名为 '" << targetName << "' 的元素\n";
+                    // 只对RootBorder以外的元素发出警告
+                    if (targetName != "RootBorder") {
+                        std::cerr << "警告：在模板中找不到名为 '" << targetName << "' 的元素\n";
+                    }
                     continue;
                 }
 
@@ -309,12 +312,88 @@ void ButtonBase<Derived>::ResolveVisualStateTargets()
                         }
                     }
                 }
+                else if (propertyPath == "BorderBrush.Color")
+                {
+                    auto *border = dynamic_cast<Border *>(target);
+                    if (border)
+                    {
+                        auto *brush = border->GetBorderBrush();
+                        auto *solidBrush = dynamic_cast<SolidColorBrush *>(brush);
+                        if (solidBrush)
+                        {
+                            auto *colorAnim = dynamic_cast<animation::ColorAnimation *>(child.get());
+                            if (colorAnim)
+                            {
+                                colorAnim->SetTarget(solidBrush, &SolidColorBrush::ColorProperty());
+
+                                if (colorAnim->HasToBinding())
+                                {
+                                    auto *bindingProperty = colorAnim->GetToBinding();
+                                    auto value = this->GetValue(*bindingProperty);
+                                    if (value.has_value())
+                                    {
+                                        auto *brush = std::any_cast<Brush *>(value);
+                                        auto *solidBrush = dynamic_cast<SolidColorBrush *>(brush);
+                                        if (solidBrush)
+                                        {
+                                            colorAnim->SetTo(solidBrush->GetColor());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 else if (propertyPath == "Opacity")
                 {
                     auto *doubleAnim = dynamic_cast<animation::DoubleAnimation *>(child.get());
                     if (doubleAnim)
                     {
                         doubleAnim->SetTarget(target, &UIElement::OpacityProperty());
+                    }
+                }
+                else if (propertyPath == "Width")
+                {
+                    auto *doubleAnim = dynamic_cast<animation::DoubleAnimation *>(child.get());
+                    if (doubleAnim)
+                    {
+                        // Border继承自FrameworkElement<Border>，可以直接访问WidthProperty
+                        auto *border = dynamic_cast<Border *>(target);
+                        if (border)
+                        {
+                            doubleAnim->SetTarget(border, &Border::WidthProperty());
+                        }
+                    }
+                }
+                else if (propertyPath == "Height")
+                {
+                    auto *doubleAnim = dynamic_cast<animation::DoubleAnimation *>(child.get());
+                    if (doubleAnim)
+                    {
+                        // Border继承自FrameworkElement<Border>，可以直接访问HeightProperty
+                        auto *border = dynamic_cast<Border *>(target);
+                        if (border)
+                        {
+                            doubleAnim->SetTarget(border, &Border::HeightProperty());
+                        }
+                    }
+                }
+                else if (propertyPath == "Stroke.Color")
+                {
+                    // 处理Path的Stroke.Color（用于CheckBox的对勾）
+                    auto *path = dynamic_cast<Path *>(target);
+                    if (path)
+                    {
+                        auto *brush = path->GetStroke();
+                        auto *solidBrush = dynamic_cast<SolidColorBrush *>(brush);
+                        if (solidBrush)
+                        {
+                            auto *colorAnim = dynamic_cast<animation::ColorAnimation *>(child.get());
+                            if (colorAnim)
+                            {
+                                colorAnim->SetTarget(solidBrush, &SolidColorBrush::ColorProperty());
+                            }
+                        }
                     }
                 }
             }

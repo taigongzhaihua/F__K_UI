@@ -5,6 +5,7 @@
 #include "fk/ui/TextEnums.h"
 #include "fk/ui/Style.h"
 #include "fk/ui/ControlTemplate.h"
+#include "fk/animation/VisualStateManager.h"
 #include "fk/binding/DependencyProperty.h"
 #include "fk/binding/BindingExpression.h"
 #include <memory>
@@ -302,6 +303,10 @@ protected:
      * @brief 模板应用钩子
      */
     void OnApplyTemplate() override {
+        // 清除旧模板的VisualStateManager
+        // 这确保派生类设置新模板时，会加载新模板的视觉状态，而不是继续使用基类模板的状态
+        animation::VisualStateManager::SetVisualStateManager(this, nullptr);
+        
         // 实例化并应用 ControlTemplate
         auto* tmpl = GetTemplate();
         if (tmpl && tmpl->IsValid()) {
@@ -574,22 +579,13 @@ void Control<Derived>::OnTemplateChanged(
         return;
     }
     
-    // 当模板改变时，重新应用模板
-    // 这会清除旧的模板视觉树并创建新的
-    try {
-        auto* newTemplate = std::any_cast<ControlTemplate*>(newValue);
-        if (newTemplate != nullptr) {
-            // 重置 templateApplied_ 标志以允许重新应用模板
-            // 这修复了继承层次中派生类无法覆盖基类模板的问题
-            control->templateApplied_ = false;
-            control->ApplyTemplate();
-        }
-    } catch (const std::bad_any_cast&) {
-        // Ignore if cast fails
-    }
+    // 当模板改变时，标记需要重新应用模板
+    // ApplyTemplate() 将在下次测量时被调用
+    control->templateApplied_ = false;
     
     // 触发视觉更新
     control->InvalidateVisual();
+    control->InvalidateArrange();
 }
 
 } // namespace fk::ui

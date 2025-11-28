@@ -34,7 +34,14 @@ const binding::DependencyProperty& UIElement::OpacityProperty() {
         "Opacity",
         typeid(float),
         typeid(UIElement),
-        binding::PropertyMetadata{1.0f}
+        binding::PropertyMetadata(
+            1.0f,
+            [](binding::DependencyObject& d, const binding::DependencyProperty& prop, const std::any& oldValue, const std::any& newValue) {
+                if (auto* element = dynamic_cast<UIElement*>(&d)) {
+                    element->InvalidateVisual();
+                }
+            }
+        )
     );
     return property;
 }

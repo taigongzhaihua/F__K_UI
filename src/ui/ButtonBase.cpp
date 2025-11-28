@@ -295,8 +295,8 @@ namespace fk::ui
                                         auto value = this->GetValue(*bindingProperty);
                                         if (value.has_value())
                                         {
-                                            auto *brush = std::any_cast<Brush *>(value);
-                                            auto *solidBrush = dynamic_cast<SolidColorBrush *>(brush);
+                                            auto *sourceBrush = std::any_cast<Brush *>(value);
+                                            auto *solidBrush = dynamic_cast<SolidColorBrush *>(sourceBrush);
                                             if (solidBrush)
                                             {
                                                 colorAnim->SetTo(solidBrush->GetColor());

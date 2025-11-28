@@ -32,6 +32,9 @@ public:
     void Pause() override;
     void Resume() override;
     void Seek(std::chrono::milliseconds offset) override;
+    
+    // 直接跳到最终状态（不播放动画）
+    void SkipToFill();
 
     // 附加属性：设置动画目标
     static void SetTarget(Timeline* timeline, binding::DependencyObject* target);

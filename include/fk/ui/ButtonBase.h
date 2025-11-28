@@ -8,6 +8,7 @@
 // 实现部分需要的头文件
 #include "fk/ui/ControlTemplate.h"
 #include "fk/ui/Border.h"
+#include "fk/ui/Shape.h"
 #include "fk/animation/VisualState.h"
 #include "fk/animation/VisualStateGroup.h"
 #include "fk/animation/Storyboard.h"

@@ -1,5 +1,4 @@
 #include "fk/animation/VisualStateManager.h"
-#include <iostream>
 
 namespace fk::animation {
 
@@ -44,11 +43,15 @@ bool VisualStateManager::GoToState(binding::DependencyObject* obj,
     
     // 查找包含目标状态的组
     auto group = manager->FindGroupContainingState(stateName);
-    if (!group) return false;
+    if (!group) {
+        return false;
+    }
     
     // 查找目标状态
     auto toState = group->FindState(stateName);
-    if (!toState) return false;
+    if (!toState) {
+        return false;
+    }
     
     // 执行状态转换
     return manager->GoToStateCore(obj, group, toState, useTransitions);

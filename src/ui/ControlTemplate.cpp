@@ -123,6 +123,16 @@ UIElement* ControlTemplate::FindNameRecursive(const std::string& name, UIElement
 ControlTemplate* ControlTemplate::AddVisualStateGroup(std::shared_ptr<animation::VisualStateGroup> group) {
     CheckSealed();
     if (group) {
+        // 先移除同名的状态组（避免重复）
+        std::string groupName = group->GetName();
+        visualStateGroups_.erase(
+            std::remove_if(visualStateGroups_.begin(), visualStateGroups_.end(),
+                [&groupName](const std::shared_ptr<animation::VisualStateGroup>& existing) {
+                    return existing && existing->GetName() == groupName;
+                }),
+            visualStateGroups_.end()
+        );
+        // 然后添加新的状态组
         visualStateGroups_.push_back(group);
     }
     return this;

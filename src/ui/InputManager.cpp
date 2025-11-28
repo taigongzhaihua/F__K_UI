@@ -192,15 +192,20 @@ void InputManager::DispatchPointerMove(UIElement* target, const PlatformPointerE
 }
 
 void InputManager::DispatchPointerEnter(UIElement* target, const PlatformPointerEvent& event) {
-    BubblePointerEvent(target, event, [](UIElement* element, PointerEventArgs& args) {
-        element->OnPointerEntered(args);
-    });
+    // Enter/Leave事件不应该冒泡，只发送给目标元素
+    // 这样可以避免鼠标在按钮内移动到子元素时重复触发父元素的Enter事件
+    if (!target) return;
+    auto args = CreatePointerArgs(target, event);
+    args.source = target;
+    target->OnPointerEntered(args);
 }
 
 void InputManager::DispatchPointerLeave(UIElement* target, const PlatformPointerEvent& event) {
-    BubblePointerEvent(target, event, [](UIElement* element, PointerEventArgs& args) {
-        element->OnPointerExited(args);
-    });
+    // Enter/Leave事件不应该冒泡，只发送给目标元素
+    if (!target) return;
+    auto args = CreatePointerArgs(target, event);
+    args.source = target;
+    target->OnPointerExited(args);
 }
 
 void InputManager::DispatchMouseWheel(UIElement* target, const PlatformPointerEvent& event) {
@@ -291,20 +296,43 @@ void InputManager::UpdateMouseOver(const Point& position) {
     UIElement* newMouseOver = HitTest(position);
     
     if (newMouseOver != mouseOverElement_) {
-        // 生成 Leave 事件
-        if (mouseOverElement_) {
-            PlatformPointerEvent leaveEvent;
-            leaveEvent.type = PlatformPointerEvent::Type::Leave;
-            leaveEvent.position = position;
-            DispatchPointerLeave(mouseOverElement_, leaveEvent);
+        // 收集旧元素的所有父元素链
+        std::vector<UIElement*> oldChain;
+        UIElement* current = mouseOverElement_;
+        while (current) {
+            oldChain.push_back(current);
+            current = GetBubbleParent(current);
         }
         
-        // 生成 Enter 事件
-        if (newMouseOver) {
-            PlatformPointerEvent enterEvent;
-            enterEvent.type = PlatformPointerEvent::Type::Enter;
-            enterEvent.position = position;
-            DispatchPointerEnter(newMouseOver, enterEvent);
+        // 收集新元素的所有父元素链
+        std::vector<UIElement*> newChain;
+        current = newMouseOver;
+        while (current) {
+            newChain.push_back(current);
+            current = GetBubbleParent(current);
+        }
+        
+        // 找到共同祖先
+        size_t commonIndex = 0;
+        while (commonIndex < oldChain.size() && commonIndex < newChain.size() &&
+               oldChain[oldChain.size() - 1 - commonIndex] == newChain[newChain.size() - 1 - commonIndex]) {
+            commonIndex++;
+        }
+        
+        // 对于旧链中不在新链中的元素，发送Leave事件（从子到父）
+        PlatformPointerEvent leaveEvent;
+        leaveEvent.type = PlatformPointerEvent::Type::Leave;
+        leaveEvent.position = position;
+        for (size_t i = 0; i < oldChain.size() - commonIndex; i++) {
+            DispatchPointerLeave(oldChain[i], leaveEvent);
+        }
+        
+        // 对于新链中不在旧链中的元素，发送Enter事件（从父到子）
+        PlatformPointerEvent enterEvent;
+        enterEvent.type = PlatformPointerEvent::Type::Enter;
+        enterEvent.position = position;
+        for (int i = static_cast<int>(newChain.size() - commonIndex) - 1; i >= 0; i--) {
+            DispatchPointerEnter(newChain[i], enterEvent);
         }
         
         mouseOverElement_ = newMouseOver;

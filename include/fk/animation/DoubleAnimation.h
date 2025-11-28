@@ -15,6 +15,12 @@ public:
 
     // 克隆动画
     std::shared_ptr<DoubleAnimation> Clone() const;
+    
+    // 重写SetFrom以标记显式设置
+    void SetFrom(double value);
+
+    // 开始动画
+    void Begin() override;
 
     // 设置目标对象和属性
     void SetTarget(binding::DependencyObject* target, const binding::DependencyProperty* property);
@@ -37,6 +43,7 @@ private:
     const binding::DependencyProperty* targetProperty_{nullptr};
     double initialValue_{0.0};
     bool hasInitialValue_{false};
+    bool hasExplicitFrom_{false};  // 标记From值是否被显式设置
 };
 
 } // namespace fk::animation

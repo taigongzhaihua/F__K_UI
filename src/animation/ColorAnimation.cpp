@@ -1,5 +1,6 @@
 #include "fk/animation/ColorAnimation.h"
 #include <algorithm>
+#include <iostream>
 
 namespace fk::animation {
 
@@ -16,7 +17,13 @@ ColorAnimation::ColorAnimation(const Color& fromColor, const Color& toColor, Dur
 
 std::shared_ptr<ColorAnimation> ColorAnimation::Clone() const {
     auto clone = std::make_shared<ColorAnimation>();
-    clone->SetFrom(GetFrom());
+    
+    // 只复制显式设置过的From值
+    if (hasExplicitFrom_) {
+        clone->SetFrom(GetFrom());
+        clone->hasExplicitFrom_ = true;
+    }
+    
     clone->SetTo(GetTo());
     clone->SetDuration(GetDuration());
     clone->SetToBinding(toBindingProperty_);
@@ -24,22 +31,16 @@ std::shared_ptr<ColorAnimation> ColorAnimation::Clone() const {
     return clone;
 }
 
+void ColorAnimation::SetFrom(const Color& value) {
+    Animation<Color>::SetFrom(value);
+    hasExplicitFrom_ = true;
+}
+
 void ColorAnimation::Begin() {
-    // 在动画开始时捕获当前颜色作为初始值
-    // 这确保了从当前状态平滑过渡，而不是从固定的初始值跳跃
-    if (target_ && targetProperty_) {
-        try {
-            auto value = target_->GetValue(*targetProperty_);
-            if (value.has_value()) {
-                initialValue_ = std::any_cast<Color>(value);
-                hasInitialValue_ = true;
-            }
-        } catch (...) {
-            // 读取失败，使用默认白色
-            initialValue_ = Color(1.0f, 1.0f, 1.0f, 1.0f);
-            hasInitialValue_ = true;
-        }
-    }
+    // 每次Begin时重置初始值标志
+    // 这样UpdateCurrentValue会在第一次调用时重新捕获当前颜色
+    // 确保从当前状态平滑过渡，即使是重复使用同一个动画对象
+    hasInitialValue_ = false;
     
     // 调用基类的 Begin() 方法
     Animation<Color>::Begin();

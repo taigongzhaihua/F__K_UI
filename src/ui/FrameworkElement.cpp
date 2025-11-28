@@ -19,7 +19,14 @@ const binding::DependencyProperty& FrameworkElement<Derived>::WidthProperty() {
         "Width",
         typeid(float),
         typeid(FrameworkElement<Derived>),
-        {-1.0f}
+        binding::PropertyMetadata(
+            -1.0f,
+            [](binding::DependencyObject& d, const binding::DependencyProperty& prop, const std::any& oldValue, const std::any& newValue) {
+                if (auto* element = dynamic_cast<FrameworkElement<Derived>*>(&d)) {
+                    element->InvalidateMeasure();
+                }
+            }
+        )
     );
     return property;
 }
@@ -30,7 +37,14 @@ const binding::DependencyProperty& FrameworkElement<Derived>::HeightProperty() {
         "Height",
         typeid(float),
         typeid(FrameworkElement<Derived>),
-        {-1.0f}
+        binding::PropertyMetadata(
+            -1.0f,
+            [](binding::DependencyObject& d, const binding::DependencyProperty& prop, const std::any& oldValue, const std::any& newValue) {
+                if (auto* element = dynamic_cast<FrameworkElement<Derived>*>(&d)) {
+                    element->InvalidateMeasure();
+                }
+            }
+        )
     );
     return property;
 }

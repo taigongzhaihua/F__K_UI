@@ -1,6 +1,5 @@
 #include "fk/animation/AnimationManager.h"
 #include <algorithm>
-#include <iostream>
 
 namespace fk::animation {
 

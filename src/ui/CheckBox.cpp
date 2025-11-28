@@ -234,9 +234,6 @@ namespace fk::ui
     void CheckBox::OnTemplateApplied()
     {
         ToggleButton::OnTemplateApplied();
-
-        // 初始化 CheckBox 特有的视觉状态
-        InitializeToggleVisualStates();
     }
 
     void CheckBox::OnPointerPressed(PointerEventArgs &e)

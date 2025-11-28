@@ -306,18 +306,21 @@ namespace fk::ui
     {
         auto checked = GetIsChecked();
 
+        std::string targetState;
         if (!checked.has_value())
         {
-            animation::VisualStateManager::GoToState(this, "Indeterminate", useTransitions);
+            targetState = "Indeterminate";
         }
         else if (*checked)
         {
-            animation::VisualStateManager::GoToState(this, "Checked", useTransitions);
+            targetState = "Checked";
         }
         else
         {
-            animation::VisualStateManager::GoToState(this, "Unchecked", useTransitions);
+            targetState = "Unchecked";
         }
+
+        animation::VisualStateManager::GoToState(this, targetState, useTransitions);
     }
 
     void ToggleButton::RaiseCheckedEvents(const std::optional<bool> &oldValue, const std::optional<bool> &newValue)

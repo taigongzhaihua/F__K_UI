@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <iostream>
 
 namespace fk::animation {
 
@@ -32,6 +33,16 @@ public:
     // 状态组管理
     void AddStateGroup(std::shared_ptr<VisualStateGroup> group) {
         if (group) {
+            // 先移除同名的状态组（避免重复，派生类模板可以覆盖基类状态）
+            std::string groupName = group->GetName();
+            stateGroups_.erase(
+                std::remove_if(stateGroups_.begin(), stateGroups_.end(),
+                    [&groupName](const std::shared_ptr<VisualStateGroup>& existing) {
+                        return existing && existing->GetName() == groupName;
+                    }),
+                stateGroups_.end()
+            );
+            // 然后添加新的状态组
             stateGroups_.push_back(group);
         }
     }
@@ -90,8 +101,16 @@ protected:
     
     // 开始新状态的故事板
     void StartStateStoryboard(VisualState* state, bool useTransitions) {
-        if (!state || !state->GetStoryboard()) return;
-        state->GetStoryboard()->Begin();
+        if (!state || !state->GetStoryboard()) {
+            return;
+        }
+        
+        if (!useTransitions) {
+            // 不使用过渡动画时，直接跳到最终状态
+            state->GetStoryboard()->SkipToFill();
+        } else {
+            state->GetStoryboard()->Begin();
+        }
     }
     
     // 重新应用所有活动状态（用于处理跨状态组冲突）

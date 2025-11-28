@@ -5,8 +5,8 @@
 #include "fk/ui/Control.h"
 #include "fk/ui/ControlTemplate.h"
 #include "fk/ui/Brush.h"
+#include "fk/ui/Border.h"
 #include <algorithm>
-#include <iostream>
 #include <sstream>
 
 namespace fk::animation {
@@ -134,6 +134,44 @@ void Storyboard::Seek(std::chrono::milliseconds offset) {
     }
 }
 
+void Storyboard::SkipToFill() {
+    // 直接将所有子动画跳到最终状态
+    // 先解析TargetName（与Begin()中的逻辑相同）
+    auto templateRoot = GetTemplateRoot(this);
+    
+    if (templateRoot) {
+        for (auto& child : children_) {
+            if (!child) continue;
+            
+            std::string targetName = GetTargetName(child.get());
+            std::string propertyPath = GetTargetProperty(child.get());
+            
+            if (!targetName.empty() && !propertyPath.empty()) {
+                ui::UIElement* rootElement = dynamic_cast<ui::UIElement*>(templateRoot);
+                if (rootElement) {
+                    ui::UIElement* targetElement = rootElement->FindName(targetName);
+                    if (targetElement) {
+                        ResolvePropertyPath(child.get(), targetElement, propertyPath);
+                    }
+                }
+            }
+        }
+    }
+    
+    // 启动动画并立即跳到最后
+    // 动画在下一帧Update时会发现已完成并自动停止
+    for (auto& child : children_) {
+        if (child) {
+            child->Begin();
+            // 获取动画的总时长并跳到最后
+            Duration duration = child->GetDuration();
+            if (duration.HasTimeSpan()) {
+                child->Seek(duration.timeSpan);
+            }
+        }
+    }
+}
+
 Duration Storyboard::GetNaturalDuration() const {
     // 返回所有子动画中最长的持续时间
     std::chrono::milliseconds maxDuration(0);
@@ -238,7 +276,32 @@ void Storyboard::ResolvePropertyPath(Timeline* timeline, ui::UIElement* targetEl
     // 检查是否是嵌套属性路径（例如 "BorderBrush.Color"）
     size_t dotPos = propertyPath.find('.');
     if (dotPos == std::string::npos) {
-        // 简单属性路径，直接在目标元素上查找
+        // 简单属性路径，处理常见属性
+        if (propertyPath == "Opacity") {
+            auto *doubleAnim = dynamic_cast<DoubleAnimation *>(timeline);
+            if (doubleAnim) {
+                doubleAnim->SetTarget(targetElement, &ui::UIElement::OpacityProperty());
+                return;
+            }
+        }
+        else if (propertyPath == "Width") {
+            auto *doubleAnim = dynamic_cast<DoubleAnimation *>(timeline);
+            auto *border = dynamic_cast<ui::Border *>(targetElement);
+            if (doubleAnim && border) {
+                doubleAnim->SetTarget(border, &ui::Border::WidthProperty());
+                return;
+            }
+        }
+        else if (propertyPath == "Height") {
+            auto *doubleAnim = dynamic_cast<DoubleAnimation *>(timeline);
+            auto *border = dynamic_cast<ui::Border *>(targetElement);
+            if (doubleAnim && border) {
+                doubleAnim->SetTarget(border, &ui::Border::HeightProperty());
+                return;
+            }
+        }
+        
+        // 尝试通过FindProperty查找
         auto prop = targetElement->FindProperty(propertyPath);
         if (prop) {
             SetTarget(timeline, targetElement, prop);

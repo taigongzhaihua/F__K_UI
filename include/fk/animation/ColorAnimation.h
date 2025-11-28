@@ -18,6 +18,9 @@ public:
 
     // 克隆动画
     std::shared_ptr<ColorAnimation> Clone() const;
+    
+    // 重写SetFrom以标记显式设置
+    void SetFrom(const Color& value);
 
     // 设置目标对象和属性
     void SetTarget(binding::DependencyObject* target, const binding::DependencyProperty* property);
@@ -48,6 +51,7 @@ private:
     const binding::DependencyProperty* targetProperty_{nullptr};
     Color initialValue_;
     bool hasInitialValue_{false};
+    bool hasExplicitFrom_{false};  // 标记From值是否被显式设置
     
     // To 值绑定（从 TemplatedParent 的属性获取）
     const DependencyProperty* toBindingProperty_{nullptr};
