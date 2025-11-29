@@ -173,19 +173,39 @@ Binding 模块是 F__K_UI 框架的数据绑定系统核心，提供了类似 WP
 | `FK_BINDING_REGISTER_SETTER` | 注册只写属性访问器 |
 | `FK_BINDING_REGISTER_PROPERTY` | 注册读写属性访问器 |
 
-### ViewModel 宏
+### ViewModel 宏（已弃用）
 **定义位置**：`ViewModelMacros.h`
 
-| 宏 | 描述 |
-|----|------|
-| `FK_VIEWMODEL_BEGIN` | 开始 ViewModel 属性注册块 |
-| `FK_VIEWMODEL_PROPERTY` | 注册只读属性 |
-| `FK_VIEWMODEL_PROPERTY_RW` | 注册可读写属性 |
-| `FK_VIEWMODEL_END` | 结束 ViewModel 属性注册块 |
-| `FK_VIEWMODEL_AUTO` | 自动注册多个属性（简化版） |
-| `FK_PROPERTY_READONLY` | 声明只读属性（自动生成代码） |
-| `FK_PROPERTY` | 声明可读写属性（自动生成代码） |
-| `FK_PROPERTY_CUSTOM` | 声明自定义 setter 的属性 |
+> ⚠️ **已弃用**：这些宏已被 `ObservableProperty<T, Owner>` 模板类取代。
+> 推荐使用 `ObservableProperty`，它提供更好的类型安全、更清晰的代码和编译期检查。
+
+| 宏 | 描述 | 替代方案 |
+|----|------|----------|
+| `FK_VIEWMODEL_BEGIN` | 开始 ViewModel 属性注册块 | 使用 `ObservableProperty` 无需注册块 |
+| `FK_VIEWMODEL_PROPERTY` | 注册只读属性 | `ObservableProperty<T, Owner>` |
+| `FK_VIEWMODEL_PROPERTY_RW` | 注册可读写属性 | `ObservableProperty<T, Owner>` |
+| `FK_VIEWMODEL_END` | 结束 ViewModel 属性注册块 | 使用 `ObservableProperty` 无需注册块 |
+| `FK_VIEWMODEL_AUTO` | 自动注册多个属性（简化版） | `ObservableProperty<T, Owner>` |
+| `FK_PROPERTY_READONLY` | 声明只读属性（自动生成代码） | `ObservableProperty<T, Owner>` |
+| `FK_PROPERTY` | 声明可读写属性（自动生成代码） | `ObservableProperty<T, Owner>` |
+| `FK_PROPERTY_CUSTOM` | 声明自定义 setter 的属性 | `ObservableProperty<T, Owner>.Setter()` |
+
+**迁移示例**：
+
+```cpp
+// 旧方式（使用宏）
+class MyViewModel : public ObservableObject {
+public:
+    FK_PROPERTY(std::string, Name)
+};
+FK_VIEWMODEL_AUTO(MyViewModel, Name)
+
+// 新方式（使用 ObservableProperty）
+class MyViewModel : public ObservableObject {
+public:
+    ObservableProperty<std::string, MyViewModel> name{this, "Name"};
+};
+```
 
 ---
 
@@ -329,7 +349,7 @@ BindingPath
 | `TemplateBinding.h` | TemplateBinding |
 | `ValidationRule.h` | ValidationRule, ValidationResult, 各种验证规则实现 |
 | `ValueConverters.h` | TryDefaultConvert, DefaultValueConverter, BooleanToStringConverter |
-| `ViewModelMacros.h` | ViewModel 宏定义 |
+| `ViewModelMacros.h` | ViewModel 宏定义（已弃用，推荐使用 ObservableProperty） |
 
 ---
 
