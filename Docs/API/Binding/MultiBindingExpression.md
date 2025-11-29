@@ -1,341 +1,468 @@
 # MultiBindingExpression
 
-## 概述
+## 概览
 
-`MultiBindingExpression` 表示一个活动的多源绑定实例，负责管理多个源属性到单个目标属性的数据流。它是 `MultiBinding` 的运行时表示，处理多个源值的聚合、转换和更新。
+| 属性 | 值 |
+|------|-----|
+| **命名空间** | `fk::binding` |
+| **头文件** | `fk/binding/MultiBindingExpression.h` |
+| **源文件** | `src/binding/MultiBindingExpression.cpp` |
 
-## 命名空间
+## 描述
 
-```cpp
-namespace fk::binding
-```
+`MultiBindingExpression` 是 `MultiBinding` 的活动实例，负责：
 
-## 继承关系
+- 管理多个子 `BindingExpression`
+- 收集所有子绑定的源值
+- 使用多值转换器（`IMultiValueConverter`）合并值
+- 将合并后的值更新到目标属性
+- 订阅和响应源属性变更通知
 
-```
-Object
-  └─ BindingExpressionBase
-       └─ MultiBindingExpression
-```
-
-## 主要功能
-
-### 1. 多源管理
-
-管理多个绑定表达式：
+## 类定义
 
 ```cpp
-class MultiBindingExpression : public BindingExpressionBase {
+namespace fk::binding {
+
+class MultiBindingExpression : public std::enable_shared_from_this<MultiBindingExpression> {
 public:
-    // 获取子绑定表达式
-    const std::vector<std::shared_ptr<BindingExpression>>& GetBindingExpressions() const;
-    
-    // 子绑定数量
-    size_t GetBindingCount() const;
-};
-```
+    MultiBindingExpression(
+        MultiBinding definition,
+        DependencyObject* target,
+        const DependencyProperty& property);
 
-**使用示例：**
+    // 生命周期方法
+    void Activate();
+    void Detach();
+    void UpdateTarget();
 
-```cpp
-auto multiBinding = std::make_shared<MultiBinding>();
-multiBinding->AddBinding(binding1);
-multiBinding->AddBinding(binding2);
+    // 状态查询方法
+    [[nodiscard]] bool IsActive() const noexcept;
+    [[nodiscard]] DependencyObject* Target() const noexcept;
+    [[nodiscard]] const DependencyProperty& Property() const noexcept;
+    [[nodiscard]] const MultiBinding& Definition() const noexcept;
 
-auto expression = multiBinding->CreateExpression(target, property);
-auto multiExpr = std::dynamic_pointer_cast<MultiBindingExpression>(expression);
-
-// 访问各个子绑定
-for (const auto& childExpr : multiExpr->GetBindingExpressions()) {
-    std::cout << "子绑定状态: " << childExpr->GetStatus() << std::endl;
-}
-```
-
-### 2. 值聚合
-
-聚合多个源值：
-
-```cpp
-// 收集所有源值
-std::vector<std::any> GetSourceValues() const;
-
-// 检查是否所有源都有效
-bool AreAllSourcesValid() const;
-```
-
-**使用示例：**
-
-```cpp
-// 假设有三个源绑定到 Person 的不同属性
-auto fullNameBinding = std::make_shared<MultiBinding>();
-fullNameBinding->AddBinding(firstNameBinding);
-fullNameBinding->AddBinding(middleNameBinding);
-fullNameBinding->AddBinding(lastNameBinding);
-
-// 设置转换器来组合值
-fullNameBinding->SetConverter(std::make_shared<NameCombinerConverter>());
-
-// 创建表达式
-auto expression = fullNameBinding->CreateExpression(textBlock, TextBlock::TextProperty);
-auto multiExpr = std::dynamic_pointer_cast<MultiBindingExpression>(expression);
-
-// 检查源值
-if (multiExpr->AreAllSourcesValid()) {
-    auto values = multiExpr->GetSourceValues();
-    // values[0] = "John", values[1] = "F", values[2] = "Kennedy"
-}
-```
-
-### 3. 转换器应用
-
-应用多值转换器：
-
-```cpp
-// 转换所有源值到目标值
-std::any ConvertValues(const std::vector<std::any>& values);
-
-// 反向转换（如果支持）
-std::vector<std::any> ConvertBackValue(const std::any& value);
-```
-
-**使用示例：**
-
-```cpp
-// 自定义多值转换器
-class StringFormatConverter : public IMultiValueConverter {
-public:
-    std::any Convert(const std::vector<std::any>& values,
-                    const std::type_info& targetType) override {
-        if (values.size() >= 2) {
-            auto name = std::any_cast<std::string>(values[0]);
-            auto age = std::any_cast<int>(values[1]);
-            return name + " (" + std::to_string(age) + " 岁)";
-        }
-        return std::string("");
-    }
-};
-
-auto binding = std::make_shared<MultiBinding>();
-binding->AddBinding(nameBinding);
-binding->AddBinding(ageBinding);
-binding->SetConverter(std::make_shared<StringFormatConverter>());
-
-// MultiBindingExpression 会自动应用转换器
-```
-
-### 4. 更新管理
-
-处理源更新：
-
-```cpp
-// 当任何源值改变时调用
-void OnSourceValueChanged(BindingExpression* sourceExpression);
-
-// 更新目标
-void UpdateTarget();
-
-// 更新所有源（双向绑定）
-void UpdateSources();
-```
-
-**使用示例：**
-
-```cpp
-// 任何源属性改变时，MultiBindingExpression 会：
-// 1. 收集所有当前源值
-// 2. 应用转换器
-// 3. 更新目标属性
-
-person->SetFirstName("Jane");  // 触发更新
-// MultiBindingExpression 自动：
-// - 收集 ["Jane", "F", "Kennedy"]
-// - 转换为 "Jane F Kennedy"
-// - 更新 TextBlock.Text
-```
-
-### 5. 状态跟踪
-
-跟踪绑定状态：
-
-```cpp
-enum class BindingStatus {
-    Unattached,      // 未附加
-    Inactive,        // 非活动
-    Active,          // 活动
-    Detached,        // 已分离
-    AsyncRequestPending  // 异步请求挂起
-};
-
-BindingStatus GetStatus() const;
-bool IsActive() const;
-```
-
-**使用示例：**
-
-```cpp
-auto expression = multiBinding->CreateExpression(target, property);
-auto multiExpr = std::dynamic_pointer_cast<MultiBindingExpression>(expression);
-
-switch (multiExpr->GetStatus()) {
-    case BindingStatus::Active:
-        std::cout << "多源绑定活动中" << std::endl;
-        break;
-    case BindingStatus::Inactive:
-        std::cout << "多源绑定非活动" << std::endl;
-        break;
-    default:
-        break;
-}
-```
-
-## 完整示例
-
-### 示例 1：格式化显示
-
-```cpp
-// ViewModel
-class PersonViewModel : public ObservableObject {
 private:
-    std::string firstName_;
-    std::string lastName_;
-    int age_;
-    
-public:
-    // 属性定义...
-    NOTIFY_PROPERTY(std::string, FirstName, firstName_)
-    NOTIFY_PROPERTY(std::string, LastName, lastName_)
-    NOTIFY_PROPERTY(int, Age, age_)
+    void EnsureTargetAlive() const;
+    void InitializeEffectiveSettings();
+    void SubscribeToChildren();
+    void UnsubscribeFromChildren();
+    void OnChildBindingUpdated();
+    void ApplyTargetValue(std::any value);
+    std::vector<std::any> CollectSourceValues() const;
+
+    MultiBinding definition_;
+    DependencyObject* target_{nullptr};
+    const DependencyProperty* property_{nullptr};
+    bool isActive_{false};
+    bool isUpdatingTarget_{false};
+    BindingMode effectiveMode_{BindingMode::OneWay};
+    UpdateSourceTrigger effectiveUpdateSourceTrigger_{UpdateSourceTrigger::PropertyChanged};
+    std::vector<std::shared_ptr<BindingExpression>> childExpressions_;
+    std::vector<INotifyPropertyChanged::PropertyChangedEvent::Connection> childConnections_;
 };
 
-// 创建多源绑定
-auto multiBinding = std::make_shared<MultiBinding>();
+} // namespace fk::binding
+```
 
-// 添加三个源绑定
-auto firstNameBinding = std::make_shared<Binding>("FirstName");
-auto lastNameBinding = std::make_shared<Binding>("LastName");
-auto ageBinding = std::make_shared<Binding>("Age");
+---
 
-multiBinding->AddBinding(firstNameBinding);
-multiBinding->AddBinding(lastNameBinding);
-multiBinding->AddBinding(ageBinding);
+## 构造函数
 
-// 设置格式化转换器
-class PersonInfoConverter : public IMultiValueConverter {
+### MultiBindingExpression()
+
+```cpp
+MultiBindingExpression(
+    MultiBinding definition,
+    DependencyObject* target,
+    const DependencyProperty& property);
+```
+
+构造一个多绑定表达式实例。
+
+**参数**：
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| `definition` | `MultiBinding` | 多绑定配置 |
+| `target` | `DependencyObject*` | 绑定目标对象 |
+| `property` | `const DependencyProperty&` | 目标属性 |
+
+**异常**：如果 `target` 为 `nullptr`，抛出 `std::invalid_argument`
+
+**说明**：
+- 构造函数会调用 `InitializeEffectiveSettings()` 初始化有效设置
+- 不会自动激活，需要显式调用 `Activate()`
+
+**示例**：
+```cpp
+fk::MultiBinding multi;
+multi.AddBinding(fk::bind("FirstName"))
+     .AddBinding(fk::bind("LastName"))
+     .Converter(std::make_shared<FullNameConverter>());
+
+auto expr = std::make_shared<fk::MultiBindingExpression>(
+    multi, textBlock, TextBlock::TextProperty());
+expr->Activate();
+```
+
+---
+
+## 生命周期方法
+
+### Activate
+
+```cpp
+void Activate();
+```
+
+激活多绑定表达式。
+
+**说明**：
+- 如果已激活，不执行任何操作
+- 为每个子绑定创建 `BindingExpression` 并激活
+- 订阅所有子绑定源的 `PropertyChanged` 事件
+- 执行初始的 `UpdateTarget()` 更新目标值
+
+**示例**：
+```cpp
+auto expr = multi.CreateExpression(target, property);
+expr->Activate();
+// 现在多绑定已激活，源变更会自动更新目标
+```
+
+### Detach
+
+```cpp
+void Detach();
+```
+
+分离多绑定表达式。
+
+**说明**：
+- 如果未激活，不执行任何操作
+- 断开所有子绑定的事件订阅
+- 分离并清除所有子 `BindingExpression`
+- 设置 `isActive_ = false`
+
+**示例**：
+```cpp
+expr->Detach();
+// 现在多绑定不再响应源变更
+```
+
+### UpdateTarget
+
+```cpp
+void UpdateTarget();
+```
+
+从所有源更新目标属性值。
+
+**说明**：
+- 如果绑定模式为 `OneWayToSource`，不执行更新
+- 收集所有子绑定的源值（通过 `CollectSourceValues()`）
+- 如果设置了转换器，调用 `IMultiValueConverter::Convert()` 合并值
+- 如果没有转换器，使用第一个绑定的值
+- 将合并后的值应用到目标属性
+
+**示例**：
+```cpp
+// 手动触发更新（通常不需要，源变更会自动触发）
+expr->UpdateTarget();
+```
+
+---
+
+## 状态查询方法
+
+### IsActive
+
+```cpp
+[[nodiscard]] bool IsActive() const noexcept;
+```
+
+检查多绑定表达式是否已激活。
+
+**返回值**：如果已激活返回 `true`
+
+**示例**：
+```cpp
+if (expr->IsActive()) {
+    std::cout << "多绑定已激活" << std::endl;
+}
+```
+
+### Target
+
+```cpp
+[[nodiscard]] DependencyObject* Target() const noexcept;
+```
+
+获取绑定目标对象。
+
+**返回值**：目标对象指针
+
+### Property
+
+```cpp
+[[nodiscard]] const DependencyProperty& Property() const noexcept;
+```
+
+获取目标属性。
+
+**返回值**：目标依赖属性的常量引用
+
+### Definition
+
+```cpp
+[[nodiscard]] const MultiBinding& Definition() const noexcept;
+```
+
+获取多绑定配置定义。
+
+**返回值**：`MultiBinding` 的常量引用
+
+---
+
+## 生命周期流程
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    MultiBindingExpression                   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  构造函数                                                    │
+│  - 保存 definition, target, property                        │
+│  - InitializeEffectiveSettings() 计算有效设置               │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Activate()                                                  │
+│  - 为每个子绑定创建 BindingExpression                        │
+│  - 激活所有子绑定                                            │
+│  - SubscribeToChildren() 订阅源变更                         │
+│  - UpdateTarget() 初始更新                                   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  源属性变更                                                  │
+│  - 子绑定的源触发 PropertyChanged                           │
+│  - OnChildBindingUpdated() 被调用                           │
+│  - UpdateTarget() 重新收集并更新目标                        │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  UpdateTarget()                                              │
+│  - CollectSourceValues() 收集所有源值                       │
+│  - 转换器 Convert() 合并值                                  │
+│  - ApplyTargetValue() 应用到目标                            │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Detach()                                                    │
+│  - UnsubscribeFromChildren() 断开订阅                       │
+│  - 分离所有子 BindingExpression                             │
+│  - isActive_ = false                                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 使用示例
+
+### 组合姓名
+
+```cpp
+#include "fk/binding/MultiBinding.h"
+#include "fk/binding/MultiBindingExpression.h"
+
+// 自定义转换器
+class FullNameConverter : public fk::IMultiValueConverter {
 public:
-    std::any Convert(const std::vector<std::any>& values,
-                    const std::type_info& targetType) override {
-        if (values.size() >= 3) {
-            auto first = std::any_cast<std::string>(values[0]);
-            auto last = std::any_cast<std::string>(values[1]);
-            auto age = std::any_cast<int>(values[2]);
-            return first + " " + last + ", " + std::to_string(age) + " 岁";
-        }
-        return std::string("未知");
+    std::any Convert(
+        const std::vector<std::any>& values,
+        std::type_index,
+        const std::any*) const override {
+        
+        if (values.size() < 2) return std::string{};
+        
+        std::string first = values[0].has_value() 
+            ? std::any_cast<std::string>(values[0]) : "";
+        std::string last = values[1].has_value() 
+            ? std::any_cast<std::string>(values[1]) : "";
+        
+        return first + " " + last;
     }
 };
 
-multiBinding->SetConverter(std::make_shared<PersonInfoConverter>());
+// 创建并使用
+fk::MultiBinding multi;
+multi.AddBinding(fk::bind("FirstName"))
+     .AddBinding(fk::bind("LastName"))
+     .Converter(std::make_shared<FullNameConverter>());
 
-// 创建表达式
-auto textBlock = std::make_shared<TextBlock>();
-auto expression = multiBinding->CreateExpression(textBlock, TextBlock::TextProperty);
+auto expr = multi.CreateExpression(textBlock, TextBlock::TextProperty());
+expr->Activate();
 
 // 设置数据上下文
-auto viewModel = std::make_shared<PersonViewModel>();
-viewModel->SetFirstName("张");
-viewModel->SetLastName("三");
-viewModel->SetAge(25);
-
 textBlock->SetDataContext(viewModel);
 
-// 结果：TextBlock 显示 "张 三, 25 岁"
+// 现在当 FirstName 或 LastName 变更时，textBlock 会自动更新
+viewModel->firstName = "张";  // 触发更新
+viewModel->lastName = "三";   // 触发更新
+// textBlock 显示 "张 三"
 ```
 
-### 示例 2：计算绑定
+### 计算绑定
 
 ```cpp
-// 计算总价转换器
-class TotalPriceConverter : public IMultiValueConverter {
+class TotalPriceConverter : public fk::IMultiValueConverter {
 public:
-    std::any Convert(const std::vector<std::any>& values,
-                    const std::type_info& targetType) override {
-        if (values.size() >= 2) {
-            auto price = std::any_cast<double>(values[0]);
-            auto quantity = std::any_cast<int>(values[1]);
-            return price * quantity;
-        }
-        return 0.0;
+    std::any Convert(
+        const std::vector<std::any>& values,
+        std::type_index,
+        const std::any*) const override {
+        
+        if (values.size() < 2) return 0.0;
+        
+        double price = values[0].has_value() 
+            ? std::any_cast<double>(values[0]) : 0.0;
+        int quantity = values[1].has_value() 
+            ? std::any_cast<int>(values[1]) : 0;
+        
+        return price * quantity;
     }
 };
 
-// 创建绑定
-auto multiBinding = std::make_shared<MultiBinding>();
-multiBinding->AddBinding(std::make_shared<Binding>("Price"));
-multiBinding->AddBinding(std::make_shared<Binding>("Quantity"));
-multiBinding->SetConverter(std::make_shared<TotalPriceConverter>());
+fk::MultiBinding totalBinding;
+totalBinding.AddBinding(fk::bind("UnitPrice"))
+            .AddBinding(fk::bind("Quantity"))
+            .Converter(std::make_shared<TotalPriceConverter>());
 
-// 绑定到文本显示
-auto totalText = std::make_shared<TextBlock>();
-multiBinding->CreateExpression(totalText, TextBlock::TextProperty);
+auto expr = totalBinding.CreateExpression(totalLabel, Label::ContentProperty());
+expr->Activate();
 
-// 当 Price 或 Quantity 改变时，Total 自动更新
+// 价格或数量变化时自动计算总价
 ```
 
-### 示例 3：可见性控制
+### 检查多绑定状态
 
 ```cpp
-// 多条件可见性转换器
-class VisibilityConverter : public IMultiValueConverter {
-public:
-    std::any Convert(const std::vector<std::any>& values,
-                    const std::type_info& targetType) override {
-        // 所有条件都为 true 时才显示
-        bool allTrue = true;
-        for (const auto& value : values) {
-            if (!std::any_cast<bool>(value)) {
-                allTrue = false;
-                break;
-            }
-        }
-        return allTrue ? Visibility::Visible : Visibility::Collapsed;
-    }
-};
+auto expr = multi.CreateExpression(target, property);
 
-auto multiBinding = std::make_shared<MultiBinding>();
-multiBinding->AddBinding(std::make_shared<Binding>("IsLoggedIn"));
-multiBinding->AddBinding(std::make_shared<Binding>("HasPermission"));
-multiBinding->AddBinding(std::make_shared<Binding>("IsEnabled"));
-multiBinding->SetConverter(std::make_shared<VisibilityConverter>());
+std::cout << "激活前: " << expr->IsActive() << std::endl;  // false
 
-// 只有三个条件都满足时才显示按钮
-auto button = std::make_shared<Button>();
-multiBinding->CreateExpression(button, UIElement::VisibilityProperty);
+expr->Activate();
+std::cout << "激活后: " << expr->IsActive() << std::endl;  // true
+
+// 获取配置信息
+const auto& def = expr->Definition();
+std::cout << "子绑定数量: " << def.GetBindings().size() << std::endl;
+
+expr->Detach();
+std::cout << "分离后: " << expr->IsActive() << std::endl;  // false
 ```
+
+---
+
+## 私有方法
+
+### EnsureTargetAlive
+
+```cpp
+void EnsureTargetAlive() const;
+```
+
+确保目标对象有效，如果 `target_` 为 `nullptr` 则抛出异常。
+
+### InitializeEffectiveSettings
+
+```cpp
+void InitializeEffectiveSettings();
+```
+
+根据 `MultiBinding` 配置和属性元数据计算有效的绑定模式和更新触发器。
+
+### SubscribeToChildren
+
+```cpp
+void SubscribeToChildren();
+```
+
+订阅所有子绑定源的 `PropertyChanged` 事件。
+
+### UnsubscribeFromChildren
+
+```cpp
+void UnsubscribeFromChildren();
+```
+
+断开所有子绑定的事件订阅。
+
+### OnChildBindingUpdated
+
+```cpp
+void OnChildBindingUpdated();
+```
+
+子绑定源变更时的回调，触发 `UpdateTarget()`。
+
+### ApplyTargetValue
+
+```cpp
+void ApplyTargetValue(std::any value);
+```
+
+将值应用到目标属性，使用 `ScopedFlag` 防止递归更新。
+
+### CollectSourceValues
+
+```cpp
+std::vector<std::any> CollectSourceValues() const;
+```
+
+从所有子绑定收集当前源值。
+
+---
+
+## 私有成员
+
+| 成员 | 类型 | 描述 |
+|------|------|------|
+| `definition_` | `MultiBinding` | 多绑定配置 |
+| `target_` | `DependencyObject*` | 绑定目标对象 |
+| `property_` | `const DependencyProperty*` | 目标属性 |
+| `isActive_` | `bool` | 是否已激活 |
+| `isUpdatingTarget_` | `bool` | 是否正在更新目标（防止递归） |
+| `effectiveMode_` | `BindingMode` | 实际生效的绑定模式 |
+| `effectiveUpdateSourceTrigger_` | `UpdateSourceTrigger` | 实际生效的更新触发器 |
+| `childExpressions_` | `std::vector<std::shared_ptr<BindingExpression>>` | 子绑定表达式列表 |
+| `childConnections_` | `std::vector<Connection>` | 子绑定事件连接列表 |
+
+---
 
 ## 性能考虑
 
-1. **延迟更新**：聚合多个源的更新，避免过多的中间更新
-2. **缓存策略**：缓存转换结果，避免重复计算
-3. **智能失效**：只在必要时重新计算值
-4. **内存管理**：正确管理子表达式的生命周期
+1. **批量更新**：当多个源同时变更时，考虑使用去抖动或批量更新策略
+2. **转换器缓存**：复杂转换器可以实现结果缓存
+3. **弱引用**：使用 `weak_from_this()` 防止循环引用
+4. **递归保护**：`isUpdatingTarget_` 标志防止递归更新
 
-## 最佳实践
-
-1. **转换器设计**：转换器应该是无状态的纯函数
-2. **错误处理**：处理源值缺失或类型不匹配的情况
-3. **性能优化**：对于复杂计算，考虑使用缓存
-4. **调试支持**：提供清晰的错误信息和状态跟踪
+---
 
 ## 相关类
 
-- `MultiBinding` - 多源绑定配置
-- `BindingExpression` - 单源绑定表达式
-- `IMultiValueConverter` - 多值转换器接口
-- `BindingExpressionBase` - 绑定表达式基类
+- [MultiBinding](MultiBinding.md) - 多绑定配置类
+- [IMultiValueConverter](MultiBinding.md#imultivalueconverter) - 多值转换器接口
+- [BindingExpression](BindingExpression.md) - 单一绑定表达式
+- [DependencyObject](DependencyObject.md) - 绑定目标基类
 
 ## 另请参阅
 
-- [MultiBinding](MultiBinding.md) - 多源绑定配置
-- [BindingExpression](BindingExpression.md) - 单源绑定表达式
-- [ValueConverters](ValueConverters.md) - 值转换器
-- [Binding](Binding.md) - 数据绑定
+- [数据绑定概述](../BINDING_MODULE_OVERVIEW.md)
+- [入门指南](../../Guides/GettingStarted.md)
