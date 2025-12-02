@@ -33,6 +33,14 @@ public:
     const DependencyProperty* GetToBinding() const { return toBindingProperty_; }
     bool HasToBinding() const { return toBindingProperty_ != nullptr; }
     
+    // 设置/获取已解析的 ToBinding 原始值（避免被动画修改后的 Brush 影响）
+    void SetResolvedToValue(const Color& value) { resolvedToValue_ = value; hasResolvedToValue_ = true; }
+    Color GetResolvedToValue() const { return resolvedToValue_; }
+    bool HasResolvedToValue() const { return hasResolvedToValue_; }
+    
+    // 清除已解析的值（用于在动画开始时重新解析）
+    void ClearResolvedToValue() { hasResolvedToValue_ = false; }
+    
     // 重写 Begin() 以在动画开始时捕获初始值
     void Begin() override;
 
@@ -55,6 +63,10 @@ private:
     
     // To 值绑定（从 TemplatedParent 的属性获取）
     const DependencyProperty* toBindingProperty_{nullptr};
+    
+    // 已解析的 ToBinding 原始值
+    Color resolvedToValue_;
+    bool hasResolvedToValue_{false};
 };
 
 } // namespace fk::animation

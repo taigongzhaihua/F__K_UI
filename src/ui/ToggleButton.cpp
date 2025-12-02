@@ -304,6 +304,14 @@ namespace fk::ui
     
     void ToggleButton::UpdateCheckVisualState(bool useTransitions)
     {
+        // 检查是否已经初始化了视觉状态，避免在模板应用前调用
+        auto* manager = animation::VisualStateManager::GetVisualStateManager(this);
+        if (!manager || manager->GetStateGroups().empty())
+        {
+            // 视觉状态还没有初始化，稍后在 OnTemplateApplied 中会处理
+            return;
+        }
+        
         auto checked = GetIsChecked();
 
         std::string targetState;

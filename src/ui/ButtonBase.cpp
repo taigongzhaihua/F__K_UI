@@ -189,14 +189,23 @@ namespace fk::ui
             return false;
         }
 
+        // 检查是否已经有 VisualStateManager，避免重复初始化
+        auto* existingManager = animation::VisualStateManager::GetVisualStateManager(this);
+        if (existingManager && existingManager->GetStateGroups().size() > 0)
+        {
+            // 已经初始化过了，直接返回 true
+            return true;
+        }
+
         auto manager = std::make_shared<animation::VisualStateManager>();
         animation::VisualStateManager::SetVisualStateManager(this, manager);
 
+        // 克隆每个 VisualStateGroup，避免多个控件共享同一个实例
         for (const auto &group : tmpl->GetVisualStateGroups())
         {
             if (group)
             {
-                manager->AddStateGroup(group);
+                manager->AddStateGroup(group->Clone());
             }
         }
 

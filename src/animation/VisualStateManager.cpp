@@ -26,7 +26,7 @@ void VisualStateManager::SetVisualStateManager(binding::DependencyObject* obj,
     }
 }
 
-bool VisualStateManager::GoToState(binding::DependencyObject* obj, 
+bool VisualStateManager::GoToState(binding::DependencyObject* obj,
                                    const std::string& stateName, 
                                    bool useTransitions) {
     if (!obj || stateName.empty()) return false;
@@ -35,19 +35,15 @@ bool VisualStateManager::GoToState(binding::DependencyObject* obj,
     auto manager = GetVisualStateManager(obj);
     
     if (!manager) {
-        // 如果没有管理器，创建一个默认的
-        auto newManager = std::make_shared<VisualStateManager>();
-        SetVisualStateManager(obj, newManager);
-        manager = newManager.get();
+        // 如果没有管理器，说明视觉状态还没初始化，返回 false
+        return false;
     }
     
     // 查找包含目标状态的组
     auto group = manager->FindGroupContainingState(stateName);
     if (!group) {
         return false;
-    }
-    
-    // 查找目标状态
+    }    // 查找目标状态
     auto toState = group->FindState(stateName);
     if (!toState) {
         return false;

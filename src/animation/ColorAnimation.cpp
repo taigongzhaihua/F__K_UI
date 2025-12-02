@@ -1,4 +1,5 @@
 #include "fk/animation/ColorAnimation.h"
+#include "fk/ui/Brush.h"
 #include <algorithm>
 #include <iostream>
 
@@ -24,9 +25,18 @@ std::shared_ptr<ColorAnimation> ColorAnimation::Clone() const {
         clone->hasExplicitFrom_ = true;
     }
     
-    clone->SetTo(GetTo());
+    // 只在显式设置了To值时才复制，避免覆盖ToBinding
+    if (HasTo()) {
+        clone->SetTo(GetTo());
+    }
     clone->SetDuration(GetDuration());
     clone->SetToBinding(toBindingProperty_);
+    
+    // 复制已解析的 ToBinding 原始值
+    if (hasResolvedToValue_) {
+        clone->SetResolvedToValue(resolvedToValue_);
+    }
+    
     // 注意：不复制 target_ 和 targetProperty_，因为这些需要在 ResolveVisualStateTargets 中重新绑定
     return clone;
 }
@@ -92,8 +102,19 @@ void ColorAnimation::UpdateCurrentValue(double progress) {
         hasInitialValue_ = true;
     }
 
+    // 获取目标颜色
+    Color toColor;
+    
+    // 使用在 ResolveVisualStateTargets 阶段保存的原始颜色值
+    // 不要动态查询，因为 TemplateBinding 共享的 Brush 颜色可能已被污染
+    if (hasResolvedToValue_) {
+        toColor = resolvedToValue_;
+    } else {
+        toColor = GetTo();
+    }
+
     // 计算当前值
-    Color currentValue = GetCurrentValue(initialValue_, GetTo(), progress);
+    Color currentValue = GetCurrentValue(initialValue_, toColor, progress);
     
     // 应用到目标属性
     target_->SetValue(*targetProperty_, currentValue);

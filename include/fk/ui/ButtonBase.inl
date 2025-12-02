@@ -294,17 +294,23 @@ void ButtonBase<Derived>::ResolveVisualStateTargets()
                             {
                                 colorAnim->SetTarget(brush, &SolidColorBrush::ColorProperty());
 
-                                if (colorAnim->HasToBinding())
+                                if (colorAnim->HasToBinding() && !colorAnim->HasResolvedToValue())
                                 {
+                                    // 只有在没有保存过原始颜色时才保存
+                                    // 这样可以防止动画修改 Brush 后污染原始值
                                     auto *bindingProperty = colorAnim->GetToBinding();
                                     auto value = this->GetValue(*bindingProperty);
                                     if (value.has_value())
                                     {
-                                        auto *brush = std::any_cast<Brush *>(value);
-                                        auto *solidBrush = dynamic_cast<SolidColorBrush *>(brush);
+                                        auto *targetBrush = std::any_cast<Brush *>(value);
+                                        auto *solidBrush = dynamic_cast<SolidColorBrush *>(targetBrush);
                                         if (solidBrush)
                                         {
-                                            colorAnim->SetTo(solidBrush->GetColor());
+                                            // 关键修复：在动画运行前保存原始颜色值！
+                                            // 因为 TemplateBinding 使 Brush 被共享，动画修改 Brush.Color 会污染原值
+                                            // 所以必须在这里（动画还没运行时）保存原始颜色
+                                            auto originalColor = solidBrush->GetColor();
+                                            colorAnim->SetResolvedToValue(originalColor);
                                         }
                                     }
                                 }
@@ -325,21 +331,6 @@ void ButtonBase<Derived>::ResolveVisualStateTargets()
                             if (colorAnim)
                             {
                                 colorAnim->SetTarget(solidBrush, &SolidColorBrush::ColorProperty());
-
-                                if (colorAnim->HasToBinding())
-                                {
-                                    auto *bindingProperty = colorAnim->GetToBinding();
-                                    auto value = this->GetValue(*bindingProperty);
-                                    if (value.has_value())
-                                    {
-                                        auto *brush = std::any_cast<Brush *>(value);
-                                        auto *solidBrush = dynamic_cast<SolidColorBrush *>(brush);
-                                        if (solidBrush)
-                                        {
-                                            colorAnim->SetTo(solidBrush->GetColor());
-                                        }
-                                    }
-                                }
                             }
                         }
                     }

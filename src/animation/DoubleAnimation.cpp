@@ -22,7 +22,10 @@ std::shared_ptr<DoubleAnimation> DoubleAnimation::Clone() const {
         clone->hasExplicitFrom_ = true;
     }
     
-    clone->SetTo(GetTo());
+    // 只在显式设置了To值时才复制
+    if (HasTo()) {
+        clone->SetTo(GetTo());
+    }
     clone->SetDuration(GetDuration());
     // 注意：不复制 target_ 和 targetProperty_，因为这些需要在 ResolveVisualStateTargets 中重新绑定
     return clone;
