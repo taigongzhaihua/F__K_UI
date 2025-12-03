@@ -104,6 +104,10 @@ protected:
     /// 解析视觉状态中的TargetName并设置实际的动画目标
     void ResolveVisualStateTargets();
 
+protected:
+    /// 设置按下状态（供派生类使用）
+    void SetPressed(bool pressed) { isPressed_ = pressed; pressedButton_ = pressed ? pressedButton_ : MouseButton::None; }
+
 private:
     bool isPressed_;
     MouseButton pressedButton_;

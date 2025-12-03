@@ -92,6 +92,7 @@ protected:
     // ========== 事件处理重写 ==========
     
     void OnPointerPressed(PointerEventArgs& e) override;
+    void OnPointerMoved(PointerEventArgs& e) override;
     void OnPointerReleased(PointerEventArgs& e) override;
     void OnPointerExited(PointerEventArgs& e) override;
     
@@ -117,6 +118,14 @@ private:
     
     std::atomic<bool> isRepeating_{false};        ///< 是否正在重复触发中
     std::atomic<bool> shouldStop_{false};         ///< 是否应该停止（用于线程同步）
+    
+    // ========== 鼠标位置追踪 ==========
+    
+    Point lastPointerPosition_;                   ///< 最后的鼠标位置（本地坐标）
+    std::atomic<bool> isPointerInBounds_{false};  ///< 鼠标是否在按钮范围内
+    
+    /// 检查鼠标是否在按钮范围内
+    bool IsPointerInBounds() const;
 };
 
 } // namespace fk::ui

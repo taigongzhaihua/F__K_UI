@@ -143,6 +143,12 @@ void RepeatButton::OnPointerPressed(PointerEventArgs& e) {
         return;
     }
     
+    // 保存鼠标在窗口中的位置（不转换为本地坐标）
+    // 因为按钮会移动（如 Track 中的 DecreaseButton），需要每次检查时重新计算
+    lastPointerPosition_ = e.position;
+    
+    isPointerInBounds_.store(true);
+    
     // 立即触发一次点击
     Click();
     
@@ -150,19 +156,39 @@ void RepeatButton::OnPointerPressed(PointerEventArgs& e) {
     StartRepeat();
 }
 
+void RepeatButton::OnPointerMoved(PointerEventArgs& e) {
+    ButtonBase<RepeatButton>::OnPointerMoved(e);
+    
+    // 注意：不更新 lastPointerPosition_
+    // 我们只关心按下时的位置，如果按钮缩小后不再包含那个位置，就停止
+    // 如果更新坐标，会导致鼠标稍微移动就可能超出缩小后的按钮范围
+}
+
 void RepeatButton::OnPointerReleased(PointerEventArgs& e) {
     // 停止重复
     StopRepeat();
     
-    // 调用基类处理（但不再触发 Click，因为我们已经在重复中触发了）
-    // 注意：直接调用 ContentControl 的处理，跳过 ButtonBase 的 Click 触发
+    // 调用 ContentControl 的处理（跳过 ButtonBase，避免再次触发 Click）
     ContentControl<RepeatButton>::OnPointerReleased(e);
     
-    // 更新视觉状态
+    if (!GetIsEnabled()) {
+        SetPressed(false);
+        return;
+    }
+    
+    // 重置按下状态
+    SetPressed(false);
+    
+    // 更新视觉状态（会根据 IsMouseOver 切换到 MouseOver 或 Normal）
     UpdateVisualState(true);
+    
+    e.handled = true;
 }
 
 void RepeatButton::OnPointerExited(PointerEventArgs& e) {
+    // 标记鼠标已离开
+    isPointerInBounds_.store(false);
+    
     // 当鼠标离开按钮时，停止重复
     StopRepeat();
     
@@ -204,6 +230,12 @@ void RepeatButton::StartRepeat() {
         
         // 开始重复触发
         while (!shouldStop_.load()) {
+            // 每次循环都重新检查鼠标是否在按钮范围内
+            // 这处理了按钮缩小后鼠标不在范围内的情况（鼠标没动，但按钮变小了）
+            if (!IsPointerInBounds()) {
+                return;
+            }
+            
             // 触发点击
             if (!shouldStop_.load()) {
                 Click();
@@ -220,6 +252,28 @@ void RepeatButton::StartRepeat() {
             }
         }
     });
+}
+
+bool RepeatButton::IsPointerInBounds() const {
+    // 计算按钮当前在窗口中的全局位置
+    // 按钮可能会移动（如 Track 中的 DecreaseButton/IncreaseButton）
+    Point globalOffset(0, 0);
+    const UIElement* current = this;
+    while (current) {
+        Rect rect = current->GetLayoutRect();
+        globalOffset.x += rect.x;
+        globalOffset.y += rect.y;
+        
+        const Visual* parent = current->GetVisualParent();
+        current = dynamic_cast<const UIElement*>(parent);
+    }
+    
+    // 计算按钮在窗口中的边界
+    Size renderSize = GetRenderSize();
+    Rect bounds(globalOffset.x, globalOffset.y, renderSize.width, renderSize.height);
+    
+    // 检查保存的鼠标窗口坐标是否在按钮当前的窗口边界内
+    return bounds.Contains(lastPointerPosition_);
 }
 
 void RepeatButton::StopRepeat() {
