@@ -2,17 +2,22 @@
 
 /**
  * @file Styling
- * @brief F__K UI Framework - 样式和模板模块
+ * @brief F__K UI Framework - 样式和模板模块（完整）
  * 
- * 包含样式、模板和主题
+ * 包含样式、模板和主题。
+ * 
+ * 如需更精细的控制，可以只包含所需的子模块：
+ * - fk/ui/Styles      样式（Style, Setter）
+ * - fk/ui/Templates   模板（ControlTemplate, DataTemplate）
+ * - fk/ui/Primitives  基础类型（Thickness, CornerRadius等）
  */
 
-#include "fk/ui/Style.h"
-#include "fk/ui/Setter.h"
-#include "fk/ui/ControlTemplate.h"
-#include "fk/ui/DataTemplate.h"
-#include "fk/ui/FrameworkTemplate.h"
-#include "fk/ui/ContentPresenter.h"
+// 子模块
+#include "fk/ui/Styles"
+#include "fk/ui/Templates"
+#include "fk/ui/Primitives"
+
+// 资源和主题
 #include "fk/resources/ResourceDictionary.h"
 #include "fk/resources/Theme.h"
 #include "fk/resources/ThemeManager.h"

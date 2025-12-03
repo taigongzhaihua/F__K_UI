@@ -1,0 +1,15 @@
+#pragma once
+
+/**
+ * @file Shapes
+ * @brief F__K UI Framework - 图形形状模块
+ * 
+ * 包含 2D 图形形状：
+ * - Shape: 形状基类
+ * - Primitives: 基本图形（Rectangle, Ellipse, Line, Polygon, Path等）
+ * - PointCollection: 点集合
+ */
+
+#include "fk/ui/graphics/Shape.h"
+#include "fk/ui/graphics/Primitives.h"
+#include "fk/ui/graphics/PointCollection.h"

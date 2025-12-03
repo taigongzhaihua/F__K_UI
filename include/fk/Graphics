@@ -2,15 +2,19 @@
 
 /**
  * @file Graphics
- * @brief F__K UI Framework - 图形绘制模块
+ * @brief F__K UI Framework - 图形绘制模块（完整）
  * 
- * 包含图形绘制相关类型
+ * 包含所有图形绘制相关类型。
+ * 
+ * 如需更精细的控制，可以只包含所需的子模块：
+ * - fk/ui/Shapes      形状（Shape, Primitives）
+ * - fk/ui/Brushes     画刷
+ * - fk/ui/Transforms  变换
+ * - fk/ui/Primitives  基础类型（Thickness, CornerRadius等）
  */
 
-#include "fk/ui/Shape.h"
-#include "fk/ui/Brush.h"
-#include "fk/ui/Primitives.h"
-#include "fk/ui/Thickness.h"
-#include "fk/ui/CornerRadius.h"
-#include "fk/ui/Transform.h"
-#include "fk/ui/PointCollection.h"
+// 子模块
+#include "fk/ui/Shapes"
+#include "fk/ui/Brushes"
+#include "fk/ui/Transforms"
+#include "fk/ui/Primitives"

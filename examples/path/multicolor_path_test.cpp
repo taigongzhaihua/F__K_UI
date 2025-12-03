@@ -4,10 +4,10 @@
  */
 
 #include "fk/app/Application.h"
-#include "fk/ui/StackPanel.h"
-#include "fk/ui/TextBlock.h"
-#include "fk/ui/Shape.h"
-#include "fk/ui/Brush.h"
+#include "fk/ui/layouts/StackPanel.h"
+#include "fk/ui/text/TextBlock.h"
+#include "fk/ui/graphics/Shape.h"
+#include "fk/ui/graphics/Brush.h"
 #include <iostream>
 
 using namespace fk;

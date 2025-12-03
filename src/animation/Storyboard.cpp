@@ -1,11 +1,11 @@
 #include "fk/animation/Storyboard.h"
 #include "fk/animation/ColorAnimation.h"
 #include "fk/animation/DoubleAnimation.h"
-#include "fk/ui/UIElement.h"
-#include "fk/ui/Control.h"
-#include "fk/ui/ControlTemplate.h"
-#include "fk/ui/Brush.h"
-#include "fk/ui/Border.h"
+#include "fk/ui/base/UIElement.h"
+#include "fk/ui/controls/Control.h"
+#include "fk/ui/styling/ControlTemplate.h"
+#include "fk/ui/graphics/Brush.h"
+#include "fk/ui/controls/Border.h"
 #include <algorithm>
 #include <sstream>
 
@@ -56,7 +56,7 @@ void Storyboard::ClearChildren() {
 void Storyboard::Begin() {
     Timeline::Begin();
     
-    // 在启动子动画前，先解析所有使用TargetName的动画
+    // 在启动子动画前，先解析所有使用TargetName的动�?
     auto templateRoot = GetTemplateRoot(this);
     
     if (templateRoot) {
@@ -68,13 +68,13 @@ void Storyboard::Begin() {
             std::string propertyPath = GetTargetProperty(child.get());
             
             if (!targetName.empty() && !propertyPath.empty()) {
-                // 尝试将 templateRoot 转换为 UIElement
+                // 尝试�?templateRoot 转换�?UIElement
                 ui::UIElement* rootElement = dynamic_cast<ui::UIElement*>(templateRoot);
                 if (rootElement) {
-                    // 在模板树中查找命名元素
+                    // 在模板树中查找命名元�?
                     ui::UIElement* targetElement = rootElement->FindName(targetName);
                     if (targetElement) {
-                        // 解析属性路径（例如 "BorderBrush.Color"）
+                        // 解析属性路径（例如 "BorderBrush.Color"�?
                         ResolvePropertyPath(child.get(), targetElement, propertyPath);
                     }
                 }
@@ -126,7 +126,7 @@ void Storyboard::Resume() {
 void Storyboard::Seek(std::chrono::milliseconds offset) {
     Timeline::Seek(offset);
     
-    // 移动所有子动画到指定时间
+    // 移动所有子动画到指定时�?
     for (auto& child : children_) {
         if (child) {
             child->Seek(offset);
@@ -135,8 +135,8 @@ void Storyboard::Seek(std::chrono::milliseconds offset) {
 }
 
 void Storyboard::SkipToFill() {
-    // 直接将所有子动画跳到最终状态
-    // 先解析TargetName（与Begin()中的逻辑相同）
+    // 直接将所有子动画跳到最终状�?
+    // 先解析TargetName（与Begin()中的逻辑相同�?
     auto templateRoot = GetTemplateRoot(this);
     
     if (templateRoot) {
@@ -158,12 +158,12 @@ void Storyboard::SkipToFill() {
         }
     }
     
-    // 启动动画并立即跳到最后
+    // 启动动画并立即跳到最�?
     // 动画在下一帧Update时会发现已完成并自动停止
     for (auto& child : children_) {
         if (child) {
             child->Begin();
-            // 获取动画的总时长并跳到最后
+            // 获取动画的总时长并跳到最�?
             Duration duration = child->GetDuration();
             if (duration.HasTimeSpan()) {
                 child->Seek(duration.timeSpan);
@@ -196,7 +196,7 @@ void Storyboard::UpdateCurrentValue(double progress) {
     // 这里可以添加整体进度的监控逻辑
 }
 
-// 附加属性实现
+// 附加属性实�?
 void Storyboard::SetTarget(Timeline* timeline, binding::DependencyObject* target) {
     if (timeline) {
         targetMap_[timeline] = target;
@@ -211,7 +211,7 @@ void Storyboard::SetTarget(Timeline* timeline, binding::DependencyObject* target
     // 设置目标对象
     targetMap_[timeline] = target;
     
-    // 尝试将 timeline 转换为具体的动画类型并设置目标
+    // 尝试�?timeline 转换为具体的动画类型并设置目�?
     if (auto* colorAnim = dynamic_cast<ColorAnimation*>(timeline)) {
         colorAnim->SetTarget(target, property);
     } else if (auto* doubleAnim = dynamic_cast<DoubleAnimation*>(timeline)) {
@@ -273,10 +273,10 @@ void Storyboard::ResolvePropertyPath(Timeline* timeline, ui::UIElement* targetEl
         return;
     }
     
-    // 检查是否是嵌套属性路径（例如 "BorderBrush.Color"）
+    // 检查是否是嵌套属性路径（例如 "BorderBrush.Color"�?
     size_t dotPos = propertyPath.find('.');
     if (dotPos == std::string::npos) {
-        // 简单属性路径，处理常见属性
+        // 简单属性路径，处理常见属�?
         if (propertyPath == "Opacity") {
             auto *doubleAnim = dynamic_cast<DoubleAnimation *>(timeline);
             if (doubleAnim) {
@@ -313,7 +313,7 @@ void Storyboard::ResolvePropertyPath(Timeline* timeline, ui::UIElement* targetEl
     std::string objectPropertyName = propertyPath.substr(0, dotPos);
     std::string subPropertyName = propertyPath.substr(dotPos + 1);
     
-    // 获取中间对象的 DependencyProperty
+    // 获取中间对象�?DependencyProperty
     auto objectProperty = targetElement->FindProperty(objectPropertyName);
     if (!objectProperty) {
         return;
@@ -322,19 +322,19 @@ void Storyboard::ResolvePropertyPath(Timeline* timeline, ui::UIElement* targetEl
     try {
         auto objectValue = targetElement->GetValue(*objectProperty);
         
-        // 检查是否有值
+        // 检查是否有�?
         if (!objectValue.has_value()) {
             return;
         }
         
-        // 尝试获取 DependencyObject 指针（Brush 继承自 DependencyObject）
+        // 尝试获取 DependencyObject 指针（Brush 继承�?DependencyObject�?
         binding::DependencyObject* subObject = nullptr;
         if (objectValue.type() == typeid(ui::Brush*)) {
             subObject = std::any_cast<ui::Brush*>(objectValue);
         }
         
         if (subObject) {
-            // 在子对象上查找子属性（例如 "Color"）
+            // 在子对象上查找子属性（例如 "Color"�?
             auto subProperty = subObject->FindProperty(subPropertyName);
             if (subProperty) {
                 SetTarget(timeline, subObject, subProperty);
@@ -349,18 +349,18 @@ std::shared_ptr<Storyboard> Storyboard::Clone() const {
     auto clone = std::make_shared<Storyboard>();
     clone->SetDuration(GetDuration());
     
-    // 克隆子动画
+    // 克隆子动�?
     for (const auto& child : children_) {
         if (!child) continue;
         
-        // 获取原始动画的 TargetName 和 TargetProperty
+        // 获取原始动画�?TargetName �?TargetProperty
         std::string targetName = GetTargetName(child.get());
         std::string targetProperty = GetTargetProperty(child.get());
         
-        // 尝试克隆不同类型的动画
+        // 尝试克隆不同类型的动�?
         if (auto* colorAnim = dynamic_cast<ColorAnimation*>(child.get())) {
             auto clonedChild = colorAnim->Clone();
-            // 复制附加属性
+            // 复制附加属�?
             if (!targetName.empty()) {
                 SetTargetName(clonedChild.get(), targetName);
             }
@@ -371,7 +371,7 @@ std::shared_ptr<Storyboard> Storyboard::Clone() const {
         }
         else if (auto* doubleAnim = dynamic_cast<DoubleAnimation*>(child.get())) {
             auto clonedChild = doubleAnim->Clone();
-            // 复制附加属性
+            // 复制附加属�?
             if (!targetName.empty()) {
                 SetTargetName(clonedChild.get(), targetName);
             }

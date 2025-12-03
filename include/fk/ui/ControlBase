@@ -1,0 +1,21 @@
+#pragma once
+
+/**
+ * @file ControlBase
+ * @brief F__K UI Framework - 控件基类模块
+ * 
+ * 包含控件基础架构：
+ * - Control: 控件基类（CRTP模板）
+ * - ContentControl: 内容控件基类
+ * - ContentPresenter: 内容呈现器
+ * - ItemsControl: 项目控件基类
+ * - ItemContainerGenerator: 项目容器生成器
+ * - ControlFactory: 控件工厂
+ */
+
+#include "fk/ui/controls/Control.h"
+#include "fk/ui/controls/ContentControl.h"
+#include "fk/ui/controls/ContentPresenter.h"
+#include "fk/ui/controls/ItemsControl.h"
+#include "fk/ui/controls/ItemContainerGenerator.h"
+#include "fk/ui/controls/ControlFactory.h"

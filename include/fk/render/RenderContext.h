@@ -1,7 +1,7 @@
 #pragma once
 
-#include "fk/ui/Primitives.h"
-#include "fk/ui/TextEnums.h"
+#include "fk/ui/graphics/Primitives.h"
+#include "fk/ui/text/TextEnums.h"
 #include "fk/render/RenderCommand.h"
 #include <vector>
 #include <stack>
@@ -14,7 +14,7 @@ class RenderList;
 class TextRenderer;
 
 /**
- * @brief 变换状态
+ * @brief 变换状�?
  */
 struct TransformState {
     float offsetX{0.0f};
@@ -23,7 +23,7 @@ struct TransformState {
 };
 
 /**
- * @brief 裁剪状态
+ * @brief 裁剪状�?
  */
 struct ClipState {
     ui::Rect clipRect;
@@ -31,29 +31,29 @@ struct ClipState {
 };
 
 /**
- * @brief 图层状态
+ * @brief 图层状�?
  */
 struct LayerState {
     float opacity{1.0f};
 };
 
 /**
- * @brief 渲染上下文
+ * @brief 渲染上下�?
  * 
- * 职责：
+ * 职责�?
  * - 提供高层绘制 API
  * - 管理变换栈、裁剪栈、图层栈
- * - 自动处理坐标变换和裁剪
- * - 生成 RenderCommand 到 RenderList
+ * - 自动处理坐标变换和裁�?
+ * - 生成 RenderCommand �?RenderList
  * 
- * Phase 5.0 核心类
+ * Phase 5.0 核心�?
  */
 class RenderContext {
 public:
     /**
      * @brief 构造渲染上下文
      * @param renderList 渲染命令列表（必须有效）
-     * @param textRenderer 文本渲染器（可选，用于文本度量）
+     * @param textRenderer 文本渲染器（可选，用于文本度量�?
      */
     RenderContext(RenderList* renderList, TextRenderer* textRenderer = nullptr);
     
@@ -79,7 +79,7 @@ public:
     TransformState GetCurrentTransform() const;
     
     /**
-     * @brief 变换点坐标
+     * @brief 变换点坐�?
      */
     ui::Point TransformPoint(const ui::Point& point) const;
     
@@ -102,21 +102,21 @@ public:
     void PopClip();
     
     /**
-     * @brief 获取当前裁剪区域（全局坐标）
+     * @brief 获取当前裁剪区域（全局坐标�?
      */
     ui::Rect GetCurrentClip() const;
     
     /**
-     * @brief 判断矩形是否被完全裁剪
+     * @brief 判断矩形是否被完全裁�?
      * @param rect 矩形（局部坐标）
-     * @return true=完全被裁剪，false=部分或完全可见
+     * @return true=完全被裁剪，false=部分或完全可�?
      */
     bool IsClipped(const ui::Rect& rect) const;
     
     /**
-     * @brief 判断矩形是否被完全裁剪（IsClipped的别名，更清晰的命名）
+     * @brief 判断矩形是否被完全裁剪（IsClipped的别名，更清晰的命名�?
      * @param rect 矩形（局部坐标）
-     * @return true=完全被裁剪，false=部分或完全可见
+     * @return true=完全被裁剪，false=部分或完全可�?
      */
     bool IsCompletelyClipped(const ui::Rect& rect) const {
         return IsClipped(rect);
@@ -125,25 +125,25 @@ public:
     // ========== 图层管理 ==========
     
     /**
-     * @brief 推入透明度图层
-     * @param opacity 透明度 (0.0-1.0)
+     * @brief 推入透明度图�?
+     * @param opacity 透明�?(0.0-1.0)
      */
     void PushLayer(float opacity);
     
     /**
-     * @brief 弹出透明度图层
+     * @brief 弹出透明度图�?
      */
     void PopLayer();
     
     /**
-     * @brief 获取当前累积透明度
+     * @brief 获取当前累积透明�?
      */
     float GetCurrentOpacity() const;
 
     // ========== 绘制 API ==========
     
     /**
-     * @brief 绘制边框（Border 控件专用）
+     * @brief 绘制边框（Border 控件专用�?
      * @param rect 矩形区域（局部坐标）
      * @param fillColor 填充颜色
      * @param strokeColor 描边颜色
@@ -152,7 +152,7 @@ public:
      * @param cornerRadiusTopRight 右上圆角半径
      * @param cornerRadiusBottomRight 右下圆角半径
      * @param cornerRadiusBottomLeft 左下圆角半径
-     * @note 四个角可以有不同的圆角半径
+     * @note 四个角可以有不同的圆角半�?
      */
     void DrawBorder(
         const ui::Rect& rect,
@@ -168,14 +168,14 @@ public:
     );
     
     /**
-     * @brief 绘制矩形（Rectangle Shape 专用）
+     * @brief 绘制矩形（Rectangle Shape 专用�?
      * @param rect 矩形区域（局部坐标）
      * @param fillColor 填充颜色
      * @param strokeColor 描边颜色
      * @param strokeWidth 描边宽度
-     * @param radiusX 圆角水平半径（应用到所有四个角）
-     * @param radiusY 圆角垂直半径（应用到所有四个角）
-     * @note radiusX 和 radiusY 用于创建椭圆形圆角，四个角共享相同的半径值
+     * @param radiusX 圆角水平半径（应用到所有四个角�?
+     * @param radiusY 圆角垂直半径（应用到所有四个角�?
+     * @note radiusX �?radiusY 用于创建椭圆形圆角，四个角共享相同的半径�?
      */
     void DrawRectangle(
         const ui::Rect& rect,
@@ -190,12 +190,12 @@ public:
     
     /**
      * @brief 绘制文本
-     * @param bounds 文本边界矩形（局部坐标），用于裁剪
+     * @param bounds 文本边界矩形（局部坐标），用于裁�?
      * @param text 文本内容
      * @param color 文本颜色
      * @param fontSize 字体大小
-     * @param fontFamily 字体族
-     * @param maxWidth 最大宽度（用于自动换行，0 表示不限制）
+     * @param fontFamily 字体�?
+     * @param maxWidth 最大宽度（用于自动换行�? 表示不限制）
      * @param textWrapping 是否自动换行
      */
     void DrawText(
@@ -237,7 +237,7 @@ public:
     );
     
     /**
-     * @brief 绘制多边形
+     * @brief 绘制多边�?
      * @param points 顶点列表（局部坐标）
      * @param fillColor 填充颜色
      * @param strokeColor 描边颜色
@@ -252,7 +252,7 @@ public:
     
     /**
      * @brief 绘制路径
-     * @param segments 路径段列表
+     * @param segments 路径段列�?
      * @param fillColor 填充颜色
      * @param strokeColor 描边颜色
      * @param strokeWidth 描边宽度
@@ -268,7 +268,7 @@ public:
      * @brief 绘制图像
      * @param bounds 目标矩形（局部坐标）
      * @param textureId 纹理 ID
-     * @param tint 着色（默认白色）
+     * @param tint 着色（默认白色�?
      */
     void DrawImage(
         const ui::Rect& bounds,
@@ -282,8 +282,8 @@ public:
      * @brief 测量文本尺寸
      * @param text 文本内容
      * @param fontSize 字体大小
-     * @param fontFamily 字体族
-     * @return 文本尺寸（宽度和高度）
+     * @param fontFamily 字体�?
+     * @return 文本尺寸（宽度和高度�?
      */
     ui::Size MeasureText(
         const std::string& text,
@@ -292,18 +292,18 @@ public:
     );
     
     /**
-     * @brief 获取文本渲染器（用于高级度量）
+     * @brief 获取文本渲染器（用于高级度量�?
      */
     TextRenderer* GetTextRenderer() const { return textRenderer_; }
 
 private:
     /**
-     * @brief 应用当前变换到 RenderCommand
+     * @brief 应用当前变换�?RenderCommand
      */
     void ApplyCurrentTransform();
     
     /**
-     * @brief 应用当前裁剪到 RenderCommand
+     * @brief 应用当前裁剪�?RenderCommand
      */
     void ApplyCurrentClip();
     
@@ -314,7 +314,7 @@ private:
 
 private:
     RenderList* renderList_{nullptr};       // 渲染命令列表
-    TextRenderer* textRenderer_{nullptr};   // 文本渲染器
+    TextRenderer* textRenderer_{nullptr};   // 文本渲染�?
     
     // 状态栈
     std::stack<TransformState> transformStack_;

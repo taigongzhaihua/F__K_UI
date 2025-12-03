@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fk/ui/ContentControl.h"
+#include "fk/ui/controls/ContentControl.h"
 #include "fk/binding/DependencyProperty.h"
 #include <string>
 #include <memory>

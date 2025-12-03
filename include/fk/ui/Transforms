@@ -1,0 +1,16 @@
+#pragma once
+
+/**
+ * @file Transforms
+ * @brief F__K UI Framework - 变换模块
+ * 
+ * 包含 2D 变换类型：
+ * - Transform: 变换基类
+ * - TranslateTransform: 平移变换
+ * - ScaleTransform: 缩放变换
+ * - RotateTransform: 旋转变换
+ * - MatrixTransform: 矩阵变换
+ * - TransformGroup: 变换组
+ */
+
+#include "fk/ui/graphics/Transform.h"

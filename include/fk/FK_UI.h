@@ -34,9 +34,9 @@
 #include "fk/Application"
 
 // UI 基础架构
-#include "fk/ui/Visual.h"
-#include "fk/ui/UIElement.h"
-#include "fk/ui/FrameworkElement.h"
+#include "fk/ui/base/Visual.h"
+#include "fk/ui/base/UIElement.h"
+#include "fk/ui/base/FrameworkElement.h"
 
 // UI 模块
 #include "fk/Controls"

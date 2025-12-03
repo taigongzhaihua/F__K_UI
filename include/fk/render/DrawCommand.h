@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fk/ui/Primitives.h"
+#include "fk/ui/graphics/Primitives.h"
 #include <string>
 #include <vector>
 #include <functional>
@@ -27,11 +27,11 @@ enum class DrawCommandType {
     Line,           // 线条
     Text,           // 文本
     Image,          // 图像
-    Custom          // 自定义
+    Custom          // 自定�?
 };
 
 /**
- * @brief 颜色（RGBA）
+ * @brief 颜色（RGBA�?
  */
 struct Color {
     float r{0}, g{0}, b{0}, a{1};
@@ -44,7 +44,7 @@ struct Color {
         return Color(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
     }
     
-    // 转换为 ARGB 整数
+    // 转换�?ARGB 整数
     uint32_t ToArgb() const {
         return (static_cast<uint32_t>(a * 255) << 24) | 
                (static_cast<uint32_t>(r * 255) << 16) | 
@@ -78,34 +78,34 @@ struct Color {
 /**
  * @brief 绘制命令
  * 
- * 职责：
- * - 封装单个绘制操作的所有参数
+ * 职责�?
+ * - 封装单个绘制操作的所有参�?
  * - 支持多种绘制类型
  */
 class DrawCommand {
 public:
     DrawCommandType type;
     
-    // 几何属性
+    // 几何属�?
     Rect bounds;
     Point position;
     Size size;
-    float radius{0};          // 圆角半径或圆形半径
+    float radius{0};          // 圆角半径或圆形半�?
     float strokeWidth{1.0f};  // 线宽
     
-    // 颜色属性
+    // 颜色属�?
     Color fillColor{Color::Transparent()};
     Color strokeColor{Color::Black()};
     
-    // 文本属性
+    // 文本属�?
     std::string text;
     float fontSize{14.0f};
     
-    // 图像属性
+    // 图像属�?
     std::string imagePath;
     void* textureId{nullptr};
     
-    // 自定义绘制
+    // 自定义绘�?
     std::function<void()> customDraw;
     
     // 变换矩阵

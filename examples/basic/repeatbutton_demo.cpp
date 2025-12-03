@@ -7,12 +7,12 @@
 
 #include "fk/app/Application.h"
 #include "fk/ui/Window.h"
-#include "fk/ui/StackPanel.h"
-#include "fk/ui/RepeatButton.h"
-#include "fk/ui/ScrollBar.h"
-#include "fk/ui/TextBlock.h"
-#include "fk/ui/Border.h"
-#include "fk/ui/Brush.h"
+#include "fk/ui/layouts/StackPanel.h"
+#include "fk/ui/buttons/RepeatButton.h"
+#include "fk/ui/scrolling/ScrollBar.h"
+#include "fk/ui/text/TextBlock.h"
+#include "fk/ui/controls/Border.h"
+#include "fk/ui/graphics/Brush.h"
 #include <iostream>
 #include <memory>
 

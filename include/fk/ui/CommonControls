@@ -1,0 +1,15 @@
+#pragma once
+
+/**
+ * @file CommonControls
+ * @brief F__K UI Framework - 通用控件模块
+ * 
+ * 包含常用的通用控件：
+ * - Border: 边框控件
+ * - Image: 图像控件
+ * - Popup: 弹出控件
+ */
+
+#include "fk/ui/controls/Border.h"
+#include "fk/ui/controls/Image.h"
+#include "fk/ui/controls/Popup.h"

@@ -171,49 +171,75 @@ add_library(fk STATIC
     # resources 模块 (Phase 4.3)
     src/resources/ThemeManager.cpp
     
-    # ui 模块（新架构）
-    src/ui/Visual.cpp
-    src/ui/VisualCollection.cpp
-    src/ui/UIElement.cpp
-    src/ui/NameScope.cpp
-    src/ui/FrameworkElement.cpp
-    src/ui/Control.cpp
-    src/ui/ContentControl.cpp
-    src/ui/FrameworkTemplate.cpp
-    src/ui/ControlTemplate.cpp
-    src/ui/DataTemplate.cpp
-    src/ui/Setter.cpp
-    # src/ui/Style.cpp  # 头文件实现，不需要 cpp 文件
+    # ========== ui 模块（重组后的新架构）==========
+    
+    # ui/base - 基础架构
+    src/ui/base/Visual.cpp
+    src/ui/base/VisualCollection.cpp
+    src/ui/base/UIElement.cpp
+    src/ui/base/FrameworkElement.cpp
+    
+    # ui/controls - 控件基类和通用控件
+    src/ui/controls/Control.cpp
+    src/ui/controls/ContentControl.cpp
+    src/ui/controls/ContentPresenter.cpp
+    src/ui/controls/ItemsControl.cpp
+    src/ui/controls/ItemContainerGenerator.cpp
+    src/ui/controls/Border.cpp
+    src/ui/controls/Image.cpp
+    src/ui/controls/Popup.cpp
+    
+    # ui/buttons - 按钮系控件
+    src/ui/buttons/ButtonBase.cpp
+    src/ui/buttons/Button.cpp
+    src/ui/buttons/ToggleButton.cpp
+    src/ui/buttons/CheckBox.cpp
+    src/ui/buttons/RadioButton.cpp
+    src/ui/buttons/RepeatButton.cpp
+    
+    # ui/text - 文本控件
+    src/ui/text/TextBlock.cpp
+    # src/ui/text/TextBox.cpp       # 不完整的实现，暂时禁用
+    # src/ui/text/TextBoxBase.cpp   # 不完整的实现，暂时禁用
+    
+    # ui/lists - 列表控件
+    src/ui/lists/ListBox.cpp
+    src/ui/lists/ComboBox.cpp
+    
+    # ui/scrolling - 滚动相关
+    src/ui/scrolling/Thumb.cpp
+    src/ui/scrolling/Track.cpp
+    src/ui/scrolling/ScrollBar.cpp
+    src/ui/scrolling/ScrollContentPresenter.cpp
+    src/ui/scrolling/ScrollViewer.cpp
+    
+    # ui/layouts - 布局容器
+    src/ui/layouts/Panel.cpp
+    src/ui/layouts/StackPanel.cpp
+    src/ui/layouts/Grid.cpp
+    src/ui/layouts/GridCellAttacher.cpp
+    
+    # ui/graphics - 图形
+    src/ui/graphics/Shape.cpp
+    src/ui/graphics/Brush.cpp
+    src/ui/graphics/Transform.cpp
+    
+    # ui/styling - 样式和模板
+    src/ui/styling/Setter.cpp
+    src/ui/styling/FrameworkTemplate.cpp
+    src/ui/styling/ControlTemplate.cpp
+    src/ui/styling/DataTemplate.cpp
+    # src/ui/styling/Style.cpp  # 头文件实现，不需要 cpp 文件
+    
+    # ui/input - 输入管理
+    src/ui/input/InputManager.cpp
+    src/ui/input/FocusManager.cpp
+    src/ui/input/NameScope.cpp
+    
+    # ui - 窗口（特殊，放根目录）
     src/ui/Window.cpp
-    src/ui/TextBlock.cpp
-    src/ui/Border.cpp
-    src/ui/Image.cpp
-    src/ui/Transform.cpp
-    src/ui/InputManager.cpp
-    src/ui/FocusManager.cpp
-    src/ui/Panel.cpp
-    src/ui/ItemsControl.cpp
-    src/ui/ItemContainerGenerator.cpp
-    src/ui/Button.cpp
-    src/ui/ToggleButton.cpp
-    src/ui/CheckBox.cpp
-    src/ui/RadioButton.cpp
-    src/ui/StackPanel.cpp
-    src/ui/Grid.cpp
-    src/ui/GridCellAttacher.cpp
-    src/ui/Brush.cpp
-    src/ui/ContentPresenter.cpp
-    src/ui/Shape.cpp
-    src/ui/Thumb.cpp                # 可拖动滑块控件
-    src/ui/RepeatButton.cpp         # 重复按钮控件
-    src/ui/Track.cpp                # 轨道布局组件
-    src/ui/ScrollBar.cpp            # 滚动条控件
-    src/ui/ScrollContentPresenter.cpp  # 滚动内容展示器
-    src/ui/ScrollViewer.cpp         # 滚动视图控件
-    src/ui/ListBox.cpp
-    src/ui/Popup.cpp
-    src/ui/ComboBox.cpp
-    # 旧的 ui::Renderer 和 RenderBackend 已移除，使用 fk::render 模块
+    
+    # ========== ui 模块结束 ==========
     
     # render 模块（完整的生产级渲染系统）
     src/render/DrawCommand.cpp

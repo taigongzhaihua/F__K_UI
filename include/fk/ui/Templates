@@ -1,0 +1,15 @@
+#pragma once
+
+/**
+ * @file Templates
+ * @brief F__K UI Framework - 模板模块
+ * 
+ * 包含控件和数据模板：
+ * - FrameworkTemplate: 框架模板基类
+ * - ControlTemplate: 控件模板
+ * - DataTemplate: 数据模板
+ */
+
+#include "fk/ui/styling/FrameworkTemplate.h"
+#include "fk/ui/styling/ControlTemplate.h"
+#include "fk/ui/styling/DataTemplate.h"

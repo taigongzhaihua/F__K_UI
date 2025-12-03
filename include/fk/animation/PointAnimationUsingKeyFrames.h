@@ -1,7 +1,7 @@
 #pragma once
 
 #include "fk/animation/KeyFrameAnimation.h"
-#include "fk/ui/Primitives.h"
+#include "fk/ui/graphics/Primitives.h"
 
 namespace fk::animation {
 
@@ -33,7 +33,7 @@ inline ui::Point LinearKeyFrame<ui::Point>::InterpolateValueCore(const ui::Point
     };
 }
 
-// Point 缓动关键帧特化
+// Point 缓动关键帧特�?
 template<>
 inline ui::Point EasingKeyFrame<ui::Point>::InterpolateValueCore(const ui::Point& from, const ui::Point& to, double progress) {
     return ui::Point{
@@ -42,7 +42,7 @@ inline ui::Point EasingKeyFrame<ui::Point>::InterpolateValueCore(const ui::Point
     };
 }
 
-// Point Spline 关键帧特化
+// Point Spline 关键帧特�?
 template<>
 inline ui::Point SplineKeyFrame<ui::Point>::InterpolateValueCore(const ui::Point& from, const ui::Point& to, double progress) {
     return ui::Point{

@@ -1,0 +1,14 @@
+#pragma once
+
+/**
+ * @file Brushes
+ * @brief F__K UI Framework - 画刷模块
+ * 
+ * 包含画刷和填充类型：
+ * - Brush: 画刷基类
+ * - SolidColorBrush: 纯色画刷
+ * - LinearGradientBrush: 线性渐变画刷
+ * - RadialGradientBrush: 径向渐变画刷
+ */
+
+#include "fk/ui/graphics/Brush.h"

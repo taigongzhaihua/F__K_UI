@@ -2,22 +2,25 @@
 
 /**
  * @file Controls
- * @brief F__K UI Framework - 控件模块
+ * @brief F__K UI Framework - 控件模块（完整）
  * 
- * 包含所有 UI 控件
+ * 包含所有 UI 控件。
+ * 
+ * 如需更精细的控制，可以只包含所需的子模块：
+ * - fk/ui/Base         UI 基础架构
+ * - fk/ui/ControlBase  控件基类
+ * - fk/ui/CommonControls 通用控件（Border, Image, Popup）
+ * - fk/ui/Buttons      按钮控件
+ * - fk/ui/Text         文本控件
+ * - fk/ui/Lists        列表控件
+ * - fk/ui/Scrolling    滚动控件
  */
 
-#include "fk/ui/Control.h"
-#include "fk/ui/ContentControl.h"
-#include "fk/ui/ItemsControl.h"
-#include "fk/ui/Button.h"
-#include "fk/ui/TextBlock.h"
-#include "fk/ui/TextBox.h"
-#include "fk/ui/TextBoxBase.h"
-#include "fk/ui/Border.h"
-#include "fk/ui/Image.h"
-// #include "fk/ui/ScrollBar.h"     // TODO: 正在重构中，采用 WPF 风格架构
-// #include "fk/ui/ScrollViewer.h"  // TODO: 正在重构中，采用 WPF 风格架构
-#include "fk/ui/ListBox.h"
-#include "fk/ui/ComboBox.h"
-#include "fk/ui/Popup.h"
+// 子模块
+#include "fk/ui/Base"
+#include "fk/ui/ControlBase"
+#include "fk/ui/CommonControls"
+#include "fk/ui/Buttons"
+#include "fk/ui/Text"
+#include "fk/ui/Lists"
+#include "fk/ui/Scrolling"

@@ -4,7 +4,7 @@
 #include <variant>
 #include <array>
 #include <vector>
-#include "fk/ui/UIElement.h"
+#include "fk/ui/base/UIElement.h"
 
 namespace fk::render {
 
@@ -17,9 +17,9 @@ enum class CommandType : std::uint8_t {
     DrawRectangle,     // 绘制矩形
     DrawText,          // 绘制文本
     DrawImage,         // 绘制图像
-    DrawPolygon,       // 绘制多边形
+    DrawPolygon,       // 绘制多边�?
     DrawPath,          // 绘制路径
-    PushLayer,         // 推入图层（用于透明度/混合）
+    PushLayer,         // 推入图层（用于透明�?混合�?
     PopLayer,          // 弹出图层
 };
 
@@ -41,7 +41,7 @@ struct ClipPayload {
 };
 
 /**
- * @brief 变换命令载荷（简化版，先用2D偏移）
+ * @brief 变换命令载荷（简化版，先�?D偏移�?
  */
 struct TransformPayload {
     float offsetX{0.0f};
@@ -54,15 +54,15 @@ struct TransformPayload {
  */
 struct RectanglePayload {
     ui::Rect rect;
-    std::array<float, 4> fillColor; // RGBA 填充色
-    std::array<float, 4> strokeColor; // RGBA 描边色
+    std::array<float, 4> fillColor; // RGBA 填充�?
+    std::array<float, 4> strokeColor; // RGBA 描边�?
     float strokeThickness{0.0f};
-    // 圆角半径（四个角可以独立设置 - 用于 Border）
+    // 圆角半径（四个角可以独立设置 - 用于 Border�?
     float cornerRadiusTopLeft{0.0f};
     float cornerRadiusTopRight{0.0f};
     float cornerRadiusBottomRight{0.0f};
     float cornerRadiusBottomLeft{0.0f};
-    // 椭圆圆角半径（用于 Rectangle Shape）
+    // 椭圆圆角半径（用�?Rectangle Shape�?
     float radiusX{0.0f};
     float radiusY{0.0f};
     StrokeAlignment strokeAlignment{StrokeAlignment::Center};
@@ -78,9 +78,9 @@ struct TextPayload {
     std::string text;           // 文本内容
     int fontId{0};              // 字体 ID
     float fontSize{14.0f};      // 字体大小
-    std::string fontFamily;     // 字体族(可选)
+    std::string fontFamily;     // 字体�?可�?
     bool textWrapping{false};   // 是否自动换行
-    float maxWidth{0.0f};       // 换行时的最大宽度
+    float maxWidth{0.0f};       // 换行时的最大宽�?
 };
 
 /**
@@ -99,7 +99,7 @@ struct LayerPayload {
 };
 
 /**
- * @brief 多边形绘制载荷
+ * @brief 多边形绘制载�?
  */
 struct PolygonPayload {
     std::vector<ui::Point> points;
@@ -110,7 +110,7 @@ struct PolygonPayload {
 };
 
 /**
- * @brief 路径段类型
+ * @brief 路径段类�?
  */
 enum class PathSegmentType : std::uint8_t {
     MoveTo,
@@ -122,19 +122,19 @@ enum class PathSegmentType : std::uint8_t {
 };
 
 /**
- * @brief 路径段数据
+ * @brief 路径段数�?
  */
 struct PathSegment {
     PathSegmentType type;
-    std::vector<ui::Point> points; // 控制点/端点
-    std::array<float, 4> strokeColor; // 分段描边颜色(RGBA,可选)
-    bool hasStrokeColor{false};       // 是否设置了分段颜色
-    std::array<float, 4> fillColor;   // 子路径填充颜色(RGBA,可选,仅MoveTo有效)
+    std::vector<ui::Point> points; // 控制�?端点
+    std::array<float, 4> strokeColor; // 分段描边颜色(RGBA,可�?
+    bool hasStrokeColor{false};       // 是否设置了分段颜�?
+    std::array<float, 4> fillColor;   // 子路径填充颜�?RGBA,可�?仅MoveTo有效)
     bool hasFillColor{false};         // 是否设置了子路径填充颜色
-    std::array<float, 4> subPathStrokeColor; // 子路径描边颜色(RGBA,可选,仅MoveTo有效)
-    float subPathStrokeThickness{0.0f};      // 子路径描边粗细(可选,仅MoveTo有效)
+    std::array<float, 4> subPathStrokeColor; // 子路径描边颜�?RGBA,可�?仅MoveTo有效)
+    float subPathStrokeThickness{0.0f};      // 子路径描边粗�?可�?仅MoveTo有效)
     bool hasSubPathStroke{false};            // 是否设置了子路径描边
-    // 用于圆弧的额外参数
+    // 用于圆弧的额外参�?
     float radiusX{0.0f};
     float radiusY{0.0f};
     float angle{0.0f};
@@ -154,7 +154,7 @@ struct PathPayload {
 };
 
 /**
- * @brief 命令载荷联合体
+ * @brief 命令载荷联合�?
  */
 using CommandPayload = std::variant<
     std::monostate,

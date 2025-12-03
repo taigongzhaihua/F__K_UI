@@ -1,7 +1,7 @@
 #pragma once
 
 #include "fk/animation/KeyFrameAnimation.h"
-#include "fk/ui/Thickness.h"
+#include "fk/ui/styling/Thickness.h"
 
 namespace fk::animation {
 
@@ -39,7 +39,7 @@ inline Thickness LinearKeyFrame<Thickness>::InterpolateValueCore(const Thickness
     );
 }
 
-// Thickness 缓动关键帧特化
+// Thickness 缓动关键帧特�?
 template<>
 inline Thickness EasingKeyFrame<Thickness>::InterpolateValueCore(const Thickness& from, const Thickness& to, double progress) {
     return Thickness(
@@ -50,7 +50,7 @@ inline Thickness EasingKeyFrame<Thickness>::InterpolateValueCore(const Thickness
     );
 }
 
-// Thickness Spline 关键帧特化
+// Thickness Spline 关键帧特�?
 template<>
 inline Thickness SplineKeyFrame<Thickness>::InterpolateValueCore(const Thickness& from, const Thickness& to, double progress) {
     return Thickness(

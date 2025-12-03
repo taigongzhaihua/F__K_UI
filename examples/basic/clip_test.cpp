@@ -1,11 +1,11 @@
 #include <fk/app/Application.h>
 #include <fk/ui/Window.h>
-#include <fk/ui/Grid.h>
-#include <fk/ui/Border.h>
-#include <fk/ui/StackPanel.h>
-#include <fk/ui/TextBlock.h>
-#include <fk/ui/Brush.h>
-#include <fk/ui/GridCellAttacher.h>
+#include <fk/ui/layouts/Grid.h>
+#include <fk/ui/controls/Border.h>
+#include <fk/ui/layouts/StackPanel.h>
+#include <fk/ui/text/TextBlock.h>
+#include <fk/ui/graphics/Brush.h>
+#include <fk/ui/layouts/GridCellAttacher.h>
 
 using namespace fk;
 using namespace fk::ui;

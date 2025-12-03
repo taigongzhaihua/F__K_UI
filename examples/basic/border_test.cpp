@@ -1,8 +1,8 @@
 #include "fk/app/Application.h"
 #include "fk/ui/Window.h"
-#include "fk/ui/TextBlock.h"
-#include "fk/ui/Border.h"
-#include "fk/ui/Brush.h"
+#include "fk/ui/text/TextBlock.h"
+#include "fk/ui/controls/Border.h"
+#include "fk/ui/graphics/Brush.h"
 #include <iostream>
 
 int main(int argc, char **argv)

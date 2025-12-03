@@ -4,8 +4,12 @@
  * @file Input
  * @brief F__K UI Framework - 输入管理模块
  * 
- * 包含输入和焦点管理
+ * 包含输入和焦点管理：
+ * - InputManager: 输入管理器
+ * - FocusManager: 焦点管理器
+ * - NameScope: 名称作用域
  */
 
-#include "fk/ui/InputManager.h"
-#include "fk/ui/FocusManager.h"
+#include "fk/ui/input/InputManager.h"
+#include "fk/ui/input/FocusManager.h"
+#include "fk/ui/input/NameScope.h"

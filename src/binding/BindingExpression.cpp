@@ -2,7 +2,7 @@
 #include "fk/binding/ValueConverters.h"
 #include "fk/binding/TemplateBinding.h"
 #include "fk/core/Dispatcher.h"
-#include "fk/ui/UIElement.h"
+#include "fk/ui/base/UIElement.h"
 
 #include <functional>
 #include <stdexcept>
@@ -80,7 +80,7 @@ void BindingExpression::UpdateTarget() {
     std::any resolvedValue;
     bool resolved = false;
 
-    // 对于 TemplateBinding，特殊处理：直接从 TemplatedParent 获取 DependencyProperty 的值
+    // 对于 TemplateBinding，特殊处理：直接�?TemplatedParent 获取 DependencyProperty 的�?
     if (isTemplateBinding_) {
         if (templateBindingSourceProperty_) {
             if (target_) {
@@ -324,9 +324,9 @@ void BindingExpression::Unsubscribe() {
 std::any BindingExpression::ResolveSourceRoot() const {
     // 检测是否为 TemplateBinding
     if (isTemplateBinding_) {
-        // TemplateBinding 应该绑定到 TemplatedParent
+        // TemplateBinding 应该绑定�?TemplatedParent
         if (target_) {
-            // 尝试将 target 转换为 UIElement 以获取 TemplatedParent
+            // 尝试�?target 转换�?UIElement 以获�?TemplatedParent
             if (auto* uiElement = dynamic_cast<ui::UIElement*>(target_)) {
                 auto* templatedParent = uiElement->GetTemplatedParent();
                 if (templatedParent) {
@@ -410,22 +410,22 @@ void BindingExpression::RefreshSourceSubscription() {
 
     currentSource_ = ResolveSourceRoot();
     
-    // 首先尝试作为 DependencyObject（用于 TemplateBinding）
+    // 首先尝试作为 DependencyObject（用�?TemplateBinding�?
     if (currentSource_.has_value()) {
         DependencyObject* depObj = nullptr;
         
-        // 尝试不同的类型转换
+        // 尝试不同的类型转�?
         if (auto* ptr = std::any_cast<DependencyObject>(&currentSource_)) {
             depObj = ptr;
         } else if (auto* ptr = std::any_cast<DependencyObject*>(&currentSource_)) {
             depObj = *ptr;
         } else if (auto* ptr = std::any_cast<ui::UIElement*>(&currentSource_)) {
-            // UIElement 继承自 DependencyObject
+            // UIElement 继承�?DependencyObject
             depObj = dynamic_cast<DependencyObject*>(*ptr);
         }
         
         if (depObj) {
-            // 订阅 DependencyObject 的 PropertyChanged 事件
+            // 订阅 DependencyObject �?PropertyChanged 事件
             auto weakSelf = weak_from_this();
             sourceDependencyObjectConnection_ = depObj->PropertyChanged.Connect(
                 [weakSelf, this](const DependencyProperty& prop, const std::any&, const std::any&, ValueSource, ValueSource) {
@@ -433,7 +433,7 @@ void BindingExpression::RefreshSourceSubscription() {
                         if (!self->isActive_ || self->isUpdatingTarget_) {
                             return;
                         }
-                        // 对于 TemplateBinding，只有当变化的属性是我们绑定的属性时才更新
+                        // 对于 TemplateBinding，只有当变化的属性是我们绑定的属性时才更�?
                         if (self->isTemplateBinding_ && self->templateBindingSourceProperty_) {
                             if (&prop != self->templateBindingSourceProperty_) {
                                 return;
@@ -447,7 +447,7 @@ void BindingExpression::RefreshSourceSubscription() {
                     }
                 });
             
-            // 订阅成功后立即更新一次目标（因为可能之前 TemplatedParent 是 null）
+            // 订阅成功后立即更新一次目标（因为可能之前 TemplatedParent �?null�?
             if (isTemplateBinding_) {
                 auto weakSelf2 = weak_from_this();
                 if (auto self = weakSelf2.lock()) {
@@ -463,7 +463,7 @@ void BindingExpression::RefreshSourceSubscription() {
         }
     }
     
-    // 如果不是 DependencyObject，尝试作为 INotifyPropertyChanged
+    // 如果不是 DependencyObject，尝试作�?INotifyPropertyChanged
     auto notifier = TryGetNotifier(currentSource_);
     
     if (notifier == nullptr) {

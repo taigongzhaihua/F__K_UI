@@ -1,0 +1,17 @@
+#pragma once
+
+/**
+ * @file Primitives
+ * @brief F__K UI Framework - 基础类型模块
+ * 
+ * 包含基础值类型：
+ * - Thickness: 边距/间距
+ * - CornerRadius: 圆角半径
+ * - Alignment: 对齐方式
+ * - Enums: 通用枚举
+ */
+
+#include "fk/ui/styling/Thickness.h"
+#include "fk/ui/styling/CornerRadius.h"
+#include "fk/ui/styling/Alignment.h"
+#include "fk/ui/styling/Enums.h"

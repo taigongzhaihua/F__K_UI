@@ -4,9 +4,12 @@
  * @file Collections
  * @brief F__K UI Framework - 集合模块
  * 
- * 包含各种集合类型
+ * 包含各种集合类型：
+ * - VisualCollection: 可视元素集合
+ * - ObservableCollection: 可观察集合
+ * - PointCollection: 点集合
  */
 
-#include "fk/ui/VisualCollection.h"
-#include "fk/ui/ObservableCollection.h"
-#include "fk/ui/PointCollection.h"
+#include "fk/ui/base/VisualCollection.h"
+#include "fk/ui/lists/ObservableCollection.h"
+#include "fk/ui/graphics/PointCollection.h"

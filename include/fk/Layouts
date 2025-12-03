@@ -4,10 +4,14 @@
  * @file Layouts
  * @brief F__K UI Framework - 布局模块
  * 
- * 包含所有布局容器
+ * 包含所有布局容器：
+ * - Panel: 面板基类
+ * - StackPanel: 堆叠面板
+ * - Grid: 网格布局
+ * - GridCellAttacher: 网格单元格附加属性
  */
 
-#include "fk/ui/Panel.h"
-#include "fk/ui/StackPanel.h"
-#include "fk/ui/Grid.h"
-#include "fk/ui/GridCellAttacher.h"
+#include "fk/ui/layouts/Panel.h"
+#include "fk/ui/layouts/StackPanel.h"
+#include "fk/ui/layouts/Grid.h"
+#include "fk/ui/layouts/GridCellAttacher.h"
