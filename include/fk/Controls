@@ -9,7 +9,7 @@
  * 如需更精细的控制，可以只包含所需的子模块：
  * - fk/ui/Base         UI 基础架构
  * - fk/ui/ControlBase  控件基类
- * - fk/ui/CommonControls 通用控件（Border, Image, Popup）
+ * - fk/ui/CommonControls 通用控件（Border, Image）
  * - fk/ui/Buttons      按钮控件
  * - fk/ui/Text         文本控件
  * - fk/ui/Lists        列表控件

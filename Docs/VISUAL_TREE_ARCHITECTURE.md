@@ -559,35 +559,6 @@ StackPanel
       └─ TextBlock "Nested"
 ```
 
-### 示例 4：ComboBox（复杂控件）
-
-**代码：**
-```cpp
-auto combo = new ComboBox();
-combo->AddItem(new ComboBoxItem()->SetContent("Item 1"));
-combo->AddItem(new ComboBoxItem()->SetContent("Item 2"));
-```
-
-**逻辑树：**
-```
-ComboBox
-  ├─ ComboBoxItem "Item 1"
-  └─ ComboBoxItem "Item 2"
-```
-
-**视觉树（应用模板后）：**
-```
-ComboBox
-  ├─ Border (template)
-  │   └─ Grid (template)
-  │       ├─ ContentPresenter (显示选中项)
-  │       └─ ToggleButton (下拉按钮)
-  └─ Popup (template)
-      └─ ItemsPresenter (template)
-          ├─ ComboBoxItem "Item 1"
-          └─ ComboBoxItem "Item 2"
-```
-
 ---
 
 ## 渲染流程与树的关系

@@ -187,7 +187,6 @@ add_library(fk STATIC
     src/ui/controls/ItemContainerGenerator.cpp
     src/ui/controls/Border.cpp
     src/ui/controls/Image.cpp
-    src/ui/controls/Popup.cpp
     
     # ui/buttons - 按钮系控件
     src/ui/buttons/ButtonBase.cpp
@@ -204,7 +203,6 @@ add_library(fk STATIC
     
     # ui/lists - 列表控件
     src/ui/lists/ListBox.cpp
-    src/ui/lists/ComboBox.cpp
     
     # ui/scrolling - 滚动相关
     src/ui/scrolling/Thumb.cpp

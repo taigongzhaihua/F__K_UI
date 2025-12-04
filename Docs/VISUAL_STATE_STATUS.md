@@ -286,7 +286,6 @@ button->Content("点击我");
 
 - **TextBox**: Normal/MouseOver/Focused/Disabled
 - **CheckBox**: Unchecked/Checked/Indeterminate × (Normal/MouseOver/Pressed/Disabled)
-- **ComboBox**: Normal/MouseOver/Pressed/Disabled/Focused
 - **ListBoxItem**: Normal/MouseOver/Selected/Disabled
 
 ## 依赖

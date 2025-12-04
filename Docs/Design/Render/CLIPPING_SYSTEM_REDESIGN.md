@@ -2152,7 +2152,6 @@ container->SetClipToBounds(true);
 
 #### 任务2.4: 适配其他控件
 - [ ] TextBox: 裁剪到边界
-- [ ] ComboBox: 下拉部分不裁剪
 - [ ] ListBox: 裁剪到视口
 - [ ] 逐一测试和验证
 

@@ -63,7 +63,6 @@ cmake --build . -j4
 ✅ gradient_brush_demo
 ✅ scrollviewer_demo
 ✅ listbox_demo
-✅ combobox_demo
 ✅ ... (共 27 个)
 ```
 

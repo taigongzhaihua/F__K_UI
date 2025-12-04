@@ -30,7 +30,6 @@
 #include "fk/ui/layouts/Grid.h"
 #include "fk/ui/text/TextBox.h"
 #include "fk/ui/lists/ListBox.h"
-#include "fk/ui/lists/ComboBox.h"
 // #include "fk/ui/scrolling/ScrollViewer.h"  // TODO: ScrollViewer 正在重构中，暂时禁用
 #include "fk/ui/controls/ContentPresenter.h"
 #include "fk/ui/controls/Image.h"
@@ -100,15 +99,6 @@ inline ui::TextBox* TextBox() {
 template<typename T = void>
 inline ui::ListBox<T>* ListBox() {
     return new ui::ListBox<T>();
-}
-
-/**
- * @brief ComboBox 工厂函数
- * @return 新创建的 ComboBox 指针
- */
-template<typename T = void>
-inline ui::ComboBox<T>* ComboBox() {
-    return new ui::ComboBox<T>();
 }
 
 /**

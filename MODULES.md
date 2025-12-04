@@ -82,8 +82,6 @@ int main() {
 - ScrollBar - 滚动条
 - ScrollViewer - 滚动视图
 - ListBox - 列表框
-- ComboBox - 组合框
-- Popup - 弹出窗口
 
 **使用场景:** 构建用户界面
 

@@ -105,7 +105,7 @@
 
 ### UI 模块 (`fk::ui`)
 - 基础类: `UIElement`, `FrameworkElement`, `Visual`
-- 控件: `Button`, `TextBlock`, `TextBox`, `ComboBox`, `ListBox`
+- 控件: `Button`, `TextBlock`, `TextBox`, `ListBox`
 - 容器: `Panel`, `StackPanel`, `Grid`, `Border`
 - 模板: `ControlTemplate`, `DataTemplate`
 

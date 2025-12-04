@@ -93,25 +93,23 @@ const binding::DependencyProperty& Control<Derived>::FontWeightProperty() {
     return property;
 }
 
-// 注意：StyleProperty、TemplateProperty 及其回调函数已在 Control.h 中实�?
-// 因为 Control 是模板类，所有方法实现都应该在头文件�?
+// 注意：StyleProperty、TemplateProperty 及其回调函数已在 Control.h 中实�?
+// 因为 Control 是模板类，所有方法实现都应该在头文件�?
 
 } // namespace fk::ui
 
-// 显式实例化需要的额外头文�?
+// 显式实例化需要的额外头文件
 #include "fk/ui/lists/ListBox.h"
-#include "fk/ui/lists/ComboBox.h"
 #include "fk/ui/buttons/ToggleButton.h"
 #include "fk/ui/scrolling/Thumb.h"
 #include "fk/ui/buttons/RepeatButton.h"
 #include "fk/ui/scrolling/ScrollBar.h"
 #include "fk/ui/scrolling/ScrollViewer.h"
 
-// 显式实例�?Control 模板（必须在命名空间之外�?
+// 显式实例�?Control 模板（必须在命名空间之外�?
 template class fk::ui::Control<fk::ui::Button>;
 template class fk::ui::Control<fk::ui::Window>;
 template class fk::ui::Control<fk::ui::ListBox<>>;
-template class fk::ui::Control<fk::ui::ComboBox<>>;
 template class fk::ui::Control<fk::ui::ToggleButton>;
 template class fk::ui::Control<fk::ui::Thumb>;
 template class fk::ui::Control<fk::ui::RepeatButton>;

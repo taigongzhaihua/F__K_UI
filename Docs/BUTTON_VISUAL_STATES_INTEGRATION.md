@@ -328,7 +328,6 @@ if (IsFocused()) {
 
 - **TextBox**: Normal/MouseOver/Focused/Disabled
 - **CheckBox**: [Unchecked/Checked/Indeterminate] × [Normal/MouseOver/Pressed/Disabled]
-- **ComboBox**: Normal/MouseOver/Pressed/Disabled/Opened
 - **ListBoxItem**: Normal/MouseOver/Selected/Disabled
 
 ## 总结

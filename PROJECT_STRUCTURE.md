@@ -65,12 +65,11 @@ F__K_UI/
 │   │   ├── Theme.h
 │   │   └── ThemeManager.h
 │   │
-│   └── ui/                  # UI 控件头文件
+│   └─ ui/                  # UI 控件头文件
 │       ├── Alignment.h
 │       ├── Border.h
 │       ├── Brush.h
 │       ├── Button.h
-│       ├── ComboBox.h
 │       ├── ContentControl.h
 │       ├── ContentPresenter.h
 │       ├── Control.h
@@ -89,7 +88,6 @@ F__K_UI/
 │       ├── ListBox.h
 │       ├── NameScope.h
 │       ├── Panel.h
-│       ├── Popup.h
 │       ├── PropertyMacros.h
 │       ├── RenderBackend.h
 │       ├── Renderer.h
@@ -219,10 +217,10 @@ F__K_UI/
 - **功能**: 提供各种 UI 控件和布局容器
 - **核心类**:
   - **基础类**: `UIElement`, `FrameworkElement`, `Visual`
-  - **控件**: `Button`, `TextBlock`, `TextBox`, `ComboBox`, `ListBox`
+  - **控件**: `Button`, `TextBlock`, `TextBox`, `ListBox`
   - **容器**: `Panel`, `StackPanel`, `Grid`, `Border`
   - **模板**: `ControlTemplate`, `DataTemplate`
-  - **其他**: `Window`, `Popup`, `ScrollViewer`
+  - **其他**: `Window`, `ScrollViewer`
 
 ## 编译说明
 

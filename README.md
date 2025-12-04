@@ -5,7 +5,7 @@
 
 ## ✨ 特性
 
-- 🎨 **丰富的 UI 控件**: Button, TextBlock, TextBox, ComboBox, ListBox, Grid, StackPanel 等
+- 🎨 **丰富的 UI 控件**: Button, TextBlock, TextBox, ListBox, Grid, StackPanel 等
 - 🔗 **MVVM 数据绑定**: 完整的依赖属性和数据绑定系统
 - 🎬 **动画系统**: 支持多种动画类型和视觉状态管理
 - 🎯 **模板系统**: ControlTemplate 和 DataTemplate 支持

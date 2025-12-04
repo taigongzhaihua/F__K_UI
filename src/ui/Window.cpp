@@ -22,7 +22,7 @@
 
 namespace fk::ui {
 
-// 模拟窗口句柄结构（用于无GLFW环境�?
+// 模拟窗口句柄结构（用于无GLFW环境�?
 struct SimulatedWindow {
     std::string title;
     int width;
@@ -40,7 +40,7 @@ static void glfwErrorCallback(int error, const char* description) {
     std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 }
 
-// GLFW 初始化辅助函数（单例�?
+// GLFW 初始化辅助函数（单例�?
 static bool InitializeGLFW() {
     static bool initialized = false;
     static bool initSuccess = false;
@@ -60,7 +60,7 @@ static bool InitializeGLFW() {
 }
 #endif
 
-// ========== 依赖属性注�?==========
+// ========== 依赖属性注�?==========
 
 const binding::DependencyProperty& Window::WidthProperty() {
     static auto& property = binding::DependencyProperty::Register(
@@ -160,7 +160,7 @@ const binding::DependencyProperty& Window::TopmostProperty() {
     return property;
 }
 
-// ========== 构�?析构 ==========
+// ========== 构�?析构 ==========
 
 Window::Window() {
     // 窗口默认尺寸
@@ -173,11 +173,11 @@ Window::Window() {
     renderer_ = std::make_unique<render::GlRenderer>();
 #endif
     
-    // 初始化焦点管理器并设置根节点为窗口本�?
+    // 初始化焦点管理器并设置根节点为窗口本�?
     focusManager_ = std::make_unique<FocusManager>();
     focusManager_->SetRoot(this);
     
-    // 初始化输入管理器并设置根节点为窗口本�?
+    // 初始化输入管理器并设置根节点为窗口本�?
     inputManager_ = std::make_unique<InputManager>();
     inputManager_->SetRoot(this);
     inputManager_->SetFocusManager(focusManager_.get());
@@ -203,7 +203,7 @@ Window::~Window() {
     }
 }
 
-// ========== 窗口状�?==========
+// ========== 窗口状�?==========
 
 void Window::SetWindowState(enum WindowState value) {
     auto oldState = GetWindowState();
@@ -233,7 +233,7 @@ void Window::SetWindowState(enum WindowState value) {
 }
 
 void Window::OnWindowStateChanged(enum WindowState oldState, enum WindowState newState) {
-    // 派生类可覆写此方�?
+    // 派生类可覆写此方�?
 }
 
 // ========== 窗口操作 ==========
@@ -278,7 +278,7 @@ void Window::Show() {
         
         nativeHandle_ = window;
         
-        // 设置OpenGL上下�?
+        // 设置OpenGL上下�?
         glfwMakeContextCurrent(window);
         
         // 启用垂直同步
@@ -291,10 +291,10 @@ void Window::Show() {
             glfwSetWindowPos(window, static_cast<int>(left), static_cast<int>(top));
         }
         
-        // 应用 Topmost 属�?
+        // 应用 Topmost 属�?
         ApplyTopmostToNativeWindow();
         
-        // 设置用户指针，以便在回调中访�?Window 实例
+        // 设置用户指针，以便在回调中访�?Window 实例
         glfwSetWindowUserPointer(window, this);
         
         // 设置鼠标按钮回调
@@ -412,7 +412,7 @@ void Window::Show() {
             self->isUpdatingSize_ = false;
         });
         
-        // 注意：InputManager �?FocusManager 的根节点已在构造函数中设置
+        // 注意：InputManager �?FocusManager 的根节点已在构造函数中设置
         
         std::cout << "GLFW window created: " << GetTitle() 
                   << " (" << width << "x" << height << ")" << std::endl;
@@ -443,11 +443,11 @@ void Window::Show() {
 bool Window::ShowDialog() {
     isModal_ = true;
     
-    // TODO: 创建并显示模态窗�?
+    // TODO: 创建并显示模态窗�?
     // 1. 创建窗口
     // 2. 应用布局
     // 3. 进入消息循环（阻塞直到窗口关闭）
-    // 4. 返回对话框结�?
+    // 4. 返回对话框结�?
     
     return false; // 临时返回
 }
@@ -459,7 +459,7 @@ void Window::Close() {
     
     isClosing_ = true;
     
-    // 触发 Closing 事件，允许取�?
+    // 触发 Closing 事件，允许取�?
     if (!OnClosing()) {
         isClosing_ = false;
         return;
@@ -494,7 +494,7 @@ void Window::Activate() {
         glfwFocusWindow(window);
     }
 #else
-    // 模拟窗口激�?
+    // 模拟窗口激�?
     std::cout << "Window activated: " << GetTitle() << std::endl;
 #endif
     Activated();  // 触发事件
@@ -520,7 +520,7 @@ bool Window::ProcessEvents() {
     
     GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
     
-    // 检查窗口是否应该关�?
+    // 检查窗口是否应该关�?
     if (glfwWindowShouldClose(window)) {
         isVisible_ = false;
         return false;
@@ -543,13 +543,13 @@ bool Window::ProcessEvents() {
         return false;
     }
     
-    // 模拟帧率控制�?0 FPS�?
+    // 模拟帧率控制�?0 FPS�?
     auto now = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
         now - window->lastFrame
     ).count();
     
-    if (elapsed < 16) { // �?60 FPS
+    if (elapsed < 16) { // �?60 FPS
         std::this_thread::sleep_for(std::chrono::milliseconds(16 - elapsed));
     }
     
@@ -583,14 +583,14 @@ void Window::RenderFrame() {
     // 渲染UI内容
 #ifdef FK_HAS_OPENGL
     if (renderer_ && renderList_) {
-        // 初始化渲染器（如果还没初始化�?
+        // 初始化渲染器（如果还没初始化�?
         if (!renderer_->IsInitialized()) {
             render::RendererInitParams params;
             params.initialSize.width = static_cast<std::uint32_t>(width);
             params.initialSize.height = static_cast<std::uint32_t>(height);
             renderer_->Initialize(params);
             
-            // 设置全局 TextRenderer，供 TextBlock �?Measure 阶段使用
+            // 设置全局 TextRenderer，供 TextBlock �?Measure 阶段使用
             TextBlock::SetGlobalTextRenderer(renderer_->GetTextRenderer());
             
             // 记录初始视口大小
@@ -598,7 +598,7 @@ void Window::RenderFrame() {
             lastViewportHeight_ = height;
         }
         
-        // 只在窗口大小改变时更新渲染器视口（性能优化�?
+        // 只在窗口大小改变时更新渲染器视口（性能优化�?
         if (width != lastViewportWidth_ || height != lastViewportHeight_) {
             render::Extent2D newSize{
                 static_cast<std::uint32_t>(width),
@@ -606,7 +606,7 @@ void Window::RenderFrame() {
             };
             renderer_->Resize(newSize);
             
-            // 更新缓存的视口大�?
+            // 更新缓存的视口大�?
             lastViewportWidth_ = width;
             lastViewportHeight_ = height;
         }
@@ -614,12 +614,12 @@ void Window::RenderFrame() {
         // 清空渲染命令列表
         renderList_->Clear();
         
-        // 创建渲染上下�?
+        // 创建渲染上下�?
         render::RenderContext context(renderList_.get(), renderer_->GetTextRenderer());
         
 
         
-        // 从Content开始收集绘制命�? 
+        // 从Content开始收集绘制命�? 
         auto content = GetContent();
         
         if (content.has_value() && content.type() == typeid(UIElement*)) {
@@ -630,28 +630,28 @@ void Window::RenderFrame() {
                 auto availableSize = Size(static_cast<float>(width), static_cast<float>(height));
                 element->Measure(availableSize);
                 
-                // 从左上角开始布局（移除居中逻辑�?
+                // 从左上角开始布局（移除居中逻辑�?
                 element->Arrange(Rect(0, 0, static_cast<float>(width), static_cast<float>(height)));
                 
-                // 收集绘制命令（不需要额外的变换偏移�?
+                // 收集绘制命令（不需要额外的变换偏移�?
                 element->CollectDrawCommands(context);
             }
         }
         
-        // 渲染所有命�?
+        // 渲染所有命�?
         render::FrameContext frameCtx;
         frameCtx.elapsedSeconds = 0.0;
         frameCtx.deltaSeconds = 0.016;
         
-        // �?Window �?Background 属性读取清除颜�?
+        // �?Window �?Background 属性读取清除颜�?
         auto* background = GetBackground();
         if (background) {
-            // 尝试转换�?SolidColorBrush
+            // 尝试转换�?SolidColorBrush
             if (auto* solidBrush = dynamic_cast<SolidColorBrush*>(background)) {
                 Color color = solidBrush->GetColor();
                 frameCtx.clearColor = {color.r, color.g, color.b, color.a};
             } else {
-                // 其他类型的画刷，使用默认浅灰色背�?
+                // 其他类型的画刷，使用默认浅灰色背�?
                 frameCtx.clearColor = {0.94f, 0.94f, 0.94f, 1.0f};
             }
         } else {
@@ -665,7 +665,7 @@ void Window::RenderFrame() {
     }
 #endif
     
-    // 交换缓冲�?
+    // 交换缓冲�?
     glfwSwapBuffers(window);
 #else
     // 模拟渲染
@@ -710,7 +710,7 @@ UIElement* Window::FindName(const std::string& name) {
     return nullptr;
 }
 
-// ========== 属性变更回调实�?==========
+// ========== 属性变更回调实�?==========
 
 void Window::OnTitleChanged(
     binding::DependencyObject& d,
@@ -825,7 +825,7 @@ void Window::OnLeftChanged(
         GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
         glfwSetWindowPos(glfwWindow, static_cast<int>(left), static_cast<int>(top));
 #endif
-        // 模拟窗口不支持位置设�?
+        // 模拟窗口不支持位置设�?
     } catch (const std::bad_any_cast&) {
         // 忽略类型转换错误
     }
@@ -850,7 +850,7 @@ void Window::OnTopChanged(
         GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window->nativeHandle_);
         glfwSetWindowPos(glfwWindow, static_cast<int>(left), static_cast<int>(top));
 #endif
-        // 模拟窗口不支持位置设�?
+        // 模拟窗口不支持位置设�?
     } catch (const std::bad_any_cast&) {
         // 忽略类型转换错误
     }
@@ -885,7 +885,7 @@ void Window::ApplyTopmostToNativeWindow() {
     glfwSetWindowAttrib(glfwWindow, GLFW_FLOATING, topmost ? GLFW_TRUE : GLFW_FALSE);
     #endif
 #endif
-    // 模拟窗口不支持置顶属�?
+    // 模拟窗口不支持置顶属�?
 }
 
 } // namespace fk::ui

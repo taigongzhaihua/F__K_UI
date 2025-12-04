@@ -481,7 +481,6 @@ Phase 2 已完全完成，框架现在具备：
 3. **高级控件**
    - ScrollViewer 完善
    - ListBox 完善
-   - ComboBox 实现
    - DataGrid 基础
 
 4. **动画系统**
