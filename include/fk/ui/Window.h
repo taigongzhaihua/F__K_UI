@@ -230,6 +230,28 @@ public:
      * UIElement会自动通过此方法访问InputManager。
      */
     class InputManager* GetInputManager() const { return inputManager_.get(); }
+    
+    // ========== 坐标转换 ==========
+    
+    /**
+     * @brief 将窗口客户区坐标转换为屏幕坐标
+     * @param clientPoint 相对于窗口客户区的坐标
+     * @return 屏幕绝对坐标
+     */
+    Point ClientToScreen(Point clientPoint) const;
+    
+    /**
+     * @brief 将屏幕坐标转换为窗口客户区坐标
+     * @param screenPoint 屏幕绝对坐标
+     * @return 相对于窗口客户区的坐标
+     */
+    Point ScreenToClient(Point screenPoint) const;
+    
+    /**
+     * @brief 获取窗口在屏幕上的边界矩形
+     * @return 屏幕坐标系下的窗口边界
+     */
+    Rect GetWindowBoundsOnScreen() const;
 
     // ========== 窗口事件 ==========
     

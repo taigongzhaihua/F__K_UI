@@ -8,6 +8,7 @@
 #include "fk/render/RenderList.h"
 #include "fk/render/RenderContext.h"
 #include "fk/render/TextRenderer.h"
+#include "fk/ui/PopupService.h"
 
 #ifdef FK_HAS_GLFW
 #include <GLFW/glfw3.h>
@@ -529,6 +530,9 @@ bool Window::ProcessEvents() {
     // 处理事件
     glfwPollEvents();
     
+    // 更新所有活跃的 Popup
+    PopupService::Instance().Update();
+    
     return isVisible_ && !isClosing_;
 #else
     // 模拟事件处理
@@ -667,6 +671,9 @@ void Window::RenderFrame() {
     
     // 交换缓冲�?
     glfwSwapBuffers(window);
+    
+    // 渲染所有活跃的 Popup（它们有独立的窗口和上下文）
+    PopupService::Instance().RenderAll();
 #else
     // 模拟渲染
     if (!nativeHandle_) {
@@ -886,6 +893,62 @@ void Window::ApplyTopmostToNativeWindow() {
     #endif
 #endif
     // 模拟窗口不支持置顶属�?
+}
+
+// ========== 坐标转换方法 ==========
+
+Point Window::ClientToScreen(Point clientPoint) const {
+#ifdef FK_HAS_GLFW
+    if (!nativeHandle_) {
+        return clientPoint;
+    }
+    
+    GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(nativeHandle_);
+    int windowX = 0, windowY = 0;
+    glfwGetWindowPos(glfwWindow, &windowX, &windowY);
+    
+    return Point(clientPoint.x + windowX, clientPoint.y + windowY);
+#else
+    // 模拟窗口：直接返回客户端坐标
+    return clientPoint;
+#endif
+}
+
+Point Window::ScreenToClient(Point screenPoint) const {
+#ifdef FK_HAS_GLFW
+    if (!nativeHandle_) {
+        return screenPoint;
+    }
+    
+    GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(nativeHandle_);
+    int windowX = 0, windowY = 0;
+    glfwGetWindowPos(glfwWindow, &windowX, &windowY);
+    
+    return Point(screenPoint.x - windowX, screenPoint.y - windowY);
+#else
+    // 模拟窗口：直接返回屏幕坐标
+    return screenPoint;
+#endif
+}
+
+Rect Window::GetWindowBoundsOnScreen() const {
+#ifdef FK_HAS_GLFW
+    if (!nativeHandle_) {
+        return Rect(0, 0, GetWidth(), GetHeight());
+    }
+    
+    GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(nativeHandle_);
+    int windowX = 0, windowY = 0;
+    glfwGetWindowPos(glfwWindow, &windowX, &windowY);
+    
+    int windowWidth = 0, windowHeight = 0;
+    glfwGetWindowSize(glfwWindow, &windowWidth, &windowHeight);
+    
+    return Rect(windowX, windowY, windowWidth, windowHeight);
+#else
+    // 模拟窗口：返回 (0,0) 处的窗口大小
+    return Rect(0, 0, GetWidth(), GetHeight());
+#endif
 }
 
 } // namespace fk::ui

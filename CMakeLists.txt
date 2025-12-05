@@ -237,6 +237,7 @@ add_library(fk STATIC
     # ui/window - 窗口相关
     src/ui/Window.cpp
     src/ui/window/PopupRoot.cpp
+    src/ui/PopupService.cpp
     
     # ========== ui 模块结束 ==========
     
@@ -351,6 +352,12 @@ target_link_libraries(datatemplate_demo PRIVATE fk)
 # Popup Examples
 add_executable(popuproot_test examples/popup/popuproot_test.cpp)
 target_link_libraries(popuproot_test PRIVATE fk)
+
+add_executable(coordinate_test examples/popup/coordinate_test.cpp)
+target_link_libraries(coordinate_test PRIVATE fk)
+
+add_executable(popupservice_test examples/popup/popupservice_test.cpp)
+target_link_libraries(popupservice_test PRIVATE fk)
 
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库

@@ -39,36 +39,56 @@
   - [ ] 调用 `renderer->BeginFrame()`, `renderer->Draw()`, `renderer->EndFrame()`
   - [ ] 调用 `glfwSwapBuffers()`
 
-### Day 2: 坐标系统扩展
+### Day 2: 坐标系统扩展 ✅
 **目标**: 实现 UI 元素坐标到屏幕绝对坐标的转换。
 
-- [ ] **Window 类扩展**
-  - [ ] 修改 `include/fk/ui/Window.h`
-  - [ ] 实现 `Point ClientToScreen(Point clientPoint)`: 使用 `glfwGetWindowPos`
-  - [ ] 实现 `Point ScreenToClient(Point screenPoint)`
-  - [ ] 考虑 DPI 缩放因子 (如果框架已支持)
-- [ ] **UIElement 类扩展**
-  - [ ] 修改 `include/fk/ui/UIElement.h`
-  - [ ] 实现 `Point PointToScreen(Point localPoint)`
-    - [ ] 递归计算 `TransformToRoot` 获取相对于 Window 的坐标
-    - [ ] 调用 `Window::ClientToScreen`
-  - [ ] 实现 `Rect GetBoundsOnScreen()`
+- [x] **Window 类扩展**
+  - [x] 修改 `include/fk/ui/Window.h`
+  - [x] 实现 `Point ClientToScreen(Point clientPoint)`: 使用 `glfwGetWindowPos`
+  - [x] 实现 `Point ScreenToClient(Point screenPoint)`
+  - [x] 实现 `Rect GetWindowBoundsOnScreen()`
+  - [x] 考虑 DPI 缩放因子 (当前版本未实现，预留接口)
+- [x] **UIElement 类扩展**
+  - [x] 修改 `include/fk/ui/base/UIElement.h`
+  - [x] 实现 `Point PointToScreen(Point localPoint)`
+    - [x] 递归计算 `TransformToRoot` 获取相对于 Window 的坐标
+    - [x] 调用 `Window::ClientToScreen`
+  - [x] 实现 `Point PointFromScreen(Point screenPoint)` (逆向转换)
+  - [x] 实现 `Point TransformToRoot(Point localPoint)` (累积布局偏移)
+  - [x] 实现 `Point TransformFromRoot(Point rootPoint)` (逆向累积)
+  - [x] 实现 `Window* GetRootWindow()` (visual tree 遍历)
+  - [x] 实现 `Rect GetBoundsOnScreen()`
+- [x] **测试验证**
+  - [x] 创建 `examples/popup/coordinate_test.cpp`
+  - [x] Window 坐标方法测试通过 (ClientToScreen/ScreenToClient 往返正确)
+  - **注意**: UIElement 的坐标方法依赖完整 visual tree 和布局完成，在实际 Popup 场景中验证
 
-### Day 3: PopupService 框架
+### Day 3: PopupService 框架 ✅
 **目标**: 建立全局 Popup 管理中心。
 
-- [ ] **文件创建**
-  - [ ] `include/fk/ui/PopupService.h`
-  - [ ] `src/ui/PopupService.cpp`
-- [ ] **单例模式**
-  - [ ] 实现 `static PopupService& Instance()`
-- [ ] **注册管理**
-  - [ ] 定义 `std::vector<Popup*> activePopups_`
-  - [ ] 实现 `RegisterPopup(Popup*)`
-  - [ ] 实现 `UnregisterPopup(Popup*)`
-- [ ] **生命周期集成**
-  - [ ] 在 `Window::ProcessEvents` 中添加 `PopupService::Instance().Update()` 调用
-  - [ ] 在 `Window::RenderFrame` 后添加 `PopupService::Instance().RenderAll()` (或者让 PopupRoot 自己管理渲染循环)
+- [x] **文件创建**
+  - [x] `include/fk/ui/PopupService.h`
+  - [x] `src/ui/PopupService.cpp`
+- [x] **单例模式**
+  - [x] 实现 `static PopupService& Instance()` - Meyers Singleton 模式
+- [x] **注册管理**
+  - [x] 定义 `std::vector<Popup*> activePopups_`
+  - [x] 实现 `RegisterPopup(Popup*)` - 支持重复注册检测
+  - [x] 实现 `UnregisterPopup(Popup*)`
+  - [x] 实现 `IsRegistered(const Popup*)` - 查询注册状态
+  - [x] 实现 `GetActivePopups()` - 获取活跃 Popup 列表
+  - [x] 实现 `CloseAll()` - 关闭所有 Popup
+- [x] **生命周期集成**
+  - [x] 在 `Window::ProcessEvents` 中添加 `PopupService::Instance().Update()` 调用
+  - [x] 在 `Window::RenderFrame` 后添加 `PopupService::Instance().RenderAll()` 调用
+- [x] **测试验证**
+  - [x] 创建 `examples/popup/popupservice_test.cpp`
+  - [x] 单例模式测试通过
+  - [x] 注册/注销功能测试通过（包括重复注册检测）
+  - [x] Update/RenderAll 空调用测试通过
+  - [x] Window 集成测试通过（5 帧事件循环）
+  - [x] CloseAll 功能测试通过
+  - **注意**: Update() 和 RenderAll() 当前为空实现，将在 Day 4-5 实现 Popup 类后完善
 
 ---
 

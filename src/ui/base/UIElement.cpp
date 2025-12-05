@@ -8,7 +8,7 @@
 
 namespace fk::ui {
 
-// 依赖属性注�?
+// 依赖属性注�?
 const binding::DependencyProperty& UIElement::VisibilityProperty() {
     static auto& property = binding::DependencyProperty::Register(
         "Visibility",
@@ -72,7 +72,7 @@ UIElement::UIElement()
     , layoutRect_(0, 0, 0, 0)
     , measureDirty_(true)
     , arrangeDirty_(true) {
-    // 初始化默认�?
+    // 初始化默认�?
     SetValue(VisibilityProperty(), Visibility::Visible);
     SetValue(IsEnabledProperty(), true);
     SetValue(OpacityProperty(), 1.0f);
@@ -80,9 +80,9 @@ UIElement::UIElement()
 
 UIElement::~UIElement() {
     // 释放所有指针捕获，防止InputManager持有悬空指针
-    // 注意：通常只会捕获pointerId=0（主指针�?
+    // 注意：通常只会捕获pointerId=0（主指针�?
     // 如果有更多的pointerId被捕获，它们也应该在控件逻辑中被显式释放
-    constexpr int MAX_COMMON_POINTER_IDS = 10; // 支持最�?0个触控点
+    constexpr int MAX_COMMON_POINTER_IDS = 10; // 支持最�?0个触控点
     for (int pointerId = 0; pointerId < MAX_COMMON_POINTER_IDS; ++pointerId) {
         if (HasPointerCapture(pointerId)) {
             ReleasePointerCapture(pointerId);
@@ -94,7 +94,7 @@ void UIElement::SetName(const std::string& name) {
     std::string oldName = GetElementName();
     SetElementName(name);
     
-    // 查找最近的 NameScope 并更新名称索�?
+    // 查找最近的 NameScope 并更新名称索�?
     NameScope* scope = FindNearestNameScope();
     if (scope) {
         scope->UpdateName(oldName, name, this);
@@ -118,15 +118,15 @@ void UIElement::Measure(const Size& availableSize) {
 }
 
 void UIElement::Arrange(const Rect& finalRect) {
-    // 检查是否需要重新排�?
-    // 注意：如�?arrangeDirty_ �?true，即使位置没变也需要重新排�?
-    //       因为子元素可能需要重新排�?
+    // 检查是否需要重新排�?
+    // 注意：如�?arrangeDirty_ �?true，即使位置没变也需要重新排�?
+    //       因为子元素可能需要重新排�?
     bool rectChanged = (layoutRect_.x != finalRect.x || 
                        layoutRect_.y != finalRect.y ||
                        layoutRect_.width != finalRect.width ||
                        layoutRect_.height != finalRect.height);
     
-    // 只有当既不脏也不需要位置更新时才跳�?
+    // 只有当既不脏也不需要位置更新时才跳�?
     if (!arrangeDirty_ && !measureDirty_ && !rectChanged) {
         return; // 已经排列过且位置没有改变，且不需要重新排列子元素
     }
@@ -151,7 +151,7 @@ void UIElement::InvalidateMeasure() {
     measureDirty_ = true;
     arrangeDirty_ = true;
     
-    // 向上传播使父节点也失�?
+    // 向上传播使父节点也失�?
     if (auto* parent = GetVisualParent()) {
         if (auto* parentElement = dynamic_cast<UIElement*>(parent)) {
             parentElement->InvalidateMeasure();
@@ -190,7 +190,7 @@ bool UIElement::GetIsEnabled() const {
 }
 
 void UIElement::SetOpacity(float value) {
-    // 限制�?0.0 �?1.0 范围�?
+    // 限制�?0.0 �?1.0 范围�?
     if (value < 0.0f) value = 0.0f;
     if (value > 1.0f) value = 1.0f;
     SetValue(OpacityProperty(), value);
@@ -246,24 +246,24 @@ void UIElement::RaiseEvent(RoutedEventArgs& args) {
     }
     
     // 根据路由策略处理事件传播
-    // 注意：完整实现需�?RoutedEvent 参数，这里简化处�?
+    // 注意：完整实现需�?RoutedEvent 参数，这里简化处�?
     
-    // 1. 触发本地处理器（Direct 策略�?
-    // 由于当前设计�?RaiseEvent 不接�?RoutedEvent 参数�?
-    // 简化为直接触发所有注册的处理�?
+    // 1. 触发本地处理器（Direct 策略�?
+    // 由于当前设计�?RaiseEvent 不接�?RoutedEvent 参数�?
+    // 简化为直接触发所有注册的处理�?
     for (auto& pair : eventHandlers_) {
         if (args.handled) break;
         
         auto strategy = pair.first->GetStrategy();
         
-        // 对于 Direct 策略，只在当前元素触�?
+        // 对于 Direct 策略，只在当前元素触�?
         if (strategy == RoutedEvent::RoutingStrategy::Direct) {
             for (auto& handler : pair.second) {
                 handler(this, args);
                 if (args.handled) break;
             }
         }
-        // Bubble 策略会向上传播（在这里触发，然后向父节点传播�?
+        // Bubble 策略会向上传播（在这里触发，然后向父节点传播�?
         else if (strategy == RoutedEvent::RoutingStrategy::Bubble) {
             for (auto& handler : pair.second) {
                 handler(this, args);
@@ -274,7 +274,7 @@ void UIElement::RaiseEvent(RoutedEventArgs& args) {
         // 当前简化实现不完全支持 Tunnel
     }
     
-    // 2. 冒泡到父元素（Bubble 策略�?
+    // 2. 冒泡到父元素（Bubble 策略�?
     if (!args.handled) {
         if (auto* parent = GetVisualParent()) {
             if (auto* parentElement = dynamic_cast<UIElement*>(parent)) {
@@ -296,14 +296,14 @@ void UIElement::RemoveHandler(RoutedEvent* routedEvent, EventHandler handler) {
         if (it != eventHandlers_.end()) {
             auto& handlers = it->second;
             // 注意：std::function 没有直接的比较操作符
-            // 这里简化实现：移除所有匹配的处理�?
-            // 实际使用中可以考虑使用句柄�?ID 来标识处理器
+            // 这里简化实现：移除所有匹配的处理�?
+            // 实际使用中可以考虑使用句柄�?ID 来标识处理器
             handlers.erase(
                 std::remove_if(handlers.begin(), handlers.end(),
                     [&](const EventHandler& h) {
                         // 无法直接比较 std::function，这里是占位实现
-                        // 实际项目中应该使�?EventToken 或其他机�?
-                        return false; // 暂时不移�?
+                        // 实际项目中应该使�?EventToken 或其他机�?
+                        return false; // 暂时不移�?
                     }),
                 handlers.end()
             );
@@ -312,54 +312,54 @@ void UIElement::RemoveHandler(RoutedEvent* routedEvent, EventHandler handler) {
 }
 
 void UIElement::OnPointerPressed(PointerEventArgs& e) {
-    // 默认不处�?
+    // 默认不处�?
 }
 
 void UIElement::OnPointerReleased(PointerEventArgs& e) {
-    // 默认不处�?
+    // 默认不处�?
 }
 
 void UIElement::OnPointerMoved(PointerEventArgs& e) {
-    // 默认不处�?
+    // 默认不处�?
 }
 
 void UIElement::OnPointerEntered(PointerEventArgs& e) {
-    // 默认不处�?
+    // 默认不处�?
 }
 
 void UIElement::OnPointerExited(PointerEventArgs& e) {
-    // 默认不处�?
+    // 默认不处�?
 }
 
 void UIElement::OnMouseWheel(PointerEventArgs& e) {
-    // 默认不处�?
+    // 默认不处�?
 }
 
 void UIElement::OnKeyDown(KeyEventArgs& e) {
-    // 默认不处�?
+    // 默认不处�?
 }
 
 void UIElement::OnKeyUp(KeyEventArgs& e) {
-    // 默认不处�?
+    // 默认不处�?
 }
 
 std::vector<UIElement*> UIElement::GetLogicalChildren() const {
-    // 默认实现：非容器元素返回空列�?
+    // 默认实现：非容器元素返回空列�?
     return {};
 }
 
 UIElement* UIElement::Clone() const {
-    // 默认实现：创建基�?UIElement 副本
+    // 默认实现：创建基�?UIElement 副本
     auto* clone = new UIElement();
     
-    // 克隆基本属�?
+    // 克隆基本属�?
     clone->SetName(GetElementName());
     clone->SetVisibility(GetVisibility());
     clone->SetIsEnabled(GetIsEnabled());
     clone->SetOpacity(GetOpacity());
     
     // 注意：不克隆 templatedParent_，因为克隆体会设置新的父元素
-    // 注意：不克隆子元素，因为基类 UIElement 没有子元�?
+    // 注意：不克隆子元素，因为基类 UIElement 没有子元�?
     
     return clone;
 }
@@ -385,22 +385,22 @@ void UIElement::OnRender(render::RenderContext& /*context*/) {
 }
 
 std::optional<ui::Rect> UIElement::DetermineClipRegion() const {
-    // 优先�?：显式ClipProperty
+    // 优先�?：显式ClipProperty
     if (HasClip()) {
         return GetClip();
     }
     
-    // 优先�?：容器自动裁�?
+    // 优先�?：容器自动裁�?
     if (ShouldClipToBounds()) {
         return CalculateClipBounds();
     }
     
-    // 不需要裁�?
+    // 不需要裁�?
     return std::nullopt;
 }
 
 void UIElement::CollectDrawCommands(render::RenderContext& context) {
-    // 检查可见�?
+    // 检查可见�?
     auto visibility = GetVisibility();
     if (visibility == Visibility::Collapsed || visibility == Visibility::Hidden) {
         return;  // 不渲染不可见或折叠的元素
@@ -432,7 +432,7 @@ void UIElement::CollectDrawCommands(render::RenderContext& context) {
         context.PushClip(*clipRegion);
     }
 
-    // 收集子元素绘制命�?
+    // 收集子元素绘制命�?
     Visual::CollectDrawCommands(context);
 
     // 弹出裁剪区域
@@ -454,12 +454,12 @@ UIElement* UIElement::FindName(const std::string& name) {
         return nullptr;
     }
     
-    // 检查当前元素的名称（使用DependencyObject的elementName_�?
+    // 检查当前元素的名称（使用DependencyObject的elementName_�?
     if (GetElementName() == name) {
         return this;
     }
     
-    // 递归搜索所有逻辑子元�?
+    // 递归搜索所有逻辑子元�?
     for (UIElement* child : GetLogicalChildren()) {
         if (child) {
             UIElement* found = child->FindName(name);
@@ -476,13 +476,13 @@ void UIElement::CreateNameScope() {
     if (!nameScope_) {
         nameScope_ = std::make_unique<NameScope>();
         
-        // 注册当前元素的名�?
+        // 注册当前元素的名�?
         const std::string& name = GetElementName();
         if (!name.empty()) {
             nameScope_->RegisterName(name, this);
         }
         
-        // 递归注册所有现有子元素的名�?
+        // 递归注册所有现有子元素的名�?
         RegisterNamesToScope(this, nameScope_.get());
     }
 }
@@ -492,14 +492,14 @@ NameScope* UIElement::GetNameScope() const {
 }
 
 NameScope* UIElement::FindNearestNameScope() const {
-    // 从当前元素开始向上查�?
+    // 从当前元素开始向上查�?
     const UIElement* current = this;
     while (current) {
         if (current->nameScope_) {
             return current->nameScope_.get();
         }
         
-        // 向上到逻辑父元�?
+        // 向上到逻辑父元�?
         auto* parent = current->GetLogicalParent();
         current = dynamic_cast<const UIElement*>(parent);
     }
@@ -512,17 +512,17 @@ UIElement* UIElement::FindNameFast(const std::string& name) {
         return nullptr;
     }
     
-    // 策略1：尝试使用最近的 NameScope（O(1)�?
+    // 策略1：尝试使用最近的 NameScope（O(1)�?
     NameScope* scope = FindNearestNameScope();
     if (scope) {
         auto* found = scope->FindName(name);
         if (found) {
-            // 找到了，�?DependencyObject 转换�?UIElement
+            // 找到了，�?DependencyObject 转换�?UIElement
             return dynamic_cast<UIElement*>(found);
         }
     }
     
-    // 策略2：回退到递归查找（O(n)�?
+    // 策略2：回退到递归查找（O(n)�?
     return FindName(name);
 }
 
@@ -538,7 +538,7 @@ void UIElement::RegisterNamesToScope(UIElement* element, NameScope* scope) {
         scope->RegisterName(name, element);
     }
     
-    // 递归注册子元�?
+    // 递归注册子元�?
     for (auto* child : element->GetLogicalChildren()) {
         if (auto* uiChild = dynamic_cast<UIElement*>(child)) {
             RegisterNamesToScope(uiChild, scope);
@@ -546,11 +546,11 @@ void UIElement::RegisterNamesToScope(UIElement* element, NameScope* scope) {
     }
 }
 
-// ========== Grid 附加属性流式方法实�?==========
+// ========== Grid 附加属性流式方法实�?==========
 
 UIElement* UIElement::Row(int row) {
-    // 前向声明，实际调�?Grid::SetRow
-    // 为避免循环依赖，在头文件中包�?Grid.h
+    // 前向声明，实际调�?Grid::SetRow
+    // 为避免循环依赖，在头文件中包�?Grid.h
     extern void SetGridRow(UIElement* element, int row);
     SetGridRow(this, row);
     return this;
@@ -578,11 +578,11 @@ void UIElement::SetTemplatedParent(UIElement* parent) {
     auto oldParent = templatedParent_;
     templatedParent_ = parent;
     
-    // 当设�?TemplatedParent 后，需要刷新所�?TemplateBinding
+    // 当设�?TemplatedParent 后，需要刷新所�?TemplateBinding
     // 触发 DataContext Changed 事件会让所有绑定重新订阅源
     if (oldParent != parent && parent != nullptr) {
-        // 触发一个假�?DataContextChanged 来让绑定重新订阅
-        // 这会导致 BindingExpression::RefreshSourceSubscription() 被调�?
+        // 触发一个假�?DataContextChanged 来让绑定重新订阅
+        // 这会导致 BindingExpression::RefreshSourceSubscription() 被调�?
         auto dummyOld = std::any{};
         auto dummyNew = std::any{};
         DataContextChanged(dummyOld, dummyNew);
@@ -618,13 +618,117 @@ bool UIElement::HasPointerCapture(int pointerId) const {
 InputManager* UIElement::GetInputManager() const {
     // 向上遍历视觉树，找到Window
     // 注意：使用const_cast是因为Visual::GetVisualParent()返回非const指针
-    // 但这个遍历操作本身不会修改任何对�?
+    // 但这个遍历操作本身不会修改任何对象
     const Visual* current = this;
     while (current) {
         // 尝试转换为Window
         if (const auto* window = dynamic_cast<const Window*>(current)) {
-            // GetInputManager()返回非const指针是合理的，因为我们需要调用捕�?释放操作
+            // GetInputManager()返回非const指针是合理的，因为我们需要调用捕获/释放操作
             return const_cast<Window*>(window)->GetInputManager();
+        }
+        current = current->GetVisualParent();
+    }
+    return nullptr;
+}
+
+// ========== 坐标转换 ==========
+
+Point UIElement::PointToScreen(Point localPoint) const {
+    // 1. 先转换到根窗口坐标
+    Point rootPoint = TransformToRoot(localPoint);
+    
+    // 2. 获取根窗口
+    Window* window = GetRootWindow();
+    if (!window) {
+        return rootPoint;  // 如果不在窗口中，返回根坐标
+    }
+    
+    // 3. 转换为屏幕坐标
+    return window->ClientToScreen(rootPoint);
+}
+
+Point UIElement::PointFromScreen(Point screenPoint) const {
+    // 1. 获取根窗口
+    Window* window = GetRootWindow();
+    if (!window) {
+        return screenPoint;
+    }
+    
+    // 2. 转换为根窗口坐标
+    Point rootPoint = window->ScreenToClient(screenPoint);
+    
+    // 3. 转换为本地坐标
+    return TransformFromRoot(rootPoint);
+}
+
+Rect UIElement::GetBoundsOnScreen() const {
+    // 获取元素的布局矩形
+    Rect bounds = GetLayoutRect();
+    
+    // 转换左上角和右下角到屏幕坐标
+    Point topLeft = PointToScreen(Point(0, 0));
+    
+    return Rect(topLeft.x, topLeft.y, bounds.width, bounds.height);
+}
+
+Point UIElement::TransformToRoot(Point localPoint) const {
+    Point result = localPoint;
+    
+    // 递归累加从当前元素到根的所有布局偏移
+    const UIElement* current = this;
+    while (current) {
+        Rect layoutRect = current->GetLayoutRect();
+        result.x += layoutRect.x;
+        result.y += layoutRect.y;
+        
+        // 向上遍历视觉树
+        Visual* parent = current->GetVisualParent();
+        if (!parent) {
+            break;
+        }
+        
+        current = dynamic_cast<const UIElement*>(parent);
+        if (!current) {
+            break;  // 父节点不是 UIElement
+        }
+    }
+    
+    return result;
+}
+
+Point UIElement::TransformFromRoot(Point rootPoint) const {
+    Point result = rootPoint;
+    
+    // 收集从当前元素到根的所有元素
+    std::vector<const UIElement*> path;
+    const UIElement* current = this;
+    while (current) {
+        path.push_back(current);
+        Visual* parent = current->GetVisualParent();
+        if (!parent) {
+            break;
+        }
+        current = dynamic_cast<const UIElement*>(parent);
+        if (!current) {
+            break;
+        }
+    }
+    
+    // 从根向下减去布局偏移
+    for (auto it = path.rbegin(); it != path.rend(); ++it) {
+        Rect layoutRect = (*it)->GetLayoutRect();
+        result.x -= layoutRect.x;
+        result.y -= layoutRect.y;
+    }
+    
+    return result;
+}
+
+Window* UIElement::GetRootWindow() const {
+    const Visual* current = this;
+    while (current) {
+        if (const auto* window = dynamic_cast<const Window*>(current)) {
+            return const_cast<Window*>(window);
         }
         current = current->GetVisualParent();
     }

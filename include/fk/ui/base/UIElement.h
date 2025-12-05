@@ -385,6 +385,51 @@ public:
      */
     virtual std::vector<UIElement*> GetLogicalChildren() const;
     
+    // ========== 坐标转换 ==========
+    
+    /**
+     * @brief 将本地坐标转换为屏幕坐标
+     * @param localPoint 元素内部的本地坐标
+     * @return 屏幕绝对坐标
+     * 
+     * 这个方法会递归计算元素到根窗口的变换，然后转换为屏幕坐标。
+     * 用于 Popup 定位、工具提示等需要屏幕坐标的场景。
+     */
+    Point PointToScreen(Point localPoint) const;
+    
+    /**
+     * @brief 将屏幕坐标转换为本地坐标
+     * @param screenPoint 屏幕绝对坐标
+     * @return 元素内部的本地坐标
+     */
+    Point PointFromScreen(Point screenPoint) const;
+    
+    /**
+     * @brief 获取元素在屏幕上的边界矩形
+     * @return 屏幕坐标系下的边界矩形
+     */
+    Rect GetBoundsOnScreen() const;
+    
+    /**
+     * @brief 将本地坐标转换为根窗口坐标
+     * @param localPoint 元素内部的本地坐标
+     * @return 相对于根窗口的坐标
+     */
+    Point TransformToRoot(Point localPoint) const;
+    
+    /**
+     * @brief 将根窗口坐标转换为本地坐标
+     * @param rootPoint 相对于根窗口的坐标
+     * @return 元素内部的本地坐标
+     */
+    Point TransformFromRoot(Point rootPoint) const;
+    
+    /**
+     * @brief 获取包含此元素的根窗口
+     * @return Window 指针，如果不在窗口中则返回 nullptr
+     */
+    class Window* GetRootWindow() const;
+    
     // ========== 对象克隆 ==========
     
     /**
