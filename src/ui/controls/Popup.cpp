@@ -9,6 +9,10 @@
 #include "fk/ui/Window.h"
 #include <iostream>
 
+#ifdef FK_HAS_GLFW
+#include <GLFW/glfw3.h>
+#endif
+
 namespace fk::ui {
 
 // 显式实例化 FrameworkElement<Popup> 模板
@@ -283,9 +287,8 @@ Point Popup::CalculateScreenPosition() {
             break;
 
         case PlacementMode::Mouse:
-            // TODO: 获取鼠标位置（需要输入管理器支持）
-            // 暂时退回到 Relative 模式
-            basePos = Point(targetBounds.x, targetBounds.y);
+            // 获取鼠标屏幕位置
+            basePos = GetMouseScreenPosition();
             break;
 
         default:
@@ -296,10 +299,76 @@ Point Popup::CalculateScreenPosition() {
     // 应用偏移
     Point finalPos(basePos.x + hOffset, basePos.y + vOffset);
 
-    // TODO: Day 5 - 边界检测，确保不超出屏幕
-    // 当前简单实现：直接返回计算的位置
+    // Day 5: 边界检测，确保不超出屏幕
+    finalPos = ApplyBoundaryConstraints(finalPos, GetWidth(), GetHeight());
 
     return finalPos;
+}
+
+Point Popup::ApplyBoundaryConstraints(Point position, float popupWidth, float popupHeight) {
+    // 获取屏幕工作区域
+    Rect workArea = GetScreenWorkArea();
+    
+    // 确保 Popup 右边不超出屏幕
+    if (position.x + popupWidth > workArea.x + workArea.width) {
+        position.x = workArea.x + workArea.width - popupWidth;
+    }
+    
+    // 确保 Popup 左边不超出屏幕
+    if (position.x < workArea.x) {
+        position.x = workArea.x;
+    }
+    
+    // 确保 Popup 底部不超出屏幕
+    if (position.y + popupHeight > workArea.y + workArea.height) {
+        position.y = workArea.y + workArea.height - popupHeight;
+    }
+    
+    // 确保 Popup 顶部不超出屏幕
+    if (position.y < workArea.y) {
+        position.y = workArea.y;
+    }
+    
+    return position;
+}
+
+Rect Popup::GetScreenWorkArea() {
+#ifdef FK_HAS_GLFW
+    // 获取主显示器信息
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    if (!monitor) {
+        // 如果获取失败，返回一个默认屏幕大小
+        return Rect(0, 0, 1920, 1080);
+    }
+    
+    // 获取显示器工作区域（排除任务栏等）
+    int xpos, ypos, width, height;
+    glfwGetMonitorWorkarea(monitor, &xpos, &ypos, &width, &height);
+    
+    return Rect(static_cast<float>(xpos), static_cast<float>(ypos),
+                static_cast<float>(width), static_cast<float>(height));
+#else
+    // 模拟环境：返回默认屏幕大小
+    return Rect(0, 0, 1920, 1080);
+#endif
+}
+
+Point Popup::GetMouseScreenPosition() {
+    // 当前版本：简化实现
+    // 由于无法直接访问 Window 的 nativeHandle_，暂时使用 PlacementTarget 位置
+    // TODO: Day 6 - 添加全局鼠标位置追踪到 Window 或 InputManager
+    
+    UIElement* target = GetPlacementTarget();
+    if (target) {
+        // 使用 target 的边界作为近似位置
+        Rect bounds = target->GetBoundsOnScreen();
+        return Point(bounds.x, bounds.y);
+    }
+    
+    // 如果没有 target，返回屏幕中心
+    Rect workArea = GetScreenWorkArea();
+    return Point(workArea.x + workArea.width / 2.0f, 
+                 workArea.y + workArea.height / 2.0f);
 }
 
 } // namespace fk::ui

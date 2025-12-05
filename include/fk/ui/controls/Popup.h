@@ -199,6 +199,27 @@ protected:
      * @return 屏幕坐标点
      */
     Point CalculateScreenPosition();
+    
+    /**
+     * @brief 应用边界检测，确保 Popup 不超出屏幕
+     * @param position 原始位置
+     * @param popupWidth Popup 宽度
+     * @param popupHeight Popup 高度
+     * @return 调整后的位置
+     */
+    Point ApplyBoundaryConstraints(Point position, float popupWidth, float popupHeight);
+    
+    /**
+     * @brief 获取屏幕工作区域
+     * @return 屏幕工作区矩形
+     */
+    Rect GetScreenWorkArea();
+    
+    /**
+     * @brief 获取鼠标的屏幕坐标位置
+     * @return 鼠标屏幕坐标
+     */
+    Point GetMouseScreenPosition();
 
 private:
     // 依赖属性变更回调
