@@ -187,6 +187,7 @@ add_library(fk STATIC
     src/ui/controls/ItemContainerGenerator.cpp
     src/ui/controls/Border.cpp
     src/ui/controls/Image.cpp
+    src/ui/controls/Popup.cpp
     
     # ui/buttons - 按钮系控件
     src/ui/buttons/ButtonBase.cpp
@@ -358,6 +359,9 @@ target_link_libraries(coordinate_test PRIVATE fk)
 
 add_executable(popupservice_test examples/popup/popupservice_test.cpp)
 target_link_libraries(popupservice_test PRIVATE fk)
+
+add_executable(popup_test examples/popup/popup_test.cpp)
+target_link_libraries(popup_test PRIVATE fk)
 
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库

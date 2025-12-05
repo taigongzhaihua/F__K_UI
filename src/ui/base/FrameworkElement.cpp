@@ -10,6 +10,7 @@
 #include "fk/ui/layouts/StackPanel.h"
 #include "fk/ui/layouts/Grid.h"
 #include "fk/ui/graphics/Shape.h"
+#include "fk/ui/controls/Popup.h"
 
 namespace fk::ui {
 
@@ -176,3 +177,4 @@ template class fk::ui::FrameworkElement<fk::ui::Track>;
 template class fk::ui::FrameworkElement<fk::ui::ScrollBar>;
 template class fk::ui::FrameworkElement<fk::ui::ScrollContentPresenter<>>;
 template class fk::ui::FrameworkElement<fk::ui::ScrollViewer>;
+template class fk::ui::FrameworkElement<fk::ui::Popup>;

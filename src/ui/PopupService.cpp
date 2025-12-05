@@ -4,6 +4,7 @@
  */
 
 #include "fk/ui/PopupService.h"
+#include "fk/ui/controls/Popup.h"
 #include <algorithm>
 
 namespace fk::ui {
@@ -54,8 +55,9 @@ void PopupService::Update() {
     for (size_t i = 0; i < activePopups_.size(); ) {
         Popup* popup = activePopups_[i];
         
-        // 这里可以调用 Popup::UpdateInternal() 等方法
-        // 目前暂时为空实现
+        if (popup) {
+            popup->UpdatePopup();
+        }
         
         ++i;
     }
@@ -68,8 +70,7 @@ void PopupService::RenderAll() {
     
     for (Popup* popup : activePopups_) {
         if (popup) {
-            // 这里会调用 popup->RenderPopup() 或类似方法
-            // Day 4-5 实现 Popup 类后补充
+            popup->RenderPopup();
         }
     }
 }
@@ -80,8 +81,7 @@ void PopupService::CloseAll() {
     
     for (Popup* popup : popupsCopy) {
         if (popup) {
-            // 调用 Popup::Close()
-            // Day 4-5 实现 Popup 类后补充
+            popup->SetIsOpen(false);
         }
     }
     

@@ -94,28 +94,53 @@
 
 ## Phase 2: Popup 控件核心 (4天)
 
-### Day 4: Popup 控件结构
+### Day 4: Popup 控件结构 ✅
 **目标**: 实现 Popup 控件的基本属性和逻辑。
 
-- [ ] **文件创建**
-  - [ ] `include/fk/ui/controls/Popup.h`
-  - [ ] `src/ui/controls/Popup.cpp`
-- [ ] **类定义**
-  - [ ] 继承自 `FrameworkElement`
-- [ ] **依赖属性定义**
-  - [ ] `IsOpenProperty` (bool)
-  - [ ] `ChildProperty` (UIElement*)
-  - [ ] `PlacementTargetProperty` (UIElement*)
-  - [ ] `PlacementProperty` (Enum)
-  - [ ] `HorizontalOffsetProperty` (float)
-  - [ ] `VerticalOffsetProperty` (float)
-  - [ ] `StaysOpenProperty` (bool)
-- [ ] **属性回调**
-  - [ ] 实现 `OnIsOpenChanged`: 触发 Open/Close 逻辑
-  - [ ] 实现 `OnChildChanged`: 更新 PopupRoot 内容
-- [ ] **Open/Close 逻辑**
-  - [ ] `Open()`: 创建/获取 PopupRoot，计算位置，显示
-  - [ ] `Close()`: 隐藏 PopupRoot
+- [x] **文件创建**
+  - [x] `include/fk/ui/controls/Popup.h`
+  - [x] `src/ui/controls/Popup.cpp`
+- [x] **类定义**
+  - [x] 继承自 `FrameworkElement<Popup>`
+  - [x] 在 `FrameworkElement.cpp` 中添加显式模板实例化
+- [x] **PlacementMode 枚举**
+  - [x] Absolute, Relative, Bottom, Top, Right, Left, Center, Mouse
+- [x] **依赖属性定义**
+  - [x] `IsOpenProperty` (bool) - 默认 false
+  - [x] `ChildProperty` (UIElement*)
+  - [x] `PlacementTargetProperty` (UIElement*)
+  - [x] `PlacementProperty` (PlacementMode) - 默认 Bottom
+  - [x] `HorizontalOffsetProperty` (float)
+  - [x] `VerticalOffsetProperty` (float)
+  - [x] `StaysOpenProperty` (bool) - 默认 true
+  - [x] Width/Height 继承自 FrameworkElement (默认 200x150)
+- [x] **属性回调**
+  - [x] 实现 `OnIsOpenChanged`: 触发 Open/Close 逻辑
+  - [x] 实现 `OnChildChanged`: 更新 PopupRoot 内容
+- [x] **Open/Close 逻辑**
+  - [x] `Open()`: 创建 PopupRoot，设置内容，计算位置，显示，注册到 PopupService
+  - [x] `Close()`: 隐藏 PopupRoot，从 PopupService 注销
+  - [x] PopupRoot 复用机制（关闭时保留，重新打开时复用）
+- [x] **事件系统**
+  - [x] `Opened` 事件 - 使用 `core::Event<>()`
+  - [x] `Closed` 事件
+- [x] **定位计算 (初步)**
+  - [x] 实现 `CalculateScreenPosition()` - 支持所有 PlacementMode
+  - [x] Absolute 模式（直接使用偏移）
+  - [x] 其他模式使用 `target->GetBoundsOnScreen()` + 偏移计算
+- [x] **PopupService 集成**
+  - [x] 更新 `PopupService::Update()` 调用 `Popup::UpdatePopup()`
+  - [x] 更新 `PopupService::RenderAll()` 调用 `Popup::RenderPopup()`
+  - [x] 更新 `PopupService::CloseAll()` 调用 `Popup::SetIsOpen(false)`
+- [x] **测试验证**
+  - [x] 创建 `examples/popup/popup_test.cpp`
+  - [x] 属性设置测试通过 (Width:300, Height:200)
+  - [x] 内容创建测试通过 (Border + TextBlock)
+  - [x] 打开/关闭逻辑测试通过
+  - [x] 事件触发测试通过 (Opened/Closed ✓)
+  - [x] PopupService 集成测试通过 (注册/注销)
+  - [x] 渲染测试通过 (91 frames @ ~60fps for 3 seconds)
+  - [x] 重新打开测试通过 (PopupRoot 复用)
 
 ### Day 5: 定位逻辑实现
 **目标**: 实现各种定位模式的坐标计算。
