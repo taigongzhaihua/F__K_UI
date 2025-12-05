@@ -234,8 +234,9 @@ add_library(fk STATIC
     src/ui/input/FocusManager.cpp
     src/ui/input/NameScope.cpp
     
-    # ui - 窗口（特殊，放根目录）
+    # ui/window - 窗口相关
     src/ui/Window.cpp
+    src/ui/window/PopupRoot.cpp
     
     # ========== ui 模块结束 ==========
     
@@ -346,6 +347,10 @@ target_link_libraries(subpath_fill_test PRIVATE fk)
 # DataTemplate Examples
 add_executable(datatemplate_demo examples/datatemplate/datatemplate_demo.cpp)
 target_link_libraries(datatemplate_demo PRIVATE fk)
+
+# Popup Examples
+add_executable(popuproot_test examples/popup/popuproot_test.cpp)
+target_link_libraries(popuproot_test PRIVATE fk)
 
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库
