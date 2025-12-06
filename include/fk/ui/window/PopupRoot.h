@@ -167,6 +167,14 @@ public:
      * @brief 获取输入管理器
      */
     InputManager* GetInputManager() const { return inputManager_.get(); }
+    
+    /**
+     * @brief 检查屏幕坐标点是否在窗口范围内
+     * @param screenX 屏幕 X 坐标
+     * @param screenY 屏幕 Y 坐标
+     * @return true 如果点在窗口内
+     */
+    bool ContainsScreenPoint(int screenX, int screenY) const;
 
 private:
     // 初始化渲染器

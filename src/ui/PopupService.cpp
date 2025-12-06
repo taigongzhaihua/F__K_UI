@@ -5,6 +5,7 @@
 
 #include "fk/ui/PopupService.h"
 #include "fk/ui/controls/Popup.h"
+#include "fk/ui/window/PopupRoot.h"
 #include <algorithm>
 
 namespace fk::ui {
@@ -88,6 +89,35 @@ void PopupService::CloseAll() {
     
     // 清空列表（如果 Close() 正确调用了 UnregisterPopup，这里应该已经为空）
     activePopups_.clear();
+}
+
+void PopupService::HandleGlobalMouseDown(int screenX, int screenY) {
+    // 创建副本以避免在迭代中修改列表（关闭 Popup 会调用 UnregisterPopup）
+    std::vector<Popup*> popupsCopy = activePopups_;
+    
+    for (Popup* popup : popupsCopy) {
+        if (!popup) {
+            continue;
+        }
+        
+        // 只处理 StaysOpen=false 的 Popup
+        if (popup->GetStaysOpen()) {
+            continue;
+        }
+        
+        // 获取 PopupRoot
+        PopupRoot* popupRoot = popup->GetPopupRoot();
+        if (!popupRoot) {
+            continue;
+        }
+        
+        // 检查点击是否在 PopupRoot 窗口内
+        if (!popupRoot->ContainsScreenPoint(screenX, screenY)) {
+            // 点击在窗口外，关闭 Popup
+            popup->SetIsOpen(false);
+        }
+        // 如果点击在窗口内，由 PopupRoot 的 InputManager 处理，不在这里关闭
+    }
 }
 
 } // namespace fk::ui

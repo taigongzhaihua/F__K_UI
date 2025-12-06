@@ -451,4 +451,28 @@ bool PopupRoot::ProcessEvents() {
 #endif
 }
 
+bool PopupRoot::ContainsScreenPoint(int screenX, int screenY) const {
+    if (!nativeHandle_ || !isVisible_) {
+        return false;
+    }
+    
+#ifdef FK_HAS_GLFW
+    GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
+    
+    // 获取窗口位置
+    int winX, winY;
+    glfwGetWindowPos(window, &winX, &winY);
+    
+    // 获取窗口大小
+    int winWidth, winHeight;
+    glfwGetWindowSize(window, &winWidth, &winHeight);
+    
+    // 检查点是否在窗口矩形内
+    return (screenX >= winX && screenX < winX + winWidth &&
+            screenY >= winY && screenY < winY + winHeight);
+#else
+    return false;
+#endif
+}
+
 } // namespace fk::ui

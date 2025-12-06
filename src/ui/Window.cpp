@@ -315,6 +315,14 @@ void Window::Show() {
             
             if (action == GLFW_PRESS) {
                 event.type = PlatformPointerEvent::Type::Down;
+                
+                // 处理全局鼠标按下事件（用于 StaysOpen=false 的 Popup）
+                // 将窗口客户区坐标转换为屏幕坐标
+                int winX, winY;
+                glfwGetWindowPos(win, &winX, &winY);
+                int screenX = winX + static_cast<int>(xpos);
+                int screenY = winY + static_cast<int>(ypos);
+                PopupService::Instance().HandleGlobalMouseDown(screenX, screenY);
             } else if (action == GLFW_RELEASE) {
                 event.type = PlatformPointerEvent::Type::Up;
             }

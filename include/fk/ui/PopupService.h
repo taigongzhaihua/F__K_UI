@@ -91,6 +91,20 @@ public:
      * 用于清理场景，如应用程序关闭时
      */
     void CloseAll();
+    
+    /**
+     * @brief 处理全局鼠标按下事件
+     * @param screenX 屏幕 X 坐标
+     * @param screenY 屏幕 Y 坐标
+     * 
+     * 用于实现 StaysOpen=false 的 Popup 点击外部关闭逻辑。
+     * 遍历所有活跃的 Popup，检查点击位置是否在 PopupRoot 窗口内：
+     * - 如果在窗口内，不做处理（由 PopupRoot 的 InputManager 处理）
+     * - 如果在窗口外且 StaysOpen=false，关闭该 Popup
+     * 
+     * 应在主窗口的鼠标按下事件中调用。
+     */
+    void HandleGlobalMouseDown(int screenX, int screenY);
 
 private:
     PopupService() = default;

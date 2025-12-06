@@ -182,13 +182,21 @@
 ### Day 7: 完善 PopupService
 **目标**: 实现点击外部关闭等交互逻辑。
 
-- [ ] **全局点击检测**
-  - [ ] 实现 `HandleGlobalMouseDown(Point screenPos)`
-  - [ ] 遍历所有 Active Popups
-  - [ ] 检查点击位置是否在 PopupRoot 范围内
-  - [ ] 如果不在且 `StaysOpen == false`，关闭 Popup
-- [ ] **Window 集成**
-  - [ ] 在 `Window` 的鼠标事件处理中调用 `PopupService`
+- [x] **全局点击检测**
+  - [x] 实现 `HandleGlobalMouseDown(int screenX, int screenY)`
+  - [x] 遍历所有 Active Popups
+  - [x] 检查点击位置是否在 PopupRoot 范围内
+  - [x] 实现 `PopupRoot::ContainsScreenPoint(int, int)`
+  - [x] 如果不在且 `StaysOpen == false`，关闭 Popup
+- [x] **Window 集成**
+  - [x] 在 `Window` 的鼠标按下事件中调用 `PopupService::HandleGlobalMouseDown`
+  - [x] 将窗口客户区坐标转换为屏幕坐标
+- [x] **测试验证**
+  - [x] 创建 `examples/popup/popup_staysopen_test.cpp`
+  - [x] 测试 StaysOpen=true 的 Popup 不会因点击外部关闭
+  - [x] 测试 StaysOpen=false 的 Popup 点击外部自动关闭
+  - [x] 测试多个 StaysOpen=false 的 Popup 同时关闭
+  - [x] 验证点击 Popup 内部不会关闭
 
 ---
 
