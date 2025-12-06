@@ -13,6 +13,7 @@ namespace fk::render {
 namespace fk::ui {
 
 class UIElement;
+class InputManager;
 
 /**
  * @brief PopupRoot - Popup 的原生窗口容器
@@ -153,6 +154,19 @@ public:
      * @brief 获取原生窗口句柄
      */
     void* GetNativeHandle() const { return nativeHandle_; }
+    
+    // ========== 事件处理 ==========
+    
+    /**
+     * @brief 处理窗口事件（输入等）
+     * @return true 表示窗口仍然活跃
+     */
+    bool ProcessEvents();
+    
+    /**
+     * @brief 获取输入管理器
+     */
+    InputManager* GetInputManager() const { return inputManager_.get(); }
 
 private:
     // 初始化渲染器
@@ -168,6 +182,7 @@ private:
     // 渲染系统
     std::unique_ptr<render::GlRenderer> renderer_;     // 独立渲染器
     std::unique_ptr<render::RenderList> renderList_;   // 渲染命令列表
+    std::unique_ptr<InputManager> inputManager_;       // 输入管理器
     
     // 状态标志
     bool initialized_{false};                          // 是否已初始化

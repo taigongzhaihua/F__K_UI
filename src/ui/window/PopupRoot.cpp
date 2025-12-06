@@ -5,6 +5,7 @@
 #include "fk/render/RenderContext.h"
 #include "fk/render/TextRenderer.h"
 #include "fk/ui/text/TextBlock.h"
+#include "fk/ui/input/InputManager.h"
 
 #ifdef FK_HAS_GLFW
 #include <GLFW/glfw3.h>
@@ -37,6 +38,10 @@ void PopupRoot::Initialize() {
     renderList_ = std::make_unique<render::RenderList>();
     // renderer_ 将在窗口创建后初始化
 #endif
+    
+    // 初始化输入管理器
+    inputManager_ = std::make_unique<InputManager>();
+    // content_ 设置后将设置 root
     
     initialized_ = true;
     std::cout << "[PopupRoot] Initialized" << std::endl;
@@ -92,6 +97,95 @@ void PopupRoot::Create(int width, int height) {
     height_ = height;
     
     std::cout << "[PopupRoot] Window created: " << width << "x" << height << std::endl;
+    
+    // 设置用户指针，以便在回调中访问 PopupRoot 实例
+    glfwSetWindowUserPointer(window, this);
+    
+    // 设置鼠标按钮回调
+    glfwSetMouseButtonCallback(window, [](GLFWwindow* win, int button, int action, int mods) {
+        auto* self = static_cast<PopupRoot*>(glfwGetWindowUserPointer(win));
+        if (!self || !self->inputManager_) return;
+        
+        double xpos, ypos;
+        glfwGetCursorPos(win, &xpos, &ypos);
+        
+        PlatformPointerEvent event;
+        event.position = Point(static_cast<float>(xpos), static_cast<float>(ypos));
+        event.button = button;
+        event.ctrlKey = (mods & GLFW_MOD_CONTROL) != 0;
+        event.shiftKey = (mods & GLFW_MOD_SHIFT) != 0;
+        event.altKey = (mods & GLFW_MOD_ALT) != 0;
+        
+        if (action == GLFW_PRESS) {
+            event.type = PlatformPointerEvent::Type::Down;
+        } else if (action == GLFW_RELEASE) {
+            event.type = PlatformPointerEvent::Type::Up;
+        }
+        
+        self->inputManager_->ProcessPointerEvent(event);
+    });
+    
+    // 设置鼠标移动回调
+    glfwSetCursorPosCallback(window, [](GLFWwindow* win, double xpos, double ypos) {
+        auto* self = static_cast<PopupRoot*>(glfwGetWindowUserPointer(win));
+        if (!self || !self->inputManager_) return;
+        
+        PlatformPointerEvent event;
+        event.type = PlatformPointerEvent::Type::Move;
+        event.position = Point(static_cast<float>(xpos), static_cast<float>(ypos));
+        
+        self->inputManager_->ProcessPointerEvent(event);
+    });
+    
+    // 设置滚轮回调
+    glfwSetScrollCallback(window, [](GLFWwindow* win, double xoffset, double yoffset) {
+        auto* self = static_cast<PopupRoot*>(glfwGetWindowUserPointer(win));
+        if (!self || !self->inputManager_) return;
+        
+        double xpos, ypos;
+        glfwGetCursorPos(win, &xpos, &ypos);
+        
+        PlatformPointerEvent event;
+        event.type = PlatformPointerEvent::Type::Wheel;
+        event.position = Point(static_cast<float>(xpos), static_cast<float>(ypos));
+        event.wheelDelta = static_cast<int>(yoffset * 120);
+        
+        self->inputManager_->ProcessPointerEvent(event);
+    });
+    
+    // 设置键盘回调
+    glfwSetKeyCallback(window, [](GLFWwindow* win, int key, int scancode, int action, int mods) {
+        auto* self = static_cast<PopupRoot*>(glfwGetWindowUserPointer(win));
+        if (!self || !self->inputManager_) return;
+        
+        PlatformKeyEvent event;
+        event.key = key;
+        event.scanCode = scancode;
+        event.isRepeat = (action == GLFW_REPEAT);
+        event.ctrlKey = (mods & GLFW_MOD_CONTROL) != 0;
+        event.shiftKey = (mods & GLFW_MOD_SHIFT) != 0;
+        event.altKey = (mods & GLFW_MOD_ALT) != 0;
+        
+        if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+            event.type = PlatformKeyEvent::Type::Down;
+        } else if (action == GLFW_RELEASE) {
+            event.type = PlatformKeyEvent::Type::Up;
+        }
+        
+        self->inputManager_->ProcessKeyboardEvent(event);
+    });
+    
+    // 设置字符输入回调
+    glfwSetCharCallback(window, [](GLFWwindow* win, unsigned int codepoint) {
+        auto* self = static_cast<PopupRoot*>(glfwGetWindowUserPointer(win));
+        if (!self || !self->inputManager_) return;
+        
+        PlatformKeyEvent event;
+        event.type = PlatformKeyEvent::Type::Char;
+        event.character = static_cast<char32_t>(codepoint);
+        
+        self->inputManager_->ProcessKeyboardEvent(event);
+    });
     
     // 初始化渲染器
     InitializeRenderer();
@@ -175,6 +269,13 @@ Size PopupRoot::GetSize() const {
 
 void PopupRoot::SetContent(UIElement* content) {
     content_ = content;
+    
+    // 设置 InputManager 的根节点
+    if (inputManager_ && content_) {
+        // content_ 需要是 Visual 类型，大多数 UIElement 都继承自 Visual
+        inputManager_->SetRoot(dynamic_cast<Visual*>(content_));
+    }
+    
     std::cout << "[PopupRoot] Content set" << std::endl;
 }
 
@@ -325,6 +426,29 @@ void PopupRoot::CleanupRenderer() {
     renderer_.reset();
     renderList_.reset();
     std::cout << "[PopupRoot] Renderer cleaned up" << std::endl;
+}
+
+// ========== 事件处理 ==========
+
+bool PopupRoot::ProcessEvents() {
+    if (!nativeHandle_) {
+        return false;
+    }
+    
+#ifdef FK_HAS_GLFW
+    GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
+    
+    // 检查窗口是否应该关闭
+    if (glfwWindowShouldClose(window)) {
+        return false;
+    }
+    
+    // GLFW 事件会通过回调自动处理
+    // 这里只需要检查窗口状态
+    return true;
+#else
+    return false;
+#endif
 }
 
 } // namespace fk::ui

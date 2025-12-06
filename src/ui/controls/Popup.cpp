@@ -221,7 +221,11 @@ void Popup::RenderPopup() {
 }
 
 void Popup::UpdatePopup() {
-    // 当前版本：简单实现
+    // 处理 PopupRoot 的窗口事件（输入等）
+    if (popupRoot_) {
+        popupRoot_->ProcessEvents();
+    }
+    
     // 未来可以添加：
     // - 检测 PlacementTarget 位置变化并更新 Popup 位置
     // - 处理 StaysOpen=false 时的外部点击检测

@@ -56,6 +56,7 @@ void PopupService::Update() {
         Popup* popup = activePopups_[i];
         
         if (popup) {
+            // 处理 Popup 窗口事件（输入等）
             popup->UpdatePopup();
         }
         

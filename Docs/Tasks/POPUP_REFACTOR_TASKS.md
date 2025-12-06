@@ -145,27 +145,39 @@
 ### Day 5: 定位逻辑实现
 **目标**: 实现各种定位模式的坐标计算。
 
-- [ ] **定位算法**
-  - [ ] 实现 `Point CalculateScreenPosition()`
-- [ ] **模式实现**
-  - [ ] `PlacementMode::Absolute`: 使用 Offset 作为屏幕坐标
-  - [ ] `PlacementMode::Relative`: 相对于 Target 左上角 + Offset
-  - [ ] `PlacementMode::Bottom`: Target 左下角
-  - [ ] `PlacementMode::Right`: Target 右上角
-  - [ ] `PlacementMode::Center`: Target 中心
-  - [ ] `PlacementMode::Mouse`: 当前鼠标位置
-- [ ] **边界检测 (初步)**
-  - [ ] 确保 Popup 不会出现在屏幕外 (简单 clamp)
+- [x] **定位算法**
+  - [x] 实现 `Point CalculateScreenPosition()`
+- [x] **模式实现**
+  - [x] `PlacementMode::Absolute`: 使用 Offset 作为屏幕坐标
+  - [x] `PlacementMode::Relative`: 相对于 Target 左上角 + Offset
+  - [x] `PlacementMode::Bottom`: Target 左下角
+  - [x] `PlacementMode::Right`: Target 右上角
+  - [x] `PlacementMode::Center`: Target 中心
+  - [x] `PlacementMode::Mouse`: 当前鼠标位置
+- [x] **边界检测 (初步)**
+  - [x] 确保 Popup 不会出现在屏幕外 (简单 clamp)
+- [x] **测试验证**
+  - [x] 创建 `examples/popup/popup_placement_test.cpp`
+  - [x] 所有 PlacementMode 测试通过
+  - [x] 边界检测测试通过 (极端坐标 x=10000, y=10000)
 
 ### Day 6: 事件系统与集成
 **目标**: 完善事件通知和输入集成。
 
-- [ ] **事件定义**
-  - [ ] `Opened` 事件
-  - [ ] `Closed` 事件
-- [ ] **输入传递**
-  - [ ] 确保 PopupRoot 能接收鼠标/键盘输入
-  - [ ] 验证 `InputManager` 在多窗口下的行为 (可能需要为每个 PopupRoot 创建 InputManager)
+- [x] **事件定义**
+  - [x] `Opened` 事件 (已在 Day 4 完成)
+  - [x] `Closed` 事件 (已在 Day 4 完成)
+- [x] **输入传递**
+  - [x] 为 PopupRoot 添加 InputManager 成员
+  - [x] 在 PopupRoot::Create 中设置 GLFW 输入回调 (MouseButton, CursorPos, Scroll, Key, Char)
+  - [x] 实现 PopupRoot::ProcessEvents() 方法
+  - [x] PopupService::Update() 调用 PopupRoot::ProcessEvents()
+  - [x] 每个 PopupRoot 都有独立的 InputManager
+- [x] **测试验证**
+  - [x] 创建 `examples/popup/popup_input_test.cpp`
+  - [x] 验证 InputManager 创建成功
+  - [x] 验证多个 Popup 的 InputManager 独立性
+  - [x] GLFW 输入回调已设置
 
 ### Day 7: 完善 PopupService
 **目标**: 实现点击外部关闭等交互逻辑。
