@@ -223,14 +223,32 @@
   - [x] 测试快速开关
   - [x] 所有动画测试通过
 
-### Day 9: 屏幕边界处理
+### Day 9: 屏幕边界处理 ✅
 **目标**: 智能调整 Popup 位置以避免被遮挡。
 
-- [ ] **获取屏幕信息**
-  - [ ] 使用 `glfwGetMonitors` 获取显示器列表和工作区大小
-- [ ] **碰撞检测**
-  - [ ] 在 `CalculateScreenPosition` 中检测是否超出屏幕
-  - [ ] 实现自动翻转逻辑 (例如 Bottom 超出则变为 Top)
+- [x] **获取屏幕信息**
+  - [x] 使用 `glfwGetMonitors` 获取显示器列表和工作区大小
+  - [x] 实现 `GetMonitorWorkAreaAt()` 方法支持多显示器
+  - [x] 根据 Popup 位置自动选择正确的显示器工作区域
+- [x] **碰撞检测**
+  - [x] 实现 `IsOutOfBounds()` 方法检测是否超出屏幕边界
+  - [x] 在 `CalculateScreenPosition` 中集成智能翻转
+  - [x] 实现自动翻转逻辑 (例如 Bottom 超出则变为 Top)
+- [x] **智能翻转算法**
+  - [x] 实现 `TryFlipPlacement()` 方法
+  - [x] 支持 Bottom ↔ Top 翻转
+  - [x] 支持 Left ↔ Right 翻转
+  - [x] 计算翻转前后的溢出量，选择最优方案
+- [x] **位置计算优化**
+  - [x] 实现 `CalculateBasePlacement()` 方法统一计算各模式的基础位置
+  - [x] 修改 `CalculateScreenPosition()` 使用智能翻转
+  - [x] 修改 `ApplyBoundaryConstraints()` 使用动态显示器工作区
+- [x] **测试**
+  - [x] 创建 `examples/popup/popup_boundary_test.cpp`
+  - [x] 测试边界碰撞检测
+  - [x] 测试自动翻转功能
+  - [x] 验证多显示器支持
+  - [x] 所有边界处理测试通过
 
 ### Day 10: 性能优化
 **目标**: 确保多窗口渲染不卡顿。

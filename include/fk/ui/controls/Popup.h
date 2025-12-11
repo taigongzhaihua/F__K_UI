@@ -214,7 +214,7 @@ protected:
     Point CalculateScreenPosition();
     
     /**
-     * @brief 应用边界检测，确保 Popup 不超出屏幕
+     * @brief 应用边界约束，确保 Popup 不超出屏幕
      * @param position 原始位置
      * @param popupWidth Popup 宽度
      * @param popupHeight Popup 高度
@@ -227,6 +227,47 @@ protected:
      * @return 屏幕工作区矩形
      */
     Rect GetScreenWorkArea();
+    
+    /**
+     * @brief 获取包含指定点的显示器的工作区域
+     * @param screenX 屏幕 X 坐标
+     * @param screenY 屏幕 Y 坐标
+     * @return 显示器工作区矩形
+     */
+    Rect GetMonitorWorkAreaAt(float screenX, float screenY);
+    
+    /**
+     * @brief 检测位置是否会导致 Popup 超出屏幕边界
+     * @param position Popup 位置
+     * @param popupWidth Popup 宽度
+     * @param popupHeight Popup 高度
+     * @param workArea 屏幕工作区域
+     * @return true 表示超出边界
+     */
+    bool IsOutOfBounds(Point position, float popupWidth, float popupHeight, const Rect& workArea);
+    
+    /**
+     * @brief 尝试智能翻转 Placement 模式以避免超出屏幕
+     * @param mode 当前的 Placement 模式
+     * @param targetBounds PlacementTarget 的屏幕边界
+     * @param popupWidth Popup 宽度
+     * @param popupHeight Popup 高度
+     * @param workArea 屏幕工作区域
+     * @return 优化后的 Placement 模式
+     */
+    PlacementMode TryFlipPlacement(PlacementMode mode, const Rect& targetBounds, 
+                                    float popupWidth, float popupHeight, const Rect& workArea);
+    
+    /**
+     * @brief 计算指定 Placement 模式下的基础位置
+     * @param mode Placement 模式
+     * @param targetBounds PlacementTarget 的屏幕边界
+     * @param popupWidth Popup 宽度
+     * @param popupHeight Popup 高度
+     * @return 基础位置（不含偏移）
+     */
+    Point CalculateBasePlacement(PlacementMode mode, const Rect& targetBounds, 
+                                  float popupWidth, float popupHeight);
     
     /**
      * @brief 获取鼠标的屏幕坐标位置

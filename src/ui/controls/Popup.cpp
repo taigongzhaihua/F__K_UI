@@ -9,6 +9,8 @@
 #include "fk/ui/Window.h"
 #include <iostream>
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 #ifdef FK_HAS_GLFW
 #include <GLFW/glfw3.h>
@@ -317,80 +319,50 @@ Point Popup::CalculateScreenPosition() {
     UIElement* target = GetPlacementTarget();
     float hOffset = GetHorizontalOffset();
     float vOffset = GetVerticalOffset();
+    float popupWidth = GetWidth();
+    float popupHeight = GetHeight();
 
     // 模式 1: Absolute - 直接使用偏移作为屏幕坐标
     if (mode == PlacementMode::Absolute) {
-        return Point(hOffset, vOffset);
+        Point pos(hOffset, vOffset);
+        // 仍然应用边界约束，防止完全超出屏幕
+        return ApplyBoundaryConstraints(pos, popupWidth, popupHeight);
     }
 
     // 如果没有 PlacementTarget，退回到 Absolute 模式
     if (!target) {
         std::cerr << "Warning: No PlacementTarget set, using Absolute mode" << std::endl;
-        return Point(hOffset, vOffset);
+        Point pos(hOffset, vOffset);
+        return ApplyBoundaryConstraints(pos, popupWidth, popupHeight);
     }
 
     // 获取 Target 在屏幕上的边界
     Rect targetBounds = target->GetBoundsOnScreen();
-
-    // 根据 PlacementMode 计算基础位置
-    Point basePos;
-
-    switch (mode) {
-        case PlacementMode::Relative:
-            // 相对于 Target 左上角
-            basePos = Point(targetBounds.x, targetBounds.y);
-            break;
-
-        case PlacementMode::Bottom:
-            // Target 左下角（常用于下拉菜单）
-            basePos = Point(targetBounds.x, targetBounds.y + targetBounds.height);
-            break;
-
-        case PlacementMode::Top:
-            // Target 左上角上方
-            basePos = Point(targetBounds.x, targetBounds.y - GetHeight());
-            break;
-
-        case PlacementMode::Right:
-            // Target 右上角
-            basePos = Point(targetBounds.x + targetBounds.width, targetBounds.y);
-            break;
-
-        case PlacementMode::Left:
-            // Target 左上角左侧
-            basePos = Point(targetBounds.x - GetWidth(), targetBounds.y);
-            break;
-
-        case PlacementMode::Center:
-            // Target 中心
-            basePos = Point(
-                targetBounds.x + (targetBounds.width - GetWidth()) / 2.0f,
-                targetBounds.y + (targetBounds.height - GetHeight()) / 2.0f
-            );
-            break;
-
-        case PlacementMode::Mouse:
-            // 获取鼠标屏幕位置
-            basePos = GetMouseScreenPosition();
-            break;
-
-        default:
-            basePos = Point(targetBounds.x, targetBounds.y);
-            break;
-    }
+    
+    // Day 9: 获取 Target 所在的显示器工作区域
+    Rect workArea = GetMonitorWorkAreaAt(
+        targetBounds.x + targetBounds.width / 2.0f,
+        targetBounds.y + targetBounds.height / 2.0f
+    );
+    
+    // Day 9: 智能翻转 - 尝试自动调整 Placement 模式以适应屏幕边界
+    PlacementMode effectiveMode = TryFlipPlacement(mode, targetBounds, popupWidth, popupHeight, workArea);
+    
+    // 计算基础位置（使用可能已翻转的模式）
+    Point basePos = CalculateBasePlacement(effectiveMode, targetBounds, popupWidth, popupHeight);
 
     // 应用偏移
     Point finalPos(basePos.x + hOffset, basePos.y + vOffset);
 
-    // Day 5: 边界检测，确保不超出屏幕
-    finalPos = ApplyBoundaryConstraints(finalPos, GetWidth(), GetHeight());
+    // 最后应用边界约束，确保不超出屏幕（作为最后的保障）
+    finalPos = ApplyBoundaryConstraints(finalPos, popupWidth, popupHeight);
 
     return finalPos;
 }
 
 Point Popup::ApplyBoundaryConstraints(Point position, float popupWidth, float popupHeight) {
-    // 获取屏幕工作区域
-    Rect workArea = GetScreenWorkArea();
+    // Day 9: 使用包含 Popup 位置的显示器工作区域
+    Rect workArea = GetMonitorWorkAreaAt(position.x, position.y);
     
     // 确保 Popup 右边不超出屏幕
     if (position.x + popupWidth > workArea.x + workArea.width) {
@@ -434,6 +406,176 @@ Rect Popup::GetScreenWorkArea() {
     // 模拟环境：返回默认屏幕大小
     return Rect(0, 0, 1920, 1080);
 #endif
+}
+
+Rect Popup::GetMonitorWorkAreaAt(float screenX, float screenY) {
+#ifdef FK_HAS_GLFW
+    // 获取所有显示器
+    int monitorCount;
+    GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
+    
+    if (!monitors || monitorCount == 0) {
+        return GetScreenWorkArea(); // 回退到主显示器
+    }
+    
+    // 查找包含指定坐标的显示器
+    for (int i = 0; i < monitorCount; ++i) {
+        int xpos, ypos, width, height;
+        glfwGetMonitorWorkarea(monitors[i], &xpos, &ypos, &width, &height);
+        
+        // 检查点是否在显示器范围内
+        if (screenX >= xpos && screenX < xpos + width &&
+            screenY >= ypos && screenY < ypos + height) {
+            return Rect(static_cast<float>(xpos), static_cast<float>(ypos),
+                       static_cast<float>(width), static_cast<float>(height));
+        }
+    }
+    
+    // 如果找不到包含该点的显示器，返回最近的显示器
+    float minDistance = std::numeric_limits<float>::max();
+    Rect nearestWorkArea;
+    
+    for (int i = 0; i < monitorCount; ++i) {
+        int xpos, ypos, width, height;
+        glfwGetMonitorWorkarea(monitors[i], &xpos, &ypos, &width, &height);
+        
+        // 计算到显示器中心的距离
+        float centerX = xpos + width / 2.0f;
+        float centerY = ypos + height / 2.0f;
+        float distance = std::sqrt((screenX - centerX) * (screenX - centerX) +
+                                  (screenY - centerY) * (screenY - centerY));
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestWorkArea = Rect(static_cast<float>(xpos), static_cast<float>(ypos),
+                                  static_cast<float>(width), static_cast<float>(height));
+        }
+    }
+    
+    return nearestWorkArea;
+#else
+    return GetScreenWorkArea();
+#endif
+}
+
+bool Popup::IsOutOfBounds(Point position, float popupWidth, float popupHeight, const Rect& workArea) {
+    // 检查任意边是否超出屏幕
+    bool outLeft = position.x < workArea.x;
+    bool outRight = position.x + popupWidth > workArea.x + workArea.width;
+    bool outTop = position.y < workArea.y;
+    bool outBottom = position.y + popupHeight > workArea.y + workArea.height;
+    
+    return outLeft || outRight || outTop || outBottom;
+}
+
+Point Popup::CalculateBasePlacement(PlacementMode mode, const Rect& targetBounds, 
+                                     float popupWidth, float popupHeight) {
+    Point basePos;
+    
+    switch (mode) {
+        case PlacementMode::Relative:
+            basePos = Point(targetBounds.x, targetBounds.y);
+            break;
+            
+        case PlacementMode::Bottom:
+            basePos = Point(targetBounds.x, targetBounds.y + targetBounds.height);
+            break;
+            
+        case PlacementMode::Top:
+            basePos = Point(targetBounds.x, targetBounds.y - popupHeight);
+            break;
+            
+        case PlacementMode::Right:
+            basePos = Point(targetBounds.x + targetBounds.width, targetBounds.y);
+            break;
+            
+        case PlacementMode::Left:
+            basePos = Point(targetBounds.x - popupWidth, targetBounds.y);
+            break;
+            
+        case PlacementMode::Center:
+            basePos = Point(
+                targetBounds.x + (targetBounds.width - popupWidth) / 2.0f,
+                targetBounds.y + (targetBounds.height - popupHeight) / 2.0f
+            );
+            break;
+            
+        case PlacementMode::Mouse:
+            basePos = GetMouseScreenPosition();
+            break;
+            
+        default:
+            basePos = Point(targetBounds.x, targetBounds.y);
+            break;
+    }
+    
+    return basePos;
+}
+
+PlacementMode Popup::TryFlipPlacement(PlacementMode mode, const Rect& targetBounds, 
+                                       float popupWidth, float popupHeight, const Rect& workArea) {
+    // 只对需要翻转的模式进行处理
+    if (mode != PlacementMode::Bottom && mode != PlacementMode::Top &&
+        mode != PlacementMode::Right && mode != PlacementMode::Left) {
+        return mode; // 不翻转 Absolute, Relative, Center, Mouse
+    }
+    
+    // 计算当前模式的位置
+    Point currentPos = CalculateBasePlacement(mode, targetBounds, popupWidth, popupHeight);
+    
+    // 如果当前位置没有超出边界，不需要翻转
+    if (!IsOutOfBounds(currentPos, popupWidth, popupHeight, workArea)) {
+        return mode;
+    }
+    
+    // 尝试翻转到相反方向
+    PlacementMode flippedMode = mode;
+    
+    switch (mode) {
+        case PlacementMode::Bottom:
+            flippedMode = PlacementMode::Top;
+            break;
+            
+        case PlacementMode::Top:
+            flippedMode = PlacementMode::Bottom;
+            break;
+            
+        case PlacementMode::Right:
+            flippedMode = PlacementMode::Left;
+            break;
+            
+        case PlacementMode::Left:
+            flippedMode = PlacementMode::Right;
+            break;
+            
+        default:
+            return mode;
+    }
+    
+    // 计算翻转后的位置
+    Point flippedPos = CalculateBasePlacement(flippedMode, targetBounds, popupWidth, popupHeight);
+    
+    // 如果翻转后更好（不超出边界或者超出更少），使用翻转后的模式
+    if (!IsOutOfBounds(flippedPos, popupWidth, popupHeight, workArea)) {
+        return flippedMode;
+    }
+    
+    // 如果两者都超出，计算哪个超出更少
+    auto calculateOverflow = [&](Point pos) -> float {
+        float overflow = 0.0f;
+        if (pos.x < workArea.x) overflow += workArea.x - pos.x;
+        if (pos.x + popupWidth > workArea.x + workArea.width) 
+            overflow += (pos.x + popupWidth) - (workArea.x + workArea.width);
+        if (pos.y < workArea.y) overflow += workArea.y - pos.y;
+        if (pos.y + popupHeight > workArea.y + workArea.height) 
+            overflow += (pos.y + popupHeight) - (workArea.y + workArea.height);
+        return overflow;
+    };
+    
+    float currentOverflow = calculateOverflow(currentPos);
+    float flippedOverflow = calculateOverflow(flippedPos);
+    
+    return (flippedOverflow < currentOverflow) ? flippedMode : mode;
 }
 
 Point Popup::GetMouseScreenPosition() {
