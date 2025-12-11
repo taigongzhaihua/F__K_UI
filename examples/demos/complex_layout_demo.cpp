@@ -8,12 +8,14 @@
 #include "fk/ui/buttons/CheckBox.h"
 #include "fk/ui/buttons/RadioButton.h"
 #include "fk/ui/controls/Border.h"
+#include "fk/ui/controls/Popup.h"
 #include "fk/ui/layouts/Grid.h"
 #include "fk/ui/layouts/GridCellAttacher.h"
 #include "fk/ui/styling/Thickness.h"
 #include "fk/core/Logger.h"
 
 #include <iostream>
+#include <memory>
 
 int main(int argc, char **argv)
 {
@@ -141,7 +143,7 @@ int main(int argc, char **argv)
 
                         // Main content area - contains multiple cards
                         (new fk::ui::Grid())
-                                ->Rows("*, *")
+                                ->Rows("*, *, Auto")
                                 ->Columns("*, *")
                                 ->Margin(fk::ui::Thickness(20))
                                 ->Children( // Card 1 - Welcome
@@ -355,7 +357,70 @@ int main(int argc, char **argv)
                                                                    ->Foreground(fk::ui::Brushes::DarkGray())
                                                                    ->Margin(fk::ui::Thickness(0, 3, 0, 3))}) |
                                                       fk::ui::cell(1, 0)}) |
-                                         fk::ui::cell(1, 1)}) |
+                                         fk::ui::cell(1, 1),
+
+                                     // Card 5 - Popup Demo (spans 2 columns)
+                                     (new fk::ui::Grid())
+                                             ->Background(new fk::ui::SolidColorBrush(255, 245, 250))
+                                             ->CornerRadius(8)
+                                             ->Rows("Auto, Auto, Auto")
+                                             ->Margin(fk::ui::Thickness(0, 10, 0, 0))
+                                             ->Children(
+                                                 {(new fk::ui::TextBlock())
+                                                          ->Text("Popup Demo 🎯")
+                                                          ->FontSize(20)
+                                                          ->Foreground(new fk::ui::SolidColorBrush(219, 39, 119))
+                                                          ->Margin(fk::ui::Thickness(15)) |
+                                                      fk::ui::cell(0, 0),
+                                                  (new fk::ui::TextBlock())
+                                                          ->Text("点击按钮显示不同类型的弹出窗口：")
+                                                          ->FontSize(14)
+                                                          ->Foreground(fk::ui::Brushes::DarkGray())
+                                                          ->Margin(fk::ui::Thickness(15, 0, 15, 10)) |
+                                                      fk::ui::cell(1, 0),
+                                                  (new fk::ui::Grid())
+                                                          ->Rows("Auto")
+                                                          ->Columns("*, *, *")
+                                                          ->Margin(fk::ui::Thickness(15, 0, 15, 15))
+                                                          ->Children(
+                                                              {(new fk::ui::Button())
+                                                                       ->Name("btnPopupMenu")
+                                                                       ->Content(
+                                                                           (new fk::ui::TextBlock())
+                                                                               ->Text("下拉菜单\n(Bottom)")
+                                                                               ->FontSize(13))
+                                                                       ->Background(new fk::ui::SolidColorBrush(147, 51, 234))
+                                                                       ->MouseOverBackground(fk::ui::Color::FromRGB(167, 71, 254))
+                                                                       ->PressedBackground(fk::ui::Color::FromRGB(127, 31, 214))
+                                                                       ->Margin(fk::ui::Thickness(5))
+                                                                       ->MinHeight(60) |
+                                                                   fk::ui::cell(0, 0),
+                                                               (new fk::ui::Button())
+                                                                       ->Name("btnPopupTooltip")
+                                                                       ->Content(
+                                                                           (new fk::ui::TextBlock())
+                                                                               ->Text("工具提示\n(Top)")
+                                                                               ->FontSize(13))
+                                                                       ->Background(new fk::ui::SolidColorBrush(59, 130, 246))
+                                                                       ->MouseOverBackground(fk::ui::Color::FromRGB(79, 150, 255))
+                                                                       ->PressedBackground(fk::ui::Color::FromRGB(39, 110, 226))
+                                                                       ->Margin(fk::ui::Thickness(5))
+                                                                       ->MinHeight(60) |
+                                                                   fk::ui::cell(0, 1),
+                                                               (new fk::ui::Button())
+                                                                       ->Name("btnPopupNotify")
+                                                                       ->Content(
+                                                                           (new fk::ui::TextBlock())
+                                                                               ->Text("通知弹窗\n(Right)")
+                                                                               ->FontSize(13))
+                                                                       ->Background(new fk::ui::SolidColorBrush(16, 185, 129))
+                                                                       ->MouseOverBackground(fk::ui::Color::FromRGB(36, 205, 149))
+                                                                       ->PressedBackground(fk::ui::Color::FromRGB(0, 165, 109))
+                                                                       ->Margin(fk::ui::Thickness(5))
+                                                                       ->MinHeight(60) |
+                                                                   fk::ui::cell(0, 2)}) |
+                                                      fk::ui::cell(2, 0)}) |
+                                         fk::ui::cell(2, 0, 1, 2)}) |
                             fk::ui::cell(1, 1),
 
                         // Bottom status bar - spans 2 columns
@@ -399,6 +464,115 @@ int main(int argc, char **argv)
     btnAbout->Click += []()
     { std::cout << "Clicked: About" << std::endl; };
 
+    // ========== Popup Demo Setup ==========
+    
+    // 创建下拉菜单 Popup
+    auto btnPopupMenu = static_cast<fk::ui::Button *>(mainWindow->FindName("btnPopupMenu"));
+    auto popupMenu = std::make_shared<fk::ui::Popup>();
+    popupMenu->SetPlacementTarget(btnPopupMenu);
+    popupMenu->SetPlacement(fk::ui::PlacementMode::Bottom);
+    popupMenu->SetStaysOpen(false);
+    popupMenu->SetAllowsTransparency(true);
+    popupMenu->SetWidth(200.0f);
+    popupMenu->SetHeight(160.0f);
+    
+    auto menuContent = new fk::ui::Grid();
+    menuContent->Background(new fk::ui::SolidColorBrush(255, 255, 255))
+               ->CornerRadius(6)
+               ->Rows("Auto, Auto, Auto, Auto")
+               ->Children({
+                   (new fk::ui::Button())
+                       ->Content((new fk::ui::TextBlock())->Text("📄 新建文件")->FontSize(13))
+                       ->Background(fk::ui::Brushes::White())
+                       ->MouseOverBackground(fk::ui::Color::FromRGB(240, 240, 255))
+                       ->Margin(fk::ui::Thickness(5)) | fk::ui::cell(0, 0),
+                   (new fk::ui::Button())
+                       ->Content((new fk::ui::TextBlock())->Text("📁 打开文件夹")->FontSize(13))
+                       ->Background(fk::ui::Brushes::White())
+                       ->MouseOverBackground(fk::ui::Color::FromRGB(240, 240, 255))
+                       ->Margin(fk::ui::Thickness(5)) | fk::ui::cell(1, 0),
+                   (new fk::ui::Button())
+                       ->Content((new fk::ui::TextBlock())->Text("💾 保存")->FontSize(13))
+                       ->Background(fk::ui::Brushes::White())
+                       ->MouseOverBackground(fk::ui::Color::FromRGB(240, 240, 255))
+                       ->Margin(fk::ui::Thickness(5)) | fk::ui::cell(2, 0),
+                   (new fk::ui::Button())
+                       ->Content((new fk::ui::TextBlock())->Text("❌ 退出")->FontSize(13))
+                       ->Background(fk::ui::Brushes::White())
+                       ->MouseOverBackground(fk::ui::Color::FromRGB(255, 240, 240))
+                       ->Margin(fk::ui::Thickness(5)) | fk::ui::cell(3, 0)
+               });
+    popupMenu->SetChild(menuContent);
+    
+    btnPopupMenu->Click += [popupMenu]() {
+        popupMenu->SetIsOpen(!popupMenu->GetIsOpen());
+        std::cout << "Popup Menu: " << (popupMenu->GetIsOpen() ? "Opened" : "Closed") << std::endl;
+    };
+    
+    // 创建工具提示 Popup
+    auto btnPopupTooltip = static_cast<fk::ui::Button *>(mainWindow->FindName("btnPopupTooltip"));
+    auto popupTooltip = std::make_shared<fk::ui::Popup>();
+    popupTooltip->SetPlacementTarget(btnPopupTooltip);
+    popupTooltip->SetPlacement(fk::ui::PlacementMode::Top);
+    popupTooltip->SetStaysOpen(false);
+    popupTooltip->SetAllowsTransparency(true);
+    popupTooltip->SetWidth(220.0f);
+    popupTooltip->SetHeight(80.0f);
+    popupTooltip->SetVerticalOffset(-5.0f);
+    
+    auto tooltipContent = new fk::ui::Border();
+    tooltipContent->Background(new fk::ui::SolidColorBrush(40, 40, 40))
+                  ->CornerRadius(4)
+                  ->Child(
+                      (new fk::ui::TextBlock())
+                          ->Text("💡 这是一个工具提示\n显示在按钮上方")
+                          ->FontSize(12)
+                          ->Foreground(fk::ui::Brushes::White())
+                          ->Margin(fk::ui::Thickness(10))
+                  );
+    popupTooltip->SetChild(tooltipContent);
+    
+    btnPopupTooltip->Click += [popupTooltip]() {
+        popupTooltip->SetIsOpen(!popupTooltip->GetIsOpen());
+        std::cout << "Popup Tooltip: " << (popupTooltip->GetIsOpen() ? "Opened" : "Closed") << std::endl;
+    };
+    
+    // 创建通知弹窗 Popup
+    auto btnPopupNotify = static_cast<fk::ui::Button *>(mainWindow->FindName("btnPopupNotify"));
+    auto popupNotify = std::make_shared<fk::ui::Popup>();
+    popupNotify->SetPlacementTarget(btnPopupNotify);
+    popupNotify->SetPlacement(fk::ui::PlacementMode::Right);
+    popupNotify->SetStaysOpen(false);
+    popupNotify->SetAllowsTransparency(true);
+    popupNotify->SetWidth(250.0f);
+    popupNotify->SetHeight(120.0f);
+    popupNotify->SetHorizontalOffset(10.0f);
+    
+    auto notifyContent = new fk::ui::Grid();
+    notifyContent->Background(new fk::ui::SolidColorBrush(240, 255, 240))
+                 ->CornerRadius(8)
+                 ->Rows("Auto, Auto")
+                 ->Padding(fk::ui::Thickness(15))
+                 ->Children({
+                     (new fk::ui::TextBlock())
+                         ->Text("✅ 操作成功")
+                         ->FontSize(16)
+                         ->Foreground(new fk::ui::SolidColorBrush(34, 139, 34))
+                         ->Margin(fk::ui::Thickness(0, 0, 0, 5)) | fk::ui::cell(0, 0),
+                     (new fk::ui::TextBlock())
+                         ->Text("您的更改已保存！\n点击外部关闭此通知。")
+                         ->FontSize(12)
+                         ->Foreground(fk::ui::Brushes::DarkGray()) | fk::ui::cell(1, 0)
+                 });
+    popupNotify->SetChild(notifyContent);
+    
+    btnPopupNotify->Click += [popupNotify]() {
+        popupNotify->SetIsOpen(!popupNotify->GetIsOpen());
+        std::cout << "Popup Notify: " << (popupNotify->GetIsOpen() ? "Opened" : "Closed") << std::endl;
+    };
+
+    // ========== Other Button Events ==========
+    
     auto navDashboard = static_cast<fk::ui::Button *>(mainWindow->FindName("navDashboard"));
     navDashboard->Click += []()
     { std::cout << "Navigate to: Dashboard" << std::endl; };
@@ -454,8 +628,14 @@ int main(int argc, char **argv)
     std::cout << "Features:" << std::endl;
     std::cout << "- Top navigation bar (3 buttons)" << std::endl;
     std::cout << "- Left sidebar (4 navigation buttons)" << std::endl;
-    std::cout << "- Main content area (4 cards with buttons)" << std::endl;
+    std::cout << "- Main content area (5 cards with demos)" << std::endl;
+    std::cout << "- Popup Demo: 下拉菜单、工具提示、通知弹窗" << std::endl;
     std::cout << "- Bottom status bar" << std::endl;
+    std::cout << "\nPopup Features:" << std::endl;
+    std::cout << "✓ 智能边界处理 - 自动翻转避免超出屏幕" << std::endl;
+    std::cout << "✓ 淡入淡出动画 - 平滑的视觉效果" << std::endl;
+    std::cout << "✓ 外部点击关闭 - StaysOpen=false" << std::endl;
+    std::cout << "✓ 透明背景支持 - AllowsTransparency=true" << std::endl;
     std::cout << "======================================\n"
               << std::endl;
 
