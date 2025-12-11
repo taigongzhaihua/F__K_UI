@@ -372,6 +372,9 @@ target_link_libraries(popup_input_test PRIVATE fk)
 add_executable(popup_staysopen_test examples/popup/popup_staysopen_test.cpp)
 target_link_libraries(popup_staysopen_test PRIVATE fk)
 
+add_executable(popup_animation_test examples/popup/popup_animation_test.cpp)
+target_link_libraries(popup_animation_test PRIVATE fk)
+
 # ===== F__K_UI 库构建完成 =====
 # 主项目专注于构建 libfk.a 静态库
 # 

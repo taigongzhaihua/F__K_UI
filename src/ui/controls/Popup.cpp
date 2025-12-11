@@ -8,6 +8,7 @@
 #include "fk/ui/PopupService.h"
 #include "fk/ui/Window.h"
 #include <iostream>
+#include <algorithm>
 
 #ifdef FK_HAS_GLFW
 #include <GLFW/glfw3.h>
@@ -96,6 +97,16 @@ const binding::DependencyProperty& Popup::StaysOpenProperty() {
     return property;
 }
 
+const binding::DependencyProperty& Popup::AllowsTransparencyProperty() {
+    static auto& property = binding::DependencyProperty::Register(
+        "AllowsTransparency",
+        typeid(bool),
+        typeid(Popup),
+        {false} // 默认不透明
+    );
+    return property;
+}
+
 // 注：Width/Height 属性由 FrameworkElement<Popup> 提供
 
 // ========== 构造/析构 ==========
@@ -166,6 +177,10 @@ void Popup::Open() {
         popupRoot_->Initialize();
     }
 
+    // 设置透明度支持
+    bool allowsTransparency = GetAllowsTransparency();
+    popupRoot_->SetAllowsTransparency(allowsTransparency);
+
     // 创建窗口
     int width = static_cast<int>(GetWidth());
     int height = static_cast<int>(GetHeight());
@@ -184,6 +199,14 @@ void Popup::Open() {
     // 显示窗口
     popupRoot_->Show(screenPos);
 
+    // 启动淡入动画
+#ifdef FK_HAS_GLFW
+    isAnimating_ = true;
+    isClosingAnimation_ = false;
+    animationProgress_ = 0.0f;
+    animationStartTime_ = static_cast<float>(glfwGetTime());
+#endif
+
     // 注册到 PopupService
     PopupService::Instance().RegisterPopup(this);
 
@@ -199,7 +222,19 @@ void Popup::Close() {
         return;
     }
 
-    // 隐藏窗口
+    // 启动淡出动画
+#ifdef FK_HAS_GLFW
+    if (!isAnimating_) {
+        isAnimating_ = true;
+        isClosingAnimation_ = true;
+        animationProgress_ = 0.0f;
+        animationStartTime_ = static_cast<float>(glfwGetTime());
+        // 淡出动画会在 UpdatePopup 中处理，完成后才真正关闭
+        return;
+    }
+#endif
+
+    // 直接关闭（无动画或动画已完成）
     popupRoot_->Hide();
 
     // 从 PopupService 注销
@@ -226,9 +261,53 @@ void Popup::UpdatePopup() {
         popupRoot_->ProcessEvents();
     }
     
+    // 更新动画
+#ifdef FK_HAS_GLFW
+    if (isAnimating_) {
+        float currentTime = static_cast<float>(glfwGetTime());
+        float elapsed = currentTime - animationStartTime_;
+        animationProgress_ = std::min(elapsed / animationDuration_, 1.0f);
+        
+        // 计算不透明度 (使用 ease-out 缓动)
+        float eased = animationProgress_ * (2.0f - animationProgress_); // ease-out quad
+        float opacity = isClosingAnimation_ ? (1.0f - eased) : eased;
+        
+        // 设置窗口不透明度
+        if (popupRoot_) {
+            GLFWwindow* window = static_cast<GLFWwindow*>(popupRoot_->GetNativeHandle());
+            if (window) {
+                glfwSetWindowOpacity(window, opacity);
+            }
+        }
+        
+        // 检查动画是否完成
+        if (animationProgress_ >= 1.0f) {
+            isAnimating_ = false;
+            
+            // 如果是关闭动画，现在真正关闭
+            if (isClosingAnimation_) {
+                isClosingAnimation_ = false;
+                
+                // 重置不透明度
+                if (popupRoot_) {
+                    GLFWwindow* window = static_cast<GLFWwindow*>(popupRoot_->GetNativeHandle());
+                    if (window) {
+                        glfwSetWindowOpacity(window, 1.0f);
+                    }
+                }
+                
+                // 真正关闭
+                popupRoot_->Hide();
+                PopupService::Instance().UnregisterPopup(this);
+                Closed();
+                std::cout << "Popup closed (after fade-out animation)" << std::endl;
+            }
+        }
+    }
+#endif
+    
     // 未来可以添加：
     // - 检测 PlacementTarget 位置变化并更新 Popup 位置
-    // - 处理 StaysOpen=false 时的外部点击检测
 }
 
 // ========== 定位计算 ==========

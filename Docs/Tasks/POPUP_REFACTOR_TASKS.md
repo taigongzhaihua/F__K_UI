@@ -205,12 +205,23 @@
 ### Day 8: 动画与透明度
 **目标**: 提升视觉体验。
 
-- [ ] **透明度支持**
-  - [ ] 验证 `GLFW_TRANSPARENT_FRAMEBUFFER` 是否生效
-  - [ ] 实现 `AllowsTransparency` 属性
-- [ ] **简单动画**
-  - [ ] 实现 Popup 打开时的淡入效果 (Opacity 0 -> 1)
-  - [ ] 实现 Popup 关闭时的淡出效果
+- [x] **透明度支持**
+  - [x] 验证 `GLFW_TRANSPARENT_FRAMEBUFFER` 已在 PopupRoot 中配置
+  - [x] 实现 `AllowsTransparency` 属性 (依赖属性)
+  - [x] 在 Popup::Open() 中设置 PopupRoot 的透明度
+- [x] **简单动画**
+  - [x] 实现 Popup 打开时的淡入效果 (Opacity 0 -> 1)
+  - [x] 实现 Popup 关闭时的淡出效果 (Opacity 1 -> 0)
+  - [x] 使用 `glfwSetWindowOpacity()` 控制窗口不透明度
+  - [x] Ease-out 缓动函数 (quad)
+  - [x] 动画持续时间: 0.2 秒（可配置）
+  - [x] 动画状态管理 (isAnimating_, isClosingAnimation_, animationProgress_)
+- [x] **测试验证**
+  - [x] 创建 `examples/popup/popup_animation_test.cpp`
+  - [x] 测试基本淡入淡出动画
+  - [x] 测试透明背景 + 动画
+  - [x] 测试快速开关
+  - [x] 所有动画测试通过
 
 ### Day 9: 屏幕边界处理
 **目标**: 智能调整 Popup 位置以避免被遮挡。

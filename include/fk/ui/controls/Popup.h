@@ -74,6 +74,9 @@ public:
     
     /// StaysOpen 属性：点击外部是否保持打开
     static const binding::DependencyProperty& StaysOpenProperty();
+    
+    /// AllowsTransparency 属性：是否允许透明背景
+    static const binding::DependencyProperty& AllowsTransparencyProperty();
 
 public:
     Popup();
@@ -144,6 +147,16 @@ public:
     
     Popup* StaysOpen(bool value) {
         SetStaysOpen(value);
+        return this;
+    }
+    
+    // ========== AllowsTransparency 属性 ==========
+    
+    bool GetAllowsTransparency() const { return GetValue<bool>(AllowsTransparencyProperty()); }
+    void SetAllowsTransparency(bool value) { SetValue(AllowsTransparencyProperty(), value); }
+    
+    Popup* AllowsTransparency(bool value) {
+        SetAllowsTransparency(value);
         return this;
     }
     
@@ -239,6 +252,13 @@ private:
 
     std::unique_ptr<PopupRoot> popupRoot_;  ///< 独立窗口实例
     bool isPopupRootCreated_{false};        ///< PopupRoot 是否已创建
+    
+    // 动画相关
+    bool isAnimating_{false};               ///< 是否正在播放动画
+    bool isClosingAnimation_{false};        ///< 是否为关闭动画
+    float animationProgress_{0.0f};         ///< 动画进度 [0, 1]
+    float animationDuration_{0.2f};         ///< 动画持续时间（秒）
+    float animationStartTime_{0.0f};        ///< 动画开始时间
 };
 
 } // namespace fk::ui
