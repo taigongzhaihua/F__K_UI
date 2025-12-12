@@ -155,6 +155,12 @@ public:
      */
     void* GetNativeHandle() const { return nativeHandle_; }
     
+    /**
+     * @brief 设置主窗口句柄（用于焦点管理）
+     * @param mainWindow 主窗口的 GLFW 句柄
+     */
+    void SetOwnerWindow(void* mainWindow) { ownerWindow_ = mainWindow; }
+    
     // ========== 事件处理 ==========
     
     /**
@@ -185,6 +191,7 @@ private:
     
 private:
     void* nativeHandle_{nullptr};                      // GLFW 窗口句柄
+    void* ownerWindow_{nullptr};                       // 主窗口句柄（用于焦点管理）
     UIElement* content_{nullptr};                      // Popup 内容
     
     // 渲染系统

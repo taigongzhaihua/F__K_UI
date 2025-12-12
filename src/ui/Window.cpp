@@ -579,6 +579,9 @@ void Window::RenderFrame() {
     
     GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
     
+    // 确保当前 context 是主窗口的（Popup 渲染后可能切换了 context）
+    glfwMakeContextCurrent(window);
+    
     // 获取窗口尺寸
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);

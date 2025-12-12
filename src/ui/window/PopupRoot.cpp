@@ -9,6 +9,11 @@
 
 #ifdef FK_HAS_GLFW
 #include <GLFW/glfw3.h>
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#include <windows.h>
+#endif
 #ifdef FK_HAS_OPENGL
 #include <GL/gl.h>
 #endif
@@ -78,6 +83,7 @@ void PopupRoot::Create(int width, int height) {
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);          // 初始隐藏
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);        // 不可调整大小
     glfwWindowHint(GLFW_FOCUSED, GLFW_FALSE);          // 不自动获取焦点
+    glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_FALSE);    // 显示时不获取焦点
     
     // 设置 OpenGL 版本
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -95,6 +101,48 @@ void PopupRoot::Create(int width, int height) {
     nativeHandle_ = window;
     width_ = width;
     height_ = height;
+    
+    // 设置窗口属性：永远不接受焦点
+    glfwSetWindowAttrib(window, GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
+    
+#ifdef _WIN32
+    // 在 Windows 上使用原生 API 设置窗口样式和父窗口关系
+    HWND hwnd = glfwGetWin32Window(window);
+    if (hwnd) {
+        // 1. 先设置 owner 窗口（如果有主窗口）
+        // 必须在设置样式之前，这样系统才能正确处理 WS_EX_NOACTIVATE
+        if (ownerWindow_) {
+            HWND ownerHwnd = glfwGetWin32Window(static_cast<GLFWwindow*>(ownerWindow_));
+            if (ownerHwnd) {
+                // 使用 SetWindowLongPtr 设置 GWLP_HWNDPARENT（owner 窗口）
+                SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(ownerHwnd));
+                std::cout << "[PopupRoot] Owner window set" << std::endl;
+            }
+        }
+        
+        // 2. 设置窗口样式
+        LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+        LONG_PTR originalExStyle = exStyle;
+        
+        // 添加 WS_EX_NOACTIVATE 和 WS_EX_TOOLWINDOW
+        exStyle |= WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW;
+        SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
+        
+        // 3. 使用 SetWindowPos 强制应用样式更改
+        // SWP_NOACTIVATE 确保窗口不会在此过程中激活
+        // SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER 保持窗口位置/大小/层级不变
+        // SWP_FRAMECHANGED 强制重绘窗口框架以应用新样式
+        SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, 
+                     SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        
+        // 验证设置是否成功
+        LONG_PTR newExStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+        std::cout << "[PopupRoot] Original exStyle: 0x" << std::hex << originalExStyle << std::endl;
+        std::cout << "[PopupRoot] New exStyle: 0x" << std::hex << newExStyle << std::endl;
+        std::cout << "[PopupRoot] WS_EX_NOACTIVATE: " << ((newExStyle & WS_EX_NOACTIVATE) ? "YES" : "NO") 
+                  << ", WS_EX_TOOLWINDOW: " << ((newExStyle & WS_EX_TOOLWINDOW) ? "YES" : "NO") << std::dec << std::endl;
+    }
+#endif
     
     std::cout << "[PopupRoot] Window created: " << width << "x" << height << std::endl;
     
@@ -287,9 +335,12 @@ void PopupRoot::RenderFrame() {
     }
     
 #ifdef FK_HAS_GLFW
+    // 保存当前上下文（通常是主窗口的 context）
+    GLFWwindow* previousContext = glfwGetCurrentContext();
+    
     GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
     
-    // 使窗口上下文为当前
+    // 切换到 Popup 窗口的上下文
     glfwMakeContextCurrent(window);
     
     // 获取窗口尺寸
@@ -345,6 +396,11 @@ void PopupRoot::RenderFrame() {
     
     // 交换缓冲区
     glfwSwapBuffers(window);
+    
+    // 恢复之前的上下文（切换回主窗口）
+    if (previousContext) {
+        glfwMakeContextCurrent(previousContext);
+    }
 #endif
 }
 
@@ -398,6 +454,9 @@ void PopupRoot::InitializeRenderer() {
     }
     
 #ifdef FK_HAS_GLFW
+    // 保存当前 context
+    GLFWwindow* previousContext = glfwGetCurrentContext();
+    
     GLFWwindow* window = static_cast<GLFWwindow*>(nativeHandle_);
     glfwMakeContextCurrent(window);
 #endif
@@ -419,6 +478,13 @@ void PopupRoot::InitializeRenderer() {
     lastViewportHeight_ = height_;
     
     std::cout << "[PopupRoot] Renderer initialized" << std::endl;
+#endif
+
+#ifdef FK_HAS_GLFW
+    // 恢复之前的 context
+    if (previousContext) {
+        glfwMakeContextCurrent(previousContext);
+    }
 #endif
 }
 

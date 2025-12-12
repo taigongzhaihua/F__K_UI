@@ -231,6 +231,14 @@ public:
      */
     class InputManager* GetInputManager() const { return inputManager_.get(); }
     
+    /**
+     * @brief 获取原生窗口句柄
+     * @return 原生窗口句柄（GLFW窗口指针）
+     * 
+     * 用于需要直接访问原生窗口的场景，例如Popup的焦点管理。
+     */
+    void* GetNativeHandle() const { return nativeHandle_; }
+    
     // ========== 坐标转换 ==========
     
     /**

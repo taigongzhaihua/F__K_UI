@@ -168,8 +168,9 @@ void Popup::OnChildChanged(
 // ========== 核心方法 ==========
 
 void Popup::Open() {
-    // 如果已经打开，不重复操作
-    if (isPopupRootCreated_ && popupRoot_) {
+    // 如果已经显示，不重复操作
+    if (isPopupRootCreated_ && popupRoot_ && popupRoot_->IsVisible()) {
+        std::cout << "Popup already visible, skipping Open()" << std::endl;
         return;
     }
 
@@ -179,9 +180,54 @@ void Popup::Open() {
         popupRoot_->Initialize();
     }
 
+    // 如果窗口已创建但被隐藏，重新显示
+    if (isPopupRootCreated_ && !popupRoot_->IsVisible()) {
+        std::cout << "Reusing existing PopupRoot window" << std::endl;
+        // 重新计算位置
+        Point screenPos = CalculateScreenPosition();
+        // 显示窗口
+        popupRoot_->Show(screenPos);
+        
+        // 启动淡入动画
+#ifdef FK_HAS_GLFW
+        isAnimating_ = true;
+        isClosingAnimation_ = false;
+        animationProgress_ = 0.0f;
+        animationStartTime_ = static_cast<float>(glfwGetTime());
+#endif
+        
+        // 注册到 PopupService
+        PopupService::Instance().RegisterPopup(this);
+        
+        // 触发 Opened 事件
+        Opened();
+        
+        std::cout << "Popup reopened at (" << screenPos.x << ", " << screenPos.y << ")" << std::endl;
+        return;
+    }
+
+    // 首次创建窗口
     // 设置透明度支持
     bool allowsTransparency = GetAllowsTransparency();
     popupRoot_->SetAllowsTransparency(allowsTransparency);
+    
+    // 设置主窗口句柄（用于焦点管理）
+    // Popup 本身不在可视树中，需要通过 PlacementTarget 找到根窗口
+    Window* rootWindow = nullptr;
+    UIElement* placementTarget = GetPlacementTarget();
+    if (placementTarget) {
+        rootWindow = placementTarget->GetRootWindow();
+    }
+    
+    if (rootWindow) {
+        void* nativeHandle = rootWindow->GetNativeHandle();
+        std::cout << "[Popup] Root window found: " << rootWindow 
+                  << ", native handle: " << nativeHandle << std::endl;
+        popupRoot_->SetOwnerWindow(nativeHandle);
+    } else {
+        std::cout << "[Popup] Warning: No root window found (PlacementTarget: " 
+                  << placementTarget << ")" << std::endl;
+    }
 
     // 创建窗口
     int width = static_cast<int>(GetWidth());
