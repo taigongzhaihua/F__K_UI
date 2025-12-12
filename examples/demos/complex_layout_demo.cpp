@@ -466,42 +466,97 @@ int main(int argc, char **argv)
 
     // ========== Popup Demo Setup ==========
     
-    // 创建下拉菜单 Popup
+    // 创建下拉菜单 Popup（复杂用户资料卡片）
     auto btnPopupMenu = static_cast<fk::ui::Button *>(mainWindow->FindName("btnPopupMenu"));
     auto popupMenu = std::make_shared<fk::ui::Popup>();
     popupMenu->SetPlacementTarget(btnPopupMenu);
     popupMenu->SetPlacement(fk::ui::PlacementMode::Bottom);
     popupMenu->SetStaysOpen(false);
     popupMenu->SetAllowsTransparency(true);
-    popupMenu->SetWidth(200.0f);
-    popupMenu->SetHeight(160.0f);
+    popupMenu->SetWidth(320.0f);
+    popupMenu->SetHeight(380.0f);
     
+    // 创建用户资料卡片
     auto menuContent = new fk::ui::Grid();
     menuContent->Background(new fk::ui::SolidColorBrush(255, 255, 255))
-               ->CornerRadius(6)
-               ->Rows("Auto, Auto, Auto, Auto")
-               ->Children({
-                   (new fk::ui::Button())
-                       ->Content((new fk::ui::TextBlock())->Text("📄 新建文件")->FontSize(13))
-                       ->Background(fk::ui::Brushes::White())
-                       ->MouseOverBackground(fk::ui::Color::FromRGB(240, 240, 255))
-                       ->Margin(fk::ui::Thickness(5)) | fk::ui::cell(0, 0),
-                   (new fk::ui::Button())
-                       ->Content((new fk::ui::TextBlock())->Text("📁 打开文件夹")->FontSize(13))
-                       ->Background(fk::ui::Brushes::White())
-                       ->MouseOverBackground(fk::ui::Color::FromRGB(240, 240, 255))
-                       ->Margin(fk::ui::Thickness(5)) | fk::ui::cell(1, 0),
-                   (new fk::ui::Button())
-                       ->Content((new fk::ui::TextBlock())->Text("💾 保存")->FontSize(13))
-                       ->Background(fk::ui::Brushes::White())
-                       ->MouseOverBackground(fk::ui::Color::FromRGB(240, 240, 255))
-                       ->Margin(fk::ui::Thickness(5)) | fk::ui::cell(2, 0),
-                   (new fk::ui::Button())
-                       ->Content((new fk::ui::TextBlock())->Text("❌ 退出")->FontSize(13))
-                       ->Background(fk::ui::Brushes::White())
-                       ->MouseOverBackground(fk::ui::Color::FromRGB(255, 240, 240))
-                       ->Margin(fk::ui::Thickness(5)) | fk::ui::cell(3, 0)
-               });
+               ->CornerRadius(12)
+               ->Rows("Auto, Auto, *")
+               ->Padding(0);
+    
+    // 头部区域
+    auto header = new fk::ui::Grid();
+    header->Background(new fk::ui::SolidColorBrush(100, 149, 237))
+          ->CornerRadius(12, 12, 0, 0)
+          ->Padding(20, 15, 20, 15)
+          ->Rows("Auto, Auto, Auto");
+    
+    auto avatar = new fk::ui::Border();
+    avatar->Background(new fk::ui::SolidColorBrush(255, 255, 255))
+          ->CornerRadius(40)
+          ->Width(80)->Height(80)
+          ->SetHAlign(fk::ui::HorizontalAlignment::Center)
+          ->Child((new fk::ui::TextBlock())->Text("👤")->FontSize(50)
+                  ->SetHAlign(fk::ui::HorizontalAlignment::Center)
+                  ->SetVAlign(fk::ui::VerticalAlignment::Center));
+    header->AddChild(avatar | fk::ui::cell(0, 0));
+    header->AddChild((new fk::ui::TextBlock())->Text("张三")->FontSize(20)
+                     ->Foreground(fk::ui::Brushes::White())
+                     ->SetHAlign(fk::ui::HorizontalAlignment::Center)
+                     ->Margin(0, 10, 0, 5) | fk::ui::cell(1, 0));
+    header->AddChild((new fk::ui::TextBlock())->Text("zhangsan@example.com")->FontSize(12)
+                     ->Foreground(new fk::ui::SolidColorBrush(255, 255, 255, 200))
+                     ->SetHAlign(fk::ui::HorizontalAlignment::Center) | fk::ui::cell(2, 0));
+    menuContent->AddChild(header | fk::ui::cell(0, 0));
+    
+    // 快捷操作区
+    auto quickActions = new fk::ui::Grid();
+    quickActions->Columns("*, *")->Rows("Auto, Auto")->Padding(15, 15, 15, 10);
+    quickActions->AddChild((new fk::ui::Button())
+        ->Content((new fk::ui::TextBlock())->Text("📧 消息")->FontSize(13))
+        ->Background(new fk::ui::SolidColorBrush(240, 248, 255))
+        ->MouseOverBackground(fk::ui::Color::FromRGB(220, 238, 255))
+        ->Padding(10, 8, 10, 8)->Margin(0, 0, 5, 5) | fk::ui::cell(0, 0));
+    quickActions->AddChild((new fk::ui::Button())
+        ->Content((new fk::ui::TextBlock())->Text("⚙️ 设置")->FontSize(13))
+        ->Background(new fk::ui::SolidColorBrush(240, 248, 255))
+        ->MouseOverBackground(fk::ui::Color::FromRGB(220, 238, 255))
+        ->Padding(10, 8, 10, 8)->Margin(5, 0, 0, 5) | fk::ui::cell(0, 1));
+    quickActions->AddChild((new fk::ui::Button())
+        ->Content((new fk::ui::TextBlock())->Text("📊 统计")->FontSize(13))
+        ->Background(new fk::ui::SolidColorBrush(240, 248, 255))
+        ->MouseOverBackground(fk::ui::Color::FromRGB(220, 238, 255))
+        ->Padding(10, 8, 10, 8)->Margin(0, 5, 5, 0) | fk::ui::cell(1, 0));
+    quickActions->AddChild((new fk::ui::Button())
+        ->Content((new fk::ui::TextBlock())->Text("❤️ 收藏")->FontSize(13))
+        ->Background(new fk::ui::SolidColorBrush(240, 248, 255))
+        ->MouseOverBackground(fk::ui::Color::FromRGB(220, 238, 255))
+        ->Padding(10, 8, 10, 8)->Margin(5, 5, 0, 0) | fk::ui::cell(1, 1));
+    menuContent->AddChild(quickActions | fk::ui::cell(1, 0));
+    
+    // 菜单列表区
+    auto menuList = new fk::ui::StackPanel();
+    menuList->Padding(10, 5, 10, 5);
+    menuList->AddChild((new fk::ui::Button())
+        ->Content((new fk::ui::TextBlock())->Text("👤 个人资料")->FontSize(14))
+        ->Background(fk::ui::Brushes::White())
+        ->MouseOverBackground(fk::ui::Color::FromRGB(245, 245, 250))
+        ->Padding(15, 10, 15, 10)->Margin(5, 2, 5, 2));
+    menuList->AddChild((new fk::ui::Button())
+        ->Content((new fk::ui::TextBlock())->Text("🔔 通知设置")->FontSize(14))
+        ->Background(fk::ui::Brushes::White())
+        ->MouseOverBackground(fk::ui::Color::FromRGB(245, 245, 250))
+        ->Padding(15, 10, 15, 10)->Margin(5, 2, 5, 2));
+    menuList->AddChild((new fk::ui::Button())
+        ->Content((new fk::ui::TextBlock())->Text("🔒 隐私安全")->FontSize(14))
+        ->Background(fk::ui::Brushes::White())
+        ->MouseOverBackground(fk::ui::Color::FromRGB(245, 245, 250))
+        ->Padding(15, 10, 15, 10)->Margin(5, 2, 5, 2));
+    menuList->AddChild((new fk::ui::Button())
+        ->Content((new fk::ui::TextBlock())->Text("❓ 帮助中心")->FontSize(14))
+        ->Background(fk::ui::Brushes::White())
+        ->MouseOverBackground(fk::ui::Color::FromRGB(245, 245, 250))
+        ->Padding(15, 10, 15, 10)->Margin(5, 2, 5, 2));
+    menuContent->AddChild(menuList | fk::ui::cell(2, 0));
     popupMenu->SetChild(menuContent);
     
     btnPopupMenu->Click += [popupMenu]() {
@@ -537,67 +592,125 @@ int main(int argc, char **argv)
         std::cout << "Popup Tooltip: " << (popupTooltip->GetIsOpen() ? "Opened" : "Closed") << std::endl;
     };
     
-    // 创建通知弹窗 Popup
+    // 创建通知弹窗 Popup（多功能通知面板）
     auto btnPopupNotify = static_cast<fk::ui::Button *>(mainWindow->FindName("btnPopupNotify"));
     auto popupNotify = std::make_shared<fk::ui::Popup>();
     popupNotify->SetPlacementTarget(btnPopupNotify);
     popupNotify->SetPlacement(fk::ui::PlacementMode::Right);
     popupNotify->SetStaysOpen(false);
     popupNotify->SetAllowsTransparency(true);
-    popupNotify->SetWidth(250.0f);
-    popupNotify->SetHeight(120.0f);
+    popupNotify->SetWidth(350.0f);
+    popupNotify->SetHeight(450.0f);
     popupNotify->SetHorizontalOffset(10.0f);
     
     auto notifyContent = new fk::ui::Grid();
-    notifyContent->Background(new fk::ui::SolidColorBrush(240, 255, 240))
-                 ->CornerRadius(8)
-                 ->Rows("Auto, Auto")
-                 ->Padding(fk::ui::Thickness(15))
-                 ->Children({
-                     (new fk::ui::TextBlock())
-                         ->Text("✅ 操作成功")
-                         ->FontSize(16)
-                         ->Foreground(new fk::ui::SolidColorBrush(34, 139, 34))
-                         ->Margin(fk::ui::Thickness(0, 0, 0, 5)) | fk::ui::cell(0, 0),
-                     (new fk::ui::TextBlock())
-                         ->Text("您的更改已保存！\n点击外部关闭此通知。")
-                         ->FontSize(12)
-                         ->Foreground(fk::ui::Brushes::DarkGray()) | fk::ui::cell(1, 0)
-                 });
+    notifyContent->Background(new fk::ui::SolidColorBrush(255, 255, 255))
+                 ->CornerRadius(10)
+                 ->Rows("Auto, *");
+    
+    // 标题栏
+    auto titleBar = new fk::ui::Grid();
+    titleBar->Background(new fk::ui::LinearGradientBrush(
+                fk::ui::Color::FromRGB(106, 90, 205),
+                fk::ui::Color::FromRGB(138, 43, 226)))
+            ->CornerRadius(10, 10, 0, 0)
+            ->Padding(15, 12, 15, 12)
+            ->Columns("*, Auto");
+    titleBar->AddChild((new fk::ui::TextBlock())
+        ->Text("🔔 通知中心")->FontSize(16)
+        ->Foreground(fk::ui::Brushes::White()) | fk::ui::cell(0, 0));
+    titleBar->AddChild((new fk::ui::TextBlock())
+        ->Text("3 条未读")->FontSize(12)
+        ->Foreground(new fk::ui::SolidColorBrush(255, 255, 255, 180)) | fk::ui::cell(0, 1));
+    notifyContent->AddChild(titleBar | fk::ui::cell(0, 0));
+    
+    // 通知列表
+    auto notifyList = new fk::ui::StackPanel();
+    notifyList->Padding(10);
+    
+    // 成功通知
+    auto successNotify = new fk::ui::Border();
+    successNotify->Background(new fk::ui::SolidColorBrush(212, 237, 218))
+                 ->CornerRadius(8)->Padding(12)->Margin(5, 5, 5, 5);
+    auto successGrid = new fk::ui::Grid();
+    successGrid->Rows("Auto, Auto, Auto");
+    successGrid->AddChild((new fk::ui::TextBlock())
+        ->Text("✅ 文件保存成功")->FontSize(14)
+        ->Foreground(new fk::ui::SolidColorBrush(25, 135, 84)) | fk::ui::cell(0, 0));
+    successGrid->AddChild((new fk::ui::TextBlock())
+        ->Text("document.txt 已成功保存到云端")->FontSize(12)
+        ->Foreground(new fk::ui::SolidColorBrush(40, 70, 50))
+        ->Margin(0, 5, 0, 5) | fk::ui::cell(1, 0));
+    successGrid->AddChild((new fk::ui::TextBlock())
+        ->Text("刚刚")->FontSize(11)
+        ->Foreground(new fk::ui::SolidColorBrush(108, 117, 125)) | fk::ui::cell(2, 0));
+    successNotify->Child(successGrid);
+    notifyList->AddChild(successNotify);
+    
+    // 警告通知
+    auto warningNotify = new fk::ui::Border();
+    warningNotify->Background(new fk::ui::SolidColorBrush(255, 243, 205))
+                 ->CornerRadius(8)->Padding(12)->Margin(5, 5, 5, 5);
+    auto warningGrid = new fk::ui::Grid();
+    warningGrid->Rows("Auto, Auto, Auto");
+    warningGrid->AddChild((new fk::ui::TextBlock())
+        ->Text("⚠️ 存储空间不足")->FontSize(14)
+        ->Foreground(new fk::ui::SolidColorBrush(255, 193, 7)) | fk::ui::cell(0, 0));
+    warningGrid->AddChild((new fk::ui::TextBlock())
+        ->Text("仅剩 15% 可用空间，建议清理文件")->FontSize(12)
+        ->Foreground(new fk::ui::SolidColorBrush(120, 80, 0))
+        ->Margin(0, 5, 0, 5) | fk::ui::cell(1, 0));
+    warningGrid->AddChild((new fk::ui::TextBlock())
+        ->Text("5 分钟前")->FontSize(11)
+        ->Foreground(new fk::ui::SolidColorBrush(108, 117, 125)) | fk::ui::cell(2, 0));
+    warningNotify->Child(warningGrid);
+    notifyList->AddChild(warningNotify);
+    
+    // 信息通知
+    auto infoNotify = new fk::ui::Border();
+    infoNotify->Background(new fk::ui::SolidColorBrush(209, 236, 241))
+              ->CornerRadius(8)->Padding(12)->Margin(5, 5, 5, 5);
+    auto infoGrid = new fk::ui::Grid();
+    infoGrid->Rows("Auto, Auto, Auto");
+    infoGrid->AddChild((new fk::ui::TextBlock())
+        ->Text("ℹ️ 系统更新可用")->FontSize(14)
+        ->Foreground(new fk::ui::SolidColorBrush(13, 110, 253)) | fk::ui::cell(0, 0));
+    infoGrid->AddChild((new fk::ui::TextBlock())
+        ->Text("发现新版本 v2.1.0，包含性能优化")->FontSize(12)
+        ->Foreground(new fk::ui::SolidColorBrush(0, 50, 100))
+        ->Margin(0, 5, 0, 5) | fk::ui::cell(1, 0));
+    infoGrid->AddChild((new fk::ui::TextBlock())
+        ->Text("1 小时前")->FontSize(11)
+        ->Foreground(new fk::ui::SolidColorBrush(108, 117, 125)) | fk::ui::cell(2, 0));
+    infoNotify->Child(infoGrid);
+    notifyList->AddChild(infoNotify);
+    
+    // 操作按钮
+    auto actionButtons = new fk::ui::Grid();
+    actionButtons->Columns("*, *")->Margin(5, 10, 5, 5);
+    actionButtons->AddChild((new fk::ui::Button())
+        ->Content((new fk::ui::TextBlock())->Text("全部标记已读")->FontSize(13))
+        ->Background(new fk::ui::SolidColorBrush(108, 117, 125))
+        ->MouseOverBackground(fk::ui::Color::FromRGB(90, 98, 104))
+        ->Foreground(fk::ui::Brushes::White())
+        ->Padding(10, 8, 10, 8)->Margin(0, 0, 5, 0) | fk::ui::cell(0, 0));
+    actionButtons->AddChild((new fk::ui::Button())
+        ->Content((new fk::ui::TextBlock())->Text("清空通知")->FontSize(13))
+        ->Background(new fk::ui::SolidColorBrush(220, 53, 69))
+        ->MouseOverBackground(fk::ui::Color::FromRGB(200, 35, 51))
+        ->Foreground(fk::ui::Brushes::White())
+        ->Padding(10, 8, 10, 8)->Margin(5, 0, 0, 0) | fk::ui::cell(0, 1));
+    notifyList->AddChild(actionButtons);
+    
+    notifyContent->AddChild(notifyList | fk::ui::cell(1, 0));
     popupNotify->SetChild(notifyContent);
     
     btnPopupNotify->Click += [popupNotify]() {
         popupNotify->SetIsOpen(!popupNotify->GetIsOpen());
         std::cout << "Popup Notify: " << (popupNotify->GetIsOpen() ? "Opened" : "Closed") << std::endl;
     };
-
-    // ========== Other Button Events ==========
     
-    auto navDashboard = static_cast<fk::ui::Button *>(mainWindow->FindName("navDashboard"));
-    navDashboard->Click += []()
-    { std::cout << "Navigate to: Dashboard" << std::endl; };
-
-    auto navProjects = static_cast<fk::ui::Button *>(mainWindow->FindName("navProjects"));
-    navProjects->Click += []()
-    { std::cout << "Navigate to: Projects" << std::endl; };
-
-    auto navTasks = static_cast<fk::ui::Button *>(mainWindow->FindName("navTasks"));
-    navTasks->Click += []()
-    { std::cout << "Navigate to: Tasks" << std::endl; };
-
-    auto navAnalytics = static_cast<fk::ui::Button *>(mainWindow->FindName("navAnalytics"));
-    navAnalytics->Click += []()
-    { std::cout << "Navigate to: Analytics" << std::endl; };
-
-    auto btnNewProject = static_cast<fk::ui::Button *>(mainWindow->FindName("btnNewProject"));
-    btnNewProject->Click += []()
-    { std::cout << "Action: New Project" << std::endl; };
-
-    auto btnNewTask = static_cast<fk::ui::Button *>(mainWindow->FindName("btnNewTask"));
-    btnNewTask->Click += []()
-    { std::cout << "Action: New Task" << std::endl; };
-
-    // Bind ToggleButton events
+    // 获取 toggle buttons 并绑定事件
     auto toggleWifi = static_cast<fk::ui::ToggleButton *>(mainWindow->FindName("toggleWifi"));
     toggleWifi->Checked += [](std::optional<bool> state)
     { std::cout << "WiFi: ON" << std::endl; };
